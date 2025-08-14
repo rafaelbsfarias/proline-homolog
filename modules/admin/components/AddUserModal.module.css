@@ -1,0 +1,94 @@
+/* Grid para duas colunas no formulário do cliente */
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modalContent {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.13),
+    0 1.5px 6px rgba(0, 0, 0, 0.1);
+  padding: 32px 28px 24px 28px;
+  min-width: 340px;
+  max-width: 95vw;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #888;
+  cursor: pointer;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  margin-bottom: 1.1em;
+  color: #222;
+}
+.form input,
+.form select {
+  margin-top: 0.3em;
+  padding: 10px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 7px;
+  font-size: 1rem;
+  background: #fafbfc;
+  color: #222;
+  outline: none;
+  transition: border 0.2s;
+}
+.form input:focus,
+.form select:focus {
+  border-color: #002e4c;
+}
+.form button[type='submit'] {
+  background: #002e4c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 14px 0;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: filter 0.2s;
+  width: 100%;
+  min-width: 220px;
+  max-width: 340px;
+  align-self: center;
+}
+.form button[type='submit']:hover {
+  filter: brightness(1.08);
+}
+.error {
+  color: #b00020;
+  margin-top: 10px;
+  font-size: 0.98rem;
+}
+.success {
+  color: #43b04a;
+  margin-top: 10px;
+  font-size: 0.98rem;
+}

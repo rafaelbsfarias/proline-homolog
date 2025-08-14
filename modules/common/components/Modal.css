@@ -1,0 +1,60 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  min-width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem; /* Adjusted for better spacing */
+  right: 0.5rem; /* Adjusted for better spacing */
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 2.5rem; /* Increased size */
+  height: 2.5rem; /* Increased size */
+  border-radius: 50%; /* Make it round */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666; /* Softer color for the 'x' */
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.modal-close:hover {
+  background-color: #f0f0f0; /* Light background on hover */
+  color: #333; /* Darker 'x' on hover */
+  transform: scale(1.1); /* Slightly enlarge on hover */
+}
+
+.modal-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  margin-top: 1rem;
+}

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Admin - Criar Parceiro</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+        input { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { 
+            background: #0056b3; 
+        }
+        .result { 
+            margin-top: 20px; 
+            padding: 15px; 
+            border-radius: 4px; 
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        .info { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border: 1px solid #bee5eb; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste: Admin Criar Parceiro</h1>
+    
+    <div class="form-group">
+        <h3>1. Login Admin</h3>
+        <label for="adminEmail">Email Admin:</label>
+        <input type="email" id="adminEmail" value="admin@prolineauto.com.br" />
+        
+        <label for="adminPassword">Senha Admin:</label>
+        <input type="password" id="adminPassword" value="" placeholder="Digite a senha do admin" />
+        
+        <button onclick="loginAdmin()">🔑 Fazer Login</button>
+    </div>
+
+    <div class="form-group">
+        <h3>2. Criar Parceiro</h3>
+        <label for="partnerName">Nome do Responsável:</label>
+        <input type="text" id="partnerName" value="João Silva Teste" />
+        
+        <label for="partnerEmail">Email:</label>
+        <input type="email" id="partnerEmail" value="joao.teste@parceiro.com" />
+        
+        <label for="partnerCnpj">CNPJ:</label>
+        <input type="text" id="partnerCnpj" value="12.345.678/0001-90" />
+        
+        <label for="partnerCompany">Razão Social:</label>
+        <input type="text" id="partnerCompany" value="Empresa Teste Ltda" />
+        
+        <label for="partnerAddress">Endereço:</label>
+        <input type="text" id="partnerAddress" value="Rua das Flores, 123 - Centro - São Paulo/SP" />
+        
+        <label for="partnerPhone">Telefone:</label>
+        <input type="text" id="partnerPhone" value="(11) 99999-9999" />
+        
+        <button onclick="createPartner()">🏢 Criar Parceiro</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        let authToken = null;
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+
+        async function loginAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!email || !password) {
+                showResult('❌ Preencha email e senha do admin', 'error');
+                return;
+            }
+            
+            try {
+                showResult('🔄 Fazendo login...', 'info');
+                
+                const response = await fetch('/api/test-auth', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    showResult(`✅ Login realizado com sucesso!<br>
+                               👤 Usuário: ${data.user?.email}<br>
+                               🔑 Token obtido: ${data.token.substring(0, 20)}...`, 'success');
+                } else {
+                    showResult(`❌ Erro no login: ${data.error || 'Credenciais inválidas'}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Erro na requisição: ${error.message}`, 'error');
+            }
+        }
+
+        async function createPartner() {
+            if (!authToken) {
+                showResult('❌ Faça login primeiro!', 'error');
+                return;
+            }
+            
+            const partnerData = {
+                name: document.getElementById('partnerName').value,
+                email: document.getElementById('partnerEmail').value,
+                cnpj: document.getElementById('partnerCnpj').value,
+                companyName: document.getElementById('partnerCompany').value,
+                address: document.getElementById('partnerAddress').value,
+                phone: document.getElementById('partnerPhone').value
+            };
+            
+            // Validar campos obrigatórios
+            for (const [key, value] of Object.entries(partnerData)) {
+                if (!value) {
+                    showResult(`❌ Campo "${key}" é obrigatório`, 'error');
+                    return;
+                }
+            }
+            
+            try {
+                showResult('🔄 Criando parceiro...', 'info');
+                
+                const response = await fetch('/api/admin/add-partner', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(partnerData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Parceiro criado com sucesso!<br>
+                               📧 Email: ${partnerData.email}<br>
+                               🏢 Empresa: ${partnerData.companyName}<br>
+                               📋 CNPJ: ${partnerData.cnpj}<br>
+                               ⏰ Status: Pendente de aprovação`, 'success');
+                } else {
+                    let errorMessage = data.error || 'Erro desconhecido';
+                    
+                    if (response.status === 401) {
+                        errorMessage += '<br>🔍 Possível problema: Token expirado ou inválido';
+                    } else if (response.status === 403) {
+                        errorMessage += '<br>🔍 Possível problema: Usuário não é admin';
+                    } else if (response.status === 409) {
+                        errorMessage += '<br>🔍 Possível problema: CNPJ ou email já existe';
+                    }
+                    
+                    showResult(`❌ Erro ao criar parceiro: ${errorMessage}<br>
+                               📊 Status: ${response.status}<br>
+                               🔍 Debug: ${JSON.stringify(data.debug || {}, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Erro na requisição: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

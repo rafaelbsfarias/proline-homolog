@@ -1,0 +1,48 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modalContent h2 {
+  color: #d32f2f; /* Material Design Red 700 */
+  margin-bottom: 15px;
+}
+
+.modalContent p {
+  color: #424242; /* Material Design Grey 800 */
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.modalContent button {
+  background-color: #2196f3; /* Material Design Blue 500 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.modalContent button:hover {
+  background-color: #1976d2; /* Material Design Blue 700 */
+}

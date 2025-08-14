@@ -1,0 +1,31 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": ["app/**/*.{ts,tsx,js,jsx}", "modules/**/*.{ts,tsx,js,jsx}"],
+  "project": ["tsconfig.knip.json"],
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/out/**",
+    "reports/**",
+
+    // Ignorar infraestrutura de testes e módulo ainda incompleto
+    "cypress/**",
+    "cypress.config.mjs",
+    "vitest.config.ts",
+    "modules/common/components/__tests__/**",
+    "modules/user/**",
+
+    // Ignorar exports "duplicados" (barrels/nome+default) — use file#ExportName
+    "modules/admin/components/AddClientModal.tsx#default",
+    "modules/admin/components/AddPartnerModal.tsx#default",
+    "modules/admin/components/AddUserModal.tsx#default",
+    "modules/common/services/SupabaseService.ts#default"
+  ],
+  "ignoreDependencies": [
+    // Esses dois apareceram como "Unlisted"; se você não quer instalá-los agora, ignore
+    "@testing-library/jest-dom",
+    "vite"
+  ],
+  "ignoreBinaries": ["wait-on"]
+}

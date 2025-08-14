@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Middleware de Autenticação</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        button { padding: 10px 15px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        #output { margin: 15px 0; min-height: 150px; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; font-family: monospace; font-size: 12px; overflow-y: auto; }
+        .token-display { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; word-break: break-all; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste do Middleware de Autenticação Admin</h1>
+        
+        <div class="test-section info">
+            <h3>📝 Token JWT do Admin</h3>
+            <p>Este é o token Bearer que estava sendo usado no console (admin@prolineauto.com.br):</p>
+            <div class="token-display" id="admin-token">
+                eyJhbGciOiJIUzI1NiIsImtpZCI6Ikd4TnZ1Y0FwOUxCOUllbDQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2lyYmFqdGNqdGdsendsaWdwZ2txLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwODMzYWU2My1iNmIwLTRmYjUtOWQ1ZS1jMmQ3MjM3MjBjYjQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU0MDc1Mzc2LCJpYXQiOjE3NTQwNzE3NzYsImVtYWlsIjoiYWRtaW5AcHJvbGluZWF1dG8uY29tLmJyIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyb2xlIjoiYWRtaW4ifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NDA3MTc3Nn1dLCJzZXNzaW9uX2lkIjoiOWZkMTc3NjMtOTc5ZC00YjI4LWJlNjAtN2QxNzlhYmU3NDI2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.WcqKVJfaHXCnvEo0TzgdXerGl9DOgZhzkYVhj0m4z48
+            </div>
+            <button class="btn-primary" onclick="decodeToken()">🔍 Decodificar Token JWT</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Testes do Middleware</h3>
+            <button class="btn-success" onclick="testWithAdminToken()">✅ Testar com Token Admin</button>
+            <button class="btn-danger" onclick="testWithoutToken()">❌ Testar sem Token</button>
+            <button class="btn-danger" onclick="testWithInvalidToken()">❌ Testar com Token Inválido</button>
+            <button class="btn-primary" onclick="clearOutput()">🧹 Limpar Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Log de Testes</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_TOKEN = 'eyJhbGciOiJIUzI1NiIsImtpZCI6Ikd4TnZ1Y0FwOUxCOUllbDQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2lyYmFqdGNqdGdsendsaWdwZ2txLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwODMzYWU2My1iNmIwLTRmYjUtOWQ1ZS1jMmQ3MjM3MjBjYjQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU0MDc1Mzc2LCJpYXQiOjE3NTQwNzE3NzYsImVtYWlsIjoiYWRtaW5AcHJvbGluZWF1dG8uY29tLmJyIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnt9LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJyb2xlIjoiYWRtaW4ifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NDA3MTc3Nn1dLCJzZXNzaW9uX2lkIjoiOWZkMTc3NjMtOTc5ZC00YjI4LWJlNjAtN2QxNzlhYmU3NDI2IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.WcqKVJfaHXCnvEo0TzgdXerGl9DOgZhzkYVhj0m4z48';
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function decodeToken() {
+            try {
+                // Decodificar JWT (apenas a parte payload)
+                const parts = ADMIN_TOKEN.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                
+                log('🔍 Token JWT decodificado:', 'info');
+                log(`📧 Email: ${payload.email}`, 'info');
+                log(`👤 User ID: ${payload.sub}`, 'info');
+                log(`🏷️ Role (user_metadata): ${payload.user_metadata?.role}`, 'info');
+                log(`⏰ Expira em: ${new Date(payload.exp * 1000).toLocaleString()}`, 'info');
+                log(`📅 Criado em: ${new Date(payload.iat * 1000).toLocaleString()}`, 'info');
+                log(`🔗 Full payload: ${JSON.stringify(payload, null, 2)}`, 'info');
+            } catch (error) {
+                log(`❌ Erro ao decodificar token: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithAdminToken() {
+            log('🧪 Teste: Requisição com token de admin...', 'info');
+            
+            try {
+                const response = await fetch('/api/admin/list-users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Sucesso! Dados recebidos:`, 'success');
+                    log(`👥 Número de usuários: ${data.users?.length || 0}`, 'success');
+                    if (data.users && data.users.length > 0) {
+                        log(`📋 Primeiro usuário: ${JSON.stringify(data.users[0], null, 2)}`, 'info');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erro: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                log(`💥 Erro de rede: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithoutToken() {
+            log('🧪 Teste: Requisição sem token...', 'info');
+            
+            try {
+                const response = await fetch('/api/admin/list-users', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'warning' : 'success');
+                
+                const errorText = await response.text();
+                log(`📝 Resposta: ${errorText}`, response.ok ? 'warning' : 'success');
+
+            } catch (error) {
+                log(`💥 Erro de rede: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithInvalidToken() {
+            log('🧪 Teste: Requisição com token inválido...', 'info');
+            
+            try {
+                const response = await fetch('/api/admin/list-users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer invalid-token-12345',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`, response.ok ? 'warning' : 'success');
+                
+                const errorText = await response.text();
+                log(`📝 Resposta: ${errorText}`, response.ok ? 'warning' : 'success');
+
+            } catch (error) {
+                log(`💥 Erro de rede: ${error.message}`, 'error');
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        // Log inicial
+        log('🚀 Sistema de teste do middleware carregado!', 'success');
+        log('💡 O token admin já está carregado. Clique em "Decodificar Token JWT" para ver os dados.', 'info');
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+Bem-vindo ao ProlineAuto!
+
+Olá!
+
+Sua conta foi criada com sucesso em nossa plataforma. Para começar a usar todos os recursos disponíveis, você precisa definir sua senha de acesso.
+
+DEFINIR MINHA SENHA:
+{{.ConfirmationURL}}
+
+Como proceder:
+1. Clique no link acima para ser redirecionado à página de definição de senha
+2. Crie uma senha segura com pelo menos 8 caracteres  
+3. Faça login usando seu e-mail e a nova senha
+4. Explore a plataforma e todos os recursos disponíveis
+
+NOTA DE SEGURANÇA: Este link é válido por 24 horas e pode ser usado apenas uma vez. Se você não solicitou esta conta, ignore este e-mail.
+
+---
+ProlineAuto
+Gestão Inteligente de Frota Automotiva
+
+Precisa de ajuda? Entre em contato: suporte@prolineauto.com
+
+Este é um e-mail automático, não responda a esta mensagem.

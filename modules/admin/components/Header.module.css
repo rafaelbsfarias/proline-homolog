@@ -1,0 +1,88 @@
+/* Alinhar engrenagem e link de sair horizontalmente e cor azul */
+.settingsButton {
+  color: #002e4c;
+  margin-right: 8px;
+}
+.logoutLink {
+  color: #002e4c;
+  font-weight: 500;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: filter 0.2s;
+}
+.logoutLink:hover {
+  filter: brightness(1.1);
+}
+/* Remove fundo, borda e sombra do botão da engrenagem, e garante SVG azul sólido */
+.settingsButton {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 8px 0 0;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0 8px 0 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  outline: none;
+  transition: filter 0.2s;
+  color: #004a7a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  outline: none;
+  transition: filter 0.2s;
+  fill: #004a7a;
+  .settingsButton:focus {
+    outline: 2px solid #002e4c;
+  }
+  color: #004a7a;
+  filter: brightness(1.1);
+}
+.settingsButton svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+  fill: #072e4c !important;
+}
+.adminHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 70px;
+  background: #fff;
+  padding: 0 32px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07);
+  box-sizing: border-box;
+  z-index: 10;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.logoImg {
+  height: 60px;
+  width: auto;
+  display: block;
+}
+.logoText {
+  /* fonte global herdada, sem serif */
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1d2129;
+  letter-spacing: -1px;
+  margin-left: 6px;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}

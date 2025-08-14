@@ -1,0 +1,78 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vehicleHeader {
+  background: #f7f7f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  color: #333;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.group {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.groupTitle {
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.options {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.primary {
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.secondary {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.success {
+  color: #065f46;
+}

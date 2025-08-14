@@ -1,0 +1,27 @@
+{
+  "threshold": 5,
+  "reporters": ["html", "console"],
+  "output": "./reports/jscpd",
+  "ignore": [
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "coverage/**",
+    "cypress/**",
+    "complexo/**",
+    "**/*.test.{js,jsx,ts,tsx}",
+    "**/*.spec.{js,jsx,ts,tsx}",
+    "**/*.config.{js,ts}",
+    "**/*.d.ts"
+  ],
+  "gitignore": true,
+  "minLines": 10,
+  "minTokens": 70,
+  "maxLines": 500,
+  "maxSize": "500kb",
+  "formatsExts": {
+    "javascript": ["js", "jsx"],
+    "typescript": ["ts", "tsx"]
+  },
+  "mode": "mild"
+}

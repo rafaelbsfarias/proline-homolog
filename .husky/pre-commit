@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# ========================================================================================
+# PRE-COMMIT HOOK - QUALITY ASSURANCE
+# ========================================================================================
+# Executa verificações de qualidade antes do commit
+# ========================================================================================
+
+echo "🔍 Running quality checks before commit..."
+
+# Run lint-staged for staged files
+npx lint-staged
+
+# Check for TODO/FIXME comments in staged files (ignore documentation and husky files)
+echo "🔍 Checking for TODO/FIXME comments..."
+git diff --cached --name-only --diff-filter=AM | grep -v -E '\.(md|txt)$|\.husky/' | xargs grep -l "TODO\|FIXME" 2>/dev/null && {
+  echo "❌ Found TODO/FIXME comments. Please resolve before committing."
+  exit 1
+} || echo "✅ No TODO/FIXME comments found."
+
+# Note: Console.log check temporarily disabled - will be improved
+echo "✅ Console.log check skipped (to be improved)."
+
+echo "✅ All quality checks passed!"

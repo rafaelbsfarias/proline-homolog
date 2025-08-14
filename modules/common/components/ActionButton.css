@@ -1,0 +1,117 @@
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px; /* Reduzido o padding para tornar o botão menor */
+  border: none;
+  border-radius: 6px; /* Cantos levemente arredondados */
+  color: white;
+  font-size: 13px; /* Tamanho da fonte reduzido */
+  font-weight: bold;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap; /* Não quebra texto dentro do botão */
+  flex: 1; /* Cada botão ocupa uma parte igual da largura disponível */
+  min-width: 0; /* Permite que os botões sejam menores que o conteúdo */
+}
+
+/* Ajustes específicos para celulares */
+@media (max-width: 576px) {
+  .action-button {
+    padding: 12px; /* Mais padding vertical para melhorar toque em dispositivos móveis */
+    height: 100%; /* Preenchimento completo da célula do grid */
+    white-space: normal; /* Permite quebra de texto em telas pequenas */
+    font-size: 12px; /* Tamanho da fonte um pouco menor */
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+.action-button .button-icon {
+  margin-right: 6px;
+  width: 20px; /* Ícone um pouco maior */
+  height: 20px;
+  flex-shrink: 0; /* Impede que o ícone diminua */
+  color: white; /* Garante que o ícone seja branco */
+  display: flex; /* Alterado para flex para melhor alinhamento */
+  align-items: center; /* Alinhamento vertical */
+  justify-content: center; /* Alinhamento horizontal */
+}
+
+.action-button .button-text {
+  display: inline-flex; /* Para lidar com os spans aninhados */
+}
+
+/* Textos para diferentes tamanhos de tela */
+.mobile-text {
+  display: none; /* Escondido por padrão (em desktop) */
+}
+
+/* Ajuste do ícone em telas pequenas */
+@media (max-width: 576px) {
+  .action-button {
+    flex-direction: column; /* Empilha ícone e texto em telas pequenas */
+  }
+
+  .action-button .button-icon {
+    margin-right: 0;
+    margin-bottom: 8px; /* Mais espaço entre o ícone e o texto */
+    width: 24px; /* Ícone maior em telas pequenas */
+    height: 24px;
+    display: flex; /* Mantém o flex para centralizar */
+    margin-left: auto; /* Centro horizontal */
+    margin-right: auto; /* Centro horizontal */
+  }
+
+  /* Alterna textos em telas pequenas */
+  .desktop-text {
+    display: none;
+  }
+
+  .mobile-text {
+    display: inline;
+  }
+}
+
+/* Cores dos botões */
+.action-button.blue {
+  background-color: #1877f2; /* Azul vivo */
+}
+
+.action-button.green {
+  background-color: #4caf50; /* Verde intenso */
+}
+
+.action-button.orange {
+  background-color: #ff9800; /* Laranja */
+}
+
+.action-button.purple {
+  background-color: #9c27b0; /* Roxo */
+}
+
+/* Efeitos de hover */
+.action-button:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px); /* Leve levantamento */
+}
+
+.action-button.blue:hover {
+  background-color: #166fe5;
+}
+
+.action-button.green:hover {
+  background-color: #45a049;
+}
+
+.action-button.orange:hover {
+  background-color: #fb8c00;
+}
+
+.action-button.purple:hover {
+  background-color: #8e24aa;
+}

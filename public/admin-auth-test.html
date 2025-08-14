@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Autenticação</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        #output { margin: 10px 0; min-height: 100px; padding: 10px; background: #f8f9fa; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste de Autenticação - Admin API</h1>
+        
+        <div class="section info">
+            <h3>1. Login</h3>
+            <input type="email" id="email" placeholder="Email do admin" value="admin@example.com">
+            <input type="password" id="password" placeholder="Senha" value="admin123">
+            <button onclick="doLogin()">Login</button>
+        </div>
+
+        <div class="section">
+            <h3>2. Testar Rota Admin</h3>
+            <button onclick="testAdminRoute()">GET /api/admin/list-users</button>
+            <button onclick="clearOutput()">Limpar Log</button>
+        </div>
+
+        <div class="section">
+            <h3>Log de Respostas</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        // Configuração do Supabase (usar as mesmas variáveis do projeto)
+        const supabaseUrl = 'https://your-project.supabase.co'
+        const supabaseKey = 'your-anon-key'
+        
+        // Se estiver em localhost, usar configuração local
+        let supabase;
+        try {
+            // Tentar usar o Supabase do projeto se disponível
+            if (typeof window !== 'undefined' && window.supabase) {
+                supabase = window.supabase;
+            } else {
+                // Fallback para teste local
+                const { createClient } = window.supabase;
+                supabase = createClient(supabaseUrl, supabaseKey);
+            }
+        } catch (e) {
+            console.log('Usando simulação de autenticação para teste');
+        }
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function doLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            log(`Tentando login com: ${email}`, 'info');
+            
+            try {
+                // Fazer login via API do projeto
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Login bem-sucedido! Usuário: ${result.user?.email}`, 'success');
+                    log(`Token disponível: ${result.session?.access_token ? 'Sim' : 'Não'}`, 'info');
+                } else {
+                    log(`❌ Erro no login: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro de rede no login: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminRoute() {
+            log('Testando rota /api/admin/list-users...', 'info');
+            
+            try {
+                // Primeiro, obter o token de sessão
+                let token = null;
+                
+                if (supabase) {
+                    const { data: { session }, error } = await supabase.auth.getSession();
+                    if (error) {
+                        log(`Erro ao obter sessão: ${error.message}`, 'error');
+                        return;
+                    }
+                    token = session?.access_token;
+                }
+
+                if (!token) {
+                    log('❌ Nenhum token de acesso encontrado. Faça login primeiro.', 'error');
+                    return;
+                }
+
+                log(`Token encontrado: ${token.substring(0, 20)}...`, 'info');
+
+                // Fazer requisição autenticada
+                const response = await fetch('/api/admin/list-users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`Status da resposta: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Sucesso! Usuários encontrados: ${data.users?.length || 0}`, 'success');
+                    log(`Dados: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Erro ${response.status}: ${errorData}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Erro de rede: ${error.message}`, 'error');
+            }
+        }
+
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        // Log inicial
+        log('Sistema de teste carregado. Faça login primeiro, depois teste a rota admin.', 'info');
+    </script>
+</body>
+</html>

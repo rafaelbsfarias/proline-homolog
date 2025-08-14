@@ -1,0 +1,209 @@
+== Supabase migration repair (status: reverted) ==
+--> 20250511000001
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250511000001] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250511000001
+--> 20250511000002
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250511000002] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250511000002
+--> 20250511000003
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250511000003] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250511000003
+--> 20250511000004
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250511000004] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250511000004
+--> 20250511000005
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250511000005] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250511000005
+--> 20250806230849
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250806230849] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250806230849
+--> 20250807060000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807060000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807060000
+--> 20250807100000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807100000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807100000
+--> 20250807103000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807103000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807103000
+--> 20250807120000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807120000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807120000
+--> 20250807150000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807150000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807150000
+--> 20250807160000
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807160000] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807160000
+--> 20250807160001
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807160001] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807160001
+--> 20250807160002
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807160002] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807160002
+--> 20250807160003
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807160003] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807160003
+--> 20250807160004
+Initialising cli_login_postgres role...
+Forgot your password? Reset it from the Dashboard: https://supabase.com/dashboard/project/irbajtcjtglzwligpgkq/settings/database
+Enter your database password: 
+Connecting to remote database...
+NOTICE (42P06): schema "supabase_migrations" already exists, skipping
+NOTICE (42P07): relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "statements" of relation "schema_migrations" already exists, skipping
+NOTICE (42701): column "name" of relation "schema_migrations" already exists, skipping
+Repaired migration history: [20250807160004] => reverted
+Finished supabase migration repair.
+Run supabase migration list to show the updated migration history.
+OK: 20250807160004

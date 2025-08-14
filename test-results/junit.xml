@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.013740508">
+    <testsuite name="app/hooks/useAuthenticatedFetch.test.ts" timestamp="2025-08-03T08:17:19.753Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.013740508">
+        <testcase classname="app/hooks/useAuthenticatedFetch.test.ts" name="useAuthenticatedFetch &gt; deve fazer GET básico" time="0.011859961">
+        </testcase>
+    </testsuite>
+</testsuites>

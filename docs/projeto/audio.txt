@@ -1,0 +1,336 @@
+Três fornecedores, H2, mecânica, etos, funilaria e a higienização e a lavagem de água, isso
+aqui eu acho que o cara só precisa solicitar, de repente, se bem que pode votar.
+Quem vai recomendar, inicialmente, os serviços é o especialista, ele que vai indicar o que
+precisa para onde ir, seria isso?
+E depois o cliente aprova se ele de fato quer executar esses serviços.
+Aí vamos votar o que ele vai fazer aqui, funilaria leve com a etos e mecânica e lavagem em uma
+guariba, tá? Aí envia as solicitações. Aí já vai estar aqui as solicitações,
+aqui, pausamento e como pendente, mesma coisa, o cliente que está vendo aqui já tudo também,
+tá? Aí aqui a gente vai, vamos botar aqui mecânica, aí a mecânica, esse carro todo
+estão lá aqui ainda, entendeu? Aí aquele carro, põe aquele carro ali.
+Agora a gente já entrou no painel de fornecedor, até então a gente estava no ADM.
+O que a gente está mexendo aqui é o 0987, então pronto, cadê o 0987 aqui? É esse aqui,
+certo? Aí ele envia o orçamento, aí vai abrir a tela de orçamento toda que vai chegar
+em um valor final, tá? Nessa parte daí, R$180,00, mas na verdade ele vai dizer aqui,
+essa tela está ali incompleta, né? Eu preciso de um descritivo.
+Para ter todos os serviços dele, que ele vai ter a tabela aprovada comigo, ele vai lançar no banco
+todos os serviços e eu vou aprovar as tabelas para poder ter o preço dele ali, eu tenho que dar o
+ok, sempre que vai ser no combinado, ele lança e para ele trocar o preço eu tenho que dar o ok,
+entendeu? E essa parte de prazo também, eu acho que aqui na verdade ele tem que, o especialista
+tem que dizer a data, ele vai ter que botar aqui a data que ele entrega, não é bem o prazo,
+para ir contando, porque se não, o prazo fica, ele bota um prazo de um dia, o outro prazo de um dia
+você não sabe qual que vai entrar primeiro, então aqui em vez de ser prazo de dias, é a data,
+vamos botar aqui um prazo, um dia, entendeu o que eu estou falando? Entendi, é porque por exemplo,
+agora seria um dia, aí um serviço acaba no dia 14, mas o próximo também vai ser um dia e aí vai
+ser um dia 15, então ele tem que descrever dia a dia para a gente poder ter o fluxo, o gráfico
+gigante, a gente conseguir montar um gráfico gigante talvez, não é? Exato, vamos logo rodar todos os
+aqui, vamos 170, então lá, prazo de um dia, ok, e esse vai ter, esse é mais complicado um pouco,
+é 500, botar aqui 1600, esse carro é complicado, esse é o Fag 0987, pronto, mas estimado 10 dias,
+pronto, ok, certo? Aí vamos aqui pra a funilaria, a funilaria só tá com aquele serviço lá que eu
+falei, Fag 0987, então a gente bota aqui, tava pendente, bota aqui 800 reais, 850 reais, e a mesma
+coisa, vai tá todas as peças e cinco dias de prazo, mas também que tá errado, aí aqui a gente vai
+fazer a lavagem, então os três carros tem que ir pra lavagem, botar a lavagem a 120,
+o estimado de um dia, enviar alçamento, 120, um dia, e esse aqui é o carro que tá fudido,
+vamos botar que a lavagem dele também tá mais cara, é uma lavagem de 450, e três dias que alimenta
+a porra toda, tem mais serviço, ok, pronto, aí aqui, todos os carros aqui já estão, análise pro
+cliente, recomendação, a mesma coisa tá pro cliente também já, já tá na praça da minha análise pro
+live, entendeu? Aí esse é o movida que tá aqui, se você, se a gente botar aqui o lock 1, vai carregar aqui o, tá na
+mesma coisa, já tá na recomendação também, entendeu? E, beleza, vamos botar lá pra o movida, a gente tá vendo,
+tá vendo as coisas, aí aqui, eu tô vendo aqui, eu vou analisar, aí aqui ele já faz o cálculo se o sistema vai
+pra varejo ou pra atacado, ok? Certo. Ele já viu aqui, ele já fez a conta, ele já sabe qual é o alçamento,
+já sabe quantos quilômetros tem, então ele já falou que já indicou o carro pra varejo, e aqui eu vou dizer
+quais serviços que eu quero que faça, vou mandar os três serviços fazer, pau, mandei aqui. Aí ele tá aguardando
+a aprovação de cliente já, tá vendo? Perfeito, aí você, o fluxo no caso aí, o fornecedor, ele descreve,
+o fornecedor ainda tá lá sem nada, ele tá aguardando. Não, mas ele passou o alçamento dele, ele passou um
+descritivo com tudo, com o prazo, e aí foi a recomendação do fornecedor pra vocês, aí agora você aprovou a
+recomendação do fornecedor para o cliente. Isso. O cliente aprovar também. O serviço, por exemplo, poderia,
+naquele momento eu já poderia tirar alguma coisa que eu achava que não cabe, entendeu? Isso, sim, perfeito,
+porque você faz um duplo filtro aí, digamos assim, né? Você olha lá, faz sentido, posso passar isso aqui pra frente
+pro fornecedor. O fornecedor não, o cliente. Eu consigo transformar um carro de atacado pra varejo.
+Perfeito, perfeito, perfeito. Não bater o atacado, eu aí tiro um serviço, tiro outro, eu consigo porque o
+nosso API principal nosso é conversão de pavarejo, de cada 100 carros, 70 tem que pavarejo, entendeu?
+Porque aí você vende com mais margem. Aí aqui ó, o cliente já tá aqui, analisar e aprovar a proposta.
+Aí o cliente vai ver aqui ó, ele já pode mandar pra atacado, reprova tudo e manda pra atacado ou ele vai
+lá e faz aqui, confirma a aprovação. Certo. Confirmou a aprovação, ó, já tá em preparação, já tá em
+preparação pra mim aqui também. E aí a gente vai na interface, ele tá pendente aqui. Aí ele tá pendente,
+pra atualizar esse status. Você pode botar aqui que ele tá em andamento. Quando botar em andamento,
+já vai aparecer que o carro, nos detalhes, que esse serviço dá em andamento e os outros
+ainda tão pendentes, que ainda não começaram, entendeu? Aí o cara vai lá, velho, e porra,
+matou o serviço, concluído.
+Aí a gente voltou pro fornecedor, cada vez que um fornecedor vai concluindo suas atividades,
+ele já vai atualizando automaticamente os status de fornecedor. Ele vai continuar
+estando em andamento, né, mas vai estar progredindo. Eu vou concluir todos desse carro aqui já, desse.
+Tá bom? Aí quando botou todos, ó, vai aparecer pra mim ó, aguardando o checklist de entrega e
+aguardando a decisão de entrega do cliente. O cliente vai aparecer, ó, seu carro tá pronto,
+você vai querer que eu entregue ele ou que eu pegue lá. Aí ele vai dizer aqui como é que ele quer
+fazer. Não é domiciliar, né, mas enfim. Aí ele vai botar, solicitar entrega. Aí aqui qual é o
+preço? Não, eu vou entregar na loja de seminobras da Paralela dele, pronto. Confirmou, ele pediu a
+entrega pra lá. E apareceu o custo aqui, ok. Apareceu pra mim aqui que o carro é pra entregar lá. Eu aí
+faço o checklist final, tiro as fotos todas, faço o checklist final e gera o pdf dele.
+É o pdf que já é uma coisa pronta. O status tá finalizado aqui. Já tá finalizado o status
+para o cliente. As evidências de entrega já estão todas aqui também. E a ficha, que vem uma ficha
+completa com tudo que foi feito no carro e já com a ficha e já pronto pro cara anunciar. E aí eu
+coloco o botão aqui pro cara já poder anunciar no portal pro online. Ele já pode botar o carro
+pra vender aqui também, entendeu. Já entra na nossa base usando as próprias fotos que já estão aí
+automáticos, já gera uma tela de venda do carro ali. E aí ele contrata ali por um valor, entendeu.
+Para criar alguns pacotes ali de tempo, de destaque que vai ter dentro do negócio. Aí uma fase já
+não é pro MVP, é uma fase de serviços. Isso é uma fase posterior, porque além dessa interface,
+a ideia é que a plataforma expanda pra também ser uma plataforma de venda. Que você consiga integrado
+ali, ok. Tanto de... Aí eu voltei uma loja de varejo e voltei um pacote de atacado pra vender
+Aí na minha loja de varejo, eu botei uma loja de carro de varejo, que eu mando os carros de varejo.
+Mesma estrutura de uma locadora, que a locadora pequena vai poder usar, que todo mundo vai poder usar.
+Já bota na minha loja de varejo o carro do cara, entendeu. Ou manda pra meu pacote de atacado também,
+pra vender lá pro desconto. Então eu vou ter essas duas lojas também pra poder direcionar esses carros, entendeu.
+Pelo que eu vi, aí terminou o fluxo. O fluxo seria esse, né. Toda aplicação seria essa.
+Das telas que você tem, pelo que me parece, fornecedor é o que tá faltando mais informações
+concretas, né. Porque precisa de tela de cadastro da tabela, que ele vai mandar essa tabela antes
+pra você. Outra dúvida que eu tive aqui também relacionada a essa parte de pagamento de boleto,
+se você já quer que a plataforma emita um boleto, ou como é que vai se dar essa comunicação,
+entende? Ah, você vai exibir o preço e aí você vai mandar por e-mail inicialmente? Não, a ideia é que
+você já consiga emitir um boleto ou pagar com cartão, né, direto pela plataforma, entendeu. A parte de cobrança
+já seria integrado na plataforma. A ideia é essa. A ideia é essa. Mas inicialmente, você já quer começar assim?
+Então, no começo, eu acho que no MVP a gente não bota ainda. Agora, o que é que não tem nada aqui?
+É isso, seria uma comunicação por e-mail inicialmente, certo? Relatórios, a gente não tem nada aqui, que é
+importante ter, entendeu? Então, aqui tem relatório para o cliente, por exemplo. Tem que ter uma lista dos carros
+que ele botou, botou por mês lá e tem um tempo médio do carro. Eu vou ver com o Cassiano para ter
+uma série de, para ter um dashboardzinho com uma série de relatórios que não vão ser muitos no começo
+também. A gente vai incrementando cada vez mais, mas pelo menos os carros que fez no mês, vai poder ser
+aumentando por mês. Você vê dos carros, pode falar quantos você mandou para a loja de atacar e de varejo,
+entendeu? Essa proporção. E aí eu vou, aí eu vou, começa com os três relatórios para ter o MVP, entendeu?
+E outra coisa que é importante para mim é o seguinte, vão ter outros fornecedores aqui que não estão aqui,
+aqui tem pneu e tal, aqui tem três. Aí vão ter, principalmente na funilaria ali, ele vai gerar uma série de peças
+que quem compra sou eu e quem vende sou eu, tá? Então, no de funilaria, tudo que for de peça, a gente na hora de cadastrar
+você vai botar o serviço e o que for peça, eu quero que gere uma lista para mim do que eu tenho que comprar naquele dia, entendeu?
+Porque isso aí tudo eu vou comprar no mercado livre, que o tempo que ele está na mecânica é o tempo que chega a essas peças.
+Quando o cliente aprovou eu compro as peças, entendeu? Esse é um relatório importantíssimo para mim.
+Você entendeu qual é esse relatório?
+Seria de todas as relações de peças que você vai precisar comprar a partir do momento do aceite do cliente.
+É, aí apareceu assim, prum, já gera o que tem que comprar e eu clique para dizer que já comprei e fique postando que está pendente o que não comprou.
+Quando eu clique e que eu possa botar, depois que eu já comprei as peças, entendeu? Que eu tique para dizer que está comprado.
+Posso ticar e dizer que está comprado, entendeu?
+Perfeito. O controle, no caso, para você poder fazer esse controle do que você já comprou.
+Isso, isso. Aí depois, se eu conseguir integrar isso no mercado livre, seria foda. Seria muito bom.
+Não é por MVP.
+Perfeito.
+Eu acho que o mercado livre deve conseguir fazer uma porra dessa, né?
+É, no caso você quer já conseguir, digamos assim, filtrar vendedores no mercado livre para você poder comprar com uma agilidade maior.
+Isso.
+A sua ideia é essa.
+Já preparar minha compra lá no mercado livre e automatizar isso, entendeu?
+Perfeito. Essa parte eu teria que pesquisar, que eu nunca fiz nenhuma integração relacionada a compras automatizadas no mercado livre ou seleção de vendedor.
+Eu teria que ver como é que faz essa parte, estudar.
+Assim, metodologias eu já pensei, não é impossível.
+Eu só estou lhe dizendo onde eu quero chegar para você entender como é.
+Exato, exato.
+Metodologias existem, nem que seja um web scrapping ou que você faça um cadastro prévio dos fornecedores que você já quer e a partir daí a gente faça um web scrapping.
+Se tiver uma PI pública que a gente possa usar no mercado livre, melhor ainda, né?
+Metodologias tem, mas aqui é um ponto de estudo, ok? Eu não vou te dar nenhuma resposta agora.
+A gente falou que dos relatórios é isso.
+Toda essa parte de pagamento, num segundo momento, não vai ser MVP, certo?
+De processar o pagamento.
+Porque o que eu consigo fazer, por exemplo, é que o sistema destare e-mail comunicando, por exemplo, o setor do financeiro que um lançamento foi aprovado e ele pode gerar para aquele e-mail cadastrado com a fatura.
+Eu vou ter que ter isso aí no portal para avisar quando o cliente mandar o ok, da mesma maneira que eu vou ter que ter a lista do que tem que comprar, tem que ter a lista do que é para faturar.
+O financeiro tem que faturar e ele já faturar.
+Se eu puder fazer essa fatura já dentro de um sistema ótimo, mas pode ser...
+Se ele já me der a lista só e eu vou lá no portal da prefeitura e faturo, para MVP está bom, entendeu, Vane?
+Isso, exato. Era o que eu ia te falar.
+Para o começo, passos menores nessa parte, para a gente poder focar nas regras e negócios principais para poder botar o carro na rua.
+Botou o carro na rua e a gente vai fazendo manevias incrementais, porque esse projeto, como você tem uma visão mais ampla, por exemplo, essa parte de...
+Seria quase um marketplace, né? Só que é deixado para os seus clientes ali.
+Já é, de fato, um novo projeto, certo? A gente vai muito provavelmente ter uma parceria duradoura aí.
+Vira isso aí, meu velho, vai ser um negócio que vai desenvolver muito.
+Eu acho que isso bem projetado, isso é fácil de replicar e tem essa demanda em todo o Brasil, né?
+Em todo o Brasil tem. Tem muita gente falando que não está organizado, isso vai dar uma eficiência boa, velho.
+Foi muito bom entender essa reunião de fato, ela foi muito proveitosa para poder ter visão ampla do que você já tem de tela, do funcionamento completo do software.
+Cada carro que eu mando para o fornecedor gera uma fatura, então cada carro que é aprovado gera uma fatura.
+É minha para ele, então isso tem que estar cadastrado também, quanto é que eu vou pagar para poder ter esse relatório de quanto o cara me deve cada mês, entendeu?
+Alô?
+Oi, estou aqui, estava só anotando.
+É, porque no caso aí você precisa saber, o cliente vai aprovar cada carro aprovado, ele vai pagar aquilo, enfim.
+Você fala do cliente para você, não é isso?
+Não, para o fornecedor. Cada carro que eu mando para o fornecedor.
+Sim, cada carro.
+Uma fatura minha para o fornecedor.
+Isso, sua para o fornecedor, perfeito.
+No caso é o que você vai pagar para o fornecedor de acordo com o que ele vai concluindo de...
+Ele vai me pagar.
+O fornecedor vai te pagar?
+É, cada carro que eu mandar para ele, ele vai me pagar uma taxa.
+Ah, perfeito, perfeito.
+É assim que ele vai me remunerar.
+Que vai ser uma taxa de licença de software que eu vou cobrar para ele, vou cobrar ele como licença de software, entendeu?
+Ele vai estar usando o meu software e cada vez que o sistema manda um carro para ele, ele remunera o sistema.
+Ele paga para o sistema 50 reais por carro, ou 60 reais, é o preço que eu vou acordar com ele.
+Perfeito, entendi. Então você precisa dar o controle disso também.
+Mesma coisa, manda um e-mail para ele, manda um e-mail para a gente e chegar nos 5 meses você tem o relatório para poder mandar a fatura.
+E ele ir acompanhando também do lado dele, do portal.
+Perfeito.
+Certo.
+Então é isso, aparentemente a gente tem de fato 4 perfis de usuário.
+Deixa eu ver aqui.
+O cliente, o administrativo, o operador barro especialista e o fornecedor.
+A gente tem 4 tipos de usuários, 3 interfaces.
+E aí tem que ter as métricas de produtividade também.
+Isso é importante porque no começo também.
+Poucas também, mas...
+É uma espécie de BI, você precisa de dashboard que monitore tudo isso.
+É o médio que o carro ficou lá.
+Tem que aparecer para o fornecedor, na linha dele, quando o carro está atrasado, ficar lá vermelho, ficar lá avisando que ele está atrasado naquele carro, entendeu?
+Pronto.
+E aí Francisco, com todas as informações, com o protótipo rodando, eu consigo montar direitinho toda a estrutura para você.
+Tanto o projeto, do que vai hospedar isso, de infraestrutura, certo?
+Você conseguiu rodar o protótipo aí?
+Vamos ver aqui, ele está até aberto aqui já.
+Eu acho que é esse link.
+Vê o veículo.
+Pizarro para o online.
+Não, primeiro é ensinar cliente.
+Taxa de parqueamento, é a mesma versão sua, está tudo aqui.
+É bom você sempre trabalhar com três tabs, que você deixa um em cada tab aberto, entendeu?
+Sim.
+Quer que eu te mostre o código?
+Não, não, eu já estou com ele aqui aberto.
+Com ele você já consegue acessar o código, não é?
+Já, já.
+Deixa eu ver aqui.
+Só para ver se não vai dar aquele bug do...
+Não está mais carregando, não é?
+Vou ver aqui em capacidade de cliente.
+E aqui também, em cima dessa linha de carros, é bom ter uns filtros, entendeu?
+Todos os carros de tempo a tempo, só os carros que não estão prontos,
+você poder filtrar nessa fila de carro que vai aparecer aí, entendeu?
+O que está em cliente, o que está no sinal vermelho, o que está para as áreas.
+Pronto, aqui está funcionando, eu já consigo testar aqui direitinho.
+Ajuda bem esse semulador, não ajuda muito.
+Com certeza, é importante, fase de projeto inclusive, a primeira coisa que se faz é o mock mesmo,
+porque aí você...
+Agora a gente tem essa facilidade da inteligência oficial,
+antes a gente usava muito Figma, outros serviços de prototipagem,
+para não ter que ir para código, para você fazer só a tela com designer gráfico,
+para poder entender, aprovar o fluxo com o cliente,
+para depois passar de fato para a programação, para evitar erro de entendimento.
+Então é bacana você podendo visualizar.
+Já funcionando de certa forma.
+Pelo menos o básico, o entendimento fica mais fácil.
+Então eu vou preparar um orçamento para você.
+E todo o planejamento, vou levantar mais questão caso surja, com mais calma, avaliando o software, o mock que você fez.
+E aí semana que vem eu já te apresento alguma coisa, está certo?
+Está bom.
+Muito bom Francisco.
+Bom final de semana, boa noite.
+Para você também, você acha que você me dá essa evolutiva quando?
+Eu acredito que eu te dê um retorno, no mais tardar, até quinta-feira, quarta-feira, eu acredito que eu já te dou um parecer, entendeu?
+Porque assim, é importante montelar isso direitinho, porque você tem uma perspectiva de crescimento, não é só isso, então isso já tem que estar na visão de futuro do projeto.
+Já dei uma olhada na infraestrutura básica para a gente poder startar de fato.
+Então, por exemplo, uma VPS para fazer o MVP, já atende, entende?
+Já atende e não tem preocupação com banco, inclusive, porque dá para botar tudo na VPS.
+Se você quiser usar o Firebase, porque já tem algum nível de integração, você já tem alguma familiaridade, podemos usar também.
+Mas em um serviço só, de infraestrutura, para a gente startar, já dá.
+Escalando, aí a gente pensa em alguma coisa mais robusta, certo?
+Para dar sobre as suas necessidades, entende?
+Tá bom.
+Aí depois, esse ficou muito curtinho.
+Deixa eu mostrar aqui.
+Deixa eu voltar aqui para você ver lá.
+Brandão, por acaso, você tem algum parente chamado Matheus Brandão?
+Rapaz, acho que eu conheço só não.
+Ah, então não.
+Ah, Brandão é um nome que não é de uma família só não.
+Ah, é?
+Vizinho meu de conhecer, tem bastante tempo.
+Quando eu vi Brandão, eu falei, rapaz, será que é a mesma família?
+A família é grande, pode ser.
+Vou dar uma olhadinha aqui.
+Isso aí, esse vídeo serve para a gente usar como referência também para o design do site.
+Eu estou usando essa cor azul e preto, uma cor mais escura.
+Eu não estou ouvindo as cores, não.
+Está compartilhando? A ideia era compartilhar dela ou mandar um reconfuso?
+Está no seu WhatsApp.
+Ah, está no WhatsApp, eu estava olhando na tela do vídeo, perdão.
+A gente abre aqui o WhatsApp.
+Perfeito.
+Tem algum site disso? Não.
+Esse vai começar por essa aplicação.
+Isso eu queria botar logo, o site com um vídeo desse tipo aí, só que um pouco maior, uns 20 segundos.
+Esse está de 8.
+E aí, dizendo já endereço e tal, explicando já o conceito, explicando a questão do portal, mas aí o portal e a construção.
+Perfeito.
+Bom que você já tem as cores, já tem a logo.
+E o tipo também, essa pegada de pictograma?
+Sim.
+Eu já vou incluir também nesse orçamento a questão da land page, está certo?
+Isso.
+Você já comprou o domínio?
+Eu reservei alguns, até comprar, acho que vai ser prolineauto.com.br
+Isso, porque é bom você já comprar exato, para evitar qualquer dor de cabeça, alguém vai registrar.
+Mas já está, o proline mesmo não tem, certo?
+Já está tomado.
+Eu compro o domínio geralmente no registro, você usa qual?
+Isso, o perfeito é o registro.br, tem que ser o registro.br mesmo.
+Todos os domínios.com.br, eles estão subjugados, vamos colocar assim, juridicionados pelo registro.br.
+Então se você comprar em algum outro lugar, pode ser até que você pague uma taxa que você não deveria.
+Então o registro.br é o local mesmo de comprar o domínio.
+Eu vou colocar prolineauto.com.br, o que você acha, está bom?
+Sim, perfeito.
+Eu tenho o postal proline.com.br e tem o prolineauto, mas eu acho que o auto fica mais completo, ele pode ir até para a venda depois.
+E te ajuda no SEO, porque você está no mercado do automobilismo.
+Então quem vai pesquisar carro, eventualmente tem que cair no seu site.
+Proceguir para pagamentos.
+Nossa.
+Deixa eu ver aqui.
+Pix.
+Deixa eu fazer esse logo aqui que vai rápido.
+Tirou.
+Praticamente todas as coisas que eu tinha lencado antes da reunião a gente conseguiu.
+Eu acho que você entendeu bem.
+Eu acho que você já pegou o espírito bem da coisa toda.
+Não foi não?
+Sim, acredito que sim.
+Eu vou gerar documentação também junto com o orçamento, que a gente chama de história de usuário.
+Para ver se eu realmente entendi.
+Aí você aprova ou não os trechos de desenvolvimento.
+Para ter certeza que está tudo conforme.
+Então esse é o compromisso com você para semana que vem.
+Orçamento, planejamento.
+Como é que eu...
+Era bom fazer logo um email.
+Isso aí você faz posterior, porque agora você tem um domínio.
+Você vai precisar de uma hospedagem tanto para o serviço do seu software como para a landing page.
+E para o email.
+Você pode botar isso tudo no mesmo lugar.
+Então você não precisa se preocupar com isso agora, porque você vai pagar um custo de hospedagem, talvez desnecessário se você já comprar agora.
+É legal, mas é caro.
+Eu tenho uma conta Google bem antiga.
+Perfeita.
+Ela...
+Do Gmail.
+Que é daquele tempo que era de graça.
+Empresas até uma quantidade de negócio era de graça.
+Lá atrás era assim.
+Eu tenho duas contas dessas.
+Será que eu não consigo botar esse outro domínio nela não?
+É uma possibilidade.
+Eu já tinha te falado da...
+Eu tenho hospedagem inclusive.
+Se você quiser vir para a minha hospedagem.
+Eu consigo hospedar o seu email.
+E o seu domínio.
+E dar uma caixa de entrada para você.
+Agora não vai ter interface do Google.
+Dá para fazer redirecionar esse email para a sua caixa outra.
+Para ter a interface do Google.
+Se você gosta da interface do Google, não tem jeito.
+Tem que comprar o Google.
+Para você ficar com sua interface familiar para você.
+É a opção.
+Google é um pouquinho mais caro.
+Big Tech.
+Não tem muito para onde correr.
+Google é caro.
+É porque eu tenho esse...
+Eu tenho um que eu...
+Que eu uso como um...
+Aqui, eu tenho um...
+Deixa eu lhe mostrar.
+Eu tenho um que é o seguinte...
+Deixa eu abrir aqui.

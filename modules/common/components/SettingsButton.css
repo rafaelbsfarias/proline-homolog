@@ -1,0 +1,61 @@
+.settings-button-container {
+  position: relative;
+  display: inline-block;
+}
+
+.settings-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.settings-button:hover {
+  background-color: rgba(0, 0, 0, 0.05); /* Leve fundo ao passar o mouse */
+}
+
+.settings-icon {
+  font-size: 24px; /* Tamanho do ícone */
+  color: #002e4c; /* Cor do ícone, similar ao azul do projeto */
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: 100%; /* Abaixo do botão */
+  right: 0; /* Alinha à direita do botão */
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Sombra mais pronunciada */
+  min-width: 180px;
+  z-index: 100;
+  overflow: hidden; /* Garante que os itens arredondados fiquem dentro */
+  margin-top: 8px; /* Espaçamento entre o botão e o dropdown */
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+  color: #333; /* Cor do texto */
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f0f0f0; /* Fundo cinza claro no hover */
+  color: #002e4c; /* Texto azul no hover */
+}
+
+.dropdown-item:not(:last-child) {
+  border-bottom: 1px solid #eee; /* Separador entre itens */
+}

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo ao ProlineAuto</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc, #004499);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-message h2 {
+            color: #0066cc;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .welcome-message p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #0066cc, #004499);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 102, 204, 0.3);
+        }
+        .instructions {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0066cc;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .instructions h3 {
+            color: #0066cc;
+            margin-top: 0;
+            font-size: 18px;
+        }
+        .instructions ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .security-note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .security-note strong {
+            color: #856404;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .footer a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .header, .content, .footer {
+                padding: 20px;
+            }
+            .cta-button {
+                display: block;
+                margin: 20px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🚗 ProlineAuto</div>
+            <h1>Bem-vindo à nossa plataforma!</h1>
+            <p>Sua conta foi criada com sucesso</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                <h2>Olá! 👋</h2>
+                <p>Sua conta foi criada com sucesso em nossa plataforma. Para começar a usar todos os recursos disponíveis, você precisa definir sua senha de acesso.</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite" class="cta-button">
+                    🔐 Definir Minha Senha
+                </a>
+            </div>
+            
+            <div class="instructions">
+                <h3>📋 Como proceder:</h3>
+                <ul>
+                    <li><strong>Clique no botão acima</strong> para ser redirecionado à página de definição de senha</li>
+                    <li><strong>Crie uma senha segura</strong> com pelo menos 8 caracteres</li>
+                    <li><strong>Faça login</strong> usando seu e-mail e a nova senha</li>
+                    <li><strong>Explore a plataforma</strong> e todos os recursos disponíveis</li>
+                </ul>
+            </div>
+            
+            <div class="security-note">
+                <strong>🔒 Nota de Segurança:</strong> Este link é válido por 24 horas e pode ser usado apenas uma vez. Se você não solicitou esta conta, ignore este e-mail.
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <p style="color: #666;">Se o botão não funcionar, copie e cole este link no seu navegador:</p>
+                <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px;">
+                    {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>ProlineAuto</strong></p>
+            <p>Gestão Inteligente de Frota Automotiva</p>
+            <p style="margin-top: 20px;">
+                Precisa de ajuda? <a href="mailto:suporte@prolineauto.com">Entre em contato conosco</a>
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                Este é um e-mail automático, não responda a esta mensagem.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
