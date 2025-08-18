@@ -247,7 +247,7 @@
 }
 
 /* License Plate Input Styling */
-.form-group input[name='licensePlate'] {
+.form-group input[name='plate'] {
   text-transform: uppercase;
   font-family: 'Courier New', monospace;
   font-weight: 600;

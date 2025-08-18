@@ -1,23 +1,60 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 interface EditUserModalProps {
   open: boolean;
   user: { id: string; full_name: string; email: string; role: string } | null;
   onClose: () => void;
-  onSave: (fields: { full_name: string; role: string }) => void;
+  onSave: (fields: {
+    full_name: string;
+    role: string;
+    taxa_operacao?: number;
+    parqueamento?: number;
+  }) => void;
   loading?: boolean;
+}
+
+interface ClientDetails {
+  taxa_operacao: number;
+  parqueamento: number;
 }
 
 const EditUserModal: React.FC<EditUserModalProps> = ({ open, user, onClose, onSave, loading }) => {
   const [fields, setFields] = useState({
     full_name: user?.full_name || '',
     role: user?.role || '',
+    taxa_operacao: 0,
+    parqueamento: 0,
   });
   const [error, setError] = useState<string | null>(null);
+  const { get } = useAuthenticatedFetch();
 
-  React.useEffect(() => {
-    setFields({ full_name: user?.full_name || '', role: user?.role || '' });
+  useEffect(() => {
+    if (open && user?.role === 'client') {
+      const fetchClientDetails = async () => {
+        const response = await get<{ client: ClientDetails }>(
+          `/api/admin/client-details/${user.id}`
+        );
+        if (response.ok && response.data?.client) {
+          setFields(prevFields => ({
+            ...prevFields,
+            taxa_operacao: response.data?.client?.taxa_operacao ?? 0,
+            parqueamento: response.data?.client?.parqueamento ?? 0,
+          }));
+        }
+      };
+      fetchClientDetails();
+    }
+  }, [open, user, get]);
+
+  useEffect(() => {
+    setFields({
+      full_name: user?.full_name || '',
+      role: user?.role || '',
+      taxa_operacao: 0,
+      parqueamento: 0,
+    });
   }, [user]);
 
   if (!open || !user) return null;
@@ -93,6 +130,60 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ open, user, onClose, onSa
             <option value="user">Usuário</option>
             <option value="specialist">Especialista</option>
           </select>
+          {fields.role === 'client' && (
+            <>
+              <label
+                style={{
+                  display: 'block',
+                  textAlign: 'left',
+                  marginTop: 12,
+                  marginBottom: 4,
+                  fontWeight: 500,
+                }}
+              >
+                Taxa de Operação
+              </label>
+              <input
+                name="taxa_operacao"
+                type="number"
+                value={fields.taxa_operacao}
+                onChange={handleChange}
+                placeholder="Taxa de operação"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  borderRadius: 6,
+                  border: '1px solid #ddd',
+                }}
+                disabled={loading}
+              />
+              <label
+                style={{
+                  display: 'block',
+                  textAlign: 'left',
+                  marginTop: 12,
+                  marginBottom: 4,
+                  fontWeight: 500,
+                }}
+              >
+                Parqueamento
+              </label>
+              <input
+                name="parqueamento"
+                type="number"
+                value={fields.parqueamento}
+                onChange={handleChange}
+                placeholder="Parqueamento"
+                style={{
+                  width: '100%',
+                  padding: 8,
+                  borderRadius: 6,
+                  border: '1px solid #ddd',
+                }}
+                disabled={loading}
+              />
+            </>
+          )}
         </div>
         {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 18 }}>

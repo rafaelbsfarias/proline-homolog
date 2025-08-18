@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Modal from './Modal';
+import React, { useState, useEffect } from 'react';
 import ClientSearch from './ClientSearch';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { validatePlate, formatPlateInput, PLATE_ERROR_MESSAGES } from '../utils/plateValidation';
-import styles from './VehicleRegistrationModal.module.css';
+import './VehicleRegistrationModal.css';
+import MessageModal from './MessageModal';
 
 interface Vehicle {
   id: string;
@@ -31,46 +31,24 @@ interface VehicleRegistrationModalProps {
 
 interface VehicleFormData {
   clientId: string;
-  licensePlate: string;
+  plate: string;
   brand: string;
   model: string;
   color: string;
   year: number | '';
-  fipeValue: number | '';
-  estimatedArrivalDate: string;
+  fipe_value: number | '';
+  estimated_arrival_date: string;
 }
 
 interface FormErrors {
   clientId?: string;
-  licensePlate?: string;
+  plate?: string;
   brand?: string;
   model?: string;
   color?: string;
   year?: string;
-  fipeValue?: string;
-  estimatedArrivalDate?: string;
-}
-
-interface VehicleFormData {
-  clientId: string;
-  licensePlate: string;
-  brand: string;
-  model: string;
-  color: string;
-  year: number | '';
-  fipeValue: number | '';
-  estimatedArrivalDate: string;
-}
-
-interface FormErrors {
-  clientId?: string;
-  licensePlate?: string;
-  brand?: string;
-  model?: string;
-  color?: string;
-  year?: string;
-  fipeValue?: string;
-  estimatedArrivalDate?: string;
+  fipe_value?: string;
+  estimated_arrival_date?: string;
 }
 
 interface Client {
@@ -86,36 +64,40 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<VehicleFormData>({
     clientId: '',
-    licensePlate: '',
+    plate: '',
     brand: '',
     model: '',
     color: '',
     year: '',
-    fipeValue: '',
-    estimatedArrivalDate: '',
+    fipe_value: '',
+    estimated_arrival_date: '',
   });
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const { post } = useAuthenticatedFetch();
 
   // Reset form when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setFormData({
         clientId: '',
-        licensePlate: '',
+        plate: '',
         brand: '',
         model: '',
         color: '',
         year: '',
-        fipeValue: '',
-        estimatedArrivalDate: '',
+        fipe_value: '',
+        estimated_arrival_date: '',
       });
       setSelectedClient(null);
       setErrors({});
+      setError(null);
+      setSuccess(false);
     }
   }, [isOpen]);
 
@@ -126,11 +108,11 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
       newErrors.clientId = 'Cliente é obrigatório';
     }
 
-    if (!formData.licensePlate) {
-      newErrors.licensePlate = PLATE_ERROR_MESSAGES.REQUIRED;
+    if (!formData.plate) {
+      newErrors.plate = PLATE_ERROR_MESSAGES.REQUIRED;
     } else {
-      if (!validatePlate(formData.licensePlate)) {
-        newErrors.licensePlate = PLATE_ERROR_MESSAGES.INVALID_FORMAT;
+      if (!validatePlate(formData.plate)) {
+        newErrors.plate = PLATE_ERROR_MESSAGES.INVALID_FORMAT;
       }
     }
 
@@ -156,14 +138,14 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
       }
     }
 
-    if (formData.fipeValue !== '' && Number(formData.fipeValue) < 0) {
-      newErrors.fipeValue = 'Valor FIPE deve ser positivo';
+    if (formData.fipe_value !== '' && Number(formData.fipe_value) < 0) {
+      newErrors.fipe_value = 'Valor FIPE deve ser positivo';
     }
 
-    if (formData.estimatedArrivalDate) {
-      const date = new Date(formData.estimatedArrivalDate);
+    if (formData.estimated_arrival_date) {
+      const date = new Date(formData.estimated_arrival_date);
       if (isNaN(date.getTime())) {
-        newErrors.estimatedArrivalDate = 'Data inválida';
+        newErrors.estimated_arrival_date = 'Data inválida';
       }
     }
 
@@ -179,43 +161,36 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
     }
 
     setLoading(true);
+    setError(null);
+    setSuccess(false);
 
     try {
       const payload = {
         clientId: selectedClient!.id,
-        licensePlate: formData.licensePlate.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+        plate: formData.plate.toUpperCase().replace(/[^A-Z0-9]/g, ''),
         brand: formData.brand,
         model: formData.model,
         color: formData.color,
         year: Number(formData.year),
-        fipeValue: formData.fipeValue ? Number(formData.fipeValue) : undefined,
-        estimatedArrivalDate: formData.estimatedArrivalDate || undefined,
+        fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
+        estimated_arrival_date: formData.estimated_arrival_date || undefined,
       };
 
       const response = await post<{
         success: boolean;
         message: string;
         vehicle: Vehicle;
+        error?: string;
       }>('/api/admin/create-vehicle', payload);
 
-      if (response.ok && response.data) {
+      if (response.ok && response.data?.success) {
+        setSuccess(true);
         onSuccess(response.data.vehicle);
-        onClose();
       } else {
-        throw new Error(response.error || 'Erro ao cadastrar veículo');
+        throw new Error(response.data?.error || response.error || 'Erro ao cadastrar veículo');
       }
     } catch (error) {
-      // Show error to user via state instead of alert
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao cadastrar veículo';
-      setErrors({
-        clientId: errorMessage.includes('Cliente') ? errorMessage : undefined,
-        licensePlate: errorMessage.includes('placa') ? errorMessage : undefined,
-      });
-
-      // For generic errors, set a general error state
-      if (!errorMessage.includes('Cliente') && !errorMessage.includes('placa')) {
-        setErrors({ clientId: errorMessage });
-      }
+      setError(error instanceof Error ? error.message : 'Erro ao cadastrar veículo');
     } finally {
       setLoading(false);
     }
@@ -254,19 +229,23 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
     }
   };
 
-  const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleplateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPlateInput(e.target.value);
     setFormData(prev => ({
       ...prev,
-      licensePlate: formatted,
+      plate: formatted,
     }));
 
-    if (errors.licensePlate) {
+    if (errors.plate) {
       setErrors(prev => ({
         ...prev,
-        licensePlate: undefined,
+        plate: undefined,
       }));
     }
+  };
+
+  const handleCloseErrorModal = () => {
+    setError(null);
   };
 
   if (!isOpen) return null;
@@ -297,20 +276,20 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="licensePlate">Placa *</label>
+              <label htmlFor="plate">Placa *</label>
               <input
                 type="text"
-                id="licensePlate"
-                name="licensePlate"
-                value={formData.licensePlate}
-                onChange={handleLicensePlateChange}
+                id="plate"
+                name="plate"
+                value={formData.plate}
+                onChange={handleplateChange}
                 placeholder="ABC-1234 ou ABC-1D23"
-                className={errors.licensePlate ? 'error' : ''}
+                className={errors.plate ? 'error' : ''}
                 disabled={loading}
                 maxLength={8}
                 required
               />
-              {errors.licensePlate && <span className="error-message">{errors.licensePlate}</span>}
+              {errors.plate && <span className="error-message">{errors.plate}</span>}
             </div>
 
             <div className="form-group">
@@ -384,38 +363,38 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="fipeValue">Valor FIPE (R$)</label>
+              <label htmlFor="fipe_value">Valor FIPE (R$)</label>
               <input
                 type="number"
-                id="fipeValue"
-                name="fipeValue"
-                value={formData.fipeValue}
+                id="fipe_value"
+                name="fipe_value"
+                value={formData.fipe_value}
                 onChange={handleInputChange}
                 placeholder="50000"
-                className={errors.fipeValue ? 'error' : ''}
+                className={errors.fipe_value ? 'error' : ''}
                 disabled={loading}
                 min="0"
                 step="0.01"
               />
-              {errors.fipeValue && <span className="error-message">{errors.fipeValue}</span>}
+              {errors.fipe_value && <span className="error-message">{errors.fipe_value}</span>}
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="estimatedArrivalDate">Data Prevista de Chegada</label>
+              <label htmlFor="estimated_arrival_date">Data Prevista de Chegada</label>
               <input
                 type="date"
-                id="estimatedArrivalDate"
-                name="estimatedArrivalDate"
-                value={formData.estimatedArrivalDate}
+                id="estimated_arrival_date"
+                name="estimated_arrival_date"
+                value={formData.estimated_arrival_date}
                 onChange={handleInputChange}
-                className={errors.estimatedArrivalDate ? 'error' : ''}
+                className={errors.estimated_arrival_date ? 'error' : ''}
                 disabled={loading}
                 min={new Date().toISOString().split('T')[0]}
               />
-              {errors.estimatedArrivalDate && (
-                <span className="error-message">{errors.estimatedArrivalDate}</span>
+              {errors.estimated_arrival_date && (
+                <span className="error-message">{errors.estimated_arrival_date}</span>
               )}
             </div>
           </div>
@@ -429,6 +408,18 @@ const VehicleRegistrationModal: React.FC<VehicleRegistrationModalProps> = ({
             </button>
           </div>
         </form>
+        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+        {success && (
+          <MessageModal
+            title="Sucesso"
+            message="Veículo cadastrado com sucesso!"
+            variant="success"
+            onClose={() => {
+              setSuccess(false);
+              onClose();
+            }}
+          />
+        )}
       </div>
     </div>
   );

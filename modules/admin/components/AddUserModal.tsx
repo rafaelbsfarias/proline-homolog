@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import styles from './AddUserModal.module.css';
-import ErrorModal from '@/modules/common/components/ErrorModal'; // Importar o novo modal de erro
+import MessageModal from '@/modules/common/components/MessageModal';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -40,9 +40,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onS
       };
       const res = await post('/api/admin/create-user', payload);
       if (!res.ok) throw new Error(res.error || 'Erro ao criar usuário');
+      // Mostrar modal de sucesso ao invés de mensagem no rodapé
       setSuccess(true);
       setForm({ name: '', email: '', role: 'admin' });
-      if (onSuccess) onSuccess();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
@@ -79,9 +79,22 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onS
           <button type="submit" disabled={loading}>
             {loading ? 'Adicionando...' : 'Adicionar Usuário'}
           </button>
-          {success && <div className={styles.success}>Usuário criado com sucesso!</div>}
+          {/* Mensagem de sucesso movida para modal dedicado */}
         </form>
-        {error && <ErrorModal message={error} onClose={handleCloseErrorModal} />}
+        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+        {success && (
+          <MessageModal
+            title="Sucesso"
+            message="Usuário criado com sucesso!"
+            variant="success"
+            onClose={() => {
+              setSuccess(false);
+              // Notificar e fechar após confirmação
+              if (onSuccess) onSuccess();
+              onClose();
+            }}
+          />
+        )}
       </div>
     </div>
   );

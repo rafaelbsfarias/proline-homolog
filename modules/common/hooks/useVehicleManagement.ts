@@ -77,13 +77,13 @@ export const useVehicleManagement = () => {
   const createVehicle = useCallback(
     async (vehicleData: {
       clientId: string;
-      licensePlate: string;
+      plate: string;
       brand: string;
       model: string;
       color: string;
       year: number;
-      fipeValue?: number;
-      estimatedArrivalDate?: string;
+      fipe_value?: number;
+      estimated_arrival_date?: string;
     }) => {
       try {
         setLoading(true);

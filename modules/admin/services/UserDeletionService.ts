@@ -76,7 +76,27 @@ export class UserDeletionService {
     }
     logger.info(`Finished cleaning up dependent tables for user ${userId}.`);
 
-    // 3. Delete the profile BEFORE the auth user (if not handled by cascade)
+    // 3. Hard deletes for strong FKs that may block cascades
+    const strongFkDeletes: { table: string; column: string }[] = [
+      { table: 'contract_partners', column: 'partner_id' },
+      { table: 'partners_service_categories', column: 'partner_id' },
+      { table: 'partners', column: 'profile_id' },
+      { table: 'clients', column: 'profile_id' },
+      { table: 'specialists', column: 'profile_id' },
+    ];
+    for (const { table, column } of strongFkDeletes) {
+      try {
+        logger.info(`Attempting hard delete from ${table} where ${column} = ${userId}`);
+        const anyClient = this.supabase as unknown as { from: (t: string) => any };
+        await anyClient.from(table).delete().eq(column, userId);
+      } catch (e) {
+        logger.warn(
+          `Warning: Could not hard delete from ${table} for user ${userId}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+    }
+
+    // 4. Delete the profile BEFORE the auth user (if not handled by cascade)
     logger.info(`Deleting profile for user ${userId}.`);
     const { error: deleteProfileError } = await this.supabase
       .from('profiles')
@@ -88,7 +108,7 @@ export class UserDeletionService {
     }
     logger.info(`Profile deleted for user ${userId}.`);
 
-    // 4. Finally, delete the user from auth.users
+    // 5. Finally, delete the user from auth.users
     logger.info(`Deleting user ${userId} from auth.users.`);
     const { error: deleteAuthError } = await this.supabase.auth.admin.deleteUser(userId);
     if (deleteAuthError) {

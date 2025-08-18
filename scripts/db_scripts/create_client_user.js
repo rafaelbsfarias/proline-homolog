@@ -80,7 +80,7 @@ async function createClientUser() {
         id: userId,
         full_name: fullName,
         role: role,
-        status: 'active',
+        status: 'ativo',
       },
       { onConflict: 'id' }
     );
@@ -109,10 +109,7 @@ async function createClientUser() {
     console.log(`
 --- Usuário cliente ${email} criado/atualizado com sucesso! ---`);
     console.log(`Email: ${email}`);
-    
   } catch (error) {
-    
-    
     process.exit(1);
   }
 }

@@ -6,7 +6,7 @@ import {
   NotFoundError,
   ValidationError,
   AppError,
-} from '@/modules/common/errors';
+} from '@/lib/utils/errors';
 import {
   validatePlate,
   preparePlateForStorage,
@@ -19,13 +19,13 @@ const logger: ILogger = getLogger('VehicleCreationService');
 
 interface VehicleCreationData {
   clientId: string;
-  licensePlate: string;
+  plate: string;
   brand: string;
   model: string;
   color: string;
   year: number;
-  fipeValue?: number;
-  estimatedArrivalDate?: string;
+  fipe_value?: number;
+  estimated_arrival_date?: string;
   createdBy?: string; // User ID of the admin creating the vehicle
 }
 
@@ -40,26 +40,26 @@ export class VehicleCreationService {
   async createVehicle(data: VehicleCreationData): Promise<any> {
     const {
       clientId,
-      licensePlate,
+      plate,
       brand,
       model,
       color,
       year,
-      fipeValue,
-      estimatedArrivalDate,
+      fipe_value,
+      estimated_arrival_date,
       createdBy,
     } = data;
 
-    logger.info(`Attempting to create vehicle for client ${clientId} with plate ${licensePlate}.`);
+    logger.info(`Attempting to create vehicle for client ${clientId} with plate ${plate}.`);
     logger.debug('Vehicle creation data:', data);
 
     // 1. Validate plate format
-    if (!validatePlate(licensePlate)) {
-      logger.warn(`Invalid plate format for ${licensePlate}.`);
+    if (!validatePlate(plate)) {
+      logger.warn(`Invalid plate format for ${plate}.`);
       throw new ValidationError(PLATE_ERROR_MESSAGES.INVALID_FORMAT);
     }
-    const sanitizedLicensePlate = preparePlateForStorage(licensePlate);
-    logger.debug(`Plate ${licensePlate} sanitized to ${sanitizedLicensePlate}.`);
+    const sanitizedplate = preparePlateForStorage(plate);
+    logger.debug(`Plate ${plate} sanitized to ${sanitizedplate}.`);
 
     // 2. Validate year
     const currentYear = new Date().getFullYear();
@@ -69,17 +69,20 @@ export class VehicleCreationService {
     }
 
     // 3. Validate optional numeric values
-    const sanitizedFipeValue = fipeValue ? sanitizeNumber(fipeValue) : null;
-    if (fipeValue && (sanitizedFipeValue === null || isNaN(sanitizedFipeValue) || sanitizedFipeValue <= 0)) {
-      logger.warn(`Invalid FIPE value ${fipeValue} for vehicle creation.`);
+    const sanitizedfipe_value = fipe_value ? sanitizeNumber(fipe_value) : null;
+    if (
+      fipe_value &&
+      (sanitizedfipe_value === null || isNaN(sanitizedfipe_value) || sanitizedfipe_value <= 0)
+    ) {
+      logger.warn(`Invalid FIPE value ${fipe_value} for vehicle creation.`);
       throw new ValidationError('Valor FIPE deve ser um número positivo válido.');
     }
 
     // 4. Validate estimated arrival date if provided
-    if (estimatedArrivalDate) {
-      const date = new Date(estimatedArrivalDate);
+    if (estimated_arrival_date) {
+      const date = new Date(estimated_arrival_date);
       if (isNaN(date.getTime())) {
-        logger.warn(`Invalid estimated arrival date: ${estimatedArrivalDate}.`);
+        logger.warn(`Invalid estimated arrival date: ${estimated_arrival_date}.`);
         throw new ValidationError('Data de previsão de chegada inválida.');
       }
     }
@@ -100,38 +103,38 @@ export class VehicleCreationService {
     logger.info(`Client ${clientId} found and is a valid client.`);
 
     // 6. Check for duplicate license plate
-    logger.info(`Checking for duplicate license plate ${sanitizedLicensePlate}.`);
+    logger.info(`Checking for duplicate license plate ${sanitizedplate}.`);
     const { data: existingVehicle, error: plateCheckError } = await this.supabase
       .from('vehicles')
       .select('id, plate')
-      .eq('plate', sanitizedLicensePlate)
+      .eq('plate', sanitizedplate)
       .maybeSingle();
 
     if (plateCheckError) {
-      logger.error(`Error checking for existing plate ${sanitizedLicensePlate}:`, plateCheckError);
+      logger.error(`Error checking for existing plate ${sanitizedplate}:`, plateCheckError);
       throw new DatabaseError(`Erro ao verificar placa existente: ${plateCheckError.message}`);
     }
     if (existingVehicle) {
-      logger.warn(`Duplicate plate ${sanitizedLicensePlate} found.`);
+      logger.warn(`Duplicate plate ${sanitizedplate} found.`);
       throw new ConflictError(PLATE_ERROR_MESSAGES.DUPLICATE);
     }
-    logger.info(`Plate ${sanitizedLicensePlate} is unique.`);
+    logger.info(`Plate ${sanitizedplate} is unique.`);
 
     // 7. Insert vehicle into database
-    logger.info(`Inserting vehicle ${sanitizedLicensePlate} into database.`);
+    logger.info(`Inserting vehicle ${sanitizedplate} into database.`);
     const { data: vehicleData, error: insertError } = await this.supabase
       .from('vehicles')
       .insert({
         client_id: clientId,
-        plate: sanitizedLicensePlate,
+        plate: sanitizedplate,
         brand: brand,
         model: model,
         color: color,
         year: year,
-        fipe_value: sanitizedFipeValue,
-        estimated_arrival_date: estimatedArrivalDate,
+        fipe_value: sanitizedfipe_value,
+        estimated_arrival_date: estimated_arrival_date,
         created_by: createdBy,
-        status: 'active',
+        status: 'definir opção de coleta',
       })
       .select(
         `
@@ -150,11 +153,11 @@ export class VehicleCreationService {
       .single();
 
     if (insertError) {
-      logger.error(`Error inserting vehicle ${sanitizedLicensePlate}:`, insertError);
+      logger.error(`Error inserting vehicle ${sanitizedplate}:`, insertError);
       throw new DatabaseError(`Erro ao cadastrar veículo: ${insertError.message}`);
     }
 
-    logger.info(`Vehicle ${sanitizedLicensePlate} created successfully. Vehicle ID: ${vehicleData.id}`);
+    logger.info(`Vehicle ${sanitizedplate} created successfully. Vehicle ID: ${vehicleData.id}`);
     return vehicleData;
   }
 }

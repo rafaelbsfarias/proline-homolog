@@ -23,7 +23,7 @@ BEGIN
         p.created_at
     FROM public.profiles p
     WHERE p.user_role = 'specialist'
-      AND p.status = 'active'
+      AND p.status = 'ativo'
     ORDER BY p.full_name ASC;
 END;
 $$;

@@ -9,11 +9,6 @@ interface ClientVehicleCount {
 }
 
 async function vehiclesCountHandler(request: AuthenticatedRequest) {
-  console.log('=== VEHICLES COUNT HANDLER ===');
-  console.log('User:', request.user.email);
-  console.log('User ID:', request.user.id);
-  console.log('User Role:', request.user.role);
-
   try {
     const supabase = SupabaseService.getInstance().getAdminClient();
 
@@ -21,8 +16,6 @@ async function vehiclesCountHandler(request: AuthenticatedRequest) {
     const { data, error } = await supabase.rpc('get_clients_with_vehicle_count');
 
     if (error) {
-      console.error('=== RPC ERROR ===');
-      console.error('RPC error:', error);
       return new Response(JSON.stringify({ error: 'Erro ao buscar contagem de veículos' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -34,10 +27,6 @@ async function vehiclesCountHandler(request: AuthenticatedRequest) {
     const userVehicleCount = clientsData?.find(
       (client: ClientVehicleCount) => client.id === request.user.id
     );
-
-    console.log('=== RPC SUCCESS ===');
-    console.log('Total clients with vehicles:', clientsData?.length || 0);
-    console.log('Current user vehicle count:', userVehicleCount?.vehicle_count || 0);
 
     // Retornar apenas a contagem do usuário logado
     const response = {
@@ -51,8 +40,6 @@ async function vehiclesCountHandler(request: AuthenticatedRequest) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('=== VEHICLES COUNT ERROR ===');
-    console.error('Server error:', error);
     return new Response(JSON.stringify({ error: 'Erro interno do servidor' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

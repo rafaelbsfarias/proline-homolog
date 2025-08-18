@@ -66,11 +66,10 @@ export function validateCEP(cep: string): boolean {
  * Valida CPF
  */
 export function validateCPF(cpf: string): boolean {
-  const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
-  if (!cpfRegex.test(cpf)) return false;
-
-  // Remove pontos e traços
-  const cleanCPF = cpf.replace(/[.-]/g, '');
+  // Aceita com ou sem máscara: mantém apenas dígitos
+  const cleanCPF = (cpf || '').replace(/\D/g, '');
+  // Deve ter 11 dígitos
+  if (cleanCPF.length !== 11) return false;
 
   // Verifica se não são todos números iguais
   if (/^(\d)\1+$/.test(cleanCPF)) return false;

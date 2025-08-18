@@ -170,7 +170,7 @@ export interface VehicleData {
   readonly make: string;
   readonly model: string;
   readonly year: number;
-  readonly licensePlate: string;
+  readonly plate: string;
   readonly color?: string;
 }
 

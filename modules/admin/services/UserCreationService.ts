@@ -78,7 +78,7 @@ export class UserCreationService {
         id: userId,
         full_name: fullName,
         role: role,
-        status: 'active',
+        status: 'ativo',
       });
       if (profileErr) {
         // Enhanced logging for RLS or other profile creation errors

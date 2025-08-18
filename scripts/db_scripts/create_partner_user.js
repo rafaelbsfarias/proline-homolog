@@ -17,7 +17,6 @@ const supabaseServiceRoleKey =
   process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  
   process.exit(1);
 }
 
@@ -33,8 +32,6 @@ async function createPartnerUser() {
   const companyName = `Oficina Parceira ${randomId}`;
 
   try {
-    
-
     // 1. Criar usuário no Supabase Auth
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email,
@@ -49,7 +46,6 @@ async function createPartnerUser() {
 
     if (authError) {
       if (authError.message.includes('User already exists')) {
-        
         const { data: existingUsers } = await supabase.auth.admin.listUsers();
         const existingUser = existingUsers?.users.find(u => u.email === email);
         if (existingUser) {
@@ -68,15 +64,13 @@ async function createPartnerUser() {
       throw new Error('ID do usuário não obtido após criação/recuperação.');
     }
 
-    
-
     // 2. Criar/Atualizar perfil na tabela public.profiles
     const { error: profileError } = await supabase.from('profiles').upsert(
       {
         id: userId,
         full_name: fullName,
         role: role,
-        status: 'active',
+        status: 'ativo',
       },
       { onConflict: 'id' }
     );
@@ -84,7 +78,6 @@ async function createPartnerUser() {
     if (profileError) {
       throw profileError;
     }
-    
 
     // 3. Criar entrada na tabela public.partners
     const { error: partnerError } = await supabase.from('partners').upsert(
@@ -100,14 +93,7 @@ async function createPartnerUser() {
     if (partnerError) {
       throw partnerError;
     }
-    
-
-    
-    
-    
   } catch (error) {
-    
-    
     process.exit(1);
   }
 }
