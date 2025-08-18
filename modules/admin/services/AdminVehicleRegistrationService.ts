@@ -23,7 +23,7 @@ interface AdminVehicleRegistrationData {
   model: string;
   color: string;
   year: number;
-  fipeValue: number;
+  fipe_value: number;
   brand?: string; // Added brand as it's required in the DB schema
 }
 
@@ -41,7 +41,7 @@ export class AdminVehicleRegistrationService {
     );
     logger.debug('Registration data:', data);
 
-    const { clientId, plate, model, color, year, fipeValue, brand } = data;
+    const { clientId, plate, model, color, year, fipe_value, brand } = data;
 
     // 1. Validate plate format
     if (!validatePlate(plate)) {
@@ -59,8 +59,8 @@ export class AdminVehicleRegistrationService {
     }
 
     // 3. Validate FIPE value
-    if (fipeValue <= 0 || isNaN(fipeValue)) {
-      logger.warn(`Invalid FIPE value ${fipeValue} for vehicle registration.`);
+    if (fipe_value <= 0 || isNaN(fipe_value)) {
+      logger.warn(`Invalid FIPE value ${fipe_value} for vehicle registration.`);
       throw new ValidationError('Valor FIPE deve ser um número positivo.');
     }
 
@@ -108,8 +108,8 @@ export class AdminVehicleRegistrationService {
         model: model,
         color: color,
         year: year,
-        fipe_value: fipeValue,
-        status: 'active',
+        fipe_value: fipe_value,
+        status: 'definir opção de coleta',
       })
       .select()
       .single();

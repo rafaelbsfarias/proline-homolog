@@ -149,7 +149,7 @@ export const createMockUser = (overrides = {}) => ({
   id: 'test-user-id',
   email: 'test@example.com',
   role: 'client',
-  status: 'active',
+  status: 'ativo',
   profile: {
     firstName: 'Test',
     lastName: 'User',

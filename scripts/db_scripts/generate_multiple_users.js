@@ -81,7 +81,7 @@ async function generateUsers() {
             id: userId,
             full_name: fullName,
             role: role,
-            status: 'active',
+            status: 'ativo',
           },
           { onConflict: 'id' }
         );

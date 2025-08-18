@@ -21,7 +21,7 @@ interface ClientVehicleData {
   color: string;
   year: number;
   initialKm?: number;
-  fipeValue?: number;
+  fipe_value?: number;
   observations?: string;
   clientId: string; // The ID of the client creating the vehicle
 }
@@ -34,7 +34,8 @@ export class ClientVehicleService {
   }
 
   async createVehicle(data: ClientVehicleData): Promise<any> {
-    const { plate, brand, model, color, year, initialKm, fipeValue, observations, clientId } = data;
+    const { plate, brand, model, color, year, initialKm, fipe_value, observations, clientId } =
+      data;
 
     // 1. Validate plate format
     if (!validatePlate(plate)) {
@@ -52,7 +53,7 @@ export class ClientVehicleService {
     if (initialKm !== undefined && (initialKm < 0 || !Number.isInteger(initialKm))) {
       throw new ValidationError('Quilometragem inicial deve ser um número inteiro positivo.');
     }
-    if (fipeValue !== undefined && (fipeValue < 0 || isNaN(fipeValue))) {
+    if (fipe_value !== undefined && (fipe_value < 0 || isNaN(fipe_value))) {
       throw new ValidationError('Valor FIPE deve ser um número positivo.');
     }
 
@@ -91,8 +92,8 @@ export class ClientVehicleService {
         model: model.trim(),
         color: color.trim(),
         year,
-        fipe_value: fipeValue || null,
-        status: 'active',
+        fipe_value: fipe_value || null,
+        status: 'definir opção de coleta',
       })
       .select()
       .single();

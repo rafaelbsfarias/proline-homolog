@@ -13,7 +13,7 @@ import { sanitizeNumber } from '@/modules/common/utils/inputSanitization';
 async function createVehicleHandler(req: NextRequest) {
   try {
     const rawData = await req.json();
-    const { plate, brand, model, color, year, initialKm, fipeValue, observations } = rawData;
+    const { plate, brand, model, color, year, initialKm, fipe_value, observations } = rawData;
 
     // Validação de campos obrigatórios
     if (!plate || !brand || !model || !color || !year) {
@@ -46,7 +46,7 @@ async function createVehicleHandler(req: NextRequest) {
       color: color as string,
       year: year as number,
       initialKm: initialKm ? sanitizeNumber(initialKm) : undefined,
-      fipeValue: fipeValue ? sanitizeNumber(fipeValue) : undefined,
+      fipe_value: fipe_value ? sanitizeNumber(fipe_value) : undefined,
       observations: observations as string,
       clientId: clientId,
     });

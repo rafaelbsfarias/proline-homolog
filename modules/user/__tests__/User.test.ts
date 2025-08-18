@@ -57,7 +57,7 @@ describe('User Domain Entity', () => {
         email: 'test@example.com',
         password_hash: 'hashed-password',
         role: 'admin',
-        status: 'active',
+        status: 'ativo',
         profile: {
           firstName: 'Admin',
           lastName: 'User',

@@ -20,10 +20,10 @@ async function cadastrarVeiculoHandler(req: NextRequest) {
     const rawData = await req.json();
     const sanitizedData = sanitizeObject(rawData);
 
-    const { clientId, plate, model, color, year, fipeValue, brand } = sanitizedData;
+    const { clientId, plate, model, color, year, fipe_value, brand } = sanitizedData;
 
     // Validação de campos obrigatórios
-    if (!clientId || !plate || !model || !color || !year || !fipeValue) {
+    if (!clientId || !plate || !model || !color || !year || !fipe_value) {
       throw new ValidationError('Preencha todos os campos obrigatórios.');
     }
 
@@ -32,7 +32,7 @@ async function cadastrarVeiculoHandler(req: NextRequest) {
     const sanitizedModel = sanitizeString(model as string);
     const sanitizedColor = sanitizeString(color as string);
     const parsedYear = sanitizeNumber(year as number);
-    const parsedFipeValue = sanitizeNumber(fipeValue as number);
+    const parsedfipe_value = sanitizeNumber(fipe_value as number);
     const sanitizedBrand = sanitizeString((brand as string) || 'N/A'); // Ensure brand is always a string
 
     const adminVehicleRegistrationService = new AdminVehicleRegistrationService();
@@ -42,7 +42,7 @@ async function cadastrarVeiculoHandler(req: NextRequest) {
       model: sanitizedModel,
       color: sanitizedColor,
       year: parsedYear,
-      fipeValue: parsedFipeValue,
+      fipe_value: parsedfipe_value,
       brand: sanitizedBrand,
     });
 

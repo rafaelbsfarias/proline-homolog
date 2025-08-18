@@ -268,11 +268,9 @@ create table "public"."vehicles" (
     "year" integer,
     "color" character varying,
     "photos" jsonb,
-    "fipeValue" numeric,
-    "estimatedArrivalDate" date,
-    "created_by" text,
-    "estimated_arrival_date" text,
     "fipe_value" numeric,
+    "estimated_arrival_date" date,
+    "created_by" text,
     "status" text
 );
 

@@ -4,7 +4,7 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import {
   sanitizeString,
   sanitizeObject,
-  sanitizeNumber, // Not used, but keeping for consistency if needed later
+  sanitizeNumber,
 } from '@/modules/common/utils/inputSanitization';
 import { getLogger, ILogger } from '@/modules/logger';
 
@@ -17,9 +17,9 @@ async function editUserHandler(req: AuthenticatedRequest) {
   try {
     const rawData = await req.json();
     const sanitizedData = sanitizeObject(rawData);
-    const { userId, full_name, email, role, status } = sanitizedData;
+    const { userId, full_name, email, role, status, taxa_operacao, parqueamento } = sanitizedData;
     logger.info(`Attempting to edit user ID: ${userId}`);
-    logger.debug('Received data:', { userId, full_name, email, role, status });
+    logger.debug('Received data:', sanitizedData);
 
     if (!userId) {
       logger.warn('User ID not provided for edit operation.');
@@ -70,6 +70,26 @@ async function editUserHandler(req: AuthenticatedRequest) {
     }
     logger.info(`Profile updated successfully for user ID: ${userId}`);
 
+    if (sanitizedRole === 'client') {
+      logger.info(`Updating client-specific data for user ID: ${userId}`);
+      const { error: clientError } = await supabase
+        .from('clients')
+        .update({
+          taxa_operacao: taxa_operacao ? sanitizeNumber(taxa_operacao as number) : null,
+          parqueamento: parqueamento ? sanitizeNumber(parqueamento as number) : null,
+        })
+        .eq('profile_id', userId);
+
+      if (clientError) {
+        logger.error(`Error updating client data for user ${userId}:`, clientError);
+        return NextResponse.json(
+          { error: `Erro ao atualizar dados do cliente: ${clientError.message}` },
+          { status: 500 }
+        );
+      }
+      logger.info(`Client-specific data updated successfully for user ID: ${userId}`);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Usuário atualizado com sucesso!',
@@ -81,9 +101,8 @@ async function editUserHandler(req: AuthenticatedRequest) {
       },
     });
   } catch (error: unknown) {
-    // Changed from e: any to error: unknown
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Internal server error in editUserHandler:', errorMessage, error); // Log the full error object
+    logger.error('Internal server error in editUserHandler:', errorMessage, error);
     return NextResponse.json(
       {
         error: 'Erro interno do servidor',
