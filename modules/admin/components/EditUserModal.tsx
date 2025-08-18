@@ -36,11 +36,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ open, user, onClose, onSa
         const response = await get<{ client: ClientDetails }>(
           `/api/admin/client-details/${user.id}`
         );
-        if (response.ok && response.data) {
+        if (response.ok && response.data?.client) {
           setFields(prevFields => ({
             ...prevFields,
-            taxa_operacao: response.data.client.taxa_operacao || 0,
-            parqueamento: response.data.client.parqueamento || 0,
+            taxa_operacao: response.data?.client?.taxa_operacao ?? 0,
+            parqueamento: response.data?.client?.parqueamento ?? 0,
           }));
         }
       };

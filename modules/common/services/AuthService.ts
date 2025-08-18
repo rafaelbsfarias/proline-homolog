@@ -148,25 +148,32 @@ export class AuthService implements AuthServiceInterface {
    */
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const client = this.supabaseService.getClient();
-      const redirectTo = this.getResetPasswordUrl();
-
-      const { error } = await client.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo,
+      const response = await fetch('/api/auth/send-password-reset-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
       });
 
-      if (error) {
+      const data = await response.json();
+
+      if (!response.ok) {
         return {
           success: false,
-          error: 'Erro ao enviar email de recuperação',
+          error: data.error || 'Erro ao enviar email de recuperação',
         };
       }
 
       return { success: true };
     } catch (error) {
+      this.errorHandler.handleError(error as Error, ErrorType.SERVER, {
+        showToUser: false,
+        context: { action: 'resetPassword', email: email.trim().toLowerCase() },
+      });
       return {
         success: false,
-        error: 'Erro interno do sistema',
+        error: SYSTEM_MESSAGES.INTERNAL_ERROR,
       };
     }
   }

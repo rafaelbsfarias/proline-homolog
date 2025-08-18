@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { SupabaseService } from './SupabaseService';
+import { authService } from './AuthService'; // Correct import
 
 interface AuthContextType {
   user: User | null;
@@ -87,12 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const resetPassword = async (email: string) => {
-    const supabase = SupabaseService.getInstance().getClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    return error ? { success: false, error: error.message } : { success: true };
+    return await authService.resetPassword(email);
   };
 
   return (

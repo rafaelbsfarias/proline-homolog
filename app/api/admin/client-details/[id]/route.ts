@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger, ILogger } from '@/modules/logger';
 
 const logger: ILogger = getLogger('AdminClientDetailsAPI');
 
-async function getClientDetailsHandler(
-  req: AuthenticatedRequest,
-  { params }: { params: { id: string } }
-) {
+async function getClientDetailsHandler(req: AuthenticatedRequest, context: any) {
+  const { id } = context.params;
   const adminUser = req.user;
-  const { id } = params;
   logger.info(
     `Handler started by admin: ${adminUser?.email} (${adminUser?.id}) to fetch details for client ${id}`
   );
