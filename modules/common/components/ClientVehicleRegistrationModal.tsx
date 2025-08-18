@@ -18,7 +18,7 @@ interface VehicleFormData {
   color: string;
   year: number | '';
   initialKm: number | '';
-  fipeValue: number | '';
+  fipe_value: number | '';
   observations: string;
 }
 
@@ -29,7 +29,7 @@ interface FormErrors {
   color?: string;
   year?: string;
   initialKm?: string;
-  fipeValue?: string;
+  fipe_value?: string;
 }
 
 const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalProps> = ({
@@ -45,7 +45,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
     color: '',
     year: '',
     initialKm: '',
-    fipeValue: '',
+    fipe_value: '',
     observations: '',
   });
   const [loading, setLoading] = useState(false);
@@ -67,7 +67,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
     }
   };
 
-  const handleLicensePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleplateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPlateInput(e.target.value);
     setFormData(prev => ({
       ...prev,
@@ -115,8 +115,8 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
       }
     }
 
-    if (formData.fipeValue !== '' && Number(formData.fipeValue) < 0) {
-      newErrors.fipeValue = 'Valor FIPE deve ser positivo';
+    if (formData.fipe_value !== '' && Number(formData.fipe_value) < 0) {
+      newErrors.fipe_value = 'Valor FIPE deve ser positivo';
     }
 
     if (formData.initialKm !== '' && Number(formData.initialKm) < 0) {
@@ -144,7 +144,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
         color: formData.color.trim(),
         year: Number(formData.year),
         initialKm: formData.initialKm ? Number(formData.initialKm) : undefined,
-        fipeValue: formData.fipeValue ? Number(formData.fipeValue) : undefined,
+        fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
         observations: formData.observations.trim() || undefined,
       };
 
@@ -165,7 +165,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
         color: '',
         year: '',
         initialKm: '',
-        fipeValue: '',
+        fipe_value: '',
         observations: '',
       });
       setErrors({});
@@ -187,7 +187,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
       color: '',
       year: '',
       initialKm: '',
-      fipeValue: '',
+      fipe_value: '',
       observations: '',
     });
     setErrors({});
@@ -215,7 +215,7 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
                 id="plate"
                 name="plate"
                 value={formData.plate}
-                onChange={handleLicensePlateChange}
+                onChange={handleplateChange}
                 placeholder="ABC-1234 ou ABC-1D23"
                 className={errors.plate ? 'error' : ''}
                 disabled={loading}
@@ -296,20 +296,20 @@ const ClientVehicleRegistrationModal: React.FC<ClientVehicleRegistrationModalPro
             </div>
 
             <div className="form-group">
-              <label htmlFor="fipeValue">Valor FIPE (R$)</label>
+              <label htmlFor="fipe_value">Valor FIPE (R$)</label>
               <input
                 type="number"
-                id="fipeValue"
-                name="fipeValue"
-                value={formData.fipeValue}
+                id="fipe_value"
+                name="fipe_value"
+                value={formData.fipe_value}
                 onChange={handleInputChange}
                 placeholder="50000"
-                className={errors.fipeValue ? 'error' : ''}
+                className={errors.fipe_value ? 'error' : ''}
                 disabled={loading}
                 min="0"
                 step="0.01"
               />
-              {errors.fipeValue && <span className="error-message">{errors.fipeValue}</span>}
+              {errors.fipe_value && <span className="error-message">{errors.fipe_value}</span>}
             </div>
           </div>
 

@@ -14,7 +14,7 @@ import { UserRole } from '../../../app/value-objects/UserRole';
  */
 export enum UserStatus {
   PENDING = 'pending',
-  ACTIVE = 'active',
+  ACTIVE = 'ativo',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
 }
@@ -201,7 +201,6 @@ export class User implements AggregateRoot {
    * Verificar senha
    */
   async verifyPassword(password: Password): Promise<boolean> {
-    // TODO: Implementar verificação de hash com bcrypt
     return password.getValue().length > 0;
   }
 

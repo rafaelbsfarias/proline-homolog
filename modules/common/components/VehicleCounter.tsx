@@ -72,7 +72,6 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   if (loading) {
     return (
       <div className="vehicle-counter loading">
-        <div className="counter-icon">🚗</div>
         <div className="counter-content">
           <h3>Carregando...</h3>
           <p>Contando seus veículos</p>
@@ -99,7 +98,6 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   return (
     <div className="vehicle-counter">
       <div className="counter-header">
-        <div className="counter-icon">🚗</div>
         <div className="counter-content">
           <h3>Meus Veículos</h3>
           <div className="counter-number">{count}</div>
@@ -150,7 +148,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                     Cadastrado em {formatDate(vehicle.created_at)}
                   </span>
                   <span className={`vehicle-status ${vehicle.status}`}>
-                    {vehicle.status === 'active' ? 'Ativo' : vehicle.status}
+                    {vehicle.status === 'ativo' ? 'Ativo' : vehicle.status}
                   </span>
                 </div>
               </div>

@@ -38,7 +38,7 @@ vi.mock('@supabase/supabase-js', () => {
                     model: 'Uno',
                     color: 'Branco',
                     year: 2020,
-                    status: 'active',
+                    status: 'ativo',
                     client: {
                       id: 'client-1',
                       full_name: 'Cliente Teste',
@@ -87,7 +87,7 @@ describe('POST /api/admin/create-vehicle', () => {
       model: 'Uno',
       color: 'Branco',
       year: 2020,
-      status: 'active',
+      status: 'ativo',
       client: { id: 'client-1', full_name: 'Cliente Teste', email: 'cliente@mock.com' },
     });
     expect(body.message).toBe('Veículo cadastrado com sucesso!');

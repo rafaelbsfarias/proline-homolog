@@ -221,12 +221,12 @@ export class AuthService implements AuthServiceInterface {
 
   private mapAuthError(errorMessage: string): string {
     const errorMap: Record<string, string> = {
-      'Invalid login credentials': AUTH_MESSAGES.LOGIN_ERROR,
-      'User already registered': AUTH_MESSAGES.USER_ALREADY_EXISTS,
-      'Password should be at least 6 characters': AUTH_MESSAGES.WEAK_PASSWORD,
-      'Signup requires a valid password': AUTH_MESSAGES.WEAK_PASSWORD,
-      'Unable to validate email address': AUTH_MESSAGES.INVALID_EMAIL,
-      'Email rate limit exceeded': 'Muitas tentativas. Tente novamente em alguns minutos.',
+      'Credenciais de login inválidas': AUTH_MESSAGES.LOGIN_ERROR,
+      'Usuário ja registrado': AUTH_MESSAGES.USER_ALREADY_EXISTS,
+      'A senha deve ter mais de 6 carcteres': AUTH_MESSAGES.WEAK_PASSWORD,
+      'Senha inválida': AUTH_MESSAGES.WEAK_PASSWORD,
+      'Não foi possível validar o e-mail': AUTH_MESSAGES.INVALID_EMAIL,
+      'Limite excedido': 'Muitas tentativas. Tente novamente em alguns minutos.',
     };
 
     return errorMap[errorMessage] || AUTH_MESSAGES.LOGIN_ERROR;

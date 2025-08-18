@@ -6,6 +6,7 @@ import {
   sanitizeForDatabase,
   validateEmail,
   validateCNPJ,
+  validateCPF,
   validateName,
 } from '@/modules/common/utils/inputSanitization';
 import { ConflictError, DatabaseError, DomainError, ValidationError } from '@/lib/utils/errors';
@@ -69,6 +70,13 @@ export class CreateUserUseCase {
         throw new ValidationError('CNPJ inválido.');
       }
     }
+    if (documentType === 'CPF' && sanitizedDocument) {
+      const isValidCpf = validateCPF(sanitizedDocument);
+      if (!isValidCpf) {
+        logger.warn(`Validation Error: Invalid CPF for ${sanitizedDocument}.`);
+        throw new ValidationError('CPF inválido.');
+      }
+    }
     logger.debug('Input data sanitized and validated.');
 
     logger.info('Checking for existing user with this email.');
@@ -83,7 +91,7 @@ export class CreateUserUseCase {
     );
     if (emailExists) {
       logger.warn(`User creation failed: Email ${sanitizedEmail} already in use.`);
-      throw new ConflictError('Este e-mail já está em uso.');
+      throw new ConflictError('Este email já está cadastrado.');
     }
     logger.info('Email is not in use, proceeding with user creation.');
 
@@ -124,7 +132,7 @@ export class CreateUserUseCase {
         id: authUserId,
         full_name: sanitizedName,
         role: role,
-        status: 'active',
+        status: 'ativo',
       });
 
       if (profileError) {
@@ -181,6 +189,14 @@ export class CreateUserUseCase {
           `Error creating specific table record for role ${role} and user ${authUserId}:`,
           specificTableError
         );
+        const msg = String((specificTableError as any)?.message || '').toLowerCase();
+        const code = String((specificTableError as any)?.code || '');
+        if (code === '23505' || /duplicate key value/.test(msg)) {
+          // Unique constraint on document numbers (clients/partners)
+          if (/clients_document_number_key|partners_cnpj_key/.test(msg)) {
+            throw new ConflictError('CPF ou CNPJ já cadastrado.');
+          }
+        }
         throw new DatabaseError(
           `Erro ao criar registro para ${role}: ${specificTableError.message}`
         );

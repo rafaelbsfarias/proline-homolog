@@ -6,25 +6,24 @@ import {
   DataPanel,
   VehiclesCounter,
 } from '@/modules/admin/components';
-import EmailTemplateTest from '@/modules/common/components/EmailTemplateTest';
-import EdgeFunctionEmailTest from '@/modules/common/components/EdgeFunctionEmailTest';
+
 import styles from './AdminDashboard.module.css';
 
+interface UserData {
+  name?: string;
+}
+
 const AdminDashboard: React.FC = () => {
-  // ...existing code...
-  // Exemplo: useUserData retorna { user } com user.name
-  // Ajuste o import conforme o hook real do projeto
-  // import { useUserData } from '../../modules/common/hooks/useUserData';
-  // const { user } = useUserData();
-  // Para este exemplo, vamos simular:
-  const user = { name: 'Administrador' };
+  const user: UserData | null = null; // Placeholder temporário
+
   return (
     <div className={styles.adminDashboardLayout}>
       <Header />
       <div style={{ background: '#F0F2F5', width: '100%', padding: '32px 0 0 0', minHeight: 80 }}>
         <div className={styles.welcomeContainer}>
           <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#222', marginBottom: '4px' }}>
-            Bem-vindo, <span style={{ color: '#072e4c', fontWeight: 600 }}>{user?.name || ''}</span>
+            Bem-vindo,{' '}
+            <span style={{ color: '#072e4c', fontWeight: 600 }}>{(user as any)?.name || ''}</span>
           </div>
         </div>
       </div>

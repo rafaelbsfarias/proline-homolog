@@ -28,16 +28,30 @@ const ClientDashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Buscar dados completos do perfil
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, clients(parqueamento, taxa_operacao)')
-          .eq('id', user.id)
-          .single();
+        // Fetch profile and client data in parallel
+        const [profileResponse, clientResponse] = await Promise.all([
+          supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+          supabase
+            .from('clients')
+            .select('parqueamento, taxa_operacao')
+            .eq('profile_id', user.id)
+            .single(),
+        ]);
+
+        const { data: profile } = profileResponse;
+        const { data: clientData } = clientResponse;
 
         if (profile) {
           setUserName(profile.full_name || '');
-          setProfileData(profile);
+          setProfileData({
+            full_name: profile.full_name || '',
+            clients: [
+              {
+                parqueamento: clientData?.parqueamento,
+                taxa_operacao: clientData?.taxa_operacao,
+              },
+            ],
+          });
         } else {
         }
 

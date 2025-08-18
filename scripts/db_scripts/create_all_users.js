@@ -86,7 +86,7 @@ async function createUser(email, password, fullName, role, additionalData = {}) 
         id: userId,
         full_name: fullName,
         role: role,
-        status: 'active',
+        status: 'ativo',
       },
       { onConflict: 'id' }
     );

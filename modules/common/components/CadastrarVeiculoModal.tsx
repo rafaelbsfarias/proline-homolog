@@ -32,7 +32,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
     color: '',
     year: '',
     initialKm: '',
-    fipeValue: '',
+    fipe_value: '',
     observations: '',
   });
   const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
       color: '',
       year: '',
       initialKm: '',
-      fipeValue: '',
+      fipe_value: '',
       observations: '',
     });
     setError(null);
@@ -107,7 +107,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
       !form.color ||
       !form.year ||
       !form.initialKm ||
-      !form.fipeValue
+      !form.fipe_value
     ) {
       setError('Por favor, preencha todos os campos obrigatórios.');
       setLoading(false);
@@ -221,10 +221,10 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
             />
             <FormInput
               label="Valor FIPE"
-              id="fipeValue"
-              name="fipeValue"
+              id="fipe_value"
+              name="fipe_value"
               type="number"
-              value={form.fipeValue}
+              value={form.fipe_value}
               onChange={handleChange}
               required
               disabled={loading}
@@ -263,7 +263,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
                     color: '',
                     year: '',
                     initialKm: '',
-                    fipeValue: '',
+                    fipe_value: '',
                     observations: '',
                   })
                 }

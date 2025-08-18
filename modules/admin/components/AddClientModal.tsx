@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import styles from './AddUserModal.module.css'; // Reutilizando estilos do modal de usuário
-import ErrorModal from '@/modules/common/components/ErrorModal'; // Importar o novo modal de erro
+import MessageModal from '@/modules/common/components/MessageModal';
+import { maskCPF, maskCNPJ, maskPhone } from '@/modules/common/utils/maskers';
+import CurrencyInput from '@/modules/common/components/CurrencyInput'; // Import CurrencyInput
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -17,10 +19,10 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     phone: '',
     documentType: 'CPF',
     document: '',
-    parqueamento: '',
-    quilometragem: '',
-    percentualFipe: '',
-    taxaOperacao: '',
+    parqueamento: undefined as number | undefined, // Change type to number | undefined
+    quilometragem: undefined as number | undefined, // Change type to number | undefined
+    percentualFipe: '', // Keep as string for now
+    taxaOperacao: undefined as number | undefined, // Change type to number | undefined
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null); // Estado para a mensagem de erro
@@ -32,35 +34,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     setError(null);
   };
 
-  // Máscara de CPF
-  function maskCPF(value: string) {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
-      .slice(0, 14);
-  }
-  // Máscara de CNPJ
-  function maskCNPJ(value: string) {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
-      .slice(0, 18);
-  }
-
-  // Máscara de telefone (99) 9 9999-9999 ou (99) 9999-9999
-  function maskPhone(value: string) {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 10) {
-      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').slice(0, 15);
-    } else {
-      return digits.replace(/(\d{2})(\d{1})(\d{4})(\d{0,4})/, '($1) $2 $3-$4').slice(0, 16);
-    }
-  }
+  // Máscaras reutilizadas de utils/maskers
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     if (e.target.name === 'documentType') {
@@ -75,6 +49,10 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     } else {
       setForm({ ...form, [e.target.name]: e.target.value });
     }
+  };
+
+  const handleCurrencyChange = (name: string, value: number | undefined) => {
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,7 +72,7 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
         parqueamento: form.parqueamento,
         quilometragem: form.quilometragem,
         percentualFipe: parseFloat(form.percentualFipe),
-        taxaOperacao: parseFloat(form.taxaOperacao),
+        taxaOperacao: form.taxaOperacao,
       };
       // Chamada para o endpoint unificado
       const res = await post('/api/admin/add-client', payload);
@@ -106,10 +84,10 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
         phone: '',
         documentType: 'CPF',
         document: '',
-        parqueamento: '',
-        quilometragem: '',
+        parqueamento: undefined,
+        quilometragem: undefined,
         percentualFipe: '',
-        taxaOperacao: '',
+        taxaOperacao: undefined,
       });
       if (onSuccess) onSuccess();
     } catch (err: unknown) {
@@ -174,7 +152,11 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
             </label>
             <label>
               Parqueamento
-              <input name="parqueamento" value={form.parqueamento} onChange={handleChange} />
+              <CurrencyInput
+                name="parqueamento"
+                value={form.parqueamento}
+                onChange={value => handleCurrencyChange('parqueamento', value)}
+              />
             </label>
           </div>
           <div className={styles.formRow}>
@@ -190,15 +172,30 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
           <div className={styles.formRow}>
             <label>
               Taxa de Operação
-              <input name="taxaOperacao" value={form.taxaOperacao} onChange={handleChange} />
+              <CurrencyInput
+                name="taxaOperacao"
+                value={form.taxaOperacao}
+                onChange={value => handleCurrencyChange('taxaOperacao', value)}
+              />
             </label>
           </div>
           <button type="submit" disabled={loading}>
             {loading ? 'Cadastrando...' : 'Cadastrar'}
           </button>
-          {success && <div className={styles.success}>Cliente cadastrado com sucesso!</div>}
+          {success && (
+            <MessageModal
+              title="Sucesso"
+              message="Cliente cadastrado com sucesso!"
+              variant="success"
+              onClose={() => {
+                setSuccess(false);
+                if (onSuccess) onSuccess();
+                onClose();
+              }}
+            />
+          )}
         </form>
-        {error && <ErrorModal message={error} onClose={handleCloseErrorModal} />}
+        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
       </div>
     </div>
   );

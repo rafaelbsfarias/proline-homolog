@@ -1,21 +1,21 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '@/modules/common/components/Modal';
 import styles from './VehicleChecklistModal.module.css';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { sanitizeString } from '@/modules/common/utils/inputSanitization';
-
-export type ChecklistStatus = 'ok' | 'attention' | 'critical';
-
-export interface VehicleInfo {
-  id: string;
-  plate: string;
-  brand: string;
-  model: string;
-  year?: number;
-  color?: string;
-}
+import { supabase } from '@/modules/common/services/supabaseClient';
+import { useChecklistForm } from '@/modules/specialist/checklist/useChecklistForm';
+import { VehicleInfo } from '@/modules/specialist/checklist/types';
+import {
+  useImageUploader,
+  MAX_FILES,
+  MAX_SIZE_MB,
+} from '@/modules/specialist/checklist/useImageUploader';
+import InspectionGroups from './Checklist/InspectionGroups';
+import ServiceCategoryField from './Checklist/ServiceCategoryField';
+// duplicate imports removed below
 
 interface VehicleChecklistModalProps {
   isOpen: boolean;
@@ -23,44 +23,7 @@ interface VehicleChecklistModalProps {
   vehicle: VehicleInfo | null;
 }
 
-interface ChecklistForm {
-  date: string;
-  odometer: string;
-  fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
-  exterior: ChecklistStatus;
-  interior: ChecklistStatus;
-  tires: ChecklistStatus;
-  brakes: ChecklistStatus;
-  lights: ChecklistStatus;
-  fluids: ChecklistStatus;
-  engine: ChecklistStatus;
-  suspension: ChecklistStatus;
-  battery: ChecklistStatus;
-  observations: string;
-}
-
-const defaultForm = (today: string): ChecklistForm => ({
-  date: today,
-  odometer: '',
-  fuelLevel: 'half',
-  exterior: 'ok',
-  interior: 'ok',
-  tires: 'ok',
-  brakes: 'ok',
-  lights: 'ok',
-  fluids: 'ok',
-  engine: 'ok',
-  suspension: 'ok',
-  battery: 'ok',
-  observations: '',
-});
-
-function formatDateYYYYMMDD(date = new Date()): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+// Form types and defaults moved to checklist/types and managed by hook
 
 const STORAGE_PREFIX = 'vehicle_checklists:';
 
@@ -70,7 +33,15 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   vehicle,
 }) => {
   const { showToast } = useToast();
-  const [form, setForm] = useState<ChecklistForm>(defaultForm(formatDateYYYYMMDD()));
+  const {
+    files,
+    previews,
+    handleFiles: handleFilesHook,
+    removeFile,
+    uploadFiles,
+    reset: resetImages,
+  } = useImageUploader();
+  const { form, setField, setServiceFlag, setServiceNotes, resetForm } = useChecklistForm();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -81,16 +52,22 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   }, [vehicle]);
 
   const handleClose = () => {
-    setForm(defaultForm(formatDateYYYYMMDD()));
+    resetForm();
     setSaving(false);
     setError(null);
     setSuccess(null);
+    resetImages();
     onClose();
   };
 
-  const setField = (name: keyof ChecklistForm, value: string) => {
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
+  // form state handled by useChecklistForm
+
+  // cleanup moved to hook
+
+  const handleFiles = (list: FileList | null) =>
+    handleFilesHook(list, msg => showToast('warning', msg));
+
+  // upload moved to hook; removeFile provided by hook
 
   const saveToLocalStorage = () => {
     if (!vehicle) return;
@@ -113,28 +90,90 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setError(null);
     setSuccess(null);
 
-    // Front-only validation
-    if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) {
-      setError('Data da inspeção inválida.');
-      setSaving(false);
-      return;
-    }
-    if (!form.odometer || Number(form.odometer) < 0) {
-      setError('Informe a quilometragem atual válida.');
-      setSaving(false);
-      return;
-    }
+    try {
+      // Front-only validation
+      if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) {
+        throw new Error('Data da inspeção inválida.');
+      }
+      if (!form.odometer || Number(form.odometer) < 0) {
+        throw new Error('Informe a quilometragem atual válida.');
+      }
+      if (!vehicle) {
+        throw new Error('Veículo inválido.');
+      }
 
-    saveToLocalStorage();
-    setSuccess('Checklist salvo localmente.');
-    showToast('success', 'Checklist salvo localmente.');
-    setSaving(false);
+      // Ensure user is authenticated (for storage RLS)
+      const {
+        data: { session },
+        error: sessErr,
+      } = await supabase.auth.getSession();
+      if (sessErr || !session?.user) {
+        throw new Error('Sessão inválida. Faça login novamente.');
+      }
+      const userId = session.user.id;
+
+      // Upload files to Supabase Storage (if any)
+      let uploadedPaths: string[] = [];
+      if (files.length) {
+        uploadedPaths = await uploadFiles(userId, vehicle.id);
+      }
+
+      // Persist locally (including uploaded paths)
+      try {
+        const key = `${STORAGE_PREFIX}${vehicle.id}`;
+        const existingRaw = localStorage.getItem(key);
+        const list = existingRaw ? (JSON.parse(existingRaw) as any[]) : [];
+        const payload = {
+          ...form,
+          date: sanitizeString(form.date),
+          odometer: sanitizeString(form.odometer),
+          observations: sanitizeString(form.observations),
+          services: {
+            mechanics: {
+              required: form.services.mechanics.required,
+              notes: sanitizeString(form.services.mechanics.notes),
+            },
+            bodyPaint: {
+              required: form.services.bodyPaint.required,
+              notes: sanitizeString(form.services.bodyPaint.notes),
+            },
+            washing: {
+              required: form.services.washing.required,
+              notes: sanitizeString(form.services.washing.notes),
+            },
+            tires: {
+              required: form.services.tires.required,
+              notes: sanitizeString(form.services.tires.notes),
+            },
+          },
+          savedAt: new Date().toISOString(),
+          vehicle: { id: vehicle.id, plate: vehicle.plate },
+          mediaPaths: uploadedPaths,
+        };
+        list.push(payload);
+        localStorage.setItem(key, JSON.stringify(list));
+      } catch (_) {
+        // ignore storage errors
+      }
+
+      setSuccess(files.length ? 'Checklist + fotos enviados.' : 'Checklist salvo localmente.');
+      showToast(
+        'success',
+        files.length ? 'Fotos enviadas com sucesso.' : 'Checklist salvo localmente.'
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
+      setError(msg);
+      showToast('error', msg);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!isOpen || !vehicle) return null;
@@ -150,6 +189,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           {vehicle.color && <div>Cor: {vehicle.color}</div>}
         </div>
 
+        {/* Dados básicos da inspeção */}
         <div className={styles.grid}>
           <div className={styles.field}>
             <label htmlFor="date">Data da inspeção</label>
@@ -192,66 +232,71 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           </div>
         </div>
 
-        {(
-          [
-            { key: 'exterior', label: 'Exterior' },
-            { key: 'interior', label: 'Interior' },
-            { key: 'tires', label: 'Pneus' },
-            { key: 'brakes', label: 'Freios' },
-            { key: 'lights', label: 'Iluminação' },
-            { key: 'fluids', label: 'Fluidos' },
-            { key: 'engine', label: 'Motor' },
-            { key: 'suspension', label: 'Suspensão' },
-            { key: 'battery', label: 'Bateria' },
-          ] as const
-        ).map(item => (
-          <div key={item.key} className={styles.group}>
-            <h4 className={styles.groupTitle}>{item.label}</h4>
-            <div className={styles.options}>
-              <label>
-                <input
-                  type="radio"
-                  name={item.key}
-                  value="ok"
-                  checked={form[item.key] === 'ok'}
-                  onChange={e => setField(item.key, e.target.value)}
-                />
-                Em ordem
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name={item.key}
-                  value="attention"
-                  checked={form[item.key] === 'attention'}
-                  onChange={e => setField(item.key, e.target.value)}
-                />
-                Atenção breve
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name={item.key}
-                  value="critical"
-                  checked={form[item.key] === 'critical'}
-                  onChange={e => setField(item.key, e.target.value)}
-                />
-                Crítico/Imediato
-              </label>
-            </div>
+        {/* Sinalização de serviços necessários por categoria */}
+        <div className={styles.group}>
+          <h4 className={styles.groupTitle}>Serviços necessários</h4>
+          <div className={styles.grid}>
+            <ServiceCategoryField
+              label="Mecânica"
+              checked={form.services.mechanics.required}
+              notes={form.services.mechanics.notes}
+              onToggle={v => setServiceFlag('mechanics', v)}
+              onNotesChange={v => setServiceNotes('mechanics', v)}
+            />
+            <ServiceCategoryField
+              label="Funilaria/Pintura"
+              checked={form.services.bodyPaint.required}
+              notes={form.services.bodyPaint.notes}
+              onToggle={v => setServiceFlag('bodyPaint', v)}
+              onNotesChange={v => setServiceNotes('bodyPaint', v)}
+            />
+            <ServiceCategoryField
+              label="Lavagem"
+              checked={form.services.washing.required}
+              notes={form.services.washing.notes}
+              onToggle={v => setServiceFlag('washing', v)}
+              onNotesChange={v => setServiceNotes('washing', v)}
+            />
+            <ServiceCategoryField
+              label="Pneus"
+              checked={form.services.tires.required}
+              notes={form.services.tires.notes}
+              onToggle={v => setServiceFlag('tires', v)}
+              onNotesChange={v => setServiceNotes('tires', v)}
+            />
           </div>
-        ))}
+        </div>
 
-        <div className={styles.field}>
-          <label htmlFor="observations">Observações gerais</label>
-          <textarea
-            id="observations"
-            name="observations"
-            rows={4}
-            value={form.observations}
-            onChange={e => setField('observations', e.target.value)}
-            placeholder="Anote detalhes relevantes, barulhos, avarias, etc."
+        {/* Upload de fotos (galeria/câmera) */}
+        <div className={styles.upload}>
+          <label htmlFor="photos">Fotos do veículo</label>
+          <input
+            id="photos"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            onChange={e => handleFiles(e.target.files)}
           />
+          <small>
+            Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
+          </small>
+          {!!previews.length && (
+            <div className={styles.previews}>
+              {previews.map((src, i) => (
+                <div key={src} className={styles.previewItem}>
+                  <img
+                    src={src}
+                    alt={`Pré-visualização ${i + 1}`}
+                    className={styles.previewImage}
+                  />
+                  <button type="button" className={styles.removeBtn} onClick={() => removeFile(i)}>
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {error && <div className={styles.error}>{error}</div>}

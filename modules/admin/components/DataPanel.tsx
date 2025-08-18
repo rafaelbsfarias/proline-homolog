@@ -8,8 +8,10 @@ import containerStyles from './DataPanelContainer.module.css';
 
 interface ClientVehicleCount {
   id: string;
-  full_name: string;
+  full_name: string; // Keeping full_name for potential use, but company_name will be displayed
+  company_name: string; // New field
   vehicle_count: number | null;
+  specialist_names: string | null; // New field
 }
 
 const DataPanel: React.FC = () => {
@@ -62,8 +64,12 @@ const DataPanel: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th>
-                <th style={{ textAlign: 'center', padding: '8px' }}>Veículos cadastrados</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>Empresa</th>{' '}
+                {/* Changed header */}
+                <th style={{ textAlign: 'center', padding: '8px' }}>Veículos cadastrados</th>{' '}
+                {/* Swapped position */}
+                <th style={{ textAlign: 'left', padding: '8px' }}>Especialista(s)</th>{' '}
+                {/* Swapped position */}
                 <th style={{ width: 40 }}></th>
               </tr>
             </thead>
@@ -71,12 +77,15 @@ const DataPanel: React.FC = () => {
               {clients.map(client => (
                 <tr key={client.id}>
                   <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                    {client.full_name}
+                    {client.company_name} {/* Display company_name */}
                   </td>
                   <td
                     style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}
                   >
-                    {client.vehicle_count ?? '-'}
+                    {client.vehicle_count ?? '-'} {/* Swapped position */}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                    {client.specialist_names || 'Nenhum'} {/* Swapped position */}
                   </td>
                   <td style={{ textAlign: 'center', borderBottom: '1px solid #eee' }}>
                     <button

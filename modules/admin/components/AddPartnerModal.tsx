@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from './AddUserModal.module.css'; // Reutilizando estilos do modal de usuário
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import ErrorModal from '@/modules/common/components/ErrorModal'; // Importar o novo modal de erro
+import MessageModal from '@/modules/common/components/MessageModal';
+import { maskCNPJ, maskPhone } from '@/modules/common/utils/maskers';
+import CurrencyInput from '@/modules/common/components/CurrencyInput'; // Import CurrencyInput
 
 interface AddPartnerModalProps {
   isOpen: boolean;
@@ -20,36 +22,41 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const { post } = useAuthenticatedFetch();
-
-  if (!isOpen) return null;
+  const [categories, setCategories] = useState<{ id: string; key: string; name: string }[]>([]);
+  const [catLoading, setCatLoading] = useState(false);
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('');
+  const [newCategoryName, setNewCategoryName] = useState<string>('');
+  const [contractValue, setContractValue] = useState<number | undefined>(undefined); // Change state type to number | undefined
+  const { post, get } = useAuthenticatedFetch();
 
   const handleCloseErrorModal = () => {
     setError(null);
   };
 
-  // Função para aplicar máscara de CNPJ
-  function maskCNPJ(value: string) {
-    return value
-      .replace(/\D/g, '')
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d{1,2})$/, '$1-$2')
-      .slice(0, 18);
-  }
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setCatLoading(true);
+      try {
+        const res = await get<{
+          success: boolean;
+          categories: { id: string; key: string; name: string }[];
+        }>('/api/admin/service-categories');
+        if (mounted && res.ok && res.data?.success) {
+          setCategories(res.data.categories || []);
+        }
+      } finally {
+        if (mounted) setCatLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [get]);
 
-  // Função para aplicar máscara de telefone
-  function maskPhone(value: string) {
-    const digits = value.replace(/\D/g, '');
-    if (digits.length <= 10) {
-      // (99) 9999-9999
-      return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').slice(0, 15);
-    } else {
-      // (99) 9 9999-9999
-      return digits.replace(/(\d{2})(\d{1})(\d{4})(\d{0,4})/, '($1) $2 $3-$4').slice(0, 16);
-    }
-  }
+  if (!isOpen) return null;
+
+  // Máscaras reutilizadas de utils/maskers
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === 'cnpj') {
@@ -76,6 +83,12 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
         documentType: 'CNPJ', // Assumindo CNPJ para parceiros
         document: form.cnpj,
         companyName: form.companyName,
+        contractValue: contractValue, // Use contractValue directly (it's already a number)
+        categoryKey:
+          selectedCategoryKey && selectedCategoryKey !== '__new__'
+            ? selectedCategoryKey
+            : undefined,
+        newCategoryName: selectedCategoryKey === '__new__' ? newCategoryName : undefined,
       };
       // Chamada para o endpoint unificado
       const res = await post('/api/admin/add-partner', payload);
@@ -85,7 +98,7 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
       }
       setSuccess(true);
       setForm({ name: '', email: '', cnpj: '', companyName: '', phone: '' });
-      if (onSuccess) onSuccess();
+      setContractValue(undefined); // Reset contractValue
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro inesperado');
     } finally {
@@ -121,17 +134,61 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
             Telefone
             <input name="phone" value={form.phone} onChange={handleChange} required />
           </label>
+          <label>
+            Valor do contrato (R$)
+            <CurrencyInput
+              name="contractValue"
+              value={contractValue}
+              onChange={setContractValue}
+              placeholder="0,00"
+              disabled={loading}
+            />
+          </label>
+          <label>
+            Categoria de serviço
+            <select
+              value={selectedCategoryKey}
+              onChange={e => setSelectedCategoryKey(e.target.value)}
+              disabled={catLoading}
+            >
+              <option value="">Selecione uma categoria...</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.key}>
+                  {c.name}
+                </option>
+              ))}
+              <option value="__new__">Adicionar nova categoria...</option>
+            </select>
+          </label>
+          {selectedCategoryKey === '__new__' && (
+            <label>
+              Nova categoria
+              <input
+                name="newCategoryName"
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                placeholder="Ex.: Funilaria Premium"
+              />
+            </label>
+          )}
           <button type="submit" disabled={loading}>
             {loading ? 'Adicionando...' : 'Adicionar Parceiro'}
           </button>
-          {success && (
-            <div className={styles.success}>
-              <p>Parceiro cadastrado com sucesso!</p>
-              <p>Um convite foi enviado por email.</p>
-            </div>
-          )}
+          {/* Mensagens de sucesso movidas para modal dedicado */}
         </form>
-        {error && <ErrorModal message={error} onClose={handleCloseErrorModal} />}
+        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+        {success && (
+          <MessageModal
+            title="Sucesso"
+            message={'Parceiro cadastrado com sucesso!\nUm convite foi enviado por email.'}
+            variant="success"
+            onClose={() => {
+              setSuccess(false);
+              if (onSuccess) onSuccess();
+              onClose();
+            }}
+          />
+        )}
       </div>
     </div>
   );
