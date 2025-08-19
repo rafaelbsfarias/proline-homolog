@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '../../modules/common/services/supabaseClient';
-import VehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
+import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
 
 interface ProfileData {
@@ -288,11 +288,10 @@ const ClientDashboard = () => {
           </div>
         </main>
       )}
-      <VehicleRegistrationModal
+      <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
-        userRole="client"
-        onSuccess={() => setRefreshVehicleCounter(key => key + 1)}
+        onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
       />
     </div>
   );
