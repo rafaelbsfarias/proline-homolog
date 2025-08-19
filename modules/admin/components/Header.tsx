@@ -52,11 +52,20 @@ const Header: React.FC = () => {
     }
   };
 
+  const handleLogoClick = () => {
+    router.push('/dashboard');
+  };
+
   return (
     <>
       <header className={styles.adminHeader}>
         <div className={styles.headerLeft}>
-          <img src="/assets/images/logo-proline.png" alt="ProLine" className={styles.logoImg} />
+          <img
+            src="/assets/images/logo-proline.png"
+            alt="ProLine"
+            className={styles.logoImg}
+            onClick={handleLogoClick}
+          />
         </div>
         <div className={styles.headerRight}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

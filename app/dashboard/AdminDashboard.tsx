@@ -8,13 +8,32 @@ import {
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 interface UserData {
   name?: string;
 }
 
 const AdminDashboard: React.FC = () => {
-  const user: UserData | null = null; // Placeholder temporário
+  const [user, setUser] = useState<UserData | null>(null);
+  console.log('user', user);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const {
+        data: { user: supabaseUser },
+      } = await supabase.auth.getUser();
+
+      if (supabaseUser) {
+        setUser({
+          name: supabaseUser.user_metadata?.full_name || '',
+        });
+      }
+    }
+
+    fetchUser();
+  }, []);
 
   return (
     <div className={styles.adminDashboardLayout}>
