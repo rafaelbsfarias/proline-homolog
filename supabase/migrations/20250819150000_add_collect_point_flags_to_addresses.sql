@@ -2,7 +2,6 @@
 alter table public.addresses
   add column if not exists is_collect_point boolean not null default false,
   add column if not exists is_main_address boolean not null default false;
-
 -- Ensure only one main address per profile (partial unique index)
 do $$ begin
   if not exists (
@@ -13,4 +12,3 @@ do $$ begin
       where is_main_address = true;
   end if;
 end $$;
-

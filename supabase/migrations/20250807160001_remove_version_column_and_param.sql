@@ -8,10 +8,8 @@ BEGIN
     END IF;
 END
 $$;
-
 -- Step 2: Drop the existing function with its old signature (including p_version)
 DROP FUNCTION IF EXISTS public.accept_partner_contract(uuid, text, boolean, text);
-
 -- Step 3: Create the function with the corrected parameter list (without p_version)
 CREATE OR REPLACE FUNCTION public.accept_partner_contract(
     p_partner_id uuid,

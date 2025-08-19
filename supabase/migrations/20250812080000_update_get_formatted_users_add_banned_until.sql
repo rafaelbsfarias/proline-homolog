@@ -37,6 +37,4 @@ BEGIN
   ORDER BY u.created_at DESC;
 END;
 $$;
-
 GRANT EXECUTE ON FUNCTION get_formatted_users() TO authenticated;
-

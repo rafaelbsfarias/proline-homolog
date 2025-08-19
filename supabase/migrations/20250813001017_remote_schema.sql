@@ -4,6 +4,3 @@ as permissive
 for select
 to service_role
 using (true);
-
-
-

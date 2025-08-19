@@ -3,6 +3,7 @@ import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '../../modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
+import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
 
 interface ProfileData {
@@ -20,6 +21,7 @@ const ClientDashboard = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
+  const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
 
@@ -262,7 +264,7 @@ const ClientDashboard = () => {
               Cadastrar Novo Veículo
             </button>
             <button
-              onClick={() => {}}
+              onClick={() => setShowAddCollectPointModal(true)}
               style={{
                 padding: '10px 20px',
                 fontSize: 16,
@@ -292,6 +294,11 @@ const ClientDashboard = () => {
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
         onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
+      />
+      <ClientCollectPointModal
+        isOpen={showAddCollectPointModal}
+        onClose={() => setShowAddCollectPointModal(false)}
+        onSuccess={() => {}}
       />
     </div>
   );

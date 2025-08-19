@@ -2,6 +2,4 @@
 
 ALTER TABLE public.contract_partners
 ADD COLUMN IF NOT EXISTS contract_value numeric(12,2);
-
 COMMENT ON COLUMN public.contract_partners.contract_value IS 'Valor de contrato acordado no momento do cadastro (BRL)';
-

@@ -11,9 +11,7 @@ CREATE TABLE IF NOT EXISTS public.inspections (
   fuel_level fuel_level_enum NOT NULL,
   observations text
 );
-
 ALTER TABLE public.inspections ENABLE ROW LEVEL SECURITY;
-
 -- Admin: full
 DO $$
 BEGIN
@@ -23,7 +21,6 @@ BEGIN
     DROP POLICY "inspections_admin_all" ON public.inspections;
   END IF;
 END $$;
-
 CREATE POLICY "inspections_admin_all" ON public.inspections FOR ALL TO authenticated
 USING (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
@@ -31,7 +28,6 @@ USING (
 WITH CHECK (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
 );
-
 -- Specialist: SELECT inspections for vehicles of linked clients; INSERT own
 DO $$
 BEGIN
@@ -46,7 +42,6 @@ BEGIN
     DROP POLICY "inspections_specialist_insert" ON public.inspections;
   END IF;
 END $$;
-
 CREATE POLICY "inspections_specialist_select" ON public.inspections FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -56,7 +51,6 @@ USING (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 CREATE POLICY "inspections_specialist_insert" ON public.inspections FOR INSERT TO authenticated
 WITH CHECK (
   specialist_id = auth.uid()
@@ -67,7 +61,6 @@ WITH CHECK (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 -- Client: SELECT inspections of their vehicles
 DO $$
 BEGIN
@@ -77,7 +70,6 @@ BEGIN
     DROP POLICY "inspections_client_select" ON public.inspections;
   END IF;
 END $$;
-
 CREATE POLICY "inspections_client_select" ON public.inspections FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -85,7 +77,6 @@ USING (
     WHERE v.id = inspections.vehicle_id AND v.client_id = auth.uid()
   )
 );
-
 -- 2) Table: inspection_services
 CREATE TABLE IF NOT EXISTS public.inspection_services (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -94,9 +85,7 @@ CREATE TABLE IF NOT EXISTS public.inspection_services (
   required boolean NOT NULL DEFAULT false,
   notes text
 );
-
 ALTER TABLE public.inspection_services ENABLE ROW LEVEL SECURITY;
-
 -- Admin: full
 DO $$
 BEGIN
@@ -104,7 +93,6 @@ BEGIN
     DROP POLICY "inspection_services_admin_all" ON public.inspection_services;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_services_admin_all" ON public.inspection_services FOR ALL TO authenticated
 USING (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
@@ -112,7 +100,6 @@ USING (
 WITH CHECK (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
 );
-
 -- Specialist: SELECT/INSERT/UPDATE/DELETE on rows of inspections they can access
 DO $$
 BEGIN
@@ -123,7 +110,6 @@ BEGIN
     DROP POLICY "inspection_services_specialist_write" ON public.inspection_services;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_services_specialist_select" ON public.inspection_services FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -134,7 +120,6 @@ USING (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 CREATE POLICY "inspection_services_specialist_write" ON public.inspection_services FOR ALL TO authenticated
 USING (
   EXISTS (
@@ -148,7 +133,6 @@ WITH CHECK (
     WHERE i.id = inspection_services.inspection_id AND i.specialist_id = auth.uid()
   )
 );
-
 -- Client: SELECT services of inspections of their vehicles
 DO $$
 BEGIN
@@ -156,7 +140,6 @@ BEGIN
     DROP POLICY "inspection_services_client_select" ON public.inspection_services;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_services_client_select" ON public.inspection_services FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -165,7 +148,6 @@ USING (
     WHERE i.id = inspection_services.inspection_id AND v.client_id = auth.uid()
   )
 );
-
 -- 3) Table: inspection_media
 CREATE TABLE IF NOT EXISTS public.inspection_media (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -174,9 +156,7 @@ CREATE TABLE IF NOT EXISTS public.inspection_media (
   uploaded_by uuid NOT NULL REFERENCES public.profiles(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-
 ALTER TABLE public.inspection_media ENABLE ROW LEVEL SECURITY;
-
 -- Admin: full
 DO $$
 BEGIN
@@ -184,7 +164,6 @@ BEGIN
     DROP POLICY "inspection_media_admin_all" ON public.inspection_media;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_media_admin_all" ON public.inspection_media FOR ALL TO authenticated
 USING (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
@@ -192,7 +171,6 @@ USING (
 WITH CHECK (
   EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'admin')
 );
-
 -- Specialist: SELECT/INSERT/UPDATE/DELETE on media of inspections they own; SELECT for linked clients
 DO $$
 BEGIN
@@ -203,7 +181,6 @@ BEGIN
     DROP POLICY "inspection_media_specialist_write" ON public.inspection_media;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_media_specialist_select" ON public.inspection_media FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -214,7 +191,6 @@ USING (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 CREATE POLICY "inspection_media_specialist_write" ON public.inspection_media FOR ALL TO authenticated
 USING (
   EXISTS (
@@ -228,7 +204,6 @@ WITH CHECK (
     WHERE i.id = inspection_media.inspection_id AND i.specialist_id = auth.uid()
   )
 );
-
 -- Client: SELECT media of inspections of their vehicles
 DO $$
 BEGIN
@@ -236,7 +211,6 @@ BEGIN
     DROP POLICY "inspection_media_client_select" ON public.inspection_media;
   END IF;
 END $$;
-
 CREATE POLICY "inspection_media_client_select" ON public.inspection_media FOR SELECT TO authenticated
 USING (
   EXISTS (
@@ -245,4 +219,3 @@ USING (
     WHERE i.id = inspection_media.inspection_id AND v.client_id = auth.uid()
   )
 );
-

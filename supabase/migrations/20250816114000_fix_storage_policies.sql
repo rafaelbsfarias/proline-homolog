@@ -14,7 +14,6 @@ BEGIN
     DROP POLICY "vehicle_media_client_read" ON storage.objects;
   END IF;
 END $$;
-
 -- Client: read own vehicles’ media (with role guard)
 CREATE POLICY "vehicle_media_client_read"
 ON storage.objects
@@ -28,7 +27,6 @@ USING (
       AND v.client_id = auth.uid()
   )
 );
-
 -- Specialist: read media for vehicles of linked clients (with role guard)
 CREATE POLICY "vehicle_media_specialist_read"
 ON storage.objects
@@ -44,7 +42,6 @@ USING (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 -- Specialist: insert under /<vehicle_id>/<auth.uid()>/** when linked to the client
 CREATE POLICY "vehicle_media_specialist_insert"
 ON storage.objects
@@ -61,7 +58,6 @@ WITH CHECK (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 -- Partner: insert under /<vehicle_id>/<auth.uid()>/** (no quotes reference to avoid recursion)
 CREATE POLICY "vehicle_media_partner_insert"
 ON storage.objects
@@ -75,6 +71,4 @@ WITH CHECK (
     WHERE v.id::text = split_part(name, '/', 1)
   )
 );
-
--- Note: keeps existing admin ALL and owner update/delete policies
-
+-- Note: keeps existing admin ALL and owner update/delete policies;

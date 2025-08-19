@@ -23,10 +23,9 @@ BEGIN
         p.created_at
     FROM public.profiles p
     WHERE p.user_role = 'specialist'
-      AND p.status = 'ativo'
+      AND p.status = 'active'
     ORDER BY p.full_name ASC;
 END;
 $$;
-
 -- Comentário da função
 COMMENT ON FUNCTION public.get_specialists() IS 'Retorna lista de todos os especialistas ativos. Apenas para administradores.';

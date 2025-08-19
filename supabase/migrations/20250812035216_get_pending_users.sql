@@ -1,6 +1,5 @@
 -- Versão com cast do email
 DROP FUNCTION IF EXISTS get_pending_users();
-
 CREATE OR REPLACE FUNCTION get_pending_users()
 RETURNS TABLE (
   id UUID,
@@ -32,5 +31,4 @@ BEGIN
   ORDER BY u.created_at DESC;
 END;
 $$;
-
 GRANT EXECUTE ON FUNCTION get_pending_users() TO authenticated;
