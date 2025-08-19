@@ -1,3 +1,4 @@
+// modules/vehicles/components/VehicleRegistrationModalBase.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -25,11 +26,17 @@ export interface Vehicle {
 
 export type UserRole = 'admin' | 'client';
 
+export type FieldKey =
+  | 'plate' | 'brand' | 'model' | 'year' | 'color'
+  | 'initialKm' | 'fipe_value'
+  | 'estimated_arrival_date' | 'observations';
+
 export interface VehicleRegistrationBaseProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (vehicle?: Vehicle) => void;
   userRole: UserRole;
+  hiddenFields?: FieldKey[]; // ← campos para ocultar por contexto (ex.: cliente)
 }
 
 interface VehicleFormData {
@@ -68,6 +75,7 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
   onClose,
   onSuccess,
   userRole,
+  hiddenFields, // ← recebido dos wrappers
 }) => {
   const { post } = useAuthenticatedFetch();
 
@@ -89,6 +97,8 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
   const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const isHidden = (key: FieldKey) => (hiddenFields ?? []).includes(key);
 
   useEffect(() => {
     if (isOpen) {
@@ -138,10 +148,10 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
       }
     }
 
-    if (formData.initialKm !== '' && Number(formData.initialKm) < 0) {
+    if (!isHidden('initialKm') && formData.initialKm !== '' && Number(formData.initialKm) < 0) {
       newErrors.initialKm = 'Quilometragem deve ser positiva';
     }
-    if (formData.fipe_value !== '' && Number(formData.fipe_value) < 0) {
+    if (!isHidden('fipe_value') && formData.fipe_value !== '' && Number(formData.fipe_value) < 0) {
       newErrors.fipe_value = 'Valor FIPE deve ser positivo';
     }
 
@@ -170,8 +180,8 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
       model: formData.model.trim(),
       color: formData.color.trim(),
       year: Number(formData.year),
-      initialKm: formData.initialKm ? Number(formData.initialKm) : undefined,
-      fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
+      ...(isHidden('initialKm') ? {} : { initialKm: formData.initialKm ? Number(formData.initialKm) : undefined }),
+      ...(isHidden('fipe_value') ? {} : { fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined }),
       observations: formData.observations.trim() || undefined,
       ...(userRole === 'admin' && { estimated_arrival_date: formData.estimated_arrival_date || undefined }),
     };
@@ -334,40 +344,47 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
               />
               {errors.color && <span className="error-message">{errors.color}</span>}
             </div>
-            <div className="form-group">
-              <label htmlFor="fipe_value">Valor FIPE (R$)</label>
-              <input
-                type="number"
-                id="fipe_value"
-                name="fipe_value"
-                value={formData.fipe_value}
-                onChange={handleInputChange}
-                placeholder="50000"
-                className={errors.fipe_value ? 'error' : ''}
-                disabled={loading}
-                min="0"
-                step="0.01"
-              />
-              {errors.fipe_value && <span className="error-message">{errors.fipe_value}</span>}
-            </div>
+
+            {/* Valor FIPE (ocultável) */}
+            {!isHidden('fipe_value') && (
+              <div className="form-group">
+                <label htmlFor="fipe_value">Valor FIPE (R$)</label>
+                <input
+                  type="number"
+                  id="fipe_value"
+                  name="fipe_value"
+                  value={formData.fipe_value}
+                  onChange={handleInputChange}
+                  placeholder="50000"
+                  className={errors.fipe_value ? 'error' : ''}
+                  disabled={loading}
+                  min="0"
+                  step="0.01"
+                />
+                {errors.fipe_value && <span className="error-message">{errors.fipe_value}</span>}
+              </div>
+            )}
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="initialKm">Quilometragem Inicial</label>
-              <input
-                type="number"
-                id="initialKm"
-                name="initialKm"
-                value={formData.initialKm}
-                onChange={handleInputChange}
-                placeholder="Ex: 50000"
-                className={errors.initialKm ? 'error' : ''}
-                disabled={loading}
-                min="0"
-              />
-              {errors.initialKm && <span className="error-message">{errors.initialKm}</span>}
-            </div>
+            {/* Quilometragem Inicial (ocultável) */}
+            {!isHidden('initialKm') && (
+              <div className="form-group">
+                <label htmlFor="initialKm">Quilometragem Inicial</label>
+                <input
+                  type="number"
+                  id="initialKm"
+                  name="initialKm"
+                  value={formData.initialKm}
+                  onChange={handleInputChange}
+                  placeholder="Ex: 50000"
+                  className={errors.initialKm ? 'error' : ''}
+                  disabled={loading}
+                  min="0"
+                />
+                {errors.initialKm && <span className="error-message">{errors.initialKm}</span>}
+              </div>
+            )}
 
             {userRole === 'admin' && (
               <div className="form-group">
@@ -390,18 +407,20 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
           </div>
 
           <div className="form-row">
-            <div className="form-group full-width">
-              <label htmlFor="observations">Observações</label>
-              <textarea
-                id="observations"
-                name="observations"
-                value={formData.observations}
-                onChange={handleInputChange}
-                placeholder="Observações adicionais sobre o veículo..."
-                disabled={loading}
-                rows={3}
-              />
-            </div>
+            {!isHidden('observations') && (
+              <div className="form-group full-width">
+                <label htmlFor="observations">Observações</label>
+                <textarea
+                  id="observations"
+                  name="observations"
+                  value={formData.observations}
+                  onChange={handleInputChange}
+                  placeholder="Observações adicionais sobre o veículo..."
+                  disabled={loading}
+                  rows={3}
+                />
+              </div>
+            )}
           </div>
 
           <div className="form-actions">
