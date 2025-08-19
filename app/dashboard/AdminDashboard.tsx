@@ -17,7 +17,6 @@ interface UserData {
 
 const AdminDashboard: React.FC = () => {
   const [user, setUser] = useState<UserData | null>(null);
-  console.log('user', user);
 
   useEffect(() => {
     async function fetchUser() {
