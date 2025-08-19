@@ -220,7 +220,7 @@ export class ResendEmailService implements EmailServiceInterface {
    */
   async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${resetToken}`;
+    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#access_token=${resetToken}`;
     const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
   }

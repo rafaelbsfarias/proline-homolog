@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import { getLogger, ILogger } from '@/modules/logger';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -12,31 +13,62 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Supabase já faz o login automático se o token for válido
-    // Aqui só exibimos o formulário para trocar a senha
+    // Captura os tokens da URL
+    const hash = window.location.hash;
+    //logger.info("Hash da URL: " + hash);
+    console.log('hash da URL: ', hash);
+    const params = new URLSearchParams(hash.substring(1));
+    console.log('params da URL: ', params);
+    //logger.info("Parâmetros da URL: " + params);
+    const accessToken = params.get('access_token');
+    console.log('accessToken da URL: ', accessToken);
+    //logger.info("Token de acesso: " + accessToken);
+
+    if (accessToken) {
+      // Estabelece a sessão com os tokens
+      const { error: sessionError } = supabase.auth.setSession({
+        access_token: accessToken,
+      });
+
+      if (sessionError) {
+        setError(sessionError.message);
+      }
+    } else {
+      setError('Tokens de autenticação não encontrados.');
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
     if (!password || !confirmPassword) {
       setError('Preencha e confirme a nova senha.');
       return;
     }
-    // eslint-disable-next-line security/detect-possible-timing-attacks
+
     if (password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
     }
+
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess('Senha redefinida com sucesso! Faça login novamente.');
-      setTimeout(() => router.push('/login'), 2000);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess('Senha redefinida com sucesso! Faça login novamente.');
+        setTimeout(() => router.push('/login'), 2000);
+      }
+    } catch (err) {
+      setError('Erro ao atualizar senha. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   }
 
