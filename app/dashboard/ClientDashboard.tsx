@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '../../modules/common/services/supabaseClient';
-import ClientVehicleRegistrationModal from '@/modules/common/components/ClientVehicleRegistrationModal';
-import VehicleCounter from '@/modules/common/components/VehicleCounter';
+import VehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
+import VehicleCounter from '@/modules/client/components/VehicleCounter';
 
 interface ProfileData {
   full_name: string;
@@ -21,6 +21,7 @@ const ClientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [vehicleCount, setVehicleCount] = useState(0);
+  const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -283,13 +284,15 @@ const ClientDashboard = () => {
 
           {/* Contador de Veículos */}
           <div style={{ marginBottom: 24 }}>
-            <VehicleCounter />
+            <VehicleCounter key={refreshVehicleCounter} />
           </div>
         </main>
       )}
-      <ClientVehicleRegistrationModal
+      <VehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
+        userRole="client"
+        onSuccess={() => setRefreshVehicleCounter(key => key + 1)}
       />
     </div>
   );

@@ -157,7 +157,12 @@
   font-weight: 500;
 }
 
-.vehicle-status.active {
+.vehicle-status.ativo {
+  background: rgba(76, 175, 80, 0.3);
+  color: #c8e6c9;
+}
+
+.vehicle-status.definir-opcao-de-coleta {
   background: rgba(76, 175, 80, 0.3);
   color: #c8e6c9;
 }

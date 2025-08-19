@@ -1,0 +1,156 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import './VehicleDetailsModal.css';
+
+export type VehicleDetails = {
+  plate: string;
+  brand: string;
+  model: string;
+  year: number;
+  color?: string;
+  status: string;
+  created_at: string;
+
+  // nomes usados no modal
+  fipe_value?: number;
+  client_name?: string;
+  analyst?: string;
+  arrival_forecast?: string;
+  current_km?: number;
+  params?: string;
+  notes?: string;
+  retirada_na_proline?: boolean;
+
+  // aliases vindos do DB/endpoint
+  estimated_arrival_date?: string | null;
+  current_odometer?: number | null;
+  fuel_level?: string | null;
+};
+
+interface VehicleDetailsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  vehicle: VehicleDetails | null;
+}
+
+const statusLabels: Record<string, string> = {
+  aguardando_chegada: 'Aguardando Chegada',
+  active: 'Ativo',
+  ativo: 'Ativo',
+  inativo: 'Inativo',
+};
+
+function sanitizeStatus(status?: string) {
+  return (status ?? '').toString().trim().toLowerCase().replace(/\s+/g, '_');
+}
+function fmtDate(d?: string | null) {
+  if (!d) return 'N/A';
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? 'N/A' : dt.toLocaleDateString('pt-BR');
+}
+function fmtBRL(n?: number | null) {
+  if (n === undefined || n === null) return 'N/A';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
+}
+
+const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClose, vehicle }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (!mounted) return;
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [isOpen, mounted]);
+
+  if (!mounted || !isOpen || !vehicle) return null;
+
+  // 💡 Fallbacks para nomes do banco
+  const statusClass = sanitizeStatus(vehicle.status);
+  const km = vehicle.current_km ?? vehicle.current_odometer ?? undefined;               // 0 aparece corretamente
+  const arrival = vehicle.arrival_forecast ?? vehicle.estimated_arrival_date ?? null;
+
+  const content = (
+    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vehicle-modal-title">
+      <div className="modal-content" role="document">
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+
+        <h2 id="vehicle-modal-title" className="modal-title">
+          Detalhes do Veículo: <span className="mono">{vehicle.plate}</span>
+        </h2>
+        <p className="modal-subtitle">
+          {vehicle.brand} {vehicle.model} ({vehicle.year})
+        </p>
+
+        <div className="details-grid">
+          <div className="detail">
+            <span className="label">Placa</span>
+            <span className="value mono">{vehicle.plate}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Marca</span>
+            <span className="value">{vehicle.brand}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Modelo</span>
+            <span className="value">{vehicle.model} ({vehicle.year})</span>
+          </div>
+          <div className="detail">
+            <span className="label">Cor</span>
+            <span className="value">{vehicle.color || 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">KM Atual</span>
+            <span className="value">{km ?? 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Valor FIPE</span>
+            <span className="value">{fmtBRL(vehicle.fipe_value)}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Cliente</span>
+            <span className="value">{vehicle.client_name || 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Status</span>
+            <span className={`vehicle-status-badge ${statusClass}`}>
+              {statusLabels[sanitizeStatus(vehicle.status)] || vehicle.status}
+            </span>
+          </div>
+          <div className="detail">
+            <span className="label">Previsão de Chegada</span>
+            <span className="value">{fmtDate(arrival)}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Analista Responsável</span>
+            <span className="value">{vehicle.analyst || 'N/A'}</span>
+          </div>
+          <div className="detail span-2">
+            <span className="label">Params Cliente Varejo</span>
+            <span className="value">{vehicle.params || 'N/A'}</span>
+          </div>
+          <div className="detail span-2">
+            <span className="label">Obs. Iniciais Pro Line</span>
+            <span className="value">{vehicle.notes || 'Nenhuma.'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Retirada na Pro Line</span>
+            <span className="value">{vehicle.retirada_na_proline ? 'Sim' : 'Não'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Cadastrado em</span>
+            <span className="value">{fmtDate(vehicle.created_at)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(content, document.body);
+};
+
+export default VehicleDetailsModal;

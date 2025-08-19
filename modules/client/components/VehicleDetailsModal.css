@@ -1,0 +1,74 @@
+/* Overlay / Container */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .18);
+  backdrop-filter: blur(3px); /* opcional */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* bem acima de qualquer card */
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 26px 22px 26px;
+  width: min(92vw, 720px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
+  position: relative;
+}
+
+/* Header */
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #7a8794;
+  cursor: pointer;
+}
+.modal-title {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #002E4C;
+}
+.modal-subtitle {
+  margin: 0 0 16px 0;
+  color: #415363;
+  font-size: 13px;
+}
+
+/* Grid de detalhes */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 22px;
+}
+@media (max-width: 640px) {
+  .details-grid { grid-template-columns: 1fr; }
+}
+.detail { display: grid; grid-template-columns: 160px 1fr; gap: 8px; align-items: center; }
+.detail.span-2 { grid-column: span 2; }
+.label { color: #6c7a86; font-size: 13px; }
+.value { color: #203243; font-weight: 600; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* Badge de status (com variantes) */
+.vehicle-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e6eef6;
+  color: #163247;
+}
+.vehicle-status-badge.aguardando_chegada { background: rgba(255, 193, 7, 0.22); color: #7a5600; }
+.vehicle-status-badge.active,
+.vehicle-status-badge.ativo { background: rgba(76, 175, 80, 0.18); color: #1b5e20; }
+.vehicle-status-badge.inativo { background: rgba(244, 67, 54, 0.18); color: #b71c1c; }
+
+
