@@ -18,9 +18,13 @@ export async function POST(req: NextRequest) {
     const resendEmailService = new ResendEmailService();
 
     // Generate the password reset link using Supabase Admin API
-    const { data, error: generateLinkError } =
-      await supabaseAdmin.auth.admin.generatePasswordResetLink(email);
-
+    const { data, error: generateLinkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: `${process.env.APP_URL}/reset-password`,
+      },
+    });
     if (generateLinkError) {
       logger.error(`Error generating password reset link for ${email}:`, generateLinkError);
       return NextResponse.json(
@@ -29,8 +33,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!data?.properties?.email_redirect_to) {
-      logger.error(`No email_redirect_to found in generated link for ${email}.`);
+    if (!data?.properties?.action_link) {
+      logger.error(`No action_link found in generatedlink for ${email}.`);
       return NextResponse.json(
         { error: 'Erro interno: Link de redefinição inválido.' },
         { status: 500 }
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract the token from the generated link
-    const resetLink = data.properties.email_redirect_to;
+    const resetLink = data?.properties?.action_link;
     const url = new URL(resetLink);
     const token = url.searchParams.get('token');
 
