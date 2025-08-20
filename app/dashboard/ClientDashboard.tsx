@@ -85,8 +85,11 @@ const ClientDashboard = () => {
 
           if (response.ok) {
             const vehicleData = await response.json();
-
-            setVehicleCount(vehicleData.vehicle_count || 0);
+            const count =
+              typeof vehicleData.count === 'number'
+                ? vehicleData.count
+                : vehicleData.vehicle_count || 0;
+            setVehicleCount(count);
           }
         } catch (error) {}
       }
@@ -284,7 +287,7 @@ const ClientDashboard = () => {
             </button>
           </div>
 
-          {/* Contador de Veículos */}
+          {/* Contador de Veículos (inclui controles de coleta/entrega integrados) */}
           <div style={{ marginBottom: 24 }}>
             <VehicleCounter key={refreshVehicleCounter} />
           </div>

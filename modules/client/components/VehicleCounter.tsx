@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import VehicleDetailsModal from './VehicleDetailsModal';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { supabase } from '@/modules/common/services/supabaseClient';
+import VehicleDetailsModal from './VehicleDetailsModal';
 import './VehicleCounter.css';
 
 interface Vehicle {
@@ -68,6 +69,19 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [showModal, setShowModal] = useState(false);
   const { get } = useAuthenticatedFetch();
 
+  // Collection controls state
+  type Method = 'collect_point' | 'bring_to_yard';
+  const [addresses, setAddresses] = useState<{ id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean }[]>([]);
+  const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
+  const [bulkAddressId, setBulkAddressId] = useState('');
+  const [bulkEta, setBulkEta] = useState('');
+  const [savingAll, setSavingAll] = useState(false);
+  const [rowMethod, setRowMethod] = useState<Record<string, Method>>({});
+  const [rowAddress, setRowAddress] = useState<Record<string, string>>({});
+  const [rowEta, setRowEta] = useState<Record<string, string>>({});
+  const [savingRow, setSavingRow] = useState<Record<string, boolean>>({});
+  const { post } = useAuthenticatedFetch();
+
   const fetchVehiclesCount = useCallback(async () => {
     try {
       setLoading(true);
@@ -95,6 +109,22 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   useEffect(() => {
     fetchVehiclesCount();
   }, [fetchVehiclesCount]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (!uid) return;
+        const { data: addrs } = await supabase
+          .from('addresses')
+          .select('id, street, number, city, is_collect_point')
+          .eq('profile_id', uid)
+          .order('created_at', { ascending: false });
+        setAddresses((addrs as any[])?.filter(a => a.is_collect_point) || []);
+      } catch {}
+    })();
+  }, []);
 
   const formatDate = (dateString: string) => {
     const d = new Date(dateString);
@@ -162,6 +192,55 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
         <div className="vehicles-details" id="vehicles-details">
           <h4>Detalhes dos Veículos:</h4>
 
+          {vehicles.length > 0 && (
+            <div className="collection-controls">
+              <div className="row">
+                <label>
+                  <input type="radio" name="bulkMethod" checked={bulkMethod === 'collect_point'} onChange={() => setBulkMethod('collect_point')} /> Ponto de Coleta
+                </label>
+                <label>
+                  <input type="radio" name="bulkMethod" checked={bulkMethod === 'bring_to_yard'} onChange={() => setBulkMethod('bring_to_yard')} /> Vou levar ao pátio ProLine
+                </label>
+              </div>
+              {bulkMethod === 'collect_point' ? (
+                <div className="row">
+                  <select value={bulkAddressId} onChange={e => setBulkAddressId(e.target.value)}>
+                    <option value="">Selecione um ponto de coleta</option>
+                    {addresses.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button className="save-button" disabled={!bulkAddressId || savingAll} onClick={async () => {
+                    try {
+                      setSavingAll(true);
+                      const resp = await post('/api/client/set-vehicles-collection', { method: 'collect_point', addressId: bulkAddressId });
+                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
+                      fetchVehiclesCount();
+                    } finally {
+                      setSavingAll(false);
+                    }
+                  }}>Aplicar a todos</button>
+                </div>
+              ) : (
+                <div className="row">
+                  <input type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                  <button className="save-button" disabled={!bulkEta || savingAll} onClick={async () => {
+                    try {
+                      setSavingAll(true);
+                      const resp = await post('/api/client/set-vehicles-collection', { method: 'bring_to_yard', estimated_arrival_date: bulkEta });
+                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
+                      fetchVehiclesCount();
+                    } finally {
+                      setSavingAll(false);
+                    }
+                  }}>Aplicar a todos</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {count > 0 && vehicles.length === 0 && (
             <p className="vehicles-hint">
               Encontramos registros, mas a lista não foi retornada pela API. Clique em atualizar.
@@ -202,6 +281,62 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                     <span className={`vehicle-status ${sClass}`}>
                       {statusLabel(vehicle.status)}
                     </span>
+                  </div>
+
+                  <div className="vehicle-row-controls" onClick={(e) => e.stopPropagation()}>
+                    <div>
+                      <select
+                        value={rowMethod[vehicle.id] || 'collect_point'}
+                        onChange={e => setRowMethod(prev => ({ ...prev, [vehicle.id]: e.target.value as Method }))}
+                      >
+                        <option value="collect_point">Ponto de Coleta</option>
+                        <option value="bring_to_yard">Vou levar ao pátio</option>
+                      </select>
+                    </div>
+                    {rowMethod[vehicle.id] === 'bring_to_yard' ? (
+                      <input
+                        type="date"
+                        value={rowEta[vehicle.id] || ''}
+                        onChange={e => setRowEta(prev => ({ ...prev, [vehicle.id]: e.target.value }))}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    ) : (
+                      <select
+                        value={rowAddress[vehicle.id] || ''}
+                        onChange={e => setRowAddress(prev => ({ ...prev, [vehicle.id]: e.target.value }))}
+                      >
+                        <option value="">Selecione um ponto</option>
+                        {addresses.map(a => (
+                          <option key={a.id} value={a.id}>
+                            {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <button
+                      className="save-button"
+                      disabled={
+                        !!savingRow[vehicle.id] ||
+                        (rowMethod[vehicle.id] === 'collect_point' && !(rowAddress[vehicle.id])) ||
+                        (rowMethod[vehicle.id] === 'bring_to_yard' && !(rowEta[vehicle.id]))
+                      }
+                      onClick={async () => {
+                        try {
+                          setSavingRow(prev => ({ ...prev, [vehicle.id]: true }));
+                          const method = rowMethod[vehicle.id] || 'collect_point';
+                          const payload: any = { method, vehicleIds: [vehicle.id] };
+                          if (method === 'collect_point') payload.addressId = rowAddress[vehicle.id];
+                          else payload.estimated_arrival_date = rowEta[vehicle.id];
+                          const resp = await post('/api/client/set-vehicles-collection', payload);
+                          if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
+                          fetchVehiclesCount();
+                        } finally {
+                          setSavingRow(prev => ({ ...prev, [vehicle.id]: false }));
+                        }
+                      }}
+                    >
+                      Salvar
+                    </button>
                   </div>
                 </div>
               );

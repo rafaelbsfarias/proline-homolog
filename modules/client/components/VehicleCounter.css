@@ -96,6 +96,48 @@
   padding-top: 15px;
 }
 
+.collection-controls {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.collection-controls .row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.collection-controls label { opacity: 0.9; }
+.collection-controls select,
+.collection-controls input[type="date"],
+.collection-controls button {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.vehicle-row-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.save-button {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
 .vehicles-details h4 {
   margin: 0 0 15px 0;
   font-size: 1rem;
