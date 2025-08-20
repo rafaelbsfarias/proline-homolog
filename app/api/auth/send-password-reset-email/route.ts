@@ -45,8 +45,16 @@ export async function POST(req: NextRequest) {
     // with access_token and refresh_token in the hash fragment
     const actionLink = data.properties.action_link;
 
-    // Send the email using ResendEmailService with the full action link
-    await resendEmailService.sendPasswordResetEmail(email, actionLink);
+    if (!token) {
+      logger.error(`Token not found in generated link for ${email}. Link: ${token}`);
+      return NextResponse.json(
+        { error: 'Erro interno: Token de redefinição não encontrado.' },
+        { status: 500 }
+      );
+    }
+
+    // Send the email using ResendEmailService
+    await resendEmailService.sendPasswordResetEmail(email, token);
 
     logger.info(`Password reset email sent to ${email} via Resend.`);
     return NextResponse.json({

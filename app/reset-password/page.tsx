@@ -4,44 +4,27 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { getLogger, ILogger } from '@/modules/logger';
 
+const logger = getLogger('FormPasswordReset');
+
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Captura os tokens da URL
-    const hash = window.location.hash;
-    //logger.info("Hash da URL: " + hash);
-    console.log('hash da URL: ', hash);
-    const params = new URLSearchParams(hash.substring(1));
-    console.log('params da URL: ', params);
-    //logger.info("Parâmetros da URL: " + params);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-    console.log('accessToken da URL: ', accessToken);
-    console.log('refreshToken da URL: ', refreshToken);
+    const urlParams = new URLSearchParams(window.location.search);
+    const t = urlParams.get('token'); // pega o token direto
 
-    const establishSession = async () => {
-      if (accessToken && refreshToken) {
-        // Estabelece a sessão com ambos os tokens e aguarda o resultado
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        });
-
-        if (sessionError) {
-          setError(sessionError.message);
-        }
-      } else {
-        setError('Tokens de autenticação não encontrados.');
-      }
-    };
-
-    establishSession();
+    if (t) {
+      setToken(t);
+      logger.info('Token extraído da URL:', t);
+    } else {
+      setError('Token não encontrado na URL.');
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -59,20 +42,29 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    if (!token) {
+      setError('Token não disponível. Atualize a página e tente novamente.');
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        password,
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
       });
 
-      if (error) {
-        setError(error.message);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Erro ao redefinir senha.');
       } else {
         setSuccess('Senha redefinida com sucesso! Faça login novamente.');
         setTimeout(() => router.push('/login'), 2000);
       }
-    } catch (err) {
-      setError('Erro ao atualizar senha. Tente novamente.');
+    } catch {
+      setError('Erro ao redefinir senha. Tente novamente.');
     } finally {
       setLoading(false);
     }
