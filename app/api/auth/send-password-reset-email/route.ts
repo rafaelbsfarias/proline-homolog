@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
     // Use the Supabase action_link directly so the user is redirected back
     // with access_token and refresh_token in the hash fragment
     const actionLink = data.properties.action_link;
-
+    const url = new URL(actionLink);
+    const token = url.searchParams.get('token');
     if (!token) {
       logger.error(`Token not found in generated link for ${email}. Link: ${token}`);
       return NextResponse.json(

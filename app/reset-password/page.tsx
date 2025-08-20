@@ -2,9 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import { getLogger, ILogger } from '@/modules/logger';
-
-const logger = getLogger('FormPasswordReset');
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -12,19 +9,18 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
+  // Estabelece sessão a partir dos tokens no hash da URL (fornecidos pelo Supabase após recovery)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const t = urlParams.get('token'); // pega o token direto
-
-    if (t) {
-      setToken(t);
-      logger.info('Token extraído da URL:', t);
-    } else {
-      setError('Token não encontrado na URL.');
-    }
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      if (accessToken && refreshToken) {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      }
+    } catch {}
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -42,28 +38,34 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!token) {
-      setError('Token não disponível. Atualize a página e tente novamente.');
-      return;
-    }
-
     setLoading(true);
     try {
+      // Opcional: garantir que a sessão está presente e obter o access_token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        setError('Sessão inválida. Abra o link do e-mail novamente.');
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ password }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error || 'Erro ao redefinir senha.');
+        setError(data?.error || 'Erro ao redefinir senha.');
       } else {
         setSuccess('Senha redefinida com sucesso! Faça login novamente.');
         setTimeout(() => router.push('/login'), 2000);
       }
-    } catch {
+    } catch (e) {
       setError('Erro ao redefinir senha. Tente novamente.');
     } finally {
       setLoading(false);
