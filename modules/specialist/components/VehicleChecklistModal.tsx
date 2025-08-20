@@ -124,49 +124,37 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
         uploadedPaths = await uploadFiles(userId, vehicle.id);
       }
 
-      // Persist locally (including uploaded paths)
-      try {
-        const key = `${STORAGE_PREFIX}${vehicle.id}`;
-        const existingRaw = localStorage.getItem(key);
-        const list = existingRaw ? (JSON.parse(existingRaw) as any[]) : [];
-        const payload = {
-          ...form,
-          date: sanitizeString(form.date),
-          odometer: sanitizeString(form.odometer),
-          observations: sanitizeString(form.observations),
-          services: {
-            mechanics: {
-              required: form.services.mechanics.required,
-              notes: sanitizeString(form.services.mechanics.notes),
-            },
-            bodyPaint: {
-              required: form.services.bodyPaint.required,
-              notes: sanitizeString(form.services.bodyPaint.notes),
-            },
-            washing: {
-              required: form.services.washing.required,
-              notes: sanitizeString(form.services.washing.notes),
-            },
-            tires: {
-              required: form.services.tires.required,
-              notes: sanitizeString(form.services.tires.notes),
-            },
-          },
-          savedAt: new Date().toISOString(),
-          vehicle: { id: vehicle.id, plate: vehicle.plate },
-          mediaPaths: uploadedPaths,
-        };
-        list.push(payload);
-        localStorage.setItem(key, JSON.stringify(list));
-      } catch (_) {
-        // ignore storage errors
+      // Persist in backend (inspections + services + media)
+      const payload = {
+        vehicleId: vehicle.id,
+        date: form.date,
+        odometer: Number(form.odometer),
+        fuelLevel: form.fuelLevel,
+        observations: sanitizeString(form.observations),
+        services: {
+          mechanics: { required: form.services.mechanics.required, notes: sanitizeString(form.services.mechanics.notes) },
+          bodyPaint: { required: form.services.bodyPaint.required, notes: sanitizeString(form.services.bodyPaint.notes) },
+          washing: { required: form.services.washing.required, notes: sanitizeString(form.services.washing.notes) },
+          tires: { required: form.services.tires.required, notes: sanitizeString(form.services.tires.notes) },
+        },
+        mediaPaths: uploadedPaths,
+      };
+
+      const resp = await fetch('/api/specialist/save-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data?.error || 'Erro ao salvar checklist');
       }
 
-      setSuccess(files.length ? 'Checklist + fotos enviados.' : 'Checklist salvo localmente.');
-      showToast(
-        'success',
-        files.length ? 'Fotos enviadas com sucesso.' : 'Checklist salvo localmente.'
-      );
+      setSuccess('Checklist salvo com sucesso.');
+      showToast('success', 'Checklist salvo com sucesso.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
       setError(msg);
@@ -312,7 +300,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             Fechar
           </button>
           <button type="submit" className={styles.primary} disabled={saving}>
-            {saving ? 'Salvando...' : 'Salvar checklist (local)'}
+            {saving ? 'Salvando...' : 'Salvar checklist'}
           </button>
         </div>
       </form>

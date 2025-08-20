@@ -23,16 +23,38 @@ const SpecialistDashboard = () => {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
   const openChecklist = (vehicle: VehicleData) => {
     setSelectedVehicle(vehicle);
     setChecklistOpen(true);
     // Front-only: marca o veículo como "em análise" no estado local
-    setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'em análise' }));
+    setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'Em análise' }));
   };
   const closeChecklist = () => {
     setChecklistOpen(false);
     setSelectedVehicle(null);
+  };
+
+  const confirmArrival = async (vehicle: VehicleData) => {
+    try {
+      setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const resp = await fetch('/api/specialist/confirm-arrival', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ vehicleId: vehicle.id }),
+      });
+      if (resp.ok) {
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'Chegada confirmada' }));
+      }
+    } finally {
+      setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
+    }
   };
 
   // Filtros de veículos (placa e status)
@@ -288,7 +310,7 @@ const SpecialistDashboard = () => {
                           <div style={{ color: '#555' }}>Ano: {v.year}</div>
                           <div style={{ color: '#555' }}>Cor: {v.color}</div>
                           {v.status && <div style={{ color: '#555' }}>Status: {v.status}</div>}
-                          <div style={{ marginTop: 8 }}>
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                             <button
                               type="button"
                               onClick={() => openChecklist(v)}
@@ -302,6 +324,22 @@ const SpecialistDashboard = () => {
                               aria-label={`Abrir checklist para o veículo ${v.plate}`}
                             >
                               Checklist
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => confirmArrival(v)}
+                              disabled={!!confirming[v.id]}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                border: '1px solid #ccc',
+                                background: '#e8f5e9',
+                                cursor: 'pointer',
+                              }}
+                              aria-label={`Confirmar chegada do veículo ${v.plate}`}
+                            >
+                              {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
                             </button>
                           </div>
                         </div>
