@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const token = url.searchParams.get('token');
 
     if (!token) {
-      logger.error(`Token not found in generated link for ${email}. Link: ${resetLink}`);
+      logger.error(`Token not found in generated link for ${email}. Link: ${token}`);
       return NextResponse.json(
         { error: 'Erro interno: Token de redefinição não encontrado.' },
         { status: 500 }

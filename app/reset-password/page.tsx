@@ -2,6 +2,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import { getLogger, ILogger } from '@/modules/logger';
+
+const logger = getLogger('FormPasswordReset');
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -9,34 +12,61 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    // Supabase já faz o login automático se o token for válido
-    // Aqui só exibimos o formulário para trocar a senha
+    const urlParams = new URLSearchParams(window.location.search);
+    const t = urlParams.get('token'); // pega o token direto
+
+    if (t) {
+      setToken(t);
+      logger.info('Token extraído da URL:', t);
+    } else {
+      setError('Token não encontrado na URL.');
+    }
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setSuccess('');
+
     if (!password || !confirmPassword) {
       setError('Preencha e confirme a nova senha.');
       return;
     }
-    // eslint-disable-next-line security/detect-possible-timing-attacks
+
     if (password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
     }
+
+    if (!token) {
+      setError('Token não disponível. Atualize a página e tente novamente.');
+      return;
+    }
+
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setLoading(false);
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess('Senha redefinida com sucesso! Faça login novamente.');
-      setTimeout(() => router.push('/login'), 2000);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Erro ao redefinir senha.');
+      } else {
+        setSuccess('Senha redefinida com sucesso! Faça login novamente.');
+        setTimeout(() => router.push('/login'), 2000);
+      }
+    } catch {
+      setError('Erro ao redefinir senha. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   }
 
