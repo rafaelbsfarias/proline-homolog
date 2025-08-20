@@ -16,7 +16,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     // Fetch vehicle and check ownership
     const { data: veh, error: vehErr } = await supabase
       .from('vehicles')
-      .select('id, client_id')
+      .select('id, client_id, status')
       .eq('id', vehicleId)
       .maybeSingle();
     if (vehErr) {
@@ -40,10 +40,24 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
+    // Validate current status before confirming arrival
+    const allowedPrevious: string[] = [
+      'AGUARDANDO COLETA',
+      'AGUARDANDO CHEGADA DO CLIENTE',
+      'AGUARDANDO CHEGADA DO VEÍCULO',
+    ];
+    const currentStatus = String((veh as any).status || '').toUpperCase();
+    if (!allowedPrevious.includes(currentStatus)) {
+      return NextResponse.json(
+        { error: 'Chegada só pode ser confirmada se o veículo estiver AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO CLIENTE' },
+        { status: 400 }
+      );
+    }
+
     // Update vehicle status
     const { error: updErr } = await supabase
       .from('vehicles')
-      .update({ status: 'Chegada confirmada' })
+      .update({ status: 'CHEGADA CONFIRMADA' })
       .eq('id', vehicleId);
     if (updErr) {
       return NextResponse.json({ error: 'Erro ao confirmar chegada' }, { status: 500 });
@@ -54,4 +68,3 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 });
-

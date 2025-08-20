@@ -46,7 +46,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     // Authorization: ensure this specialist is linked to the client's vehicle
     const { data: veh, error: vehErr } = await supabase
       .from('vehicles')
-      .select('id, client_id')
+      .select('id, client_id, status')
       .eq('id', vehicleId)
       .maybeSingle();
     if (vehErr) {
@@ -73,22 +73,69 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    // Insert inspection
-    const { data: inspection, error: insErr } = await supabase
+    // Enforce vehicle status before allowing checklist
+    if (String((veh as any).status || '').toUpperCase() !== 'CHEGADA CONFIRMADA') {
+      logger.warn('invalid_vehicle_status', { requestId, vehicleId, status: (veh as any).status });
+      return NextResponse.json({ error: 'Checklist disponível apenas após "Chegada confirmada"' }, { status: 400 });
+    }
+
+    // Find existing non-finalized inspection for this vehicle (collaborative)
+    const { data: existing } = await supabase
       .from('inspections')
-      .insert({
-        vehicle_id: vehicleId,
-        specialist_id: req.user.id,
-        inspection_date: body.date,
-        odometer: body.odometer,
-        fuel_level: body.fuelLevel,
-        observations: body.observations || null,
-      })
-      .select()
-      .single();
-    if (insErr) {
-      logger.error('db_error_insert_inspection', { requestId, error: insErr.message });
-      return NextResponse.json({ error: 'Erro ao salvar inspeção' }, { status: 500 });
+      .select('id, finalized')
+      .eq('vehicle_id', vehicleId)
+      .eq('finalized', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let inspectionId: string;
+    if (existing?.id) {
+      // Update existing
+      const { error: updInsErr } = await supabase
+        .from('inspections')
+        .update({
+          specialist_id: req.user.id, // last editor
+          inspection_date: body.date,
+          odometer: body.odometer,
+          fuel_level: body.fuelLevel,
+          observations: body.observations || null,
+        })
+        .eq('id', existing.id);
+      if (updInsErr) {
+        logger.error('db_error_update_inspection', { requestId, error: updInsErr.message });
+        return NextResponse.json({ error: 'Erro ao salvar inspeção' }, { status: 500 });
+      }
+      inspectionId = existing.id;
+      // Clear services to re-insert snapshot
+      const { error: delSvcErr } = await supabase
+        .from('inspection_services')
+        .delete()
+        .eq('inspection_id', inspectionId);
+      if (delSvcErr) {
+        logger.error('db_error_delete_services', { requestId, error: delSvcErr.message });
+        return NextResponse.json({ error: 'Erro ao salvar serviços' }, { status: 500 });
+      }
+    } else {
+      // Insert new inspection
+      const { data: ins, error: insErr } = await supabase
+        .from('inspections')
+        .insert({
+          vehicle_id: vehicleId,
+          specialist_id: req.user.id,
+          inspection_date: body.date,
+          odometer: body.odometer,
+          fuel_level: body.fuelLevel,
+          observations: body.observations || null,
+          finalized: false,
+        })
+        .select()
+        .single();
+      if (insErr) {
+        logger.error('db_error_insert_inspection', { requestId, error: insErr.message });
+        return NextResponse.json({ error: 'Erro ao salvar inspeção' }, { status: 500 });
+      }
+      inspectionId = ins.id;
     }
 
     // Insert services flags (only required or with notes)
@@ -99,7 +146,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       if (!s) return;
       const required = !!s.required;
       const notes = (s.notes || '').trim();
-      if (required || notes) toInsert.push({ inspection_id: inspection.id, category, required, notes: notes || null });
+      if (required || notes) toInsert.push({ inspection_id: inspectionId, category, required, notes: notes || null });
     };
     pushService('mechanics', 'mechanics');
     pushService('bodyPaint', 'bodyPaint');
@@ -107,7 +154,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     pushService('tires', 'tires');
 
     if (toInsert.length) {
-      const { error: svcErr } = await supabase.from('inspection_services').insert(toInsert);
+      const { error: svcErr } = await supabase.from('inspection_services').insert(toInsert.map(s => ({ ...s, inspection_id: inspectionId })));
       if (svcErr) {
         logger.error('db_error_insert_services', { requestId, error: svcErr.message });
         return NextResponse.json({ error: 'Erro ao salvar serviços' }, { status: 500 });
@@ -116,7 +163,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
 
     // Insert media references, if any
     const media = (body.mediaPaths || []).filter(Boolean).map(p => ({
-      inspection_id: inspection.id,
+      inspection_id: inspectionId,
       storage_path: p,
       uploaded_by: req.user.id,
     }));
@@ -133,8 +180,8 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       .from('vehicles')
       .update({ current_odometer: body.odometer, fuel_level: body.fuelLevel })
       .eq('id', vehicleId);
-    logger.info('success', { requestId, inspectionId: inspection.id, vehicleId });
-    return NextResponse.json({ success: true, inspectionId: inspection.id });
+    logger.info('success', { requestId, inspectionId, vehicleId });
+    return NextResponse.json({ success: true, inspectionId });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     logger.error('unhandled_error', { error: message });

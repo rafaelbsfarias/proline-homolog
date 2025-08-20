@@ -26,6 +26,11 @@ const SpecialistDashboard = () => {
   const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
   const openChecklist = (vehicle: VehicleData) => {
+    const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+    if (currentStatus !== 'CHEGADA CONFIRMADA') {
+      // Bloqueia abertura caso a chegada não tenha sido confirmada
+      return;
+    }
     setSelectedVehicle(vehicle);
     setChecklistOpen(true);
     // Front-only: marca o veículo como "em análise" no estado local
@@ -38,6 +43,12 @@ const SpecialistDashboard = () => {
 
   const confirmArrival = async (vehicle: VehicleData) => {
     try {
+      const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+      const canConfirm =
+        currentStatus === 'AGUARDANDO COLETA' ||
+        currentStatus === 'AGUARDANDO CHEGADA DO CLIENTE' ||
+        currentStatus === 'AGUARDANDO CHEGADA DO VEÍCULO';
+      if (!canConfirm) return;
       setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
@@ -50,7 +61,7 @@ const SpecialistDashboard = () => {
         body: JSON.stringify({ vehicleId: vehicle.id }),
       });
       if (resp.ok) {
-        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'Chegada confirmada' }));
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'CHEGADA CONFIRMADA' }));
       }
     } finally {
       setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
@@ -314,14 +325,16 @@ const SpecialistDashboard = () => {
                             <button
                               type="button"
                               onClick={() => openChecklist(v)}
+                              disabled={String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA'}
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: '#fff',
-                                cursor: 'pointer',
+                                background: String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? '#f0f0f0' : '#fff',
+                                cursor: String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? 'not-allowed' : 'pointer',
                               }}
                               aria-label={`Abrir checklist para o veículo ${v.plate}`}
+                              title={String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? 'Disponível após confirmar chegada' : 'Abrir checklist'}
                             >
                               Checklist
                             </button>
@@ -329,15 +342,23 @@ const SpecialistDashboard = () => {
                             <button
                               type="button"
                               onClick={() => confirmArrival(v)}
-                              disabled={!!confirming[v.id]}
+                              disabled={
+                                !!confirming[v.id] || !(
+                                  (() => {
+                                    const s = String(v.status || '').toUpperCase();
+                                    return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
+                                  })()
+                                )
+                              }
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: '#e8f5e9',
-                                cursor: 'pointer',
+                                background: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0'; })(),
+                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed'; })(),
                               }}
                               aria-label={`Confirmar chegada do veículo ${v.plate}`}
+                              title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO CLIENTE')(String(v.status || '').toUpperCase())}
                             >
                               {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
                             </button>

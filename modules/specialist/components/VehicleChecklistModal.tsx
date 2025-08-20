@@ -62,6 +62,44 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
   // form state handled by useChecklistForm
 
+  // Load existing checklist (collaborative, latest non-finalized)
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!isOpen || !vehicle) return;
+        const url = `/api/specialist/get-checklist?vehicleId=${vehicle.id}`;
+        const resp = await fetch(url, { method: 'GET' });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data?.inspection) {
+          setField('date', data.inspection.inspection_date);
+          setField('odometer', String(data.inspection.odometer ?? ''));
+          setField('fuelLevel', data.inspection.fuel_level || 'half');
+          setField('observations', data.inspection.observations || '');
+          (data.services || []).forEach((s: any) => {
+            const map: Record<string, keyof typeof form.services> = {
+              mechanics: 'mechanics',
+              bodyPaint: 'bodyPaint',
+              washing: 'washing',
+              tires: 'tires',
+            };
+            const key = map[s.category];
+            if (key) {
+              setServiceFlag(key, !!s.required);
+              setServiceNotes(key, s.notes || '');
+            }
+          });
+          if (data.inspection.finalized) {
+            setSaving(true);
+          }
+        }
+      } catch (e) {
+        // ignore prefill errors
+      }
+    })();
+  }, [isOpen, vehicle]);
+
+
   // cleanup moved to hook
 
   const handleFiles = (list: FileList | null) =>

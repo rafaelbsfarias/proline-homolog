@@ -140,6 +140,18 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
     return plateOk && statusOk;
   });
 
+  // Regras de edição: cliente só pode alterar coleta quando status atual for um dos permitidos
+  const canClientModify = (status?: string) => {
+    const s = String(status || '').toUpperCase();
+    return (
+      s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
+      s === 'AGUARDANDO COLETA' ||
+      s === 'AGUARDANDO CHEGADA DO CLIENTE' ||
+      s === 'AGUARDANDO CHEGADA DO VEÍCULO' // compat
+    );
+  };
+  const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
+
   if (loading) {
     return (
       <div className="vehicle-counter loading" role="status" aria-live="polite">
@@ -240,7 +252,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                       </option>
                     ))}
                   </select>
-                  <button className="save-button" disabled={!bulkAddressId || savingAll} onClick={async () => {
+                  <button className="save-button" disabled={!bulkAddressId || savingAll || !allVehiclesAllowed} onClick={async () => {
                     try {
                       setSavingAll(true);
                       const resp = await post('/api/client/set-vehicles-collection', { method: 'collect_point', addressId: bulkAddressId });
@@ -254,7 +266,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
               ) : (
                 <div className="row">
                   <input type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-                  <button className="save-button" disabled={!bulkEta || savingAll} onClick={async () => {
+                  <button className="save-button" disabled={!bulkEta || savingAll || !allVehiclesAllowed} onClick={async () => {
                     try {
                       setSavingAll(true);
                       const resp = await post('/api/client/set-vehicles-collection', { method: 'bring_to_yard', estimated_arrival_date: bulkEta });
@@ -344,7 +356,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                     <button
                       className="save-button"
                       disabled={
-                        !!savingRow[vehicle.id] ||
+                        !!savingRow[vehicle.id] || !canClientModify(vehicle.status) ||
                         (rowMethod[vehicle.id] === 'collect_point' && !(rowAddress[vehicle.id])) ||
                         (rowMethod[vehicle.id] === 'bring_to_yard' && !(rowEta[vehicle.id]))
                       }

@@ -66,10 +66,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Guard: only allow status changes from allowed current statuses
+    const allowedPrevious = new Set([
+      'AGUARDANDO DEFINIÇÃO DE COLETA',
+      'AGUARDANDO COLETA',
+      'AGUARDANDO CHEGADA DO CLIENTE',
+      // compat: alguns registros antigos podem usar "VEÍCULO"
+      'AGUARDANDO CHEGADA DO VEÍCULO',
+    ]);
+    const { data: currentVehicles, error: curErr } = await admin
+      .from('vehicles')
+      .select('id, status, client_id')
+      .in('id', ids)
+      .eq('client_id', userId);
+    if (curErr) {
+      logger.error('load-current-status-error', { error: curErr.message });
+      return NextResponse.json({ error: 'Erro ao validar status atual' }, { status: 500 });
+    }
+    const invalid = (currentVehicles || []).filter((v: { status?: string | null }) =>
+      !allowedPrevious.has(String((v?.status || '')).toUpperCase())
+    );
+    if (invalid.length) {
+      return NextResponse.json(
+        { error: 'Alteração de coleta não permitida para um ou mais veículos no status atual.' },
+        { status: 400 }
+      );
+    }
+
     // Build update payload
     const payload: Record<string, unknown> = {};
     if (method === 'collect_point') {
-      payload.status = 'Aguardando Coleta';
+      payload.status = 'AGUARDANDO COLETA';
       payload.pickup_address_id = addressId!;
       payload.estimated_arrival_date = null; // clear any previous client-arrival date
     } else {
@@ -77,7 +104,7 @@ export async function POST(req: NextRequest) {
       if (!estimated_arrival_date) {
         return NextResponse.json({ error: 'Data de previsão de chegada é obrigatória' }, { status: 400 });
       }
-      payload.status = 'Aguardando Chegada do Cliente';
+      payload.status = 'AGUARDANDO CHEGADA DO CLIENTE';
       payload.estimated_arrival_date = estimated_arrival_date;
       payload.pickup_address_id = null;
     }
