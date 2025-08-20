@@ -68,6 +68,8 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
   const { get } = useAuthenticatedFetch();
+  const [filterPlate, setFilterPlate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
 
   // Collection controls state
   type Method = 'collect_point' | 'bring_to_yard';
@@ -131,6 +133,13 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
     return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
   };
 
+  const statusOptions = Array.from(new Set((vehicles || []).map(v => (v.status || '').trim()).filter(Boolean)));
+  const filteredVehicles = (vehicles || []).filter(v => {
+    const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
+    const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
+    return plateOk && statusOk;
+  });
+
   if (loading) {
     return (
       <div className="vehicle-counter loading" role="status" aria-live="polite">
@@ -164,6 +173,25 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           <h3>Meus Veículos</h3>
           <div className="counter-number" aria-live="polite">{count}</div>
           <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
+        </div>
+        <div className="counter-filters" role="group" aria-label="Filtros de veículo">
+          <input
+            type="text"
+            placeholder="Buscar por placa"
+            value={filterPlate}
+            onChange={e => setFilterPlate(e.target.value)}
+            aria-label="Buscar por placa"
+          />
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            aria-label="Filtrar por status"
+          >
+            <option value="">Todos os status</option>
+            {statusOptions.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
         <div className="counter-actions">
           <button
@@ -248,7 +276,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           )}
 
           <div className="vehicles-list">
-            {vehicles.map((vehicle) => {
+            {filteredVehicles.map((vehicle) => {
               const sClass = sanitizeStatus(vehicle.status);
               return (
                 <div
