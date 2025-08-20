@@ -41,21 +41,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract the token from the generated link
-    const resetLink = data?.properties?.action_link;
-    const url = new URL(resetLink);
-    const token = url.searchParams.get('token');
+    // Use the Supabase action_link directly so the user is redirected back
+    // with access_token and refresh_token in the hash fragment
+    const actionLink = data.properties.action_link;
 
-    if (!token) {
-      logger.error(`Token not found in generated link for ${email}. Link: ${resetLink}`);
-      return NextResponse.json(
-        { error: 'Erro interno: Token de redefinição não encontrado.' },
-        { status: 500 }
-      );
-    }
-
-    // Send the email using ResendEmailService
-    await resendEmailService.sendPasswordResetEmail(email, token);
+    // Send the email using ResendEmailService with the full action link
+    await resendEmailService.sendPasswordResetEmail(email, actionLink);
 
     logger.info(`Password reset email sent to ${email} via Resend.`);
     return NextResponse.json({

@@ -56,10 +56,9 @@ export class MailpitEmailService implements EmailServiceInterface {
     await this.sendEmail({ to: email, subject, html });
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const link = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-    const html = `<p>Para redefinir sua senha, <a href="${link}">clique aqui</a>.</p>`;
+    const html = `<p>Para redefinir sua senha, <a href="${resetUrl}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
   }
 

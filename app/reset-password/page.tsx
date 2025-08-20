@@ -21,21 +21,27 @@ export default function ResetPasswordPage() {
     console.log('params da URL: ', params);
     //logger.info("Parâmetros da URL: " + params);
     const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
     console.log('accessToken da URL: ', accessToken);
-    //logger.info("Token de acesso: " + accessToken);
+    console.log('refreshToken da URL: ', refreshToken);
 
-    if (accessToken) {
-      // Estabelece a sessão com os tokens
-      const { error: sessionError } = supabase.auth.setSession({
-        access_token: accessToken,
-      });
+    const establishSession = async () => {
+      if (accessToken && refreshToken) {
+        // Estabelece a sessão com ambos os tokens e aguarda o resultado
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
 
-      if (sessionError) {
-        setError(sessionError.message);
+        if (sessionError) {
+          setError(sessionError.message);
+        }
+      } else {
+        setError('Tokens de autenticação não encontrados.');
       }
-    } else {
-      setError('Tokens de autenticação não encontrados.');
-    }
+    };
+
+    establishSession();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

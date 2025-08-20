@@ -216,12 +216,13 @@ export class ResendEmailService implements EmailServiceInterface {
   }
 
   /**
-   * Envia email de recuperação de senha.
+   * Envia email de recuperação de senha usando o action_link do Supabase.
+   * O link do Supabase cuidará do fluxo de verificação e redirecionará
+   * para o APP com access_token e refresh_token no fragmento da URL.
    */
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#access_token=${resetToken}`;
-    const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
+    const html = `<p>Para redefinir sua senha, <a href="${resetUrl}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
   }
 
