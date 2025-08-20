@@ -120,40 +120,40 @@ export default function AddressModalBase({
         <form onSubmit={handleSubmit} className="vehicle-form">
           <div className="form-row">
             <div className="form-group">
+              <label htmlFor="zip_code" className="required">CEP</label>
+              <input id="zip_code" name="zip_code" value={form.zip_code} onChange={handleChange} placeholder="00000-000" required />
+              {errors.zip_code && <span className="error-message">{errors.zip_code}</span>}
+            </div>            
+            <div className="form-group">
               <label htmlFor="street" className="required">Rua</label>
               <input id="street" name="street" value={form.street} onChange={handleChange} required />
               {errors.street && <span className="error-message">{errors.street}</span>}
             </div>
+          </div>
+
+          <div className="form-row">
             <div className="form-group">
               <label htmlFor="number" className="required">Número</label>
               <input id="number" name="number" value={form.number} onChange={handleChange} required />
               {errors.number && <span className="error-message">{errors.number}</span>}
-            </div>
-          </div>
-
-          <div className="form-row">
+            </div>            
             <div className="form-group">
               <label htmlFor="neighborhood" className="required">Bairro</label>
               <input id="neighborhood" name="neighborhood" value={form.neighborhood} onChange={handleChange} required />
               {errors.neighborhood && <span className="error-message">{errors.neighborhood}</span>}
             </div>
-            <div className="form-group">
-              <label htmlFor="city" className="required">Cidade</label>
-              <input id="city" name="city" value={form.city} onChange={handleChange} required />
-              {errors.city && <span className="error-message">{errors.city}</span>}
-            </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
+              <label htmlFor="city" className="required">Cidade</label>
+              <input id="city" name="city" value={form.city} onChange={handleChange} required />
+              {errors.city && <span className="error-message">{errors.city}</span>}
+            </div>            
+            <div className="form-group">
               <label htmlFor="state" className="required">Estado</label>
               <input id="state" name="state" value={form.state} onChange={handleChange} required />
               {errors.state && <span className="error-message">{errors.state}</span>}
-            </div>
-            <div className="form-group">
-              <label htmlFor="zip_code" className="required">CEP</label>
-              <input id="zip_code" name="zip_code" value={form.zip_code} onChange={handleChange} placeholder="00000-000" required />
-              {errors.zip_code && <span className="error-message">{errors.zip_code}</span>}
             </div>
           </div>
 
