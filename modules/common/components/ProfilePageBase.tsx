@@ -37,7 +37,12 @@ export default function ProfilePageBase({ fullName, email, role, showAddresses, 
   return (
     <main className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>Meu Perfil</h1>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Meu Perfil</h1>
+          <button onClick={() => setOpenChange(true)} className={styles.changeBtn}>
+            Alterar Senha
+          </button>
+        </div>
         <div className={styles.infoGrid}>
           <div>
             <div className={styles.label}>Nome completo</div>
@@ -47,15 +52,7 @@ export default function ProfilePageBase({ fullName, email, role, showAddresses, 
             <div className={styles.label}>E-mail</div>
             <div className={styles.value}>{email || '-'}</div>
           </div>
-          <div>
-            <div className={styles.label}>Papel</div>
-            <div className={styles.value}>{role}</div>
-          </div>
-          <div className={styles.actionsRight}>
-            <button onClick={() => setOpenChange(true)} className={styles.changeBtn}>
-              Alterar Senha
-            </button>
-          </div>
+          {/* Papel oculto para todas as roles */}
         </div>
       </div>
 

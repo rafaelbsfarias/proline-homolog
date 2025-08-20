@@ -18,6 +18,13 @@
   margin: 0 0 16px 0;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .infoGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -79,4 +86,3 @@
     grid-template-columns: 1fr;
   }
 }
-

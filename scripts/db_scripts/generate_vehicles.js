@@ -71,7 +71,7 @@ async function generateVehicles() {
         model: randomModel,
         color: randomColor,
         year: randomYear,
-        status: 'ativo',
+        status: 'aguardando definição de coleta',
       });
     }
 
