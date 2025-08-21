@@ -52,11 +52,18 @@ function sanitizeStatus(status?: string): string {
 }
 
 function statusLabel(status?: string): string {
-  const s = sanitizeStatus(status);
-  if (s === 'ativo') return 'Ativo';
-  if (s === 'inativo') return 'Inativo';
-  if (s === 'pendente') return 'Pendente';
-  return status ?? '—';
+  if (!status) return '—';
+  const raw = String(status).trim();
+  const s = raw.toUpperCase();
+  // Mapeia principais status do fluxo
+  if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') return 'Aguardando definição de coleta';
+  if (s === 'AGUARDANDO COLETA') return 'Aguardando coleta';
+  if (s === 'AGUARDANDO CHEGADA DO CLIENTE') return 'Aguardando chegada do cliente';
+  if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 'Aguardando chegada do veículo';
+  if (s === 'CHEGADA CONFIRMADA') return 'Chegada confirmada';
+  if (s === 'EM ANÁLISE') return 'Em análise';
+  if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 'Análise finalizada';
+  return raw;
 }
 
 export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
@@ -134,6 +141,25 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   };
 
   const statusOptions = Array.from(new Set((vehicles || []).map(v => (v.status || '').trim()).filter(Boolean)));
+  const statusCounts = (vehicles || []).reduce<Record<string, number>>((acc, v) => {
+    const key = (v.status || '').trim();
+    if (!key) return acc;
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Ordenação por fluxo de status
+  const statusOrder = (statusRaw: string): number => {
+    const s = String(statusRaw || '').toUpperCase().trim();
+    if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') return 1;
+    if (s === 'AGUARDANDO CHEGADA DO CLIENTE') return 2;
+    if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 2; // compat
+    if (s === 'AGUARDANDO COLETA') return 2; // bifurcação
+    if (s === 'CHEGADA CONFIRMADA') return 3;
+    if (s === 'EM ANÁLISE') return 4;
+    if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 5;
+    return 99;
+  };
   const filteredVehicles = (vehicles || []).filter(v => {
     const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
     const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
@@ -184,6 +210,52 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           <h3>Meus Veículos</h3>
           <div className="counter-number" aria-live="polite">{count}</div>
           <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
+          {/* Contadores por status (renderiza apenas status com pelo menos 1 veículo) */}
+          {Object.keys(statusCounts).length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }} aria-label="Contadores por status">
+              {Object.entries(statusCounts)
+                .filter(([, c]) => c > 0)
+                .sort((a, b) => {
+                  const [sa] = a; const [sb] = b;
+                  const ra = statusOrder(sa);
+                  const rb = statusOrder(sb);
+                  if (ra !== rb) return ra - rb;
+                  // dentro do mesmo nível, ordena por label para estabilidade
+                  const la = statusLabel(sa);
+                  const lb = statusLabel(sb);
+                  return la.localeCompare(lb);
+                })
+                .map(([s, c]) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFilterStatus(s)}
+                    title={`Filtrar por ${statusLabel(s)}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'rgba(255,255,255,0.18)',
+                      color: '#fff',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                      borderRadius: 16,
+                      padding: '4px 10px',
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span>{statusLabel(s)}</span>
+                    <span style={{
+                      background: 'rgba(0,0,0,0.25)',
+                      borderRadius: 10,
+                      padding: '2px 6px',
+                      fontWeight: 600,
+                      lineHeight: 1,
+                    }}>{c}</span>
+                  </button>
+                ))}
+            </div>
+          )}
         </div>
         <div className="counter-filters" role="group" aria-label="Filtros de veículo">
           <input
