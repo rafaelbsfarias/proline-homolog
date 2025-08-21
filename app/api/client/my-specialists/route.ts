@@ -51,7 +51,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       full_name: p.full_name || null,
       display: p.full_name || '',
     }));
-    const names = specialists.map(s => s.display).filter(Boolean).join(', ');
+    const names = specialists.map((s: { display: string }) => s.display).filter(Boolean).join(', ');
 
     logger.info('success', { count: specialists.length });
     return NextResponse.json({ success: true, specialists, names });
