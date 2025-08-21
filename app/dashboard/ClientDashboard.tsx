@@ -5,6 +5,7 @@ import { supabase } from '../../modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
+import '@/modules/client/components/ClientDashboard.css';
 
 interface ProfileData {
   full_name: string;
@@ -238,57 +239,31 @@ const ClientDashboard = () => {
           </div>
         </main>
       ) : (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
+        <main className="dashboard-main">
+          <h1 className="dashboard-title">
             Painel do Cliente
           </h1>
-          <p style={{ color: '#666', fontSize: '1.15rem', marginBottom: 24 }}>
+          <p className="dashboard-welcome">
             Bem-vindo, {userName}!
           </p>
 
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+          <div className="dashboard-actions">
             <button
               onClick={() => setShowCadastrarVeiculoModal(true)}
-              style={{
-                padding: '10px 20px',
-                fontSize: 16,
-                borderRadius: 6,
-                border: 'none',
-                background: '#002e4c',
-                color: '#fff',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(25,119,242,0.08)',
-                cursor: 'pointer',
-                transition: 'filter 0.2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
-              onMouseOut={e => (e.currentTarget.style.filter = 'none')}
+              className="dashboard-btn"
             >
               Cadastrar Novo Veículo
             </button>
             <button
               onClick={() => setShowAddCollectPointModal(true)}
-              style={{
-                padding: '10px 20px',
-                fontSize: 16,
-                borderRadius: 6,
-                border: 'none',
-                background: '#002e4c',
-                color: '#fff',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(25,119,242,0.08)',
-                cursor: 'pointer',
-                transition: 'filter 0.2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
-              onMouseOut={e => (e.currentTarget.style.filter = 'none')}
+              className="dashboard-btn"
             >
               Adicionar Ponto de Coleta
             </button>
           </div>
 
           {/* Contador de Veículos (inclui controles de coleta/entrega integrados) */}
-          <div style={{ marginBottom: 24 }}>
+          <div className="dashboard-counter">
             <VehicleCounter key={refreshVehicleCounter} />
           </div>
         </main>

@@ -132,12 +132,15 @@
 .collection-controls select,
 .collection-controls input[type="date"],
 .collection-controls button {
-  background: rgba(255,255,255,0.12);
+  background: rgba(33, 51, 63, 0.58);
   color: white;
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 6px;
   padding: 6px 10px;
 }
+
+/* Campo de data com dd/mm/aaaa e ícone no modo em lote */
+/* removidos estilos de campo custom de data em lote para voltar ao input nativo */
 
 .vehicle-row-controls {
   display: grid;
@@ -145,6 +148,10 @@
   gap: 8px;
   margin-top: 8px;
 }
+
+.vehicle-item--clickable { cursor: pointer; }
+.vehicle-extra-line { grid-column: 1 / -1; font-size: 0.85rem; opacity: 0.9; }
+.vehicle-row-actions { grid-column: 1 / -1; }
 
 .save-button {
   background: rgba(255,255,255,0.2);

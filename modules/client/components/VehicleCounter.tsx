@@ -1,81 +1,46 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { supabase } from '@/modules/common/services/supabaseClient';
 import VehicleDetailsModal from './VehicleDetailsModal';
 import './VehicleCounter.css';
+import RowCollectionModal from './RowCollectionModal';
+import BulkCollectionModal from './BulkCollectionModal';
+import StatusChips from './StatusChips';
+import VehicleFilters from './VehicleFilters';
+import BulkCollectionControls from './BulkCollectionControls';
+import { useVehicles } from '@/modules/client/hooks/useVehicles';
+import { useAddresses } from '@/modules/client/hooks/useAddresses';
+import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
+import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
+import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
+import type { Vehicle, Method } from '@/modules/client/types';
+import VehicleItemRow from './VehicleItemRow';
 
-interface Vehicle {
-  id: string;
-  plate: string;
-  brand: string;
-  model: string;
-  year: number;
-  status: string;
-  created_at: string;
-}
+// Types moved to modules/client/types.ts
 
-interface VehiclesApiResponse {
-  success?: boolean;
-  message?: string;
-  count?: number;
-  vehicle_count?: number;
-  vehicles?: Vehicle[];
-  data?: unknown; // fallback para APIs que retornem { data: [...] }
-}
+// API response normalization moved to hooks
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
 }
 
-function normalizeVehiclesPayload(payload: VehiclesApiResponse): { count: number; vehicles: Vehicle[] } {
-  const listFromVehicles = Array.isArray(payload.vehicles) ? (payload.vehicles as Vehicle[]) : [];
-  const listFromData =
-    Array.isArray(payload.data) ? (payload.data as Vehicle[]) :
-    (payload.data && typeof payload.data === 'object' && Array.isArray((payload.data as any).vehicles))
-      ? ((payload.data as any).vehicles as Vehicle[])
-      : [];
-
-  const vehicles = listFromVehicles.length ? listFromVehicles : listFromData;
-
-  const count =
-    typeof payload.count === 'number' ? payload.count :
-    typeof payload.vehicle_count === 'number' ? payload.vehicle_count :
-    vehicles.length;
-
-  return { count, vehicles };
-}
-
-function sanitizeStatus(status?: string): string {
-  return (status ?? '').toString().trim().toLowerCase().replace(/\s+/g, '-');
-}
-
-function statusLabel(status?: string): string {
-  const s = sanitizeStatus(status);
-  if (s === 'ativo') return 'Ativo';
-  if (s === 'inativo') return 'Inativo';
-  if (s === 'pendente') return 'Pendente';
-  return status ?? '—';
-}
+// Status helpers moved to utils
 
 export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
-  const [count, setCount] = useState<number>(0);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const { count, vehicles, loading, error, refetch } = useVehicles(onRefresh);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const { get } = useAuthenticatedFetch();
+  // only need post for actions
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
 
   // Collection controls state
-  type Method = 'collect_point' | 'bring_to_yard';
-  const [addresses, setAddresses] = useState<{ id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean }[]>([]);
+  const { addresses } = useAddresses();
   const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
   const [bulkAddressId, setBulkAddressId] = useState('');
+  // bulkEta (ISO YYYY-MM-DD) — não exigido na abertura do modal
   const [bulkEta, setBulkEta] = useState('');
   const [savingAll, setSavingAll] = useState(false);
   const [rowMethod, setRowMethod] = useState<Record<string, Method>>({});
@@ -83,72 +48,22 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [rowEta, setRowEta] = useState<Record<string, string>>({});
   const [savingRow, setSavingRow] = useState<Record<string, boolean>>({});
   const { post } = useAuthenticatedFetch();
+  const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
+  const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
 
-  const fetchVehiclesCount = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError('');
+  // Data helpers
+  const minDateIsoLocal = makeLocalIsoDate();
 
-      const response = await get<VehiclesApiResponse>('/api/client/vehicles-count');
-      if (!response.ok) {
-        throw new Error(response.error || 'Erro ao buscar contagem de veículos');
-      }
+  const formatDate = formatDateBR;
 
-      const payload = (response.data ?? {}) as VehiclesApiResponse;
-      const { count: normalizedCount, vehicles: normalizedVehicles } = normalizeVehiclesPayload(payload);
+  const { statusOptions, statusCounts, sorter } = useStatusCounters(vehicles);
 
-      setCount(normalizedCount);
-      setVehicles(normalizedVehicles);
-
-      onRefresh?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
-    }
-  }, [get, onRefresh]);
-
-  useEffect(() => {
-    fetchVehiclesCount();
-  }, [fetchVehiclesCount]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: auth } = await supabase.auth.getUser();
-        const uid = auth.user?.id;
-        if (!uid) return;
-        const { data: addrs } = await supabase
-          .from('addresses')
-          .select('id, street, number, city, is_collect_point')
-          .eq('profile_id', uid)
-          .order('created_at', { ascending: false });
-        setAddresses((addrs as any[])?.filter(a => a.is_collect_point) || []);
-      } catch {}
-    })();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString);
-    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
-  };
-
-  const statusOptions = Array.from(new Set((vehicles || []).map(v => (v.status || '').trim()).filter(Boolean)));
   const filteredVehicles = (vehicles || []).filter(v => {
     const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
     const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
     return plateOk && statusOk;
   });
 
-  // Regras de edição: cliente só pode alterar coleta quando status atual for um dos permitidos
-  const canClientModify = (status?: string) => {
-    const s = String(status || '').toUpperCase();
-    return (
-      s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
-      s === 'AGUARDANDO COLETA' ||
-      s === 'AGUARDANDO CHEGADA DO VEÍCULO' 
-    );
-  };
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
 
   if (loading) {
@@ -169,7 +84,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
         <div className="counter-content">
           <h3>Erro</h3>
           <p>{error}</p>
-          <button onClick={fetchVehiclesCount} className="retry-button" aria-label="Tentar novamente">
+          <button onClick={refetch} className="retry-button" aria-label="Tentar novamente">
             Tentar novamente
           </button>
         </div>
@@ -184,29 +99,18 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           <h3>Meus Veículos</h3>
           <div className="counter-number" aria-live="polite">{count}</div>
           <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
+          <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
-        <div className="counter-filters" role="group" aria-label="Filtros de veículo">
-          <input
-            type="text"
-            placeholder="Buscar por placa"
-            value={filterPlate}
-            onChange={e => setFilterPlate(e.target.value)}
-            aria-label="Buscar por placa"
-          />
-          <select
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-            aria-label="Filtrar por status"
-          >
-            <option value="">Todos os status</option>
-            {statusOptions.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
+        <VehicleFilters
+          filterPlate={filterPlate}
+          setFilterPlate={setFilterPlate}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          statusOptions={statusOptions}
+        />
         <div className="counter-actions">
           <button
-            onClick={fetchVehiclesCount}
+            onClick={refetch}
             className="refresh-button"
             title="Atualizar contagem"
             aria-label="Atualizar contagem de veículos"
@@ -229,56 +133,19 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
       {showDetails && (
         <div className="vehicles-details" id="vehicles-details">
-          <h4>Detalhes dos Veículos:</h4>
-
           {vehicles.length > 0 && (
-            <div className="collection-controls">
-              <div className="row">
-                <label>
-                  <input type="radio" name="bulkMethod" checked={bulkMethod === 'collect_point'} onChange={() => setBulkMethod('collect_point')} /> Ponto de Coleta
-                </label>
-                <label>
-                  <input type="radio" name="bulkMethod" checked={bulkMethod === 'bring_to_yard'} onChange={() => setBulkMethod('bring_to_yard')} /> Vou levar ao pátio ProLine
-                </label>
-              </div>
-              {bulkMethod === 'collect_point' ? (
-                <div className="row">
-                  <select value={bulkAddressId} onChange={e => setBulkAddressId(e.target.value)}>
-                    <option value="">Selecione um ponto de coleta</option>
-                    {addresses.map(a => (
-                      <option key={a.id} value={a.id}>
-                        {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <button className="save-button" disabled={!bulkAddressId || savingAll || !allVehiclesAllowed} onClick={async () => {
-                    try {
-                      setSavingAll(true);
-                      const resp = await post('/api/client/set-vehicles-collection', { method: 'collect_point', addressId: bulkAddressId });
-                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
-                      fetchVehiclesCount();
-                    } finally {
-                      setSavingAll(false);
-                    }
-                  }}>Aplicar a todos</button>
-                </div>
-              ) : (
-                <div className="row">
-                  <input type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-                  <button className="save-button" disabled={!bulkEta || savingAll || !allVehiclesAllowed} onClick={async () => {
-                    try {
-                      setSavingAll(true);
-                      const resp = await post('/api/client/set-vehicles-collection', { method: 'bring_to_yard', estimated_arrival_date: bulkEta });
-                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
-                      fetchVehiclesCount();
-                    } finally {
-                      setSavingAll(false);
-                    }
-                  }}>Aplicar a todos</button>
-                </div>
-              )}
-            </div>
+            <BulkCollectionControls
+              method={bulkMethod}
+              setMethod={setBulkMethod}
+              addressId={bulkAddressId}
+              setAddressId={setBulkAddressId}
+              saving={savingAll}
+              onOpenModal={(m) => setBulkModalOpen(m)}
+              addresses={addresses as any}
+            />
           )}
+
+          <h4>Detalhes dos Veículos:</h4>
 
           {count > 0 && vehicles.length === 0 && (
             <p className="vehicles-hint">
@@ -287,99 +154,15 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           )}
 
           <div className="vehicles-list">
-            {filteredVehicles.map((vehicle) => {
-              const sClass = sanitizeStatus(vehicle.status);
-              return (
-                <div
-                  key={vehicle.id}
-                  className="vehicle-item"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    setSelectedVehicle(vehicle);
-                    setShowModal(true);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      setSelectedVehicle(vehicle);
-                      setShowModal(true);
-                    }
-                  }}
-                >
-                  <div className="vehicle-info">
-                    <span className="vehicle-plate">{vehicle.plate}</span>
-                    <span className="vehicle-model">
-                      {vehicle.brand} {vehicle.model} ({vehicle.year})
-                    </span>
-                  </div>
-                  <div className="vehicle-meta">
-                    <span className="vehicle-date">
-                      Cadastrado em {formatDate(vehicle.created_at)}
-                    </span>
-                    <span className={`vehicle-status ${sClass}`}>
-                      {statusLabel(vehicle.status)}
-                    </span>
-                  </div>
-
-                  <div className="vehicle-row-controls" onClick={(e) => e.stopPropagation()}>
-                    <div>
-                      <select
-                        value={rowMethod[vehicle.id] || 'collect_point'}
-                        onChange={e => setRowMethod(prev => ({ ...prev, [vehicle.id]: e.target.value as Method }))}
-                      >
-                        <option value="collect_point">Ponto de Coleta</option>
-                        <option value="bring_to_yard">Vou levar ao pátio</option>
-                      </select>
-                    </div>
-                    {rowMethod[vehicle.id] === 'bring_to_yard' ? (
-                      <input
-                        type="date"
-                        value={rowEta[vehicle.id] || ''}
-                        onChange={e => setRowEta(prev => ({ ...prev, [vehicle.id]: e.target.value }))}
-                        min={new Date().toISOString().split('T')[0]}
-                      />
-                    ) : (
-                      <select
-                        value={rowAddress[vehicle.id] || ''}
-                        onChange={e => setRowAddress(prev => ({ ...prev, [vehicle.id]: e.target.value }))}
-                      >
-                        <option value="">Selecione um ponto</option>
-                        {addresses.map(a => (
-                          <option key={a.id} value={a.id}>
-                            {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    <button
-                      className="save-button"
-                      disabled={
-                        !!savingRow[vehicle.id] || !canClientModify(vehicle.status) ||
-                        (rowMethod[vehicle.id] === 'collect_point' && !(rowAddress[vehicle.id])) ||
-                        (rowMethod[vehicle.id] === 'bring_to_yard' && !(rowEta[vehicle.id]))
-                      }
-                      onClick={async () => {
-                        try {
-                          setSavingRow(prev => ({ ...prev, [vehicle.id]: true }));
-                          const method = rowMethod[vehicle.id] || 'collect_point';
-                          const payload: any = { method, vehicleIds: [vehicle.id] };
-                          if (method === 'collect_point') payload.addressId = rowAddress[vehicle.id];
-                          else payload.estimated_arrival_date = rowEta[vehicle.id];
-                          const resp = await post('/api/client/set-vehicles-collection', payload);
-                          if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
-                          fetchVehiclesCount();
-                        } finally {
-                          setSavingRow(prev => ({ ...prev, [vehicle.id]: false }));
-                        }
-                      }}
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {filteredVehicles.map((vehicle) => (
+              <VehicleItemRow
+                key={vehicle.id}
+                vehicle={vehicle}
+                addresses={addresses as any}
+                onOpenDetails={(v) => { setSelectedVehicle(v); setShowModal(true); }}
+                onOpenRowModal={(v) => setRowModalVehicle(v)}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -392,6 +175,39 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
             setSelectedVehicle(null);
           }}
           vehicle={selectedVehicle}
+        />
+      )}
+
+      {bulkModalOpen && (
+        <BulkCollectionModal
+          isOpen={!!bulkModalOpen}
+          onClose={() => setBulkModalOpen(null)}
+          method={bulkModalOpen}
+          vehicles={vehicles}
+          addresses={addresses as any}
+          minDate={minDateIsoLocal}
+          initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}
+          initialEtaIso={bulkMethod === 'bring_to_yard' ? bulkEta : undefined}
+          onApply={async (payload) => {
+            const resp = await post('/api/client/set-vehicles-collection', payload);
+            if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
+            refetch();
+          }}
+        />
+      )}
+
+      {rowModalVehicle && (
+        <RowCollectionModal
+          isOpen={!!rowModalVehicle}
+          onClose={() => setRowModalVehicle(null)}
+          vehicle={{ id: rowModalVehicle.id, pickup_address_id: rowModalVehicle.pickup_address_id }}
+          addresses={addresses as any}
+          minDate={minDateIsoLocal}
+          onApply={async (payload) => {
+            const resp = await post('/api/client/set-vehicles-collection', payload);
+            if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
+            refetch();
+          }}
         />
       )}
     </div>

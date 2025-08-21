@@ -1,0 +1,41 @@
+.dashboard-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 0 0 0;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.dashboard-welcome {
+  color: #666;
+  font-size: 1.15rem;
+  margin-bottom: 24px;
+}
+
+.dashboard-actions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: none;
+  background: #002e4c;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(25, 119, 242, 0.08);
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.dashboard-btn:hover { filter: brightness(1.08); }
+
+.dashboard-counter { margin-bottom: 24px; }
+

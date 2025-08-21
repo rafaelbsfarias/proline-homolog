@@ -2,6 +2,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import './VehicleCollectionControls.css';
+import CollectPointSelect from './CollectPointSelect';
+import DatePickerBR from './DatePickerBR';
 
 type Vehicle = { id: string; plate: string; status?: string };
 type Address = { id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean };
@@ -90,16 +93,16 @@ export default function VehicleCollectionControls() {
   };
 
   if (loading) return <div>Carregando opções de coleta...</div>;
-  if (error) return <div style={{ color: '#b91c1c' }}>{error}</div>;
+  if (error) return <div className="vcc-error">{error}</div>;
   if (vehicles.length === 0) return null;
 
   return (
-    <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Opção de Coleta/Entrega</h3>
+    <div className="vcc">
+      <h3 className="vcc-title">Opção de Coleta/Entrega</h3>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div className="vcc-grid">
+        <div className="vcc-flex">
+          <label className="vcc-inline">
             <input
               type="radio"
               name="bulkMethod"
@@ -108,7 +111,7 @@ export default function VehicleCollectionControls() {
             />
             Usar Ponto de Coleta
           </label>
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label className="vcc-inline">
             <input
               type="radio"
               name="bulkMethod"
@@ -120,43 +123,40 @@ export default function VehicleCollectionControls() {
         </div>
 
         {bulkMethod === 'collect_point' ? (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <select
+          <div className="vcc-inline">
+            <CollectPointSelect
+              addresses={collectAddresses as any}
               value={bulkAddressId}
-              onChange={e => setBulkAddressId(e.target.value)}
-            >
-              <option value="">Selecione um ponto de coleta</option>
-              {collectAddresses.map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                </option>
-              ))}
-            </select>
-            <button onClick={applyBulk} disabled={savingAll || !bulkAddressId}>
+              onChange={setBulkAddressId}
+              className="vcc-select"
+            />
+            <button className="vcc-btn" onClick={applyBulk} disabled={savingAll || !bulkAddressId}>
               Aplicar a todos
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              type="date"
-              value={bulkEta}
-              onChange={e => setBulkEta(e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
+          <div className="vcc-inline">
+            <DatePickerBR
+              valueIso={bulkEta}
+              minIso={`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`}
+              onChangeIso={setBulkEta}
+              inputClass="vcc-input"
+              buttonClass="vcc-btn"
             />
-            <button onClick={applyBulk} disabled={savingAll || !bulkEta}>
+            <button className="vcc-btn" onClick={applyBulk} disabled={savingAll || !bulkEta}>
               Aplicar a todos
             </button>
           </div>
         )}
       </div>
 
-      <div style={{ display: 'grid', gap: 8 }}>
+      <div className="vcc-rows">
         {vehicles.map(v => (
-          <div key={v.id} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr 120px', gap: 8, alignItems: 'center' }}>
-            <div style={{ fontWeight: 600 }}>{v.plate}</div>
+          <div key={v.id} className="vcc-row">
+            <div className="vcc-plate">{v.plate}</div>
             <div>
               <select
+                className="vcc-select"
                 value={rowMethod[v.id] || 'collect_point'}
                 onChange={e => setRowMethod(prev => ({ ...prev, [v.id]: e.target.value as Method }))}
               >
@@ -165,27 +165,25 @@ export default function VehicleCollectionControls() {
               </select>
             </div>
             {rowMethod[v.id] === 'bring_to_yard' ? (
-              <input
-                type="date"
-                value={rowEta[v.id] || ''}
-                onChange={e => setRowEta(prev => ({ ...prev, [v.id]: e.target.value }))}
-                min={new Date().toISOString().split('T')[0]}
+              <DatePickerBR
+                valueIso={rowEta[v.id] || ''}
+                minIso={`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`}
+                onChangeIso={(iso) => setRowEta(prev => ({ ...prev, [v.id]: iso }))}
+                inputClass="vcc-input"
+                buttonClass="vcc-btn"
               />
             ) : (
-              <select
+              <CollectPointSelect
+                addresses={collectAddresses as any}
                 value={rowAddress[v.id] || ''}
-                onChange={e => setRowAddress(prev => ({ ...prev, [v.id]: e.target.value }))}
-              >
-                <option value="">Selecione um ponto</option>
-                {collectAddresses.map(a => (
-                  <option key={a.id} value={a.id}>
-                    {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setRowAddress(prev => ({ ...prev, [v.id]: val }))}
+                className="vcc-select"
+                placeholder="Selecione um ponto"
+              />
             )}
             <div>
               <button
+                className="vcc-btn"
                 onClick={() => applyRow(v)}
                 disabled={
                   savingRow[v.id] ||
@@ -202,4 +200,3 @@ export default function VehicleCollectionControls() {
     </div>
   );
 }
-
