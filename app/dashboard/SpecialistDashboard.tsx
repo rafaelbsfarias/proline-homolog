@@ -5,6 +5,7 @@ import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistCl
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
+import ClientTable from '@/modules/specialist/components/ClientTable';
 
 const SpecialistDashboard = () => {
   const [userName, setUserName] = useState('');
@@ -25,6 +26,10 @@ const SpecialistDashboard = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [confirming, setConfirming] = useState<Record<string, boolean>>({});
+
+  const handleSelectClient = (clientId: string) => {
+    setSelectedClientId(prev => (prev === clientId ? null : clientId));
+  };
 
   const openChecklist = async (vehicle: VehicleData) => {
     const s = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
@@ -157,51 +162,11 @@ const SpecialistDashboard = () => {
             <p>Nenhum cliente associado a você ainda.</p>
           ) : (
             <div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#f0f0f0' }}>
-                    <th style={{ padding: '10px', textAlign: 'left' }}>Cliente</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Total de Veículos</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map(client => (
-                    <tr key={client.client_id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px', textAlign: 'left' }}>
-                        {client.client_full_name}
-                      </td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
-                        {client.vehicle_count}
-                      </td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setSelectedClientId(prev =>
-                              prev === client.client_id ? null : client.client_id
-                            )
-                          }
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 6,
-                            border: '1px solid #ccc',
-                            background:
-                              selectedClientId === client.client_id ? '#e8f0fe' : '#fafafa',
-                            cursor: 'pointer',
-                          }}
-                          aria-expanded={selectedClientId === client.client_id}
-                          aria-controls={`vehicles-${client.client_id}`}
-                        >
-                          {selectedClientId === client.client_id
-                            ? 'Ocultar veículos'
-                            : 'Ver veículos'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <ClientTable
+                clients={clients}
+                selectedClientId={selectedClientId}
+                onSelectClient={handleSelectClient}
+              />
 
               {selectedClient && (
                 <div
