@@ -65,6 +65,14 @@ const SpecialistDashboard = () => {
     [clients, selectedClientId]
   );
 
+  const filters = useMemo(
+    () => ({
+      plate: filterPlate,
+      status: filterStatus,
+    }),
+    [filterPlate, filterStatus]
+  );
+
   const {
     vehicles,
     loading: loadingVehicles,
@@ -77,10 +85,7 @@ const SpecialistDashboard = () => {
     currentPage,
     setCurrentPage,
     totalPages,
-  } = useClientVehicles(selectedClientId || undefined, {
-    plate: filterPlate,
-    status: filterStatus,
-  });
+  } = useClientVehicles(selectedClientId || undefined, filters);
 
   const availableStatuses = useMemo(() => {
     const set = new Set<string>();
