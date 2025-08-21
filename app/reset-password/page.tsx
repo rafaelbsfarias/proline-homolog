@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/modules/common/services/supabaseClient';
-import { getLogger, ILogger } from '@/modules/logger';
+import { createBrowserClient } from '@supabase/ssr';
+import { getLogger } from '@/modules/logger';
 
-const logger = getLogger('FormPasswordReset');
+const logger = getLogger('ResetPasswordPage');
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -13,21 +13,85 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [sessionValid, setSessionValid] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const t = urlParams.get('token'); // pega o token direto
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-    if (t) {
-      setToken(t);
-      logger.info('Token extraído da URL:', t);
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const emailFromUrl = searchParams.get('email');
+    const hash = window.location.hash;
+
+    logger.debug('URL searchParams:', window.location.search);
+    logger.debug('URL hash:', hash);
+
+    if (!emailFromUrl) {
+      setError('Email não encontrado na URL.');
+      logger.error('Email não encontrado na URL');
+      return;
+    }
+    setEmail(emailFromUrl);
+    logger.debug('Email extraído da URL:', emailFromUrl);
+
+    if (hash.startsWith('#token=')) {
+      const extractedToken = hash.replace('#token=', '');
+      setToken(extractedToken);
+      logger.debug('Token extraído do hash:', extractedToken);
+      verifyRecoveryToken(emailFromUrl, extractedToken);
     } else {
       setError('Token não encontrado na URL.');
+      logger.error('Token não encontrado na URL');
     }
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function verifyRecoveryToken(email: string, token: string) {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'recovery',
+      });
+
+      if (error) {
+        setError('Token inválido ou expirado. Por favor, solicite um novo link.');
+        logger.error('Erro ao verificar token', error);
+        setSessionValid(false);
+        setLoading(false);
+        return;
+      }
+
+      // Confirmar que a sessão temporária existe
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        setError('Sessão inválida. Por favor, solicite um novo link.');
+        setSessionValid(false);
+      } else {
+        setSessionValid(true);
+        logger.info('Token validado, sessão de recuperação criada.');
+      }
+    } catch (err) {
+      setError('Erro inesperado ao validar token. Tente novamente.');
+      logger.error('Erro inesperado em verifyRecoveryToken', err);
+      setSessionValid(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -42,33 +106,44 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!token) {
-      setError('Token não disponível. Atualize a página e tente novamente.');
+    if (!sessionValid) {
+      setError('Sessão inválida ou token não verificado.');
       return;
     }
 
     setLoading(true);
+
     try {
-      const res = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
-      });
+      // Confirmar a sessão ativa antes de atualizar
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      const data = await res.json();
+      if (sessionError || !session) {
+        setError('Sessão inválida. Por favor, solicite um novo link.');
+        setSessionValid(false);
+        setLoading(false);
+        return;
+      }
 
-      if (!res.ok) {
-        setError(data.error || 'Erro ao redefinir senha.');
+      const { error } = await supabase.auth.updateUser({ password });
+
+      if (error) {
+        setError('Erro ao redefinir senha: ' + error.message);
+        logger.error('Erro ao atualizar senha', error);
       } else {
-        setSuccess('Senha redefinida com sucesso! Faça login novamente.');
+        setSuccess('Senha redefinida com sucesso! Você já pode logar.');
+        logger.info('Senha redefinida com sucesso.');
         setTimeout(() => router.push('/login'), 2000);
       }
-    } catch {
-      setError('Erro ao redefinir senha. Tente novamente.');
+    } catch (err) {
+      setError('Erro inesperado. Tente novamente.');
+      logger.error('Erro no handleSubmit', err);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div
@@ -91,10 +166,9 @@ export default function ResetPasswordPage() {
         }}
       >
         <h2 style={{ marginBottom: 18 }}>Redefinir Senha</h2>
+
         <div style={{ marginBottom: 16 }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: 6 }}>
-            Nova senha
-          </label>
+          <label htmlFor="password">Nova senha</label>
           <input
             id="password"
             type="password"
@@ -102,12 +176,12 @@ export default function ResetPasswordPage() {
             onChange={e => setPassword(e.target.value)}
             style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
             required
+            disabled={!sessionValid || loading}
           />
         </div>
+
         <div style={{ marginBottom: 16 }}>
-          <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: 6 }}>
-            Confirme a nova senha
-          </label>
+          <label htmlFor="confirmPassword">Confirme a nova senha</label>
           <input
             id="confirmPassword"
             type="password"
@@ -115,10 +189,13 @@ export default function ResetPasswordPage() {
             onChange={e => setConfirmPassword(e.target.value)}
             style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
             required
+            disabled={!sessionValid || loading}
           />
         </div>
+
         {error && <div style={{ color: '#e74c3c', marginBottom: 12 }}>{error}</div>}
         {success && <div style={{ color: '#2e7d32', marginBottom: 12 }}>{success}</div>}
+
         <button
           type="submit"
           style={{
@@ -128,9 +205,8 @@ export default function ResetPasswordPage() {
             color: '#fff',
             border: 'none',
             borderRadius: 6,
-            fontWeight: 600,
           }}
-          disabled={loading}
+          disabled={loading || !sessionValid}
         >
           {loading ? 'Salvando...' : 'Redefinir Senha'}
         </button>

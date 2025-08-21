@@ -218,9 +218,15 @@ export class ResendEmailService implements EmailServiceInterface {
   /**
    * Envia email de recuperação de senha.
    */
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  // async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  //   const subject = 'Redefinição de Senha - ProLine Hub';
+  //   const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#token=${resetToken}`;
+  //   const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
+  //   await this.sendEmail({ to: email, subject, html });
+  // }
+
+  async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${resetToken}`;
     const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
   }

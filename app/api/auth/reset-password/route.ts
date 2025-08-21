@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+/* import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { getLogger } from '@/modules/logger';
 
@@ -6,13 +6,13 @@ const logger = getLogger('ResetPasswordAPI');
 
 export async function POST(req: NextRequest) {
   try {
-    const { password } = await req.json();
+    const { password, token } = await req.json();
 
     if (!password) {
       return NextResponse.json({ error: 'Nova senha é obrigatória.' }, { status: 400 });
     }
 
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+    const { error: updateError } = await supabase.auth.updateUser({ password, token});
 
     if (updateError) {
       logger.error('Erro ao redefinir senha:', updateError);
@@ -32,3 +32,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+ */
