@@ -8,6 +8,7 @@ import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import ClientTable from '@/modules/specialist/components/ClientTable';
 import VehicleSection from '@/modules/specialist/components/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
+import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
@@ -87,9 +88,9 @@ const SpecialistDashboard = () => {
     totalPages,
   } = useClientVehicles(selectedClientId || undefined, filters);
 
-  const availableStatuses = useMemo(() => {
-    return Object.values(VehicleStatus).map(s => String(s).toLowerCase());
-  }, []);
+  const { statuses: availableStatuses, loading: loadingStatuses } = useClientVehicleStatuses(
+    selectedClientId || undefined
+  );
 
   useEffect(() => {
     async function fetchUser() {
