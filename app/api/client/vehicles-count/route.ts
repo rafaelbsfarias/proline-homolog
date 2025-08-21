@@ -80,6 +80,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         status,
         created_at,
         fipe_value,
+        pickup_address_id,
         estimated_arrival_date,
         current_odometer,
         fuel_level
