@@ -88,10 +88,8 @@ const SpecialistDashboard = () => {
   } = useClientVehicles(selectedClientId || undefined, filters);
 
   const availableStatuses = useMemo(() => {
-    const set = new Set<string>();
-    vehicles.forEach(v => v.status && set.add((v.status as string).toLowerCase()));
-    return Array.from(set);
-  }, [vehicles]);
+    return Object.values(VehicleStatus).map(s => String(s).toLowerCase());
+  }, []);
 
   useEffect(() => {
     async function fetchUser() {
