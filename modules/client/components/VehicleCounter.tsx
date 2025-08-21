@@ -5,6 +5,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import { supabase } from '@/modules/common/services/supabaseClient';
 import VehicleDetailsModal from './VehicleDetailsModal';
 import './VehicleCounter.css';
+import BulkCollectionModal from './BulkCollectionModal';
 
 interface Vehicle {
   id: string;
@@ -90,6 +91,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [rowEta, setRowEta] = useState<Record<string, string>>({});
   const [savingRow, setSavingRow] = useState<Record<string, boolean>>({});
   const { post } = useAuthenticatedFetch();
+  const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
 
   const fetchVehiclesCount = useCallback(async () => {
     try {
@@ -172,7 +174,8 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
     return (
       s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
       s === 'AGUARDANDO COLETA' ||
-      s === 'AGUARDANDO CHEGADA DO VEÍCULO' 
+      s === 'AGUARDANDO CHEGADA DO VEÍCULO' ||
+      s === 'AGUARDANDO CHEGADA DO CLIENTE'
     );
   };
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
@@ -323,30 +326,24 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                       </option>
                     ))}
                   </select>
-                  <button className="save-button" disabled={!bulkAddressId || savingAll || !allVehiclesAllowed} onClick={async () => {
-                    try {
-                      setSavingAll(true);
-                      const resp = await post('/api/client/set-vehicles-collection', { method: 'collect_point', addressId: bulkAddressId });
-                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
-                      fetchVehiclesCount();
-                    } finally {
-                      setSavingAll(false);
-                    }
-                  }}>Aplicar a todos</button>
+                  <button
+                    className="save-button"
+                    disabled={!bulkAddressId || savingAll}
+                    onClick={() => setBulkModalOpen('collect_point')}
+                  >
+                    Definir ponto de coleta em lote
+                  </button>
                 </div>
               ) : (
                 <div className="row">
                   <input type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-                  <button className="save-button" disabled={!bulkEta || savingAll || !allVehiclesAllowed} onClick={async () => {
-                    try {
-                      setSavingAll(true);
-                      const resp = await post('/api/client/set-vehicles-collection', { method: 'bring_to_yard', estimated_arrival_date: bulkEta });
-                      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
-                      fetchVehiclesCount();
-                    } finally {
-                      setSavingAll(false);
-                    }
-                  }}>Aplicar a todos</button>
+                  <button
+                    className="save-button"
+                    disabled={!bulkEta || savingAll}
+                    onClick={() => setBulkModalOpen('bring_to_yard')}
+                  >
+                    Levar ao pátio em lote
+                  </button>
                 </div>
               )}
             </div>
@@ -464,6 +461,22 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
             setSelectedVehicle(null);
           }}
           vehicle={selectedVehicle}
+        />
+      )}
+
+      {bulkModalOpen && (
+        <BulkCollectionModal
+          isOpen={!!bulkModalOpen}
+          onClose={() => setBulkModalOpen(null)}
+          method={bulkModalOpen}
+          vehicles={vehicles}
+          addresses={addresses as any}
+          minDate={new Date().toISOString().split('T')[0]}
+          onApply={async (payload) => {
+            const resp = await post('/api/client/set-vehicles-collection', payload);
+            if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
+            fetchVehiclesCount();
+          }}
         />
       )}
     </div>
