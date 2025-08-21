@@ -38,6 +38,14 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
+    if (
+      user &&
+      user.user_metadata?.must_change_password &&
+      !request.nextUrl.pathname.startsWith('/force-change-password')
+    ) {
+      return NextResponse.redirect(new URL('/force-change-password', request.url));
+    }
+
     if (user && isAuthPage) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }

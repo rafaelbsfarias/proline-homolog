@@ -94,7 +94,7 @@ const ForgotPasswordPage: React.FC = () => {
         setFormState(prev =>
           FormStateManager.setSuccess(
             prev,
-            'Email enviado com sucesso! Verifique sua caixa de entrada.'
+            'Se um usuário com este email existir, uma nova senha foi enviada.'
           )
         );
       } else {
@@ -131,7 +131,7 @@ const ForgotPasswordPage: React.FC = () => {
         <h1 className={styles.title}>Esqueci minha senha</h1>
 
         <p className={styles.subtitle}>
-          Digite seu email e enviaremos um link para redefinir sua senha
+          Digite seu email e enviaremos uma nova senha para o seu email
         </p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -157,7 +157,7 @@ const ForgotPasswordPage: React.FC = () => {
           {formState.message && <div className={styles.successMessage}>{formState.message}</div>}
 
           <button type="submit" className={styles.submitButton} disabled={formState.isLoading}>
-            {formState.isLoading ? 'Enviando...' : 'Enviar link de recuperação'}
+            {formState.isLoading ? 'Enviando...' : 'Enviar nova senha'}
           </button>
 
           <div className={styles.backToLogin}>
