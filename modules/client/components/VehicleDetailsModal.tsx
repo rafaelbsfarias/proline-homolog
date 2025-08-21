@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './VehicleDetailsModal.css';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import type { VehicleItem } from '@/modules/client/types';
 import { getLogger } from '@/modules/logger';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
@@ -35,7 +36,7 @@ export type VehicleDetails = {
 interface VehicleDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  vehicle: VehicleDetails | null;
+  vehicle: VehicleDetails | VehicleItem | null;
 }
 
 const statusLabels: Record<string, string> = {
@@ -105,9 +106,10 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
   if (!mounted || !isOpen || !vehicle) return null;
 
   // 💡 Fallbacks para nomes do banco
-  const statusClass = sanitizeStatus(vehicle.status);
-  const km = vehicle.current_km ?? vehicle.current_odometer ?? undefined;               // 0 aparece corretamente
-  const arrival = vehicle.arrival_forecast ?? vehicle.estimated_arrival_date ?? null;
+  const statusClass = sanitizeStatus((vehicle as any).status);
+  const vAny = vehicle as any;
+  const km = (vAny.current_km ?? vAny.current_odometer) ?? undefined;               // 0 aparece corretamente
+  const arrival = (vAny.arrival_forecast ?? vAny.estimated_arrival_date) ?? null;
 
   const content = (
     <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vehicle-modal-title">
@@ -150,7 +152,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
           <div className="detail">
             <span className="label">Status</span>
             <span className={`vehicle-status-badge ${statusClass}`}>
-              {statusLabels[sanitizeStatus(vehicle.status)] || vehicle.status}
+              {statusLabels[sanitizeStatus((vehicle as any).status)] || (vehicle as any).status}
             </span>
           </div>
           <div className="detail">
@@ -159,7 +161,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
           </div>
           <div className="detail">
             <span className="label">Especialista Responsável</span>
-            <span className="value">{specialistNames || vehicle.analyst || 'N/A'}</span>
+            <span className="value">{specialistNames || (vAny.analyst) || 'N/A'}</span>
           </div>
           
           <div className="detail">

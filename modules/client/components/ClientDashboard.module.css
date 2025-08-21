@@ -26,7 +26,6 @@
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .dashboard-btn {
@@ -214,10 +213,65 @@
   background: #14345c;
 }
 
-.vehicles-grid {
+.vehicles-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
+}
+
+.vehicle-item {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.vehicle-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.vehicle-plate {
+  font-weight: 600;
+  color: #333;
+}
+
+.vehicle-model {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.vehicle-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.vehicle-date {
+  font-style: italic;
+}
+
+.vehicle-status {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.vehicle-status.ativo {
+  background: rgba(76, 175, 80, 0.3);
+  color: #c8e6c9;
+}
+
+.vehicle-status.definir-opcao-de-coleta {
+  background: rgba(76, 175, 80, 0.3);
+  color: #c8e6c9;
 }
 
 /* Responsividade */
@@ -254,7 +308,7 @@
     font-size: 1.25rem;
   }
 
-  .vehicles-grid {
+  .vehicles-list {
     grid-template-columns: 1fr;
   }
 }

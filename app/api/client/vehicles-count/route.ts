@@ -3,8 +3,10 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger, ILogger } from '@/modules/logger';
 import { randomUUID } from 'crypto';
+import { ClientVehicleService } from '@/modules/client/services/ClientVehicleService';
 
 const logger: ILogger = getLogger('api:client:vehicles-count');
+const vehicleService = new ClientVehicleService();
 
 export const revalidate = 0;             // sem cache
 export const dynamic = 'force-dynamic';  // sempre dinâmico
@@ -21,12 +23,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
   };
 
   try {
-    const supabase = SupabaseService.getInstance().getAdminClient();
-
-    const userId =
-      (req as any)?.user?.id ||
-      (req as any)?.auth?.user?.id ||
-      (req as any)?.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
       log.warn('vehicles-count:missing-user-id');
@@ -39,6 +36,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     log.info('vehicles-count:start', { userId: String(userId).slice(0, 8) });
 
     // 1) clients: PK é profile_id (não existe clients.id)
+    const supabase = SupabaseService.getInstance().getAdminClient();
     const { data: clientRow, error: clientErr } = await supabase
       .from('clients')
       .select('profile_id')

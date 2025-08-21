@@ -1,10 +1,11 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
-import styles from '@/modules/common/components/SignupPage.module.css';
-import Header from '@/modules/admin/components/Header';
-import { supabase } from '../../modules/common/services/supabaseClient';
+import Header from '../../modules/admin/components/Header';
+import { supabase } from '@/modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
-import VehicleCounter from '@/modules/client/components/VehicleCounter';
+import { VehicleCounter } from '@/modules/client/components/VehicleCounter';
 import '@/modules/client/components/ClientDashboard.css';
 
 interface ProfileData {
@@ -97,7 +98,7 @@ const ClientDashboard = () => {
     };
 
     fetchVehicleCount();
-  }, [profileData]);
+  }, [profileData, refreshVehicleCounter]);
 
   async function handleAcceptContract() {
     setLoading(true);
@@ -220,7 +221,6 @@ const ClientDashboard = () => {
                 </label>
               </div>
               <button
-                className={styles.submitButton}
                 style={{
                   marginTop: 24,
                   background: '#aab0bb',
@@ -229,6 +229,9 @@ const ClientDashboard = () => {
                   fontSize: '1.13rem',
                   opacity: checked ? 1 : 0.7,
                   cursor: checked ? 'pointer' : 'not-allowed',
+                  padding: '12px 24px',
+                  border: 'none',
+                  borderRadius: '6px',
                 }}
                 disabled={!checked || loading}
                 onClick={handleAcceptContract}

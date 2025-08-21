@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { supabase } from '@/modules/common/services/supabaseClient';
+import styles from './VehicleCounter.module.css';
 import VehicleDetailsModal from './VehicleDetailsModal';
-import './VehicleCounter.css';
 import RowCollectionModal from './RowCollectionModal';
 import BulkCollectionModal from './BulkCollectionModal';
 import StatusChips from './StatusChips';
@@ -14,23 +15,17 @@ import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
-import type { Vehicle, Method } from '@/modules/client/types';
+import type { VehicleItem, Method } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
-
-// Types moved to modules/client/types.ts
-
-// API response normalization moved to hooks
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
 }
 
-// Status helpers moved to utils
-
-export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
+export const VehicleCounter: React.FC<VehicleCounterProps> = ({ onRefresh }) => {
   const { count, vehicles, loading, error, refetch } = useVehicles(onRefresh);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleItem | null>(null);
   const [showModal, setShowModal] = useState(false);
   // only need post for actions
   const [filterPlate, setFilterPlate] = useState('');
@@ -49,7 +44,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [savingRow, setSavingRow] = useState<Record<string, boolean>>({});
   const { post } = useAuthenticatedFetch();
   const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
-  const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
+  const [rowModalVehicle, setRowModalVehicle] = useState<VehicleItem | null>(null);
 
   // Data helpers
   const minDateIsoLocal = makeLocalIsoDate();
@@ -58,18 +53,20 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
   const { statusOptions, statusCounts, sorter } = useStatusCounters(vehicles);
 
-  const filteredVehicles = (vehicles || []).filter(v => {
-    const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
-    const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
-    return plateOk && statusOk;
-  });
+  const filteredVehicles = useMemo(() => {
+    return (vehicles || []).filter(v => {
+      const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
+      const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
+      return plateOk && statusOk;
+    });
+  }, [vehicles, filterPlate, filterStatus]);
 
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
 
   if (loading) {
     return (
-      <div className="vehicle-counter loading" role="status" aria-live="polite">
-        <div className="counter-content">
+      <div className={styles.vehicleCounter} role="status" aria-live="polite">
+        <div className={styles.counterContent}>
           <h3>Carregando...</h3>
           <p>Contando seus veículos</p>
         </div>
@@ -79,12 +76,12 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
   if (error) {
     return (
-      <div className="vehicle-counter error">
-        <div className="counter-icon" aria-hidden>⚠️</div>
-        <div className="counter-content">
+      <div className={styles.vehicleCounter}>
+        <div className={styles.counterIcon} aria-hidden>⚠️</div>
+        <div className={styles.counterContent}>
           <h3>Erro</h3>
           <p>{error}</p>
-          <button onClick={refetch} className="retry-button" aria-label="Tentar novamente">
+          <button onClick={refetch} className={styles.retryButton} aria-label="Tentar novamente">
             Tentar novamente
           </button>
         </div>
@@ -93,11 +90,11 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   }
 
   return (
-    <div className="vehicle-counter">
-      <div className="counter-header">
-        <div className="counter-content">
+    <div className={styles.vehicleCounter}>
+      <div className={styles.counterHeader}>
+        <div className={styles.counterContent}>
           <h3>Meus Veículos</h3>
-          <div className="counter-number" aria-live="polite">{count}</div>
+          <div className={styles.counterNumber} aria-live="polite">{count}</div>
           <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
@@ -108,10 +105,10 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           setFilterStatus={setFilterStatus}
           statusOptions={statusOptions}
         />
-        <div className="counter-actions">
+        <div className={styles.counterActions}>
           <button
             onClick={refetch}
-            className="refresh-button"
+            className={styles.refreshButton}
             title="Atualizar contagem"
             aria-label="Atualizar contagem de veículos"
           >
@@ -119,8 +116,8 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           </button>
           {count > 0 && (
             <button
-              onClick={() => setShowDetails((v) => !v)}
-              className="details-button"
+              onClick={() => setShowDetails(prev => !prev)}
+              className={styles.detailsButton}
               title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
               aria-expanded={showDetails}
               aria-controls="vehicles-details"
@@ -132,7 +129,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
       </div>
 
       {showDetails && (
-        <div className="vehicles-details" id="vehicles-details">
+        <div className={styles.vehiclesDetails} id="vehicles-details">
           {vehicles.length > 0 && (
             <BulkCollectionControls
               method={bulkMethod}
@@ -145,15 +142,15 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
             />
           )}
 
-          <h4>Detalhes dos Veículos:</h4>
+          <h4 className={styles.sectionTitle}>Detalhes dos Veículos:</h4>
 
           {count > 0 && vehicles.length === 0 && (
-            <p className="vehicles-hint">
+            <p className={styles.vehiclesHint}>
               Encontramos registros, mas a lista não foi retornada pela API. Clique em atualizar.
             </p>
           )}
 
-          <div className="vehicles-list">
+          <div className={styles.vehiclesList}>
             {filteredVehicles.map((vehicle) => (
               <VehicleItemRow
                 key={vehicle.id}
@@ -212,4 +209,6 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
       )}
     </div>
   );
-}
+};
+
+export default VehicleCounter;

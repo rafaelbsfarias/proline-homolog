@@ -2,15 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import styles from './ClientDashboard.module.css';
+import { useVehicles } from '@/modules/client/hooks/useVehicles';
+import { useToast } from '@/modules/common/components/ToastProvider';
 import { VehicleCounterHeader } from '@/modules/client/components/VehicleCounterHeader';
 import { VehicleCounterActions } from '@/modules/client/components/VehicleCounterActions';
 import { VehicleCounterError } from '@/modules/client/components/VehicleCounterError';
-import { VehicleCard } from '@/modules/client/components/VehicleCard';
 import VehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
-import { ClientModule } from '@/modules/client/ClientModule';
-import { useToast } from '@/modules/common/components/ToastProvider';
+import styles from './ClientDashboard.module.css';
 
 interface ProfileData {
   full_name: string;
@@ -25,21 +24,17 @@ const ClientDashboard = () => {
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
-  const [vehicleCount, setVehicleCount] = useState(0);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const { vehicles, loading: loadingVehicles, error: vehiclesError, refetch: refetchVehicles } = useVehicles();
   const { showToast } = useToast();
-  const clientModule = new ClientModule();
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-
       if (user) {
         // Fetch profile and client data in parallel
         const [profileResponse, clientResponse] = await Promise.all([
@@ -75,67 +70,31 @@ const ClientDashboard = () => {
           .maybeSingle();
         setAccepted(!!acceptance);
       }
-      setLoading(false);
+      setLoadingUser(false);
     }
-
     fetchUserAndAcceptance();
   }, []);
 
-  useEffect(() => {
-    const fetchVehicleCount = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        try {
-          const response = await fetch('/api/client/vehicles-count', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (response.ok) {
-            const vehicleData = await response.json();
-            const count =
-              typeof vehicleData.count === 'number'
-                ? vehicleData.count
-                : vehicleData.vehicle_count || 0;
-            setVehicleCount(count);
-            
-            // Fetch vehicles for display
-            if (vehicleData.vehicles) {
-              setVehicles(vehicleData.vehicles);
-            }
-          }
-        } catch (err) {
-          setError('Erro ao carregar veículos');
-        }
-      }
-    };
-
-    fetchVehicleCount();
-  }, [profileData]);
-
-  async function handleAcceptContract() {
-    setLoading(true);
+  const handleAcceptContract = async () => {
+    setLoadingUser(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
       if (!profileData || !profileData.clients || profileData.clients.length === 0) {
-        setLoading(false);
+        setLoadingUser(false);
         return;
       }
 
       const contentToSend = JSON.stringify(profileData.clients[0]);
 
       // Tenta usar a RPC; se indisponível, faz upsert direto como fallback
-      const { data, error: generateLinkError } =
-        await supabase.rpc('accept_client_contract', {
-          p_client_id: user.id,
-          p_content: contentToSend,
-        });
+      const { data, error } = await supabase.rpc('accept_client_contract', {
+        p_client_id: user.id,
+        p_content: contentToSend,
+      });
 
-      if (generateLinkError) {
+      if (error) {
         // Fallback: upsert direto, caso a função não exista no banco
         const { error: upsertError } = await supabase.from('client_contract_acceptance').upsert(
           {
@@ -146,62 +105,26 @@ const ClientDashboard = () => {
           { onConflict: 'client_id' }
         );
         if (upsertError) {
-          setLoading(false);
+          setLoadingUser(false);
           return;
         }
       }
 
       setAccepted(true);
     }
-    setLoading(false);
-  }
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        const response = await fetch('/api/client/vehicles-count', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const vehicleData = await response.json();
-          const count =
-            typeof vehicleData.count === 'number'
-              ? vehicleData.count
-              : vehicleData.vehicle_count || 0;
-          setVehicleCount(count);
-          
-          // Fetch vehicles for display
-          if (vehicleData.vehicles) {
-            setVehicles(vehicleData.vehicles);
-          }
-        } else {
-          throw new Error('Erro ao buscar dados');
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setLoading(false);
-    }
+    setLoadingUser(false);
   };
 
   const handleVehicleCreated = () => {
     showToast('success', 'Veículo cadastrado com sucesso!');
-    handleRefresh();
+    refetchVehicles();
   };
 
   const handleAddressCreated = () => {
     showToast('success', 'Endereço cadastrado com sucesso!');
   };
 
-  if (loading) {
+  if (loadingUser) {
     return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
   }
 
@@ -254,7 +177,7 @@ const ClientDashboard = () => {
               </div>
               <button
                 className={styles.acceptButton}
-                disabled={!checked || loading}
+                disabled={!checked || loadingUser}
                 onClick={handleAcceptContract}
               >
                 Aceitar Contrato
@@ -265,22 +188,22 @@ const ClientDashboard = () => {
           <div className={styles.dashboardContent}>
             <VehicleCounterHeader
               userName={userName}
-              vehicleCount={vehicleCount}
-              onRefresh={handleRefresh}
-              loading={loading}
+              vehicleCount={vehicles.length}
+              onRefresh={refetchVehicles}
+              loading={loadingVehicles}
             />
             
             <VehicleCounterActions
               onCreateVehicle={() => setShowCadastrarVeiculoModal(true)}
               onCreateAddress={() => setShowAddCollectPointModal(true)}
-              onRefresh={handleRefresh}
-              loading={loading}
+              onRefresh={refetchVehicles}
+              loading={loadingVehicles}
             />
             
-            {error && (
+            {vehiclesError && (
               <VehicleCounterError
-                error={error}
-                onRetry={handleRefresh}
+                error={vehiclesError}
+                onRetry={refetchVehicles}
               />
             )}
             
@@ -297,21 +220,20 @@ const ClientDashboard = () => {
                   </button>
                 </div>
               ) : (
-                <div className={styles.vehiclesGrid}>
+                <div className={styles.vehiclesList}>
                   {vehicles.map(vehicle => (
-                    <VehicleCard
-                      key={vehicle.id}
-                      plate={vehicle.plate}
-                      brand={vehicle.brand}
-                      model={vehicle.model}
-                      year={vehicle.year}
-                      color={vehicle.color}
-                      status={vehicle.status}
-                      onClick={() => {
-                        // TODO: Implement vehicle detail view
-                        console.log('Vehicle clicked:', vehicle);
-                      }}
-                    />
+                    <div key={vehicle.id} className={styles.vehicleItem}>
+                      <div className={styles.vehicleInfo}>
+                        <span className={styles.vehiclePlate}>{vehicle.plate}</span>
+                        <span className={styles.vehicleModel}>
+                          {vehicle.brand} {vehicle.model} ({vehicle.year})
+                        </span>
+                      </div>
+                      <div className={styles.vehicleMeta}>
+                        <span className={styles.vehicleDate}>Cadastrado em {new Date(vehicle.created_at).toLocaleDateString('pt-BR')}</span>
+                        <span className={styles.vehicleStatus}>{vehicle.status || 'Sem status'}</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
