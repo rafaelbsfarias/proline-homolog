@@ -1,0 +1,65 @@
+.vehicle-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.vehicle-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #002e4c;
+}
+
+.vehicle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.vehicle-plate {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #002e4c;
+  font-family: 'Courier New', monospace;
+}
+
+.vehicle-status {
+  background: #e8f4f8;
+  color: #002e4c;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vehicle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vehicle-brand-model {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.vehicle-details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .vehicle-details {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
