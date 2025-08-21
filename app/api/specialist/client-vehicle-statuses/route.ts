@@ -25,7 +25,12 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     }
 
     // Fetch distinct statuses for vehicles of this client
-    const { data, error } = (await supabase.from('vehicles').select('status')) as {
+    const { data, error } = (await supabase
+      .from('vehicles')
+      .select('status', { distinct: true })
+      .eq('client_id', clientId)
+      .not('status', 'is', null) // Exclude null statuses
+      .order('status', { ascending: true })) as {
       data: { status: string }[] | null;
       error: any;
     };
@@ -35,9 +40,12 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Erro ao buscar status de veículos' }, { status: 500 });
     }
 
-    const statuses = (data || []).map(row => String(row.status).toLowerCase());
+    // Map and trim/lowercase statuses, then ensure uniqueness in case of DB inconsistencies
+    const uniqueStatuses = Array.from(
+      new Set((data || []).map(row => String(row.status).trim().toLowerCase()))
+    );
 
-    return NextResponse.json({ success: true, statuses });
+    return NextResponse.json({ success: true, statuses: uniqueStatuses });
   } catch (e) {
     console.error('GET client-vehicle-statuses error:', e);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
