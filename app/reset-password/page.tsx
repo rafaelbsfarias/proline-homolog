@@ -127,7 +127,16 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({ password });
+      // const { error } = await supabase.auth.updateUser({
+      //   password,
+      //   data: { must_change_password: true },
+      // });
+
+      const userId = session.user.id;
+      const { data, error } = await supabase.auth.admin.updateUserById(userId, {
+        password,
+        app_metadata: { must_change_password: true },
+      });
 
       if (error) {
         setError('Erro ao redefinir senha: ' + error.message);

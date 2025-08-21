@@ -7,11 +7,14 @@ import VehicleCounter from '@/modules/client/components/VehicleCounter';
 
 interface ProfileData {
   full_name: string;
+  must_change_password: boolean;
   clients: {
     parqueamento?: number;
     taxa_operacao?: number;
   }[];
 }
+
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal';
 
 const ClientDashboard = () => {
   const [accepted, setAccepted] = useState(false);
@@ -22,6 +25,7 @@ const ClientDashboard = () => {
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -31,7 +35,11 @@ const ClientDashboard = () => {
       if (user) {
         // Fetch profile and client data in parallel
         const [profileResponse, clientResponse] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+          supabase
+            .from('profiles')
+            .select('full_name, must_change_password')
+            .eq('id', user.id)
+            .single(),
           supabase
             .from('clients')
             .select('parqueamento, taxa_operacao')
@@ -46,6 +54,7 @@ const ClientDashboard = () => {
           setUserName(profile.full_name || '');
           setProfileData({
             full_name: profile.full_name || '',
+            must_change_password: profile.must_change_password,
             clients: [
               {
                 parqueamento: clientData?.parqueamento,
@@ -53,6 +62,10 @@ const ClientDashboard = () => {
               },
             ],
           });
+
+          if (profile.must_change_password) {
+            setShowForceChangePasswordModal(true);
+          }
         } else {
         }
 
@@ -292,6 +305,13 @@ const ClientDashboard = () => {
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
         onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
+      />
+      <ForceChangePasswordModal
+        isOpen={showForceChangePasswordModal}
+        onClose={() => setShowForceChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowForceChangePasswordModal(false);
+        }}
       />
     </div>
   );

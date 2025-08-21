@@ -68,6 +68,17 @@ export async function POST(req: NextRequest) {
     }
     logger.info(`Password updated successfully for user ${user.id}.`);
 
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ must_change_password: true })
+      .eq('id', user.id);
+
+    if (profileError) {
+      logger.error('Erro ao atualizar must_change_password:', profileError);
+    } else {
+      logger.debug('must_change_password atualizado com sucesso para o usuário ' + user.id);
+    }
+
     // 4. Send the new password to the user's email
     const userName = user.user_metadata?.full_name || 'Usuário';
     const userRole = user.user_metadata?.role || 'Usuário';
