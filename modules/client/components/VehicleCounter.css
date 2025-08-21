@@ -149,6 +149,10 @@
   margin-top: 8px;
 }
 
+.vehicle-item--clickable { cursor: pointer; }
+.vehicle-extra-line { grid-column: 1 / -1; font-size: 0.85rem; opacity: 0.9; }
+.vehicle-row-actions { grid-column: 1 / -1; }
+
 .save-button {
   background: rgba(255,255,255,0.2);
   border: 1px solid rgba(255,255,255,0.25);

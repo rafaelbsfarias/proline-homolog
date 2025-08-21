@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './VehicleDetailsModal.css';
+import { supabase } from '@/modules/common/services/supabaseClient';
+import { getLogger } from '@/modules/logger';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 export type VehicleDetails = {
   plate: string;
@@ -57,6 +60,10 @@ function fmtBRL(n?: number | null) {
 
 const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClose, vehicle }) => {
   const [mounted, setMounted] = useState(false);
+  const [specialistNames, setSpecialistNames] = useState<string>('');
+  const [loadingSpecialist, setLoadingSpecialist] = useState<boolean>(false);
+  const logger = getLogger('client:VehicleDetailsModal');
+  const { get } = useAuthenticatedFetch();
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!mounted) return;
@@ -66,6 +73,34 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
       return () => { document.body.style.overflow = prev; };
     }
   }, [isOpen, mounted]);
+
+  // Quando o modal abre, buscar o(s) especialista(s) via API server-side (evita RLS no cliente)
+  useEffect(() => {
+    let active = true;
+    async function fetchSpecialistsForClient() {
+      try {
+        setLoadingSpecialist(true);
+        logger.debug('Fetching specialists via API (modal open).');
+        const resp = await get<{ success: boolean; names?: string; specialists?: any[]; error?: string }>(
+          '/api/client/my-specialists'
+        );
+        if (!resp.ok || !resp.data?.success) {
+          logger.warn('API error fetching specialists', resp.error || resp.data?.error);
+          if (active) setSpecialistNames('');
+          return;
+        }
+        const names = resp.data.names || '';
+        logger.info('Specialist names resolved', { count: resp.data.specialists?.length || 0, names });
+        if (active) setSpecialistNames(names);
+      } catch (e: any) {
+        logger.error('Unhandled error while fetching specialists', e?.message || e);
+      } finally {
+        if (active) setLoadingSpecialist(false);
+      }
+    }
+    if (isOpen) fetchSpecialistsForClient();
+    return () => { active = false; };
+  }, [isOpen, get]);
 
   if (!mounted || !isOpen || !vehicle) return null;
 
@@ -111,10 +146,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
             <span className="label">Valor FIPE</span>
             <span className="value">{fmtBRL(vehicle.fipe_value)}</span>
           </div>
-          <div className="detail">
-            <span className="label">Cliente</span>
-            <span className="value">{vehicle.client_name || 'N/A'}</span>
-          </div>
+          
           <div className="detail">
             <span className="label">Status</span>
             <span className={`vehicle-status-badge ${statusClass}`}>
@@ -127,20 +159,9 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
           </div>
           <div className="detail">
             <span className="label">Especialista Responsável</span>
-            <span className="value">{vehicle.analyst || 'N/A'}</span>
+            <span className="value">{specialistNames || vehicle.analyst || 'N/A'}</span>
           </div>
-          <div className="detail span-2">
-            <span className="label">Params Cliente Varejo</span>
-            <span className="value">{vehicle.params || 'N/A'}</span>
-          </div>
-          <div className="detail span-2">
-            <span className="label">Obs. Iniciais Pro Line</span>
-            <span className="value">{vehicle.notes || 'Nenhuma.'}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Retirada na Pro Line</span>
-            <span className="value">{vehicle.retirada_na_proline ? 'Sim' : 'Não'}</span>
-          </div>
+          
           <div className="detail">
             <span className="label">Cadastrado em</span>
             <span className="value">{fmtDate(vehicle.created_at)}</span>

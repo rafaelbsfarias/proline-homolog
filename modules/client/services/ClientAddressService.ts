@@ -23,6 +23,54 @@ export class ClientAddressService {
     this.supabase = SupabaseService.getInstance().getAdminClient();
   }
 
+  private async ensureClientOrPartner(clientId: string, action: 'cadastrar' | 'editar') {
+    const { data: profile, error: profileError } = await this.supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', clientId)
+      .single();
+    if (profileError || !profile || (profile.role !== 'client' && profile.role !== 'partner')) {
+      const verb = action === 'cadastrar' ? 'cadastrar' : 'editar';
+      throw new NotFoundError(`Acesso negado. Apenas clientes e parceiros podem ${verb} endereços.`);
+    }
+  }
+
+  private validateAddressInput({ street, number, neighborhood, city, state, zip_code }: Partial<ClientAddressData>) {
+    if (!street?.trim() || !number?.trim() || !neighborhood?.trim() || !city?.trim() || !state?.trim()) {
+      throw new ValidationError('Campos obrigatórios não informados.');
+    }
+    if (!zip_code?.trim() || !validateCEP(zip_code)) {
+      throw new ValidationError('CEP inválido.');
+    }
+  }
+
+  private buildPayload(base: ClientAddressData) {
+    const { clientId, street, number, neighborhood, city, state, zip_code, complement, is_collect_point, is_main_address } = base;
+    return {
+      profile_id: clientId,
+      street: sanitizeString(street),
+      number: sanitizeString(number),
+      neighborhood: sanitizeString(neighborhood),
+      city: sanitizeString(city),
+      state: sanitizeString(state),
+      zip_code: sanitizeString(zip_code),
+      complement: complement ? sanitizeString(complement) : null,
+      is_collect_point: !!is_collect_point,
+      is_main_address: !!is_main_address,
+    } as const;
+  }
+
+  private async clearMainAddress(clientId: string) {
+    const { error } = await this.supabase
+      .from('addresses')
+      .update({ is_main_address: false })
+      .eq('profile_id', clientId)
+      .eq('is_main_address', true);
+    if (error) {
+      throw new DatabaseError(`Erro ao atualizar endereço principal: ${error.message}`);
+    }
+  }
+
   async createAddress(data: ClientAddressData) {
     const {
       clientId,
@@ -37,47 +85,24 @@ export class ClientAddressService {
       is_main_address = false,
     } = data;
 
-    // Validate client role
-    const { data: profile, error: profileError } = await this.supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', clientId)
-      .single();
-    if (profileError || !profile || (profile.role !== 'client' && profile.role !== 'partner')) {
-      throw new NotFoundError('Acesso negado. Apenas clientes e parceiros podem cadastrar endereços.');
-    }
-
-    // Basic validation
-    if (!street?.trim() || !number?.trim() || !neighborhood?.trim() || !city?.trim() || !state?.trim()) {
-      throw new ValidationError('Campos obrigatórios não informados.');
-    }
-    if (!zip_code?.trim() || !validateCEP(zip_code)) {
-      throw new ValidationError('CEP inválido.');
-    }
-
-    const payload = {
-      profile_id: clientId,
-      street: sanitizeString(street),
-      number: sanitizeString(number),
-      neighborhood: sanitizeString(neighborhood),
-      city: sanitizeString(city),
-      state: sanitizeString(state),
-      zip_code: sanitizeString(zip_code),
-      complement: complement ? sanitizeString(complement) : null,
+    await this.ensureClientOrPartner(clientId, 'cadastrar');
+    this.validateAddressInput({ street, number, neighborhood, city, state, zip_code });
+    const payload = this.buildPayload({
+      clientId,
+      street,
+      number,
+      neighborhood,
+      city,
+      state,
+      zip_code,
+      complement,
       is_collect_point,
       is_main_address,
-    } as const;
+    });
 
     // If set as main, clear existing main first to avoid unique index conflicts
     if (is_main_address) {
-      const { error: clearError } = await this.supabase
-        .from('addresses')
-        .update({ is_main_address: false })
-        .eq('profile_id', clientId)
-        .eq('is_main_address', true);
-      if (clearError) {
-        throw new DatabaseError(`Erro ao atualizar endereço principal: ${clearError.message}`);
-      }
+      await this.clearMainAddress(clientId);
     }
 
     const { data: inserted, error: insertError } = await this.supabase
@@ -108,23 +133,8 @@ export class ClientAddressService {
       is_main_address,
     } = data;
 
-    // Validate client role
-    const { data: profile, error: profileError } = await this.supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', clientId)
-      .single();
-    if (profileError || !profile || (profile.role !== 'client' && profile.role !== 'partner')) {
-      throw new NotFoundError('Acesso negado. Apenas clientes e parceiros podem editar endereços.');
-    }
-
-    // Basic validation
-    if (!street?.trim() || !number?.trim() || !neighborhood?.trim() || !city?.trim() || !state?.trim()) {
-      throw new ValidationError('Campos obrigatórios não informados.');
-    }
-    if (!zip_code?.trim() || !validateCEP(zip_code)) {
-      throw new ValidationError('CEP inválido.');
-    }
+    await this.ensureClientOrPartner(clientId, 'editar');
+    this.validateAddressInput({ street, number, neighborhood, city, state, zip_code });
 
     const payload = {
       street: sanitizeString(street),
@@ -139,14 +149,7 @@ export class ClientAddressService {
     } as const;
 
     if (is_main_address) {
-      const { error: clearError } = await this.supabase
-        .from('addresses')
-        .update({ is_main_address: false })
-        .eq('profile_id', clientId)
-        .eq('is_main_address', true);
-      if (clearError) {
-        throw new DatabaseError(`Erro ao atualizar endereço principal: ${clearError.message}`);
-      }
+      await this.clearMainAddress(clientId);
     }
 
     const { data: updated, error: updateError } = await this.supabase

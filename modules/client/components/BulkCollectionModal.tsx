@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './BulkCollectionModal.css';
+import DatePickerBR from './DatePickerBR';
+import CollectPointSelect from './CollectPointSelect';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -49,7 +51,6 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   const [selectColeta, setSelectColeta] = useState(true);
   const [addressId, setAddressId] = useState('');
   const [eta, setEta] = useState(''); // ISO YYYY-MM-DD
-  const [etaBr, setEtaBr] = useState(''); // dd/mm/aaaa
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hiddenDateRef = useRef<HTMLInputElement | null>(null);
@@ -97,136 +98,72 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     if (method === 'collect_point' && initialAddressId) setAddressId(initialAddressId);
-    if (method === 'bring_to_yard' && initialEtaIso) {
-      setEta(initialEtaIso);
-      const [y, m, d] = (initialEtaIso || '').split('-');
-      setEtaBr(initialEtaIso ? `${d}/${m}/${y}` : '');
-    }
+    if (method === 'bring_to_yard' && initialEtaIso) setEta(initialEtaIso);
   }, [isOpen, method, initialAddressId, initialEtaIso]);
 
   if (!isOpen) return null;
 
   const node = (
-    <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 10000, paddingTop: 40 }}>
-      <div style={{ background: '#fff', color: '#222', borderRadius: 10, width: 'min(760px, 96vw)', padding: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: '1.25rem' }}>
+    <div className="bcm-overlay" role="dialog" aria-modal="true">
+      <div className="bcm-modal">
+        <div className="bcm-header">
+          <h3 className="bcm-title">
             {method === 'collect_point' ? 'Definir ponto de coleta em lote' : 'Levar ao pátio ProLine em lote'}
           </h3>
-          <button type="button" onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer', lineHeight: 1 }} aria-label="Fechar">×</button>
+          <button type="button" onClick={onClose} className="bcm-close" aria-label="Fechar">×</button>
         </div>
 
         {/* Seletor de parâmetros conforme método */}
         {method === 'collect_point' ? (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', marginBottom: 6 }}>Ponto de coleta</label>
-            <select value={addressId} onChange={e => setAddressId(e.target.value)} style={{ width: '100%', padding: '8px 10px' }}>
-              <option value="">Selecione um ponto de coleta</option>
-              {addresses.filter(a => a.is_collect_point).map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                </option>
-              ))}
-            </select>
+          <div className="bcm-form-group">
+            <label className="bcm-label">Ponto de coleta</label>
+            <CollectPointSelect className="bcm-select" addresses={addresses as any} value={addressId} onChange={setAddressId} />
           </div>
         ) : (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', marginBottom: 6 }}>Data prevista de chegada ao pátio</label>
-            <div className="bcm-date-field">
-              <input
-                className="bcm-date-input"
-                type="text"
-                inputMode="numeric"
-                placeholder="dd/mm/aaaa"
-                value={etaBr}
-                onChange={e => {
-                  const only = e.target.value.replace(/\D+/g, '').slice(0, 8);
-                  const p1 = only.slice(0, 2);
-                  const p2 = only.slice(2, 4);
-                  const p3 = only.slice(4, 8);
-                  const formatted = only.length <= 2 ? p1 : only.length <= 4 ? `${p1}/${p2}` : `${p1}/${p2}/${p3}`;
-                  setEtaBr(formatted);
-                  if (only.length === 8) {
-                    const d = parseInt(only.slice(0, 2), 10);
-                    const m = parseInt(only.slice(2, 4), 10);
-                    const y = parseInt(only.slice(4, 8), 10);
-                    const dt = new Date(y, m - 1, d);
-                    if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
-                      const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                      setEta(iso);
-                    } else {
-                      setEta('');
-                    }
-                  } else {
-                    setEta('');
-                  }
-                }}
-                maxLength={10}
-              />
-              <button
-                type="button"
-                className="bcm-calendar-btn"
-                aria-label="Abrir calendário"
-                onClick={() => {
-                  const el = hiddenDateRef.current;
-                  if (!el) return;
-                  // @ts-ignore
-                  if (typeof el.showPicker === 'function') el.showPicker(); else { el.focus(); el.click(); }
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M7 10h5v5H7z"></path>
-                  <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path>
-                </svg>
-              </button>
-              <input
-                ref={hiddenDateRef}
-                className="bcm-hidden-date"
-                type="date"
-                value={eta}
-                min={minDate}
-                onChange={e => {
-                  const iso = e.target.value;
-                  setEta(iso);
-                  const [y, m, d] = (iso || '').split('-');
-                  setEtaBr(iso ? `${d}/${m}/${y}` : '');
-                }}
-                aria-hidden
-                tabIndex={-1}
-              />
-            </div>
+          <div className="bcm-form-group">
+            <label className="bcm-label">Data prevista de chegada ao pátio</label>
+            <DatePickerBR
+              valueIso={eta}
+              minIso={minDate}
+              onChangeIso={setEta}
+              ariaLabel="Data prevista de chegada ao pátio (dd/mm/aaaa)"
+              containerClass="bcm-date-field"
+              inputClass="bcm-date-input"
+              buttonClass="bcm-calendar-btn"
+              hiddenInputClass="bcm-hidden-date"
+            />
           </div>
         )}
 
         {/* Checkboxes de seleção por status */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="bcm-grid">
+          <label className="bcm-checkbox-row">
             <input type="checkbox" checked={selectDefinicao} onChange={e => setSelectDefinicao(e.target.checked)} disabled={counts.definicao === 0} />
             <span>Aguardando definição de coleta</span>
-            <span style={{ marginLeft: 'auto', opacity: 0.7 }}>({counts.definicao})</span>
+            <span className="bcm-count">({counts.definicao})</span>
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label className="bcm-checkbox-row">
             <input type="checkbox" checked={selectChegada} onChange={e => setSelectChegada(e.target.checked)} disabled={counts.chegada === 0} />
             <span>Aguardando chegada do veículo</span>
-            <span style={{ marginLeft: 'auto', opacity: 0.7 }}>({counts.chegada})</span>
+            <span className="bcm-count">({counts.chegada})</span>
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label className="bcm-checkbox-row">
             <input type="checkbox" checked={selectColeta} onChange={e => setSelectColeta(e.target.checked)} disabled={counts.coleta === 0} />
             <span>Aguardando coleta</span>
-            <span style={{ marginLeft: 'auto', opacity: 0.7 }}>({counts.coleta})</span>
+            <span className="bcm-count">({counts.coleta})</span>
           </label>
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 14, color: '#444' }}>
+        <div className="bcm-affected">
           Veículos afetados: <b>{selectedIds.length}</b>
         </div>
 
         {error && (
-          <div style={{ color: 'red', marginTop: 8 }}>{error}</div>
+          <div className="bcm-error">{error}</div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-          <button type="button" onClick={onClose} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ccc', background: '#fafafa' }}>Cancelar</button>
+        <div className="bcm-actions">
+          <button type="button" onClick={onClose} className="bcm-btn bcm-btn-secondary">Cancelar</button>
           <button
             type="button"
             disabled={!canSubmit || submitting}
@@ -248,7 +185,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
                 setSubmitting(false);
               }
             }}
-            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #1b5e20', background: '#2e7d32', color: '#fff' }}
+            className="bcm-btn bcm-btn-primary"
           >
             {method === 'collect_point' ? 'Aplicar ponto de coleta' : 'Aplicar data de entrega ao pátio'}
           </button>
