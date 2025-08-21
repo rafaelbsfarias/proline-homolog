@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { withSpecialistAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import {
+  withSpecialistAuth,
+  type AuthenticatedRequest,
+} from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
 import { getLogger } from '@/modules/logger';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
+import { authorizeSpecialistForVehicle } from '@/modules/specialist/utils/authorization';
 
 interface ChecklistPayload {
   vehicleId: string;
@@ -41,45 +46,36 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Quilometragem inválida' }, { status: 400 });
     }
 
+    // Authorization: ensure this specialist is linked to the client's vehicle
+    const authResult = await authorizeSpecialistForVehicle(req.user.id, vehicleId);
+    if (!authResult.authorized) {
+      logger.warn('authorization_failed', { requestId, userId: req.user.id, vehicleId });
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
+    }
+
     const supabase = SupabaseService.getInstance().getAdminClient();
 
-    // Authorization: ensure this specialist is linked to the client's vehicle
+    // Enforce vehicle status before allowing checklist (allow CHEGADA CONFIRMADA or EM ANÁLISE)
     const { data: veh, error: vehErr } = await supabase
       .from('vehicles')
-      .select('id, client_id, status')
+      .select('status')
       .eq('id', vehicleId)
-      .maybeSingle();
-    if (vehErr) {
-      logger.error('db_error_vehicle_load', { requestId, error: vehErr.message });
-      return NextResponse.json({ error: 'Erro ao carregar veículo' }, { status: 500 });
-    }
-    if (!veh) {
-      logger.warn('not_found_vehicle', { requestId, vehicleId });
-      return NextResponse.json({ error: 'Veículo não encontrado' }, { status: 404 });
+      .single();
+
+    if (vehErr || !veh) {
+      logger.error('db_error_vehicle_load_status', { requestId, error: vehErr?.message });
+      return NextResponse.json({ error: 'Erro ao carregar status do veículo' }, { status: 500 });
     }
 
-    const { data: link, error: linkErr } = await supabase
-      .from('client_specialists')
-      .select('client_id')
-      .eq('client_id', veh.client_id)
-      .eq('specialist_id', req.user.id)
-      .maybeSingle();
-    if (linkErr) {
-      logger.error('db_error_check_link', { requestId, error: linkErr.message });
-      return NextResponse.json({ error: 'Erro de autorização' }, { status: 500 });
-    }
-    if (!link) {
-      logger.warn('access_denied', { requestId, userId: req.user.id, clientId: veh.client_id });
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
-
-    // Enforce vehicle status before allowing checklist (allow CHEGADA CONFIRMADA or EM ANÁLISE)
     {
-      const s = String((veh as any).status || '').toUpperCase();
-      const allowed = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+      const s = String(veh.status || '').toUpperCase();
+      const allowed = s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
       if (!allowed) {
-        logger.warn('invalid_vehicle_status', { requestId, vehicleId, status: (veh as any).status });
-        return NextResponse.json({ error: 'Checklist disponível apenas após Chegada Confirmada ou em Análise' }, { status: 400 });
+        logger.warn('invalid_vehicle_status', { requestId, vehicleId, status: veh.status });
+        return NextResponse.json(
+          { error: 'Checklist disponível apenas após Chegada Confirmada ou em Análise' },
+          { status: 400 }
+        );
       }
     }
 
@@ -144,13 +140,22 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
 
     // Insert services flags (only required or with notes)
     const services = body.services || {};
-    const toInsert: { inspection_id: string; category: string; required: boolean; notes?: string | null }[] = [];
-    const pushService = (key: keyof NonNullable<ChecklistPayload['services']>, category: string) => {
+    const toInsert: {
+      inspection_id: string;
+      category: string;
+      required: boolean;
+      notes?: string | null;
+    }[] = [];
+    const pushService = (
+      key: keyof NonNullable<ChecklistPayload['services']>,
+      category: string
+    ) => {
       const s = services[key];
       if (!s) return;
       const required = !!s.required;
       const notes = (s.notes || '').trim();
-      if (required || notes) toInsert.push({ inspection_id: inspectionId, category, required, notes: notes || null });
+      if (required || notes)
+        toInsert.push({ inspection_id: inspectionId, category, required, notes: notes || null });
     };
     pushService('mechanics', 'mechanics');
     pushService('bodyPaint', 'bodyPaint');
@@ -158,7 +163,9 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     pushService('tires', 'tires');
 
     if (toInsert.length) {
-      const { error: svcErr } = await supabase.from('inspection_services').insert(toInsert.map(s => ({ ...s, inspection_id: inspectionId })));
+      const { error: svcErr } = await supabase
+        .from('inspection_services')
+        .insert(toInsert.map(s => ({ ...s, inspection_id: inspectionId })));
       if (svcErr) {
         logger.error('db_error_insert_services', { requestId, error: svcErr.message });
         return NextResponse.json({ error: 'Erro ao salvar serviços' }, { status: 500 });
@@ -182,9 +189,13 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     // Optionally update vehicle snapshot info and set status to EM ANÁLISE while not finalized
     await supabase
       .from('vehicles')
-      .update({ current_odometer: body.odometer, fuel_level: body.fuelLevel, status: 'EM ANÁLISE' })
+      .update({
+        current_odometer: body.odometer,
+        fuel_level: body.fuelLevel,
+        status: VehicleStatus.EM_ANALISE,
+      })
       .eq('id', vehicleId);
-    
+
     // Record history snapshot
     try {
       const snapshot = {
@@ -193,23 +204,30 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
         fuelLevel: body.fuelLevel,
         observations: body.observations || null,
         services: {
-          mechanics: { required: !!services.mechanics?.required, notes: services.mechanics?.notes || '' },
-          bodyPaint: { required: !!services.bodyPaint?.required, notes: services.bodyPaint?.notes || '' },
+          mechanics: {
+            required: !!services.mechanics?.required,
+            notes: services.mechanics?.notes || '',
+          },
+          bodyPaint: {
+            required: !!services.bodyPaint?.required,
+            notes: services.bodyPaint?.notes || '',
+          },
           washing: { required: !!services.washing?.required, notes: services.washing?.notes || '' },
           tires: { required: !!services.tires?.required, notes: services.tires?.notes || '' },
         },
         mediaPaths: body.mediaPaths || [],
       };
-      await supabase
-        .from('inspection_history')
-        .insert({
-          inspection_id: inspectionId,
-          vehicle_id: vehicleId,
-          edited_by: req.user.id,
-          snapshot,
-        });
+      await supabase.from('inspection_history').insert({
+        inspection_id: inspectionId,
+        vehicle_id: vehicleId,
+        edited_by: req.user.id,
+        snapshot,
+      });
     } catch (histErr) {
-      logger.warn('history_insert_failed', { requestId, error: histErr instanceof Error ? histErr.message : String(histErr) });
+      logger.warn('history_insert_failed', {
+        requestId,
+        error: histErr instanceof Error ? histErr.message : String(histErr),
+      });
     }
     logger.info('success', { requestId, inspectionId, vehicleId });
     return NextResponse.json({ success: true, inspectionId });

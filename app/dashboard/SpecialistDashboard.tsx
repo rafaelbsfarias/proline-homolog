@@ -4,6 +4,7 @@ import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const SpecialistDashboard = () => {
   const [userName, setUserName] = useState('');
@@ -27,7 +28,7 @@ const SpecialistDashboard = () => {
 
   const openChecklist = async (vehicle: VehicleData) => {
     const s = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
-    const canOpen = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+    const canOpen = s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
     if (!canOpen) return;
     try {
       const { data: session } = await supabase.auth.getSession();
@@ -41,7 +42,7 @@ const SpecialistDashboard = () => {
         body: JSON.stringify({ vehicleId: vehicle.id }),
       });
       if (resp.ok) {
-        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'EM ANÁLISE' }));
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: VehicleStatus.EM_ANALISE }));
       }
     } finally {
       setSelectedVehicle(vehicle);
@@ -55,10 +56,12 @@ const SpecialistDashboard = () => {
 
   const confirmArrival = async (vehicle: VehicleData) => {
     try {
-      const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+      const currentStatus = String(
+        (statusOverrides[vehicle.id] ?? vehicle.status) || ''
+      ).toUpperCase();
       const canConfirm =
-        currentStatus === 'AGUARDANDO COLETA' ||
-        currentStatus === 'AGUARDANDO CHEGADA DO VEÍCULO';
+        currentStatus === VehicleStatus.AGUARDANDO_COLETA ||
+        currentStatus === VehicleStatus.AGUARDANDO_CHEGADA;
       if (!canConfirm) return;
       setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
       const { data: session } = await supabase.auth.getSession();
@@ -72,8 +75,10 @@ const SpecialistDashboard = () => {
         body: JSON.stringify({ vehicleId: vehicle.id }),
       });
       if (resp.ok) {
-        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'CHEGADA CONFIRMADA' }));
-        try { refetch(); } catch {}
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: VehicleStatus.CHEGADA_CONFIRMADA }));
+        try {
+          refetch();
+        } catch {}
       }
     } finally {
       setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
@@ -337,40 +342,86 @@ const SpecialistDashboard = () => {
                             <button
                               type="button"
                               onClick={() => openChecklist(v)}
-                              disabled={!(() => { const s = String(v.status || '').toUpperCase(); return s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE'; })()}
-                              style={{
-                                padding: '6px 10px',
-                                borderRadius: 6,
-                                border: '1px solid #ccc',
-                                background: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? '#fff' : '#f0f0f0'; })(),
-                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'pointer' : 'not-allowed'; })(),
-                              }}
-                              aria-label={`Abrir checklist para o veículo ${v.plate}`}
-                              title={(s => (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'Abrir checklist' : 'Disponível após confirmar chegada')(String(v.status || '').toUpperCase())}
-                            >
-                              Checklist
-                            </button>
-                            
-                            <button
-                              type="button"
-                              onClick={() => confirmArrival(v)}
                               disabled={
-                                !!confirming[v.id] || !(
-                                  (() => {
-                                    const s = String(v.status || '').toUpperCase();
-                                    return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
-                                  })()
-                                )
+                                !(() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return (
+                                    s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                                    s === VehicleStatus.EM_ANALISE
+                                  );
+                                })()
                               }
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0'; })(),
-                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed'; })(),
+                                background: (() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                                    s === VehicleStatus.EM_ANALISE
+                                    ? '#fff'
+                                    : '#f0f0f0';
+                                })(),
+                                cursor: (() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                                    s === VehicleStatus.EM_ANALISE
+                                    ? 'pointer'
+                                    : 'not-allowed';
+                                })(),
+                              }}
+                              aria-label={`Abrir checklist para o veículo ${v.plate}`}
+                              title={(s =>
+                                s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                                s === VehicleStatus.EM_ANALISE
+                                  ? 'Abrir checklist'
+                                  : 'Disponível após confirmar chegada')(
+                                String(v.status || '').toUpperCase()
+                              )}
+                            >
+                              Checklist
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => confirmArrival(v)}
+                              disabled={
+                                !!confirming[v.id] ||
+                                !(() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return (
+                                    s === VehicleStatus.AGUARDANDO_COLETA ||
+                                    s === VehicleStatus.AGUARDANDO_CHEGADA
+                                  );
+                                })()
+                              }
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                border: '1px solid #ccc',
+                                background: (() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return s === VehicleStatus.AGUARDANDO_COLETA ||
+                                    s === VehicleStatus.AGUARDANDO_CHEGADA
+                                    ? '#e8f5e9'
+                                    : '#f0f0f0';
+                                })(),
+                                cursor: (() => {
+                                  const s = String(v.status || '').toUpperCase();
+                                  return s === VehicleStatus.AGUARDANDO_COLETA ||
+                                    s === VehicleStatus.AGUARDANDO_CHEGADA
+                                    ? 'pointer'
+                                    : 'not-allowed';
+                                })(),
                               }}
                               aria-label={`Confirmar chegada do veículo ${v.plate}`}
-                              title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO VEÍCULO')(String(v.status || '').toUpperCase())}
+                              title={(s =>
+                                s === VehicleStatus.AGUARDANDO_COLETA ||
+                                s === VehicleStatus.AGUARDANDO_CHEGADA
+                                  ? 'Confirmar chegada'
+                                  : `Disponível quando status for ${VehicleStatus.AGUARDANDO_COLETA} ou ${VehicleStatus.AGUARDANDO_CHEGADA}`)(
+                                String(v.status || '').toUpperCase()
+                              )}
                             >
                               {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
                             </button>
@@ -389,10 +440,14 @@ const SpecialistDashboard = () => {
         isOpen={checklistOpen}
         onClose={closeChecklist}
         onSaved={() => {
-          try { refetch(); } catch {}
+          try {
+            refetch();
+          } catch {}
         }}
         onFinalized={() => {
-          try { refetch(); } catch {}
+          try {
+            refetch();
+          } catch {}
         }}
         vehicle={
           selectedVehicle

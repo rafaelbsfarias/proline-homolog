@@ -5,6 +5,7 @@ import {
 } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
+import { checkSpecialistClientLink } from '@/modules/specialist/utils/authorization';
 
 export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -18,19 +19,9 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Authorization: ensure this specialist is linked to the client
-    const { data: link, error: linkError } = await supabase
-      .from('client_specialists')
-      .select('client_id')
-      .eq('client_id', clientId)
-      .eq('specialist_id', req.user.id)
-      .maybeSingle();
-
-    if (linkError) {
-      return NextResponse.json({ error: 'Erro ao verificar vínculo' }, { status: 500 });
-    }
-
-    if (!link) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    const authResult = await checkSpecialistClientLink(supabase, req.user.id, clientId);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
     // Fetch vehicles for the client
