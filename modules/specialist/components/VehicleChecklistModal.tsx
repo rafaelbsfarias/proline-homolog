@@ -73,7 +73,9 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
       try {
         if (!isOpen || !vehicle) return;
         const url = `/api/specialist/get-checklist?vehicleId=${vehicle.id}`;
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         const resp = await fetch(url, {
           method: 'GET',
           headers: {
@@ -107,7 +109,6 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
       }
     })();
   }, [isOpen, vehicle]);
-
 
   // cleanup moved to hook
 
@@ -180,10 +181,22 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
         fuelLevel: form.fuelLevel,
         observations: sanitizeString(form.observations),
         services: {
-          mechanics: { required: form.services.mechanics.required, notes: sanitizeString(form.services.mechanics.notes) },
-          bodyPaint: { required: form.services.bodyPaint.required, notes: sanitizeString(form.services.bodyPaint.notes) },
-          washing: { required: form.services.washing.required, notes: sanitizeString(form.services.washing.notes) },
-          tires: { required: form.services.tires.required, notes: sanitizeString(form.services.tires.notes) },
+          mechanics: {
+            required: form.services.mechanics.required,
+            notes: sanitizeString(form.services.mechanics.notes),
+          },
+          bodyPaint: {
+            required: form.services.bodyPaint.required,
+            notes: sanitizeString(form.services.bodyPaint.notes),
+          },
+          washing: {
+            required: form.services.washing.required,
+            notes: sanitizeString(form.services.washing.notes),
+          },
+          tires: {
+            required: form.services.tires.required,
+            notes: sanitizeString(form.services.tires.notes),
+          },
         },
         mediaPaths: uploadedPaths,
       };
@@ -203,7 +216,9 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
       setSuccess('Checklist salvo com sucesso.');
       showToast('success', 'Checklist salvo com sucesso.');
-      try { onSaved && onSaved(); } catch {}
+      try {
+        onSaved && onSaved();
+      } catch {}
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
       setError(msg);
@@ -218,139 +233,147 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={title}>
       <form className={styles.container} onSubmit={handleSubmit}>
-        <div className={styles.vehicleHeader}>
-          <div>
-            Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
-          </div>
-          <div>Placa: {vehicle.plate}</div>
-          {vehicle.color && <div>Cor: {vehicle.color}</div>}
-          {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
-        </div>
-
-        {/* Dados básicos da inspeção */}
-        <div className={styles.grid}>
-          <div className={styles.field}>
-            <label htmlFor="date">Data da inspeção</label>
-            <input
-              id="date"
-              name="date"
-              type="date"
-              value={form.date}
-              onChange={e => setField('date', e.target.value)}
-              required
-              disabled={isFinalized}
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="odometer">Quilometragem atual (km)</label>
-            <input
-              id="odometer"
-              name="odometer"
-              type="number"
-              min="0"
-              inputMode="numeric"
-              value={form.odometer}
-              onChange={e => setField('odometer', e.target.value)}
-              disabled={isFinalized}
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="fuelLevel">Nível de combustível</label>
-            <select
-              id="fuelLevel"
-              name="fuelLevel"
-              value={form.fuelLevel}
-              onChange={e => setField('fuelLevel', e.target.value)}
-              disabled={isFinalized}
-            >
-              <option value="empty">Vazio</option>
-              <option value="quarter">1/4</option>
-              <option value="half">1/2</option>
-              <option value="three_quarters">3/4</option>
-              <option value="full">Cheio</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Sinalização de serviços necessários por categoria */}
-        <div className={styles.group}>
-          <h4 className={styles.groupTitle}>Serviços necessários</h4>
-          <div className={styles.grid}>
-            <ServiceCategoryField
-              label="Mecânica"
-              checked={form.services.mechanics.required}
-              notes={form.services.mechanics.notes}
-              onToggle={v => setServiceFlag('mechanics', v)}
-              onNotesChange={v => setServiceNotes('mechanics', v)}
-              disabled={isFinalized}
-            />
-            <ServiceCategoryField
-              label="Funilaria/Pintura"
-              checked={form.services.bodyPaint.required}
-              notes={form.services.bodyPaint.notes}
-              onToggle={v => setServiceFlag('bodyPaint', v)}
-              onNotesChange={v => setServiceNotes('bodyPaint', v)}
-              disabled={isFinalized}
-            />
-            <ServiceCategoryField
-              label="Lavagem"
-              checked={form.services.washing.required}
-              notes={form.services.washing.notes}
-              onToggle={v => setServiceFlag('washing', v)}
-              onNotesChange={v => setServiceNotes('washing', v)}
-              disabled={isFinalized}
-            />
-            <ServiceCategoryField
-              label="Pneus"
-              checked={form.services.tires.required}
-              notes={form.services.tires.notes}
-              onToggle={v => setServiceFlag('tires', v)}
-              onNotesChange={v => setServiceNotes('tires', v)}
-              disabled={isFinalized}
-            />
-          </div>
-        </div>
-
-        {/* Upload de fotos (galeria/câmera) */}
-        <div className={styles.upload}>
-          <label htmlFor="photos">Fotos do veículo</label>
-          <input
-            id="photos"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            onChange={e => handleFiles(e.target.files)}
-            disabled={isFinalized}
-          />
-          <small>
-            Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
-          </small>
-          {!!previews.length && (
-            <div className={styles.previews}>
-              {previews.map((src, i) => (
-                <div key={src} className={styles.previewItem}>
-                  <img
-                    src={src}
-                    alt={`Pré-visualização ${i + 1}`}
-                    className={styles.previewImage}
-                  />
-                  {!isFinalized && (
-                    <button type="button" className={styles.removeBtn} onClick={() => removeFile(i)}>
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
+        {/* Área de conteúdo que vai rolar */}
+        <div className={styles.content}>
+          <div className={styles.vehicleHeader}>
+            <div>
+              Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
             </div>
-          )}
+            <div>Placa: {vehicle.plate}</div>
+            {vehicle.color && <div>Cor: {vehicle.color}</div>}
+            {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
+          </div>
+
+          {/* Dados básicos da inspeção */}
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <label htmlFor="date">Data da inspeção</label>
+              <input
+                id="date"
+                name="date"
+                type="date"
+                value={form.date}
+                onChange={e => setField('date', e.target.value)}
+                required
+                disabled={isFinalized}
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="odometer">Quilometragem atual (km)</label>
+              <input
+                id="odometer"
+                name="odometer"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={form.odometer}
+                onChange={e => setField('odometer', e.target.value)}
+                disabled={isFinalized}
+                required
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="fuelLevel">Nível de combustível</label>
+              <select
+                id="fuelLevel"
+                name="fuelLevel"
+                value={form.fuelLevel}
+                onChange={e => setField('fuelLevel', e.target.value)}
+                disabled={isFinalized}
+              >
+                <option value="empty">Vazio</option>
+                <option value="quarter">1/4</option>
+                <option value="half">1/2</option>
+                <option value="three_quarters">3/4</option>
+                <option value="full">Cheio</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Sinalização de serviços necessários por categoria */}
+          <div className={styles.group}>
+            <h4 className={styles.groupTitle}>Serviços necessários</h4>
+            <div className={styles.grid}>
+              <ServiceCategoryField
+                label="Mecânica"
+                checked={form.services.mechanics.required}
+                notes={form.services.mechanics.notes}
+                onToggle={v => setServiceFlag('mechanics', v)}
+                onNotesChange={v => setServiceNotes('mechanics', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Funilaria/Pintura"
+                checked={form.services.bodyPaint.required}
+                notes={form.services.bodyPaint.notes}
+                onToggle={v => setServiceFlag('bodyPaint', v)}
+                onNotesChange={v => setServiceNotes('bodyPaint', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Lavagem"
+                checked={form.services.washing.required}
+                notes={form.services.washing.notes}
+                onToggle={v => setServiceFlag('washing', v)}
+                onNotesChange={v => setServiceNotes('washing', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Pneus"
+                checked={form.services.tires.required}
+                notes={form.services.tires.notes}
+                onToggle={v => setServiceFlag('tires', v)}
+                onNotesChange={v => setServiceNotes('tires', v)}
+                disabled={isFinalized}
+              />
+            </div>
+          </div>
+
+          {/* Upload de fotos (galeria/câmera) */}
+          <div className={styles.upload}>
+            <label htmlFor="photos">Fotos do veículo</label>
+            <input
+              id="photos"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              onChange={e => handleFiles(e.target.files)}
+              disabled={isFinalized}
+            />
+            <small>
+              Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
+            </small>
+            {!!previews.length && (
+              <div className={styles.previews}>
+                {previews.map((src, i) => (
+                  <div key={src} className={styles.previewItem}>
+                    <img
+                      src={src}
+                      alt={`Pré-visualização ${i + 1}`}
+                      className={styles.previewImage}
+                    />
+                    {!isFinalized && (
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => removeFile(i)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <div className={styles.error}>{error}</div>}
+          {success && <div className={styles.success}>{success}</div>}
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>{success}</div>}
-
-        <div className={styles.actions}>
+        {/* Rodapé de Ações Fixo */}
+        <div className={`${styles.actions} ${styles.actionsFooter}`}>
           <button
             type="button"
             className={styles.secondary}
@@ -369,12 +392,16 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               if (!vehicle || isFinalized) return;
               try {
                 setSaving(true);
-                const { data: { session } } = await supabase.auth.getSession();
+                const {
+                  data: { session },
+                } = await supabase.auth.getSession();
                 const resp = await fetch('/api/specialist/finalize-checklist', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
-                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                    ...(session?.access_token
+                      ? { Authorization: `Bearer ${session.access_token}` }
+                      : {}),
                   },
                   body: JSON.stringify({ vehicleId: vehicle.id }),
                 });
@@ -385,7 +412,9 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                 setIsFinalized(true);
                 setSuccess('Checklist finalizado.');
                 showToast('success', 'Checklist finalizado.');
-                try { onFinalized && onFinalized(); } catch {}
+                try {
+                  onFinalized && onFinalized();
+                } catch {}
               } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Erro ao finalizar checklist.';
                 setError(msg);
