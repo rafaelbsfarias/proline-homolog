@@ -15,4 +15,3 @@ BEGIN
     ADD CONSTRAINT contract_partners_partner_id_fkey
     FOREIGN KEY (partner_id) REFERENCES public.partners(profile_id) ON DELETE CASCADE';
 END $$;
-

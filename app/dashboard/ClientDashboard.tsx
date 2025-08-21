@@ -3,6 +3,7 @@ import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '../../modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
+import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
 
 interface ProfileData {
@@ -20,6 +21,7 @@ const ClientDashboard = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
+  const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
 
@@ -83,8 +85,11 @@ const ClientDashboard = () => {
 
           if (response.ok) {
             const vehicleData = await response.json();
-
-            setVehicleCount(vehicleData.vehicle_count || 0);
+            const count =
+              typeof vehicleData.count === 'number'
+                ? vehicleData.count
+                : vehicleData.vehicle_count || 0;
+            setVehicleCount(count);
           }
         } catch (error) {}
       }
@@ -262,7 +267,7 @@ const ClientDashboard = () => {
               Cadastrar Novo Veículo
             </button>
             <button
-              onClick={() => {}}
+              onClick={() => setShowAddCollectPointModal(true)}
               style={{
                 padding: '10px 20px',
                 fontSize: 16,
@@ -282,7 +287,7 @@ const ClientDashboard = () => {
             </button>
           </div>
 
-          {/* Contador de Veículos */}
+          {/* Contador de Veículos (inclui controles de coleta/entrega integrados) */}
           <div style={{ marginBottom: 24 }}>
             <VehicleCounter key={refreshVehicleCounter} />
           </div>
@@ -292,6 +297,11 @@ const ClientDashboard = () => {
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
         onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
+      />
+      <ClientCollectPointModal
+        isOpen={showAddCollectPointModal}
+        onClose={() => setShowAddCollectPointModal(false)}
+        onSuccess={() => {}}
       />
     </div>
   );

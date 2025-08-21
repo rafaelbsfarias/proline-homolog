@@ -25,6 +25,23 @@
   gap: 15px;
 }
 
+.counter-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.counter-filters input[type="text"],
+.counter-filters select {
+  background: rgba(33, 51, 63, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+}
+
 .counter-icon {
   font-size: 2.5rem;
   opacity: 0.9;
@@ -94,6 +111,48 @@
   margin-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
   padding-top: 15px;
+}
+
+.collection-controls {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.collection-controls .row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.collection-controls label { opacity: 0.9; }
+.collection-controls select,
+.collection-controls input[type="date"],
+.collection-controls button {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.vehicle-row-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.save-button {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: white;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
 }
 
 .vehicles-details h4 {

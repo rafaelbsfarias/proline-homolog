@@ -5,7 +5,6 @@
 -- Ensure fipe_value exists
 ALTER TABLE public.vehicles
 ADD COLUMN IF NOT EXISTS fipe_value numeric;
-
 -- Backfill from legacy "fipeValue" (camelCase) if it exists, then drop it
 DO $$
 BEGIN
@@ -17,7 +16,6 @@ BEGIN
     EXECUTE 'ALTER TABLE public.vehicles DROP COLUMN "fipeValue"';
   END IF;
 END $$;
-
 -- Backfill from legacy lowercase variant "fipevalue" if it exists, then drop it
 DO $$
 BEGIN
@@ -29,15 +27,12 @@ BEGIN
     EXECUTE 'ALTER TABLE public.vehicles DROP COLUMN fipevalue';
   END IF;
 END $$;
-
 -- Normalize estimated_arrival_date to DATE
 -- 1) Ensure target column exists (DATE)
 ALTER TABLE public.vehicles
 ADD COLUMN IF NOT EXISTS estimated_arrival_date date;
-
 -- 2) Backfill from camelCase legacy column if present
 DO $$ BEGIN END $$;
-
 -- 3) If a text-typed estimated_arrival_date existed on some environments, convert it
 DO $$
 DECLARE

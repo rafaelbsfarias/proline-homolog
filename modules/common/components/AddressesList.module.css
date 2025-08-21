@@ -1,0 +1,68 @@
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.addressCard {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.addressTitle {
+  color: #111827;
+  font-weight: 600;
+}
+
+.addressSubtitle {
+  color: #374151;
+}
+
+.addressComplement {
+  color: #6b7280;
+}
+
+.rightActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.badgeMain {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgeCollect {
+  background: #ecfccb;
+  color: #3f6212;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.editButton {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading { color: #374151; }
+.error { color: #b91c1c; }
+.empty { color: #6b7280; }
+

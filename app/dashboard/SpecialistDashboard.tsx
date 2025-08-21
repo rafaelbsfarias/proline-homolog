@@ -23,16 +23,61 @@ const SpecialistDashboard = () => {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+  const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
-  const openChecklist = (vehicle: VehicleData) => {
-    setSelectedVehicle(vehicle);
-    setChecklistOpen(true);
-    // Front-only: marca o veículo como "em análise" no estado local
-    setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'em análise' }));
+  const openChecklist = async (vehicle: VehicleData) => {
+    const s = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+    const canOpen = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+    if (!canOpen) return;
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const resp = await fetch('/api/specialist/start-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ vehicleId: vehicle.id }),
+      });
+      if (resp.ok) {
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'EM ANÁLISE' }));
+      }
+    } finally {
+      setSelectedVehicle(vehicle);
+      setChecklistOpen(true);
+    }
   };
   const closeChecklist = () => {
     setChecklistOpen(false);
     setSelectedVehicle(null);
+  };
+
+  const confirmArrival = async (vehicle: VehicleData) => {
+    try {
+      const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+      const canConfirm =
+        currentStatus === 'AGUARDANDO COLETA' ||
+        currentStatus === 'AGUARDANDO CHEGADA DO VEÍCULO';
+      if (!canConfirm) return;
+      setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const resp = await fetch('/api/specialist/confirm-arrival', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ vehicleId: vehicle.id }),
+      });
+      if (resp.ok) {
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'CHEGADA CONFIRMADA' }));
+        try { refetch(); } catch {}
+      }
+    } finally {
+      setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
+    }
   };
 
   // Filtros de veículos (placa e status)
@@ -288,20 +333,46 @@ const SpecialistDashboard = () => {
                           <div style={{ color: '#555' }}>Ano: {v.year}</div>
                           <div style={{ color: '#555' }}>Cor: {v.color}</div>
                           {v.status && <div style={{ color: '#555' }}>Status: {v.status}</div>}
-                          <div style={{ marginTop: 8 }}>
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                             <button
                               type="button"
                               onClick={() => openChecklist(v)}
+                              disabled={!(() => { const s = String(v.status || '').toUpperCase(); return s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE'; })()}
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: '#fff',
-                                cursor: 'pointer',
+                                background: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? '#fff' : '#f0f0f0'; })(),
+                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'pointer' : 'not-allowed'; })(),
                               }}
                               aria-label={`Abrir checklist para o veículo ${v.plate}`}
+                              title={(s => (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'Abrir checklist' : 'Disponível após confirmar chegada')(String(v.status || '').toUpperCase())}
                             >
                               Checklist
+                            </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => confirmArrival(v)}
+                              disabled={
+                                !!confirming[v.id] || !(
+                                  (() => {
+                                    const s = String(v.status || '').toUpperCase();
+                                    return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
+                                  })()
+                                )
+                              }
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                border: '1px solid #ccc',
+                                background: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0'; })(),
+                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed'; })(),
+                              }}
+                              aria-label={`Confirmar chegada do veículo ${v.plate}`}
+                              title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO VEÍCULO')(String(v.status || '').toUpperCase())}
+                            >
+                              {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
                             </button>
                           </div>
                         </div>
@@ -317,6 +388,12 @@ const SpecialistDashboard = () => {
       <VehicleChecklistModal
         isOpen={checklistOpen}
         onClose={closeChecklist}
+        onSaved={() => {
+          try { refetch(); } catch {}
+        }}
+        onFinalized={() => {
+          try { refetch(); } catch {}
+        }}
         vehicle={
           selectedVehicle
             ? {

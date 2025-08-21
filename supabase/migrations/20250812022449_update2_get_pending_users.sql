@@ -1,6 +1,5 @@
 -- Dropar a função existente
 DROP FUNCTION IF EXISTS get_pending_users();
-
 -- Recriar com tipos corretos baseados na estrutura real
 CREATE OR REPLACE FUNCTION get_pending_users()
 RETURNS TABLE (
@@ -33,6 +32,5 @@ BEGIN
   ORDER BY u.created_at DESC;
 END;
 $$;
-
 -- Regarantir permissões
 GRANT EXECUTE ON FUNCTION get_pending_users() TO authenticated;
