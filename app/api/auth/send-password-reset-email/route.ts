@@ -78,17 +78,17 @@ export async function POST(req: NextRequest) {
 
     // Agora sim monta o link final para o front
     //const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#token=${token}`;
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?email=${encodeURIComponent(email)}#token=${token}`;
-
-    // Send the email using ResendEmailService
-    await resendEmailService.sendPasswordResetEmail(email, resetLink);
-
-    logger.debug(`Password reset email sent to ${email} via Resend.`);
+    //const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?email=${encodeURIComponent(email)}#token=${token}`;
 
     // Send the email using ResendEmailService
     //await resendEmailService.sendPasswordResetEmail(email, resetLink);
 
-    logger.info(`Password reset email sent to ${email} via Resend.`);
+    //logger.debug(`Password reset email sent to ${email} via Resend.`);
+
+    // Send the email using ResendEmailService
+    //await resendEmailService.sendPasswordResetEmail(email, resetLink);
+
+    // logger.info(`Password reset email sent to ${email} via Resend.`);
     return NextResponse.json({
       success: true,
       message: 'Email de redefinição enviado com sucesso!',

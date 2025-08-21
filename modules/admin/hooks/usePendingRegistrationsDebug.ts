@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetchDebug'; // This hook itself might have debug logs
 import { getLogger, ILogger } from '@/modules/logger';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 const logger: ILogger = getLogger('usePendingRegistrationsDebugHook');
 
