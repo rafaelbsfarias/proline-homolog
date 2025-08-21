@@ -11,14 +11,16 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
 
     const supabase = SupabaseService.getInstance().getAdminClient();
 
-    // Authorization: ensure this specialist is linked to the client's vehicle
+    // Fetch vehicle
     const { data: veh, error: vehErr } = await supabase
       .from('vehicles')
-      .select('id, client_id')
+      .select('id, client_id, status')
       .eq('id', vehicleId)
       .maybeSingle();
     if (vehErr) return NextResponse.json({ error: 'Erro ao carregar veículo' }, { status: 500 });
     if (!veh) return NextResponse.json({ error: 'Veículo não encontrado' }, { status: 404 });
+
+    // Check specialist linkage
     const { data: link, error: linkErr } = await supabase
       .from('client_specialists')
       .select('client_id')
@@ -28,33 +30,22 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     if (linkErr) return NextResponse.json({ error: 'Erro de autorização' }, { status: 500 });
     if (!link) return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
 
-    // Get latest non-finalized inspection for this vehicle
-    const { data: inspection } = await supabase
-      .from('inspections')
-      .select('id')
-      .eq('vehicle_id', vehicleId)
-      .eq('finalized', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const current = String((veh as any).status || '').toUpperCase();
+    const allowedPrev = current === 'CHEGADA CONFIRMADA' || current === 'EM ANÁLISE';
+    if (!allowedPrev) {
+      return NextResponse.json({ error: 'Início de análise permitido apenas após Chegada Confirmada' }, { status: 400 });
+    }
 
-    if (!inspection) return NextResponse.json({ error: 'Nenhuma análise em andamento' }, { status: 404 });
-
-    // Mark as finalized
+    // Set status to EM ANÁLISE
     const { error: updErr } = await supabase
-      .from('inspections')
-      .update({ finalized: true })
-      .eq('id', inspection.id);
-    if (updErr) return NextResponse.json({ error: 'Erro ao finalizar análise' }, { status: 500 });
-
-    // Update vehicle status
-    await supabase
       .from('vehicles')
-      .update({ status: 'Análise Finalizada' })
+      .update({ status: 'EM ANÁLISE' })
       .eq('id', vehicleId);
+    if (updErr) return NextResponse.json({ error: 'Erro ao iniciar análise' }, { status: 500 });
 
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 });
+

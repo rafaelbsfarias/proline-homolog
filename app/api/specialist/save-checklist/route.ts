@@ -73,10 +73,14 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    // Enforce vehicle status before allowing checklist
-    if (String((veh as any).status || '').toUpperCase() !== 'CHEGADA CONFIRMADA') {
-      logger.warn('invalid_vehicle_status', { requestId, vehicleId, status: (veh as any).status });
-      return NextResponse.json({ error: 'Checklist disponível apenas após "Chegada confirmada"' }, { status: 400 });
+    // Enforce vehicle status before allowing checklist (allow CHEGADA CONFIRMADA or EM ANÁLISE)
+    {
+      const s = String((veh as any).status || '').toUpperCase();
+      const allowed = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+      if (!allowed) {
+        logger.warn('invalid_vehicle_status', { requestId, vehicleId, status: (veh as any).status });
+        return NextResponse.json({ error: 'Checklist disponível apenas após Chegada Confirmada ou em Análise' }, { status: 400 });
+      }
     }
 
     // Find existing non-finalized inspection for this vehicle (collaborative)
@@ -175,11 +179,38 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       }
     }
 
-    // Optionally update vehicle snapshot info
+    // Optionally update vehicle snapshot info and set status to EM ANÁLISE while not finalized
     await supabase
       .from('vehicles')
-      .update({ current_odometer: body.odometer, fuel_level: body.fuelLevel })
+      .update({ current_odometer: body.odometer, fuel_level: body.fuelLevel, status: 'EM ANÁLISE' })
       .eq('id', vehicleId);
+    
+    // Record history snapshot
+    try {
+      const snapshot = {
+        date: body.date,
+        odometer: body.odometer,
+        fuelLevel: body.fuelLevel,
+        observations: body.observations || null,
+        services: {
+          mechanics: { required: !!services.mechanics?.required, notes: services.mechanics?.notes || '' },
+          bodyPaint: { required: !!services.bodyPaint?.required, notes: services.bodyPaint?.notes || '' },
+          washing: { required: !!services.washing?.required, notes: services.washing?.notes || '' },
+          tires: { required: !!services.tires?.required, notes: services.tires?.notes || '' },
+        },
+        mediaPaths: body.mediaPaths || [],
+      };
+      await supabase
+        .from('inspection_history')
+        .insert({
+          inspection_id: inspectionId,
+          vehicle_id: vehicleId,
+          edited_by: req.user.id,
+          snapshot,
+        });
+    } catch (histErr) {
+      logger.warn('history_insert_failed', { requestId, error: histErr instanceof Error ? histErr.message : String(histErr) });
+    }
     logger.info('success', { requestId, inspectionId, vehicleId });
     return NextResponse.json({ success: true, inspectionId });
   } catch (e) {

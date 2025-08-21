@@ -25,16 +25,28 @@ const SpecialistDashboard = () => {
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
   const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
-  const openChecklist = (vehicle: VehicleData) => {
-    const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
-    if (currentStatus !== 'CHEGADA CONFIRMADA') {
-      // Bloqueia abertura caso a chegada não tenha sido confirmada
-      return;
+  const openChecklist = async (vehicle: VehicleData) => {
+    const s = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+    const canOpen = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+    if (!canOpen) return;
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const token = session.session?.access_token;
+      const resp = await fetch('/api/specialist/start-analysis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ vehicleId: vehicle.id }),
+      });
+      if (resp.ok) {
+        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'EM ANÁLISE' }));
+      }
+    } finally {
+      setSelectedVehicle(vehicle);
+      setChecklistOpen(true);
     }
-    setSelectedVehicle(vehicle);
-    setChecklistOpen(true);
-    // Front-only: marca o veículo como "em análise" no estado local
-    setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'Em análise' }));
   };
   const closeChecklist = () => {
     setChecklistOpen(false);
@@ -62,6 +74,7 @@ const SpecialistDashboard = () => {
       });
       if (resp.ok) {
         setStatusOverrides(prev => ({ ...prev, [vehicle.id]: 'CHEGADA CONFIRMADA' }));
+        try { refetch(); } catch {}
       }
     } finally {
       setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
@@ -325,16 +338,16 @@ const SpecialistDashboard = () => {
                             <button
                               type="button"
                               onClick={() => openChecklist(v)}
-                              disabled={String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA'}
+                              disabled={!(() => { const s = String(v.status || '').toUpperCase(); return s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE'; })()}
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? '#f0f0f0' : '#fff',
-                                cursor: String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? 'not-allowed' : 'pointer',
+                                background: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? '#fff' : '#f0f0f0'; })(),
+                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'pointer' : 'not-allowed'; })(),
                               }}
                               aria-label={`Abrir checklist para o veículo ${v.plate}`}
-                              title={String(v.status || '').toUpperCase() !== 'CHEGADA CONFIRMADA' ? 'Disponível após confirmar chegada' : 'Abrir checklist'}
+                              title={(s => (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ? 'Abrir checklist' : 'Disponível após confirmar chegada')(String(v.status || '').toUpperCase())}
                             >
                               Checklist
                             </button>
@@ -376,6 +389,12 @@ const SpecialistDashboard = () => {
       <VehicleChecklistModal
         isOpen={checklistOpen}
         onClose={closeChecklist}
+        onSaved={() => {
+          try { refetch(); } catch {}
+        }}
+        onFinalized={() => {
+          try { refetch(); } catch {}
+        }}
         vehicle={
           selectedVehicle
             ? {

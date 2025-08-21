@@ -21,6 +21,8 @@ interface VehicleChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicle: VehicleInfo | null;
+  onSaved?: () => void;
+  onFinalized?: () => void;
 }
 
 // Form types and defaults moved to checklist/types and managed by hook
@@ -31,6 +33,8 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   isOpen,
   onClose,
   vehicle,
+  onSaved,
+  onFinalized,
 }) => {
   const { showToast } = useToast();
   const {
@@ -45,6 +49,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isFinalized, setIsFinalized] = useState(false);
 
   const title = useMemo(() => {
     if (!vehicle) return 'Checklist do Veículo';
@@ -68,7 +73,13 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
       try {
         if (!isOpen || !vehicle) return;
         const url = `/api/specialist/get-checklist?vehicleId=${vehicle.id}`;
-        const resp = await fetch(url, { method: 'GET' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
         if (!resp.ok) return;
         const data = await resp.json();
         if (data?.inspection) {
@@ -89,9 +100,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               setServiceNotes(key, s.notes || '');
             }
           });
-          if (data.inspection.finalized) {
-            setSaving(true);
-          }
+          setIsFinalized(!!data.inspection.finalized);
         }
       } catch (e) {
         // ignore prefill errors
@@ -130,6 +139,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isFinalized) return; // read-only when finalized
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -193,6 +203,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
       setSuccess('Checklist salvo com sucesso.');
       showToast('success', 'Checklist salvo com sucesso.');
+      try { onSaved && onSaved(); } catch {}
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
       setError(msg);
@@ -213,6 +224,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           </div>
           <div>Placa: {vehicle.plate}</div>
           {vehicle.color && <div>Cor: {vehicle.color}</div>}
+          {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
         </div>
 
         {/* Dados básicos da inspeção */}
@@ -226,6 +238,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               value={form.date}
               onChange={e => setField('date', e.target.value)}
               required
+              disabled={isFinalized}
             />
           </div>
           <div className={styles.field}>
@@ -238,6 +251,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               inputMode="numeric"
               value={form.odometer}
               onChange={e => setField('odometer', e.target.value)}
+              disabled={isFinalized}
               required
             />
           </div>
@@ -248,6 +262,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               name="fuelLevel"
               value={form.fuelLevel}
               onChange={e => setField('fuelLevel', e.target.value)}
+              disabled={isFinalized}
             >
               <option value="empty">Vazio</option>
               <option value="quarter">1/4</option>
@@ -268,6 +283,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               notes={form.services.mechanics.notes}
               onToggle={v => setServiceFlag('mechanics', v)}
               onNotesChange={v => setServiceNotes('mechanics', v)}
+              disabled={isFinalized}
             />
             <ServiceCategoryField
               label="Funilaria/Pintura"
@@ -275,6 +291,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               notes={form.services.bodyPaint.notes}
               onToggle={v => setServiceFlag('bodyPaint', v)}
               onNotesChange={v => setServiceNotes('bodyPaint', v)}
+              disabled={isFinalized}
             />
             <ServiceCategoryField
               label="Lavagem"
@@ -282,6 +299,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               notes={form.services.washing.notes}
               onToggle={v => setServiceFlag('washing', v)}
               onNotesChange={v => setServiceNotes('washing', v)}
+              disabled={isFinalized}
             />
             <ServiceCategoryField
               label="Pneus"
@@ -289,6 +307,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               notes={form.services.tires.notes}
               onToggle={v => setServiceFlag('tires', v)}
               onNotesChange={v => setServiceNotes('tires', v)}
+              disabled={isFinalized}
             />
           </div>
         </div>
@@ -303,6 +322,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             capture="environment"
             multiple
             onChange={e => handleFiles(e.target.files)}
+            disabled={isFinalized}
           />
           <small>
             Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
@@ -316,9 +336,11 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                     alt={`Pré-visualização ${i + 1}`}
                     className={styles.previewImage}
                   />
-                  <button type="button" className={styles.removeBtn} onClick={() => removeFile(i)}>
-                    ×
-                  </button>
+                  {!isFinalized && (
+                    <button type="button" className={styles.removeBtn} onClick={() => removeFile(i)}>
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -337,8 +359,44 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           >
             Fechar
           </button>
-          <button type="submit" className={styles.primary} disabled={saving}>
+          <button type="submit" className={styles.primary} disabled={saving || isFinalized}>
             {saving ? 'Salvando...' : 'Salvar checklist'}
+          </button>
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={async () => {
+              if (!vehicle || isFinalized) return;
+              try {
+                setSaving(true);
+                const { data: { session } } = await supabase.auth.getSession();
+                const resp = await fetch('/api/specialist/finalize-checklist', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                  },
+                  body: JSON.stringify({ vehicleId: vehicle.id }),
+                });
+                if (!resp.ok) {
+                  const data = await resp.json().catch(() => ({}));
+                  throw new Error(data?.error || 'Erro ao finalizar checklist');
+                }
+                setIsFinalized(true);
+                setSuccess('Checklist finalizado.');
+                showToast('success', 'Checklist finalizado.');
+                try { onFinalized && onFinalized(); } catch {}
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Erro ao finalizar checklist.';
+                setError(msg);
+                showToast('error', msg);
+              } finally {
+                setSaving(false);
+              }
+            }}
+            disabled={saving || isFinalized}
+          >
+            Finalizar checklist
           </button>
         </div>
       </form>
