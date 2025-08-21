@@ -9,10 +9,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function getCollectionRequestsHandler(req: AuthenticatedRequest, context: { params: { clientId: string } }) {
+async function getCollectionRequestsHandler(req: AuthenticatedRequest, context: any) {
   const { clientId } = context.params;
   const adminUser = req.user;
-  logger.info(`Handler started by admin: ${adminUser?.email} (${adminUser?.id}) to fetch collection requests for client ${clientId}`);
+  logger.info(
+    `Handler started by admin: ${adminUser?.email} (${adminUser?.id}) to fetch collection requests for client ${clientId}`
+  );
 
   try {
     const supabase = SupabaseService.getInstance().getAdminClient();
@@ -21,13 +23,15 @@ async function getCollectionRequestsHandler(req: AuthenticatedRequest, context: 
     // This assumes the vehicle_collections table and collection_id in vehicles table exist.
     const { data, error } = await supabase
       .from('vehicle_collections')
-      .select(`
+      .select(
+        `
         id,
         collection_address,
         collection_fee_per_vehicle,
         status,
         vehicles(id)
-      `)
+      `
+      )
       .eq('client_id', clientId)
       .eq('status', 'requested'); // Only show 'requested' collections for now
 
@@ -39,7 +43,7 @@ async function getCollectionRequestsHandler(req: AuthenticatedRequest, context: 
       );
     }
 
-    const formattedData = data.map(collection => ({
+    const formattedData = data.map((collection: any) => ({
       id: collection.id,
       address: collection.collection_address,
       vehicle_count: collection.vehicles.length, // Count vehicles linked to this collection
