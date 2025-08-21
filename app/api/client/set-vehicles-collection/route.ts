@@ -70,8 +70,6 @@ export async function POST(req: NextRequest) {
     const allowedPrevious = new Set([
       'AGUARDANDO DEFINIÇÃO DE COLETA',
       'AGUARDANDO COLETA',
-      'AGUARDANDO CHEGADA DO CLIENTE',
-      // compat: alguns registros antigos podem usar "VEÍCULO"
       'AGUARDANDO CHEGADA DO VEÍCULO',
     ]);
     const { data: currentVehicles, error: curErr } = await admin
@@ -104,7 +102,7 @@ export async function POST(req: NextRequest) {
       if (!estimated_arrival_date) {
         return NextResponse.json({ error: 'Data de previsão de chegada é obrigatória' }, { status: 400 });
       }
-      payload.status = 'AGUARDANDO CHEGADA DO CLIENTE';
+      payload.status = 'AGUARDANDO CHEGADA DO VEÍCULO';
       payload.estimated_arrival_date = estimated_arrival_date;
       payload.pickup_address_id = null;
     }

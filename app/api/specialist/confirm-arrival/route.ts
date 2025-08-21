@@ -43,13 +43,12 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     // Validate current status before confirming arrival
     const allowedPrevious: string[] = [
       'AGUARDANDO COLETA',
-      'AGUARDANDO CHEGADA DO CLIENTE',
       'AGUARDANDO CHEGADA DO VEÍCULO',
     ];
     const currentStatus = String((veh as any).status || '').toUpperCase();
     if (!allowedPrevious.includes(currentStatus)) {
       return NextResponse.json(
-        { error: 'Chegada só pode ser confirmada se o veículo estiver AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO CLIENTE' },
+        { error: 'Chegada só pode ser confirmada se o veículo estiver AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO VEÍCULO' },
         { status: 400 }
       );
     }

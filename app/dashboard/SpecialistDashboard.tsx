@@ -58,7 +58,6 @@ const SpecialistDashboard = () => {
       const currentStatus = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
       const canConfirm =
         currentStatus === 'AGUARDANDO COLETA' ||
-        currentStatus === 'AGUARDANDO CHEGADA DO CLIENTE' ||
         currentStatus === 'AGUARDANDO CHEGADA DO VEÍCULO';
       if (!canConfirm) return;
       setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
@@ -359,7 +358,7 @@ const SpecialistDashboard = () => {
                                 !!confirming[v.id] || !(
                                   (() => {
                                     const s = String(v.status || '').toUpperCase();
-                                    return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
+                                    return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
                                   })()
                                 )
                               }
@@ -367,11 +366,11 @@ const SpecialistDashboard = () => {
                                 padding: '6px 10px',
                                 borderRadius: 6,
                                 border: '1px solid #ccc',
-                                background: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0'; })(),
-                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed'; })(),
+                                background: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0'; })(),
+                                cursor: (() => { const s = String(v.status || '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed'; })(),
                               }}
                               aria-label={`Confirmar chegada do veículo ${v.plate}`}
-                              title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO CLIENTE')(String(v.status || '').toUpperCase())}
+                              title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO VEÍCULO')(String(v.status || '').toUpperCase())}
                             >
                               {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
                             </button>

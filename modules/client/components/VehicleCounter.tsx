@@ -146,8 +146,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
     return (
       s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
       s === 'AGUARDANDO COLETA' ||
-      s === 'AGUARDANDO CHEGADA DO CLIENTE' ||
-      s === 'AGUARDANDO CHEGADA DO VEÍCULO' // compat
+      s === 'AGUARDANDO CHEGADA DO VEÍCULO' 
     );
   };
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
