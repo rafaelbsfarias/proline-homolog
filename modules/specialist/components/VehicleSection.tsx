@@ -1,6 +1,7 @@
 import React from 'react';
 import type { VehicleData } from '../hooks/useClientVehicles';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
+import Pagination from '@/modules/common/components/Pagination';
 
 interface VehicleSectionProps {
   clientName: string;
@@ -18,6 +19,10 @@ interface VehicleSectionProps {
   onOpenChecklist: (vehicle: VehicleData) => void;
   onConfirmArrival: (vehicle: VehicleData) => void;
   confirming: Record<string, boolean>;
+  // Pagination props
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
 const VehicleSection: React.FC<VehicleSectionProps> = ({
@@ -36,6 +41,9 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   onOpenChecklist,
   onConfirmArrival,
   confirming,
+  currentPage,
+  totalPages,
+  onPageChange,
 }) => {
   return (
     <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 16 }}>
@@ -243,6 +251,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
           ))}
         </div>
       )}
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   );
 };

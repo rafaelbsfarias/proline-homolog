@@ -29,6 +29,10 @@ const SpecialistDashboard = () => {
     isSubmitting,
     confirmVehicleArrival,
     startVehicleAnalysis,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    totalPages,
   } = useClientVehicles(selectedClientId || undefined);
 
   const [checklistOpen, setChecklistOpen] = useState(false);
@@ -167,6 +171,10 @@ const SpecialistDashboard = () => {
                   onOpenChecklist={handleOpenChecklist} // Pass new handler
                   onConfirmArrival={handleConfirmArrival} // Pass new handler
                   confirming={isSubmitting} // Pass state from hook
+                  // Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
                 />
               )}
             </div>
