@@ -16,27 +16,9 @@ const SpecialistDashboard = () => {
   const { clients, loading: loadingClients, error: clientsError } = useSpecialistClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
-  const selectedClient = useMemo(
-    () => clients.find(c => c.client_id === selectedClientId) || null,
-    [clients, selectedClientId]
-  );
-
-  const {
-    vehicles,
-    loading: loadingVehicles,
-    error: vehiclesError,
-    refetch,
-    isSubmitting,
-    confirmVehicleArrival,
-    startVehicleAnalysis,
-    // Pagination
-    currentPage,
-    setCurrentPage,
-    totalPages,
-  } = useClientVehicles(selectedClientId || undefined, {
-    plate: filterPlate,
-    status: filterStatus,
-  });
+  // Filtros de veículos (placa e status)
+  const [filterPlate, setFilterPlate] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
@@ -78,9 +60,27 @@ const SpecialistDashboard = () => {
     setSelectedVehicle(null);
   };
 
-  // Filtros de veículos (placa e status)
-  const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const selectedClient = useMemo(
+    () => clients.find(c => c.client_id === selectedClientId) || null,
+    [clients, selectedClientId]
+  );
+
+  const {
+    vehicles,
+    loading: loadingVehicles,
+    error: vehiclesError,
+    refetch,
+    isSubmitting,
+    confirmVehicleArrival,
+    startVehicleAnalysis,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    totalPages,
+  } = useClientVehicles(selectedClientId || undefined, {
+    plate: filterPlate,
+    status: filterStatus,
+  });
 
   const availableStatuses = useMemo(() => {
     const set = new Set<string>();
