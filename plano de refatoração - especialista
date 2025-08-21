@@ -1,0 +1,1236 @@
+Plano de Refatoração do Domínio do EspecialistaApresento um plano de refatoração em 
+  etapas para alinhar o domínio do especialista com os princípios definidos em 
+  @docs/DEVELOPMENT_INSTRUCTIONS.md, mantendo o sistema funcional após cada etapa.
+
+  Etapa 1: Centralizar Validações e Autorizações Comuns
+
+  ObjetivoEliminar duplicações de validações e autorizações nos endpoints da API.
+
+  Tarefas1. Criar modules/specialist/utils/authorization.ts: 
+  `typescript import { SupabaseService } from
+  '@/modules/common/services/SupabaseService';
+     import { validateUUID } from '@/modules/common/utils/inputSanitization'; export
+  class SpecialistAuthorizationService {
+       private supabase = SupabaseService.getInstance().getAdminClient(); async
+  validateVehicleAccess(specialistId: string, vehicleId: string): Promise<boolean> {
+        if (!validateUUID(specialistId) || !validateUUID(vehicleId)) {
+           return false;
+         }
+         const { data: link, error } = await this.supabase
+           .from('client_specialists')
+           .select('client_id')         .eq('client_id',           this.supabase
+               .from('vehicles')             .select('client_id') .eq('id',
+  vehicleId)             .maybeSingle()
+               .then(res => res.data?.client_id)         )
+           .eq('specialist_id', specialistId)
+           .maybeSingle(); return !error && !!link; }
+
+       async validateClientAccess(specialistId: string, clientId: string):
+  Promise<boolean> {
+         if (!validateUUID(specialistId) || !validateUUID(clientId)) {
+  return false;       } const { data: link, error } = await this.supabase
+  .from('client_specialists') .select('client_id')
+           .eq('client_id', clientId) .eq('specialist_id', specialistId)
+           .maybeSingle();       return !error && !!link;     }
+     }   `
+
+   2. Criar modules/specialist/utils/validation.ts:
+
+    1    import { validateUUID } from
+      '@/modules/common/utils/inputSanitization';
+    2 
+    3    export class SpecialistValidationService {
+    4      static validateVehicleId(vehicleId: string): boolean {
+    5        return validateUUID(vehicleId);     } static validateClientId(
+      clientId: string): boolean {
+    6        return validateUUID(clientId);
+    7      }     static validateDate(date: string): boolean {
+    8        return /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date);
+    9      }     static validateOdometer(odometer: number): boolean {
+   10        return typeof odometer === 'number' && odometer >= 0;
+   11      } }
+   12    ```### Benefícios
+   13 - Elimina duplicação de código de validação- Centraliza regras de negócio
+      em serviços reutilizáveis
+   14 - Facilita manutenção futura
+   15 
+  Etapa 2: Refatorar Endpoints da API
+
+  ObjetivoAplicar os serviços centralizados e seguir princípios SOLID.
+
+  Tarefas1. Refatorar app/api/specialist/client-vehicles/route.ts: 
+  `typescript import { NextResponse } from 'next/server';
+     import {
+       withSpecialistAuth, type AuthenticatedRequest,
+     } from '@/modules/common/utils/authMiddleware'; import { SupabaseService } from
+  '@/modules/common/services/SupabaseService';
+     import { SpecialistAuthorizationService } from
+  '@/modules/specialist/utils/authorization'; import { SpecialistValidationService }
+  from '@/modules/specialist/utils/validation';   export const GET =
+  withSpecialistAuth(async (req: AuthenticatedRequest) => { try {
+         const url = new URL(req.url); const clientId =
+  url.searchParams.get('clientId') || '';
+         if (!SpecialistValidationService.validateClientId(clientId)) {
+           return NextResponse.json({ error: 'clientId inválido' }, { status:400 });
+        } const authService = new SpecialistAuthorizationService();       const
+  hasAccess = await authService.validateClientAccess(req.user.id, clientId);
+         if (!hasAccess) {         return NextResponse.json({ error: 'Acesso negado'
+  }, { status: 403 }); }
+
+         const supabase = SupabaseService.getInstance().getAdminClient(); // Fetch
+  vehicles for the client const { data: vehicles, error } = await supabase
+           .from('vehicles')         .select('id, plate, brand, model, color, year,
+  status')
+           .eq('client_id', clientId) .order('created_at', { ascending: false });
+     if (error) {
+           return NextResponse.json({ error: 'Erro ao buscar veículos' }, { status:
+  500 });
+         }
+         return NextResponse.json({ success: true, vehicles: vehicles || [] });
+       } catch {
+         return NextResponse.json({ error: 'Erro interno do servidor' }, { status:
+  500 });
+       } });
+     ``2. Aplicar o mesmo padrão para os demais endpoints: - 
+  confirm-arrival/route.ts`
+      - finalize-checklist/route.ts - get-checklist/route.ts
+      - my-clients/route.ts - save-checklist/route.ts
+      - start-analysis/route.ts
+
+  Benefícios
+   - Consistência na implementação de endpoints
+   - Redução de código duplicado
+   - Melhor separação de responsabilidades
+
+  Etapa 3: Refatorar Hooks Customizados### Objetivo
+  Seguir o Princípio da Responsabilidade Única (SRP) e melhorar a testabilidade.
+
+  Tarefas
+   1. Criar modules/specialist/hooks/useVehicleData.ts:
+
+    1    import { useEffect, useState } from 'react';
+    2    import { useAuthenticatedFetch } from
+      '@/modules/common/hooks/useAuthenticatedFetch';
+    3 
+    4    export interface VehicleData {     id: string;
+    5      plate: string;
+    6      brand: string; model: string;     color: string;
+    7      year: number;
+    8      status?: string; }
+    9 
+   10    interface UseVehicleDataResult {
+   11      vehicles: VehicleData[]; loading: boolean;     error: string | null;
+      refetch: () => void; }
+   12 
+   13    export const useVehicleData = (clientId?: string):
+      UseVehicleDataResult => {     const { get } = useAuthenticatedFetch();
+   14      const [vehicles, setVehicles] = useState<VehicleData[]>([]);
+   15      const [loading, setLoading] = useState(false);
+   16      const [error, setError] = useState<string | null>(null);     const
+      [triggerRefetch, setTriggerRefetch] = useState(0);
+   17 
+   18      const refetch = () => setTriggerRefetch(v => v + 1);
+   19      useEffect(() => {
+   20        const fetchVehicles = async () => {         if (!clientId) return;
+      setLoading(true); setError(null); try {
+   21            const response = await get<{ success: boolean; vehicles:
+      VehicleData[]; error?: string }>(
+      `/api/specialist/client-vehicles?clientId=${clientId}`
+   22            );           if (response.ok && response.data?.success) {
+      setVehicles(response.data.vehicles);
+   23            } else {
+   24              setError(response.data?.error || response.error || 'Erro ao 
+      buscar veículos.');
+   25            }         } catch (e) { setError('Erro de rede ou desconhecido
+      ao buscar veículos.');
+   26          } finally {
+   27            setLoading(false);
+   28          }       }; fetchVehicles();     }, [clientId, get,
+      triggerRefetch]);     return { vehicles, loading, error, refetch };   };
+
+   2. Criar modules/specialist/hooks/useSpecialistData.ts:
+
+    1    import { useEffect, useState } from 'react';
+    2    import { useAuthenticatedFetch } from
+      '@/modules/common/hooks/useAuthenticatedFetch';
+    3 
+    4    interface ClientData { client_id: string;
+    5      client_full_name: string;     vehicle_count: number;
+    6    }
+    7    interface UseSpecialistDataResult {
+    8      clients: ClientData[]; loading: boolean;     error: string | null;
+      refetch: () => void; }
+    9 
+   10    export const useSpecialistData = (): UseSpecialistDataResult => {
+   11      const { get } = useAuthenticatedFetch();     const [clients,
+      setClients] = useState<ClientData[]>([]);
+   12      const [loading, setLoading] = useState(true);
+   13      const [error, setError] = useState<string | null>(null);     const
+      [triggerRefetch, setTriggerRefetch] = useState(0);
+   14 
+   15      const refetch = () => {
+   16        setTriggerRefetch(prev => prev +1);
+   17      };
+   18      useEffect(() => {
+   19        const fetchClients = async () => { setLoading(true); setError(null
+      ); try {
+   20            const response = await get<{ success: boolean; clients:
+      ClientData[]; error?: string }>(             '/api/specialist/my-clients'
+   21            );           if (response.ok && response.data?.success) {
+      setClients(response.data.clients); } else { setError(response.data?.error
+      || response.error || 'Erro ao buscar clientes.'); }
+   22          } catch (error) {           setError('Erro de rede ou 
+      desconhecido ao buscar clientes.');
+   23          } finally {
+   24            setLoading(false);
+   25          }       }; fetchClients(); }, [get, triggerRefetch]);
+   26      return { clients, loading, error, refetch };
+   27    }; ```
+   28 
+   3. Atualizar modules/specialist/hooks/useClientVehicles.ts para usar o novo hook:
+
+   1    export { useVehicleData as useClientVehicles, type VehicleData } from
+     './useVehicleData'; ```
+   2 
+   4. Atualizar modules/specialist/hooks/useSpecialistClients.ts para usar o novo hook:
+
+   1    export { useSpecialistData as useSpecialistClients } from
+     './useSpecialistData';
+   2    ```### Benefícios
+   3 - Separação clara de responsabilidades- Maior reusabilidade dos hooks
+   4 - Código mais testável
+   5 
+  Etapa 4: Refatorar Componentes do Dashboard
+
+  Objetivo
+  Separar responsabilidades e seguir princípios SOLID.
+
+  Tarefas1. Criar 
+  modules/specialist/components/SpecialistDashboard/SpecialistHeader.tsx:
+
+    1    import React from 'react';
+    2    import styles from './SpecialistDashboard.module.css';
+    3    interface SpecialistHeaderProps { userName: string;     onRefresh: ()
+      => void;     onLogout: () => void;     loading: boolean;
+    4    }   export const SpecialistHeader: React.FC<SpecialistHeaderProps> =
+      ({     userName, onRefresh, onLogout, loading
+    5    }) => (
+    6      <header className={styles.header}>
+    7        <div className={styles.headerContent}> <h1>Painel do Especialista
+      </h1>
+    8          <div className={styles.userActions}> <span>Bem-vindo,
+      {userName}!</span>
+    9            <button
+   10              onClick={onRefresh} className={styles.refreshButton}
+   11              disabled={loading} >
+   12              🔄 Atualizar           </button>           <button onClick=
+      {onLogout} className={styles.logoutButton}>
+   13              Sair
+   14            </button>
+   15          </div>
+   16        </div>
+   17      </header>
+   18    );   ```
+   19 
+   2. Criar modules/specialist/components/SpecialistDashboard/ClientList.tsx:
+  `typescript   import React, { useState } from 'react'; import styles from
+  './SpecialistDashboard.module.css';
+     import { useVehicleData } from '@/modules/specialist/hooks/useVehicleData';
+     interface Client {
+       client_id: string; client_full_name: string;
+       vehicle_count: number;   } interface ClientListProps {
+       clients: Client[];
+       clientsError: string | null;
+       onSelectClient: (clientId: string | null) => void;     selectedClientId:
+  string | null;   } export const ClientList: React.FC<ClientListProps> = ({
+       clients,     clientsError,     onSelectClient,     selectedClientId   }) => {
+      if (clientsError) { return <p style={{ color: 'red' }}>Erro ao carregar
+  clientes: {clientsError}</p>; }
+
+       if (clients.length === 0) {       return <p>Nenhum cliente associado a você
+  ainda.</p>;     } return (
+         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+           <thead>
+             <tr style={{ background: '#f0f0f0' }}>
+               <th style={{ padding: '10px', textAlign: 'left' }}>Cliente</th> <th
+  style={{ padding: '10px', textAlign: 'center' }}>Total de Veículos</th>
+   <th style={{ padding: '10px', textAlign: 'center' }}>Ações</th> </tr> </thead>
+  <tbody> {clients.map(client => (
+               <tr key={client.client_id} style={{ borderBottom: '1px solid #eee'
+  }}> <td style={{ padding: '10px', textAlign: 'left' }}>
+                   {client.client_full_name}               </td>               <td
+  style={{ padding: '10px', textAlign: 'center' }}>
+                   {client.vehicle_count}               </td>               <td
+  style={{ padding: '10px', textAlign: 'center' }}>
+                   <button
+                     type="button" onClick={() => onSelectClient(prev =>
+            prev === client.client_id ? null : client.client_id
+                       ) }
+                     style={{                     padding: '6px 12px', borderRadius:
+  6,
+                       border: '1px solid #ccc', background:
+                         selectedClientId === client.client_id ? '#e8f0fe' :
+  '#fafafa',
+                       cursor: 'pointer',                   }}
+                     aria-expanded={selectedClientId === client.client_id}
+                     aria-controls={vehicles-${client.client_id}} >
+                     {selectedClientId === client.client_id
+                       ? 'Ocultar veículos' : 'Ver veículos'}
+                   </button>
+                 </td>
+               </tr>
+             ))}         </tbody>       </table>     );
+     };   `
+
+   3. Criar modules/specialist/components/SpecialistDashboard/VehicleList.tsx:
+  `typescript   import React, { useState, useMemo } from 'react';
+     import styles from './SpecialistDashboard.module.css';
+     interface Vehicle {
+       id: string;
+       plate: string; brand: string;     model: string;
+       color: string;
+       year: number; status?: string;   } interface VehicleListProps {
+       vehicles: Vehicle[];
+       statusOverrides: Record<string, string>; setStatusOverrides:
+  React.Dispatch<React.SetStateAction<Record<string, string>>>;
+       confirming: Record<string, boolean>;
+       setConfirming: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+      onOpenChecklist: (vehicle: Vehicle) => void;
+       onConfirmArrival: (vehicle: Vehicle) => void;   } export const VehicleList:
+  React.FC<VehicleListProps> = ({
+       vehicles,
+       statusOverrides,
+       setStatusOverrides,
+       confirming,     setConfirming,
+       onOpenChecklist, onConfirmArrival
+     }) => {
+       // Filtros de veículos (placa e status) const uiVehicles = useMemo(() => {
+         return vehicles.map(v => ({ ...v, status: statusOverrides[v.id] ?? v.status
+  }));
+       }, [vehicles, statusOverrides]); const [filterPlate, setFilterPlate] =
+  useState('');     const [filterStatus, setFilterStatus] = useState<string>('');
+   const filteredVehicles = useMemo(() => {
+         const term = filterPlate.trim().toLowerCase();       return
+  uiVehicles.filter(v => {
+           const matchesPlate = term ? v.plate.toLowerCase().includes(term) : true;
+  const matchesStatus = filterStatus ? (v.status || '').toLowerCase() ===
+  filterStatus : true;         return matchesPlate && matchesStatus;       });
+       }, [uiVehicles, filterPlate, filterStatus]);     const availableStatuses =
+  useMemo(() => {
+         const set = new Set<string>();
+         uiVehicles.forEach(v => v.status && set.add((v.status as
+  string).toLowerCase()));
+         return Array.from(set);     }, [uiVehicles]);     return ( <div style={{
+             display: 'grid',           gridTemplateColumns: 'repeat(auto-fill,
+  minmax(240px, 1fr))', gap: 12,
+             marginTop: 12,
+           }} >
+           <div style={{ gridColumn: '1 / -1' }}> <div style={{
+                 display: 'flex',               gap:12, flexWrap: 'wrap',
+                 alignItems: 'flex-end',
+               }} >
+               <div>
+                 <label
+                   htmlFor="filter-plate"                 style={{ display: 'block',
+  color: '#333' }}               >
+                   Filtrar por placa
+                 </label>
+                 <input
+                   id="filter-plate"
+                   type="text"
+                   placeholder="Ex: ABC1234"
+                   value={filterPlate} onChange={e =>
+  setFilterPlate(e.target.value)} style={{
+                     padding: '6px 8px',                   border: '1px solid #ccc',
+                     borderRadius: 6,                 }}
+                 />             </div>             <div>               <label
+           htmlFor="filter-status"
+                   style={{ display: 'block', color: '#333' }}
+                 >                 Status </label> <select id="filter-status"
+                   value={filterStatus} onChange={e =>
+  setFilterStatus(e.target.value)} style={{
+                     padding: '6px 8px',                   border: '1px solid #ccc',
+                     borderRadius: 6,                 }}
+                 >                 <option value="">Todos</option>
+                   {availableStatuses.map(s => (
+                     <option key={s} value={s}>
+                       {s}
+                     </option>
+                   ))} </select> </div> {(filterPlate || filterStatus) && (
+                 <div>
+                   <button
+                     type="button"
+                     onClick={() => { setFilterPlate('');
+  setFilterStatus('');
+                     }} style={{
+                       padding: '6px 10px',
+                       borderRadius: 6, border: '1px solid #ccc',
+                       background: '#fff', cursor: 'pointer',
+                     }} >
+                     Limpar filtros </button> </div> )}
+             </div>
+           </div>
+
+           {filteredVehicles.map(v => ( <div key={v.id}
+               style={{               border: '1px solid #eee',
+                 borderRadius: 8,               padding:12, background: '#fafafa',
+               }}           >
+               <div style={{ fontWeight: 600, color: '#333' }}>
+                 {v.brand} {v.model} </div> <div style={{ color: '#555' }}>Placa:
+  {v.plate}</div>
+               <div style={{ color: '#555' }}>Ano: {v.year}</div>             <div
+  style={{ color: '#555' }}>Cor: {v.color}</div>
+               {v.status && <div style={{ color: '#555' }}>Status: {v.status}</div>}
+               <div style={{ marginTop: 8, display: 'flex', gap:8 }}>
+                 <button
+                   type="button" onClick={() => onOpenChecklist(v)}
+                   disabled={!(() => { const s = String(v.status ||
+  '').toUpperCase(); return s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE'; })()}
+                 style={{ padding: '6px 10px',
+                     borderRadius: 6,                   border: '1px solid #ccc',
+                     background: (() => { const s = String(v.status ||
+  '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ?
+  '#fff' : '#f0f0f0'; })(), cursor: (() => { const s = String(v.status ||
+  '').toUpperCase(); return (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ?
+  'pointer' : 'not-allowed'; })(),
+                   }} aria-label={Abrir checklist para o veículo ${v.plate}}
+                   title={(s => (s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE') ?
+  'Abrir checklist' : 'Disponível após confirmar chegada')(String(v.status ||
+  '').toUpperCase())}
+                 > Checklist
+                 </button> <button type="button"                 onClick={() =>
+  onConfirmArrival(v)}
+                   disabled={
+                     !!confirming[v.id] || !( (() => { const s = String(v.status ||
+  '').toUpperCase();
+                         return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO
+  CHEGADA DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO';
+  })() )
+                   } style={{
+                     padding: '6px 10px',
+                     borderRadius: 6, border: '1px solid #ccc',
+                     background: (() => { const s = String(v.status ||
+  '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA
+  DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? '#e8f5e9' : '#f0f0f0';
+  })(),
+                     cursor: (() => { const s = String(v.status ||
+  '').toUpperCase(); return s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA
+  DO VEÍCULO' || s === 'AGUARDANDO CHEGADA DO VEÍCULO' ? 'pointer' : 'not-allowed';
+  })(), }}
+                   aria-label={Confirmar chegada do veículo ${v.plate}}
+     title={(s => (s === 'AGUARDANDO COLETA' || s === 'AGUARDANDO CHEGADA DO VEÍCULO'
+   || s === 'AGUARDANDO CHEGADA DO VEÍCULO') ? 'Confirmar chegada' : 'Disponível
+  quando status for AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO
+  VEÍCULO')(String(v.status || '').toUpperCase())}               >
+                   {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
+                 </button>
+               </div>
+             </div>
+           ))}       </div>     );
+     };   `
+
+   4. Atualizar app/dashboard/SpecialistDashboard.tsx para usar os novos componentes:
+
+    1    import React, { useEffect, useMemo, useState } from 'react';
+    2    import Header from '../../modules/admin/components/Header'; import {
+      supabase } from '@/modules/common/services/supabaseClient';
+    3    import { useSpecialistClients } from
+      '@/modules/specialist/hooks/useSpecialistClients';
+    4    import { useClientVehicles } from
+      '@/modules/specialist/hooks/useClientVehicles';
+    5    import VehicleChecklistModal from
+      '@/modules/specialist/components/VehicleChecklistModal';   import {
+      SpecialistHeader } from
+      '@/modules/specialist/components/SpecialistDashboard/SpecialistHeader';
+    6    import { ClientList } from
+      '@/modules/specialist/components/SpecialistDashboard/ClientList'; import
+      { VehicleList } from
+      '@/modules/specialist/components/SpecialistDashboard/VehicleList';
+    7    const SpecialistDashboard = () => {
+    8      const [userName, setUserName] = useState('');     const
+      [loadingUser, setLoadingUser] = useState(true);
+    9      const { clients, loading: loadingClients, error: clientsError,
+      refetch: refetchClients } = useSpecialistClients();
+   10      const [selectedClientId, setSelectedClientId] = useState<string |
+      null>(null);
+   11      const selectedClient = useMemo(
+   12        () => clients.find(c => c.client_id === selectedClientId) || null,
+   13        [clients, selectedClientId]
+   14      ); const {
+   15        vehicles,
+   16        loading: loadingVehicles,       error: vehiclesError,
+   17        refetch: refetchVehicles, } = useClientVehicles(selectedClientId
+      || undefined); const [checklistOpen, setChecklistOpen] = useState(false);
+      const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
+      const [statusOverrides, setStatusOverrides] = useState<Record<string,
+      string>>({}); const [confirming, setConfirming] = useState<Record<string,
+      boolean>>({});     // ... (restante do código permanece o mesmo)
+   18    };   export default SpecialistDashboard;
+
+  Benefícios
+   - Separação clara de responsabilidades
+   - Código mais legível e manutenível
+   - Componentes reutilizáveis
+   - Melhor organização visual
+
+  Etapa 5: Criar Serviços de Negócio para o Domínio
+
+  ObjetivoSeguir os princípios SOLID e centralizar a lógica de negócio.
+
+  Tarefas
+   1. Criar modules/specialist/services/SpecialistVehicleService.ts:
+
+    1    import { SupabaseService } from
+      '@/modules/common/services/SupabaseService';   import {
+      SpecialistAuthorizationService } from
+      '@/modules/specialist/utils/authorization';
+    2 
+    3    export class SpecialistVehicleService {
+    4      private supabase = SupabaseService.getInstance().getAdminClient();
+    5      private authService = new SpecialistAuthorizationService(); async
+      confirmVehicleArrival(specialistId: string, vehicleId: string): Promise<{
+      success: boolean; error?: string }> {       try { // Verificar acesso
+    6          const hasAccess = await this.authService.validateVehicleAccess
+      (specialistId, vehicleId);         if (!hasAccess) { return { success:
+      false, error: 'Acesso negado' }; }
+    7 
+    8          // Fetch vehicle and check ownership
+    9          const { data: veh, error: vehErr } = await this.supabase
+   10            .from('vehicles') .select('id, client_id, status')
+   11            .eq('id', vehicleId) .maybeSingle();
+   12          if (vehErr) {           return { success: false, error: 'Erro ao
+      carregar veículo' };
+   13          }         if (!veh) {
+   14            return { success: false, error: 'Veículo não encontrado' };
+   15          }
+   16          // Validate current status before confirming arrival
+   17          const allowedPrevious: string[] = [ 'AGUARDANDO COLETA',
+   18            'AGUARDANDO CHEGADA DO VEÍCULO',
+   19          ];         const currentStatus = String((veh as any).status ||
+      '').toUpperCase();
+   20          if (!allowedPrevious.includes(currentStatus)) { return { success
+      : false,
+   21              error: 'Chegada só pode ser confirmada se o veículo estiver 
+      AGUARDANDO COLETA ou AGUARDANDO CHEGADA DO VEÍCULO'
+   22            };         } // Update vehicle status
+   23          const { error: updErr } = await this.supabase           .from(
+      'vehicles')
+   24            .update({ status: 'CHEGADA CONFIRMADA' })
+   25            .eq('id', vehicleId); if (updErr) {
+   26            return { success: false, error: 'Erro ao confirmar chegada' };
+      } return { success: true };
+   27        } catch (error) {
+   28          return {
+   29            success: false, error: error instanceof Error ? error.message
+      : 'Erro interno do servidor'
+   30          }; }
+   31      }     async startVehicleAnalysis(specialistId: string, vehicleId:
+      string): Promise<{ success: boolean; error?: string }> {       try { // 
+      Verificar acesso
+   32          const hasAccess = await this.authService.validateVehicleAccess
+      (specialistId, vehicleId);         if (!hasAccess) { return { success:
+      false, error: 'Acesso negado' }; }
+   33 
+   34          // Fetch vehicle const { data: veh, error: vehErr } = await 
+      this.supabase
+   35            .from('vehicles')           .select('id, client_id, status') .
+      eq('id', vehicleId)           .maybeSingle();
+   36 
+   37          if (vehErr) {
+   38            return { success: false, error: 'Erro ao carregar veículo' };
+   39          }
+   40          if (!veh) { return { success: false, error: 'Veículo não 
+      encontrado' }; }
+   41 
+   42          const current = String((veh as any).status || '').toUpperCase();
+   43          const allowedPrev = current === 'CHEGADA CONFIRMADA' || current
+      === 'EM ANÁLISE'; if (!allowedPrev) {
+   44            return {
+   45              success: false,             error: 'Início de análise 
+      permitido apenas após Chegada Confirmada' };
+   46          }         // Set status to EM ANÁLISE const { error: updErr } = 
+      await this.supabase
+   47            .from('vehicles')           .update({ status: 'EM ANÁLISE' })
+   48            .eq('id', vehicleId);         if (updErr) { return { success:
+      false, error: 'Erro ao iniciar análise' }; }
+   49 
+   50          return { success: true };
+   51        } catch (error) {         return {           success: false,
+   52            error: error instanceof Error ? error.message : 'Erro interno 
+      do servidor'         };
+   53        }     }
+   54    }   ```
+   55 
+   2. Criar modules/specialist/services/SpecialistChecklistService.ts:
+
+     1    import { SupabaseService } from
+       '@/modules/common/services/SupabaseService';
+     2    import { SpecialistAuthorizationService } from
+       '@/modules/specialist/utils/authorization';
+     3    import { SpecialistValidationService } from
+       '@/modules/specialist/utils/validation'; interface ChecklistPayload {
+       vehicleId: string;
+     4      date: string; // YYYY-MM-DD     odometer: number;
+     5      fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full'
+       ; observations?: string;     services?: {       mechanics?: { required?:
+       boolean; notes?: string };       bodyPaint?: { required?: boolean; notes
+       ?: string };
+     6        washing?: { required?: boolean; notes?: string };
+     7        tires?: { required?: boolean; notes?: string };
+     8      }; mediaPaths?: string[]; // Supabase Storage paths already 
+       uploaded from client
+     9    }   export class SpecialistChecklistService {     private supabase =
+       SupabaseService.getInstance().getAdminClient();     private authService
+       = new SpecialistAuthorizationService();
+    10 
+    11      async saveChecklist(       specialistId: string, payload:
+       ChecklistPayload
+    12      ): Promise<{ success: boolean; error?: string; inspectionId?:
+       string }> { try {
+    13          const vehicleId = String(payload.vehicleId || '');
+    14 
+    15          if (!SpecialistValidationService.validateVehicleId(vehicleId))
+       {           return { success: false, error: 'vehicleId inválido' };
+       } if (!SpecialistValidationService.validateDate(payload.date || '')) {
+    16            return { success: false, error: 'Data inválida' };
+    17          }
+    18          if (!SpecialistValidationService.validateOdometer(payload.
+       odometer)) {
+    19            return { success: false, error: 'Quilometragem inválida' };
+    20          }         // Authorization: ensure this specialist is linked to
+       the client's vehicle const hasAccess = await 
+       this.authService.validateVehicleAccess(specialistId, vehicleId);
+    21          if (!hasAccess) {
+    22            return { success: false, error: 'Acesso negado' };
+    23          }         // Enforce vehicle status before allowing checklist
+    24          const { data: veh } = await this.supabase           .from(
+       'vehicles')
+    25            .select('id, client_id, status')
+    26            .eq('id', vehicleId)
+    27            .maybeSingle();         if (!veh) {
+    28            return { success: false, error: 'Veículo não encontrado' };
+    29          }
+    30          const s = String((veh as any).status || '').toUpperCase();
+       const allowed = s === 'CHEGADA CONFIRMADA' || s === 'EM ANÁLISE';
+    31          if (!allowed) { return { success: false,
+    32              error: 'Checklist disponível apenas após Chegada Confirmada
+       ou em Análise'
+    33            };         } // Find existing non-finalized inspection for 
+       this vehicle (collaborative) const { data: existing } = await 
+       this.supabase
+    34            .from('inspections')           .select('id, finalized')
+       .eq('vehicle_id', vehicleId)
+    35            .eq('finalized', false) .order('created_at', { ascending:
+       false }) .limit(1)
+    36            .maybeSingle(); let inspectionId: string;
+    37          if (existing?.id) {
+    38            // Update existing const { error: updInsErr } = await 
+       this.supabase .from('inspections')
+    39              .update({
+    40                specialist_id: specialistId, // last editor
+    41                inspection_date: payload.date,               odometer:
+       payload.odometer,               fuel_level: payload.fuelLevel,
+    42                observations: payload.observations || null,
+    43              })             .eq('id', existing.id);
+    44 
+    45            if (updInsErr) {
+    46              return { success: false, error: 'Erro ao salvar inspeção'
+       };           } inspectionId = existing.id; // Clear services to 
+       re-insert snapshot           const { error: delSvcErr } = await 
+       this.supabase             .from('inspection_services') .delete() 
+       .eq('inspection_id', inspectionId);
+    47 
+    48            if (delSvcErr) {
+    49              return { success: false, error: 'Erro ao salvar serviços'
+       };
+    50            }         } else {           // Insert new inspection
+    51            const { data: ins, error: insErr } = await this.supabase
+    52              .from('inspections')             .insert({
+       vehicle_id: vehicleId, specialist_id: specialistId,
+    53                inspection_date: payload.date,
+    54                odometer: payload.odometer,
+    55                fuel_level: payload.fuelLevel,
+    56                observations: payload.observations || null, finalized:
+       false,             })
+    57              .select()
+    58              .single(); if (insErr) {
+    59              return { success: false, error: 'Erro ao salvar inspeção'
+       };           } inspectionId = ins.id;
+    60          }
+    61          // Insert services flags (only required or with notes)
+    62          const services = payload.services || {};
+    63          const toInsert: { inspection_id: string; category: string;
+       required: boolean; notes?: string | null }[] = [];
+    64          const pushService = (key: keyof NonNullable<ChecklistPayload[
+       'services']>, category: string) => {
+    65            const s = services[key];
+    66            if (!s) return;           const required = !!s.required;
+       const notes = (s.notes || '').trim(); if (required || notes) toInsert.
+       push({ inspection_id: inspectionId, category, required, notes: notes ||
+       null });
+    67          };         pushService('mechanics', 'mechanics');
+    68          pushService('bodyPaint', 'bodyPaint');         pushService(
+       'washing', 'washing');
+    69          pushService('tires', 'tires');
+    70          if (toInsert.length) {
+    71            const { error: svcErr } = await this.supabase.from(
+       'inspection_services').insert(toInsert.map(s => ({ ...s, inspection_id:
+       inspectionId })));
+    72            if (svcErr) {             return { success: false, error:
+       'Erro ao salvar serviços' };           }
+    73          }
+    74          // Insert media references, if any
+    75          const media = (payload.mediaPaths || []).filter(Boolean).map(p
+       => ({ inspection_id: inspectionId,
+    76            storage_path: p,           uploaded_by: specialistId, }));
+    77 
+    78          if (media.length) {
+    79            const { error: mediaErr } = await this.supabase.from(
+       'inspection_media').insert(media); if (mediaErr) {
+    80              return { success: false, error: 'Erro ao registrar mídias'
+       };           }
+    81          }
+    82          // Optionally update vehicle snapshot info and set status to EM
+       ANÁLISE while not finalized
+    83          await this.supabase           .from('vehicles')
+    84            .update({ current_odometer: payload.odometer, fuel_level:
+       payload.fuelLevel, status: 'EM ANÁLISE' })           .eq('id',
+       vehicleId);
+    85 
+    86          // Record history snapshot         try { const snapshot = {
+       date: payload.date,
+    87              odometer: payload.odometer,
+    88              fuelLevel: payload.fuelLevel, observations: payload.
+       observations || null,             services: {               mechanics: {
+       required: !!services.mechanics?.required, notes: services.mechanics?.
+       notes || '' }, bodyPaint: { required: !!services.bodyPaint?.required,
+       notes: services.bodyPaint?.notes || '' }, washing: { required:
+       !!services.washing?.required, notes: services.washing?.notes || '' },
+    89                tires: { required: !!services.tires?.required, notes:
+       services.tires?.notes || '' },
+    90              }, mediaPaths: payload.mediaPaths || [],           };
+    91            await this.supabase
+    92              .from('inspection_history')             .insert({
+       inspection_id: inspectionId, vehicle_id: vehicleId,
+    93                edited_by: specialistId,
+    94                snapshot,             });
+    95          } catch (histErr) {
+    96            // Log but don't fail the operation         } return { 
+       success: true, inspectionId };
+    97        } catch (error) {         return {           success: false,
+    98            error: error instanceof Error ? error.message : 'Erro interno
+       do servidor'         };
+    99        }     } async finalizeChecklist(
+   100        specialistId: string,       vehicleId: string
+   101      ): Promise<{ success: boolean; error?: string }> { try {
+   102          if (!SpecialistValidationService.validateVehicleId(vehicleId))
+       {           return { success: false, error: 'vehicleId inválido' };
+       } // Authorization: ensure this specialist is linked to the client's 
+       vehicle
+   103          const hasAccess = await this.authService.validateVehicleAccess
+       (specialistId, vehicleId);
+   104          if (!hasAccess) {           return { success: false, error:
+       'Acesso negado' };         } // Get latest non-finalized inspection for 
+       this vehicle const { data: inspection } = await this.supabase
+   105            .from('inspections')           .select('id')
+   106            .eq('vehicle_id', vehicleId)           .eq('finalized', false
+       )
+   107            .order('created_at', { ascending: false })
+   108            .limit(1) .maybeSingle();
+   109          if (!inspection) { return { success: false, error: 'Nenhuma 
+       análise em andamento' };
+   110          }
+   111          // Mark as finalized const { error: updErr } = await 
+       this.supabase
+   112            .from('inspections')
+   113            .update({ finalized: true })
+   114            .eq('id', inspection.id); if (updErr) {
+   115            return { success: false, error: 'Erro ao finalizar análise'
+       }; }
+   116 
+   117          // Update vehicle status         await this.supabase 
+       .from('vehicles')
+   118            .update({ status: 'Análise Finalizada' }) .eq('id',
+       vehicleId);
+   119          return { success: true };       } catch (error) { return {
+       success: false,
+   120            error: error instanceof Error ? error.message : 'Erro interno
+       do servidor' };
+   121        } }
+   122    } ```
+   123 
+  Benefícios
+   - Centralização da lógica de negócio
+   - Melhor separação de responsabilidades
+   - Código mais testável
+   - Maior reusabilidade## Etapa6: Atualizar Endpoints da API para Usar Serviços###
+     Objetivo
+  Aplicar os serviços centralizados nos endpoints da API.
+
+  Tarefas
+   1. Atualizar app/api/specialist/confirm-arrival/route.ts:
+
+    1    import { NextResponse } from 'next/server';
+    2    import { withSpecialistAuth, type AuthenticatedRequest } from
+      '@/modules/common/utils/authMiddleware';
+    3    import { SpecialistVehicleService } from
+      '@/modules/specialist/services/SpecialistVehicleService';
+    4    import { SpecialistValidationService } from
+      '@/modules/specialist/utils/validation'; export const POST =
+      withSpecialistAuth(async (req: AuthenticatedRequest) => {
+    5      try {
+    6        const body = await req.json();
+    7        const vehicleId = (body?.vehicleId as string) || '';
+    8        if (!SpecialistValidationService.validateVehicleId(vehicleId)) {
+      return NextResponse.json({ error: 'vehicleId inválido' }, { status: 400
+      });
+    9        }
+   10        const vehicleService = new SpecialistVehicleService(); const
+      result = await vehicleService.confirmVehicleArrival(req.user.id,
+      vehicleId);
+   11 
+   12        if (!result.success) {
+   13          return NextResponse.json({ error: result.error }, { status:500
+      });       } return NextResponse.json({ success: true });
+   14      } catch {
+   15        return NextResponse.json({ error: 'Erro interno do servidor' }, {
+      status: 500 });
+   16      } });
+   17    ```2. Atualizar `app/api/specialist/start-analysis/route.ts`:
+   18 
+    1    import { NextResponse } from 'next/server';
+    2    import { withSpecialistAuth, type AuthenticatedRequest } from
+      '@/modules/common/utils/authMiddleware';
+    3    import { SpecialistVehicleService } from
+      '@/modules/specialist/services/SpecialistVehicleService';
+    4    import { SpecialistValidationService } from
+      '@/modules/specialist/utils/validation'; export const POST =
+      withSpecialistAuth(async (req: AuthenticatedRequest) => {
+    5      try {
+    6        const body = await req.json();
+    7        const vehicleId = (body?.vehicleId as string) || '';
+    8        if (!SpecialistValidationService.validateVehicleId(vehicleId)) {
+      return NextResponse.json({ error: 'vehicleId inválido' }, { status: 400
+      });
+    9        }
+   10        const vehicleService = new SpecialistVehicleService(); const
+      result = await vehicleService.startVehicleAnalysis(req.user.id,
+      vehicleId);
+   11        if (!result.success) {         return NextResponse.json({ error:
+      result.error }, { status: 500 }); }
+   12 
+   13        return NextResponse.json({ success: true });     } catch {
+      return NextResponse.json({ error: 'Erro interno do servidor' }, { status:
+      500 });     }
+   14    });   ```
+   15 
+   3. Atualizar app/api/specialist/save-checklist/route.ts:
+
+   1    import { NextResponse } from 'next/server';
+   2    import { withSpecialistAuth, type AuthenticatedRequest } from
+     '@/modules/common/utils/authMiddleware';
+   3    import { SpecialistChecklistService } from
+     '@/modules/specialist/services/SpecialistChecklistService';
+   4    export const POST = withSpecialistAuth(async (req: AuthenticatedRequest
+     ) => {     try { const body = await req.json();       const
+     checklistService = new SpecialistChecklistService(); const result = await
+     checklistService.saveChecklist(req.user.id, body);       if (!result.
+     success) { return NextResponse.json({ error: result.error }, { status: 500
+     });
+   5        }
+   6        return NextResponse.json({ success: true, inspectionId: result.
+     inspectionId }); } catch { return NextResponse.json({ error: 'Erro interno
+     do servidor' }, { status: 500 }); }
+   7    }); ```
+   8 
+   4. Atualizar app/api/specialist/finalize-checklist/route.ts:
+  `typescript import { NextResponse } from 'next/server';
+     import { withSpecialistAuth, type AuthenticatedRequest } from
+  '@/modules/common/utils/authMiddleware'; import { SpecialistChecklistService }
+  from '@/modules/specialist/services/SpecialistChecklistService';
+     import { SpecialistValidationService } from
+  '@/modules/specialist/utils/validation';
+
+     export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
+       try {       const body = await req.json();       const vehicleId =
+  String(body?.vehicleId || '');
+         if (!SpecialistValidationService.validateVehicleId(vehicleId)) { return
+  NextResponse.json({ error: 'vehicleId inválido' }, { status: 400 });
+         }
+         const checklistService = new SpecialistChecklistService();       const
+  result = await checklistService.finalizeChecklist(req.user.id, vehicleId); if
+  (!result.success) {
+           return NextResponse.json({ error: result.error }, { status: 500 });
+         }       return NextResponse.json({ success: true });
+       } catch {
+         return NextResponse.json({ error: 'Erro interno do servidor' }, { status:
+  500 });
+       }   });
+   1 
+  Benefícios
+   - Consistência na implementação dos endpoints- Redução de código duplicado- Melhor
+     separação de responsabilidades
+   - Maior facilidade de manutenção## Etapa7: Refatorar Componentes do Checklist
+
+  Objetivo
+  Melhorar a organização dos componentes do checklist e seguir princípios SOLID.
+
+  Tarefas
+   1. Criar modules/specialist/components/Checklist/ChecklistHeader.tsx:
+  `typescript   import React from 'react'; import styles from
+  '../VehicleChecklistModal.module.css';   interface ChecklistHeaderProps {
+       vehicle: {
+         brand: string; model: string;       year?: number;
+         plate: string;
+         color?: string; } | null;     isFinalized: boolean; }
+
+     export const ChecklistHeader: React.FC<ChecklistHeaderProps> = ({ vehicle,
+  isFinalized }) => {
+       if (!vehicle) return null; return (
+         <div className={styles.vehicleHeader}> <div> Veículo: {vehicle.brand}
+  {vehicle.model} {vehicle.year ? • ${vehicle.year} : ''} </div> <div>Placa:
+  {vehicle.plate}</div>
+           {vehicle.color && <div>Cor: {vehicle.color}</div>}
+           {isFinalized && <div className={styles.success}>Checklist
+  finalizado</div>}
+         </div>
+       ); };
+     ``2. Criar modules/specialist/components/Checklist/BasicInspectionForm.tsx`:
+
+    1    import React from 'react';
+    2    import styles from '../VehicleChecklistModal.module.css';
+    3 
+    4    interface BasicInspectionFormProps {
+    5      form: {
+    6        date: string; odometer: string;
+    7        fuelLevel: string; };
+    8      setField: (name: string, value: string) => void;
+    9      isFinalized: boolean;   } export const BasicInspectionForm: React.FC
+      <BasicInspectionFormProps> = ({
+   10      form,
+   11      setField,
+   12      isFinalized
+   13    }) => (
+   14      <div className={styles.grid}>
+   15        <div className={styles.field}>
+   16          <label htmlFor="date">Data da inspeção</label>
+   17          <input
+   18            id="date"
+   19            name="date" type="date"           value={form.date}
+   20            onChange={e => setField('date', e.target.value)}
+      required disabled={isFinalized}
+   21          />       </div>       <div className={styles.field}>
+      <label htmlFor="odometer">Quilometragem atual (km)</label> <input id=
+      "odometer"
+   22            name="odometer" type="number"           min="0"
+   23            inputMode="numeric" value={form.odometer}
+   24            onChange={e => setField('odometer', e.target.value)}
+   25            disabled={isFinalized}           required />
+   26        </div>
+   27        <div className={styles.field}>
+   28          <label htmlFor="fuelLevel">Nível de combustível</label>
+   29          <select
+   30            id="fuelLevel" name="fuelLevel"
+   31            value={form.fuelLevel}
+   32            onChange={e => setField('fuelLevel', e.target.value)}
+      disabled={isFinalized} >
+   33            <option value="empty">Vazio</option>
+   34            <option value="quarter">1/4</option>
+   35            <option value="half">1/2</option> <option
+      value="three_quarters">3/4</option>
+   36            <option value="full">Cheio</option>
+   37          </select>
+   38        </div>
+   39      </div>
+   40    );   ```
+   41 
+   3. Criar modules/specialist/components/Checklist/ServiceCategoriesSection.tsx:
+  `typescript   import React from 'react'; import styles from
+  '../VehicleChecklistModal.module.css'; import ServiceCategoryField from
+  './ServiceCategoryField'; interface ServiceCategoriesSectionProps {
+       services: {
+         mechanics: { required: boolean; notes: string };
+         bodyPaint: { required: boolean; notes: string }; washing: { required:
+  boolean; notes: string }; tires: { required: boolean; notes: string }; };
+       setServiceFlag: (key: string, required: boolean) => void;
+       setServiceNotes: (key: string, notes: string) => void; isFinalized: boolean;
+     }
+     export const ServiceCategoriesSection: React.FC<ServiceCategoriesSectionProps>
+  = ({
+       services,     setServiceFlag,
+       setServiceNotes,
+       isFinalized }) => ( <div className={styles.group}> <h4
+  className={styles.groupTitle}>Serviços necessários</h4>
+         <div className={styles.grid}>
+           <ServiceCategoryField label="Mecânica"
+  checked={services.mechanics.required}
+             notes={services.mechanics.notes} onToggle={v =>
+  setServiceFlag('mechanics', v)} onNotesChange={v => setServiceNotes('mechanics',
+  v)}           disabled={isFinalized} />
+           <ServiceCategoryField label="Funilaria/Pintura"
+             checked={services.bodyPaint.required}
+             notes={services.bodyPaint.notes}
+             onToggle={v => setServiceFlag('bodyPaint', v)}
+  onNotesChange={v => setServiceNotes('bodyPaint', v)}
+  disabled={isFinalized} />
+           <ServiceCategoryField label="Lavagem"
+             checked={services.washing.required}
+             notes={services.washing.notes}
+             onToggle={v => setServiceFlag('washing', v)}           onNotesChange={v
+  => setServiceNotes('washing', v)} disabled={isFinalized}
+           />         <ServiceCategoryField
+             label="Pneus"
+             checked={services.tires.required}
+             notes={services.tires.notes}
+             onToggle={v => setServiceFlag('tires', v)}           onNotesChange={v
+  => setServiceNotes('tires', v)}           disabled={isFinalized} />
+         </div>
+       </div>
+     ); `
+
+   4. Criar modules/specialist/components/Checklist/ImageUploadSection.tsx:
+
+    1    import React from 'react';
+    2    import styles from '../VehicleChecklistModal.module.css';
+    3    import { MAX_FILES, MAX_SIZE_MB } from
+      '@/modules/specialist/checklist/useImageUploader';   interface
+      ImageUploadSectionProps { previews: string[];     handleFiles: (list:
+      FileList | null) => void; removeFile: (index: number) => void;
+      isFinalized: boolean;
+    4    }
+    5    export const ImageUploadSection: React.FC<ImageUploadSectionProps> =
+      ({
+    6      previews,     handleFiles,     removeFile,     isFinalized
+    7    }) => (
+    8      <div className={styles.upload}>
+    9        <label htmlFor="photos">Fotos do veículo</label> <input id=
+      "photos"         type="file"
+   10          accept="image/*" capture="environment"         multiple
+      onChange={e => handleFiles(e.target.files)}
+   11          disabled={isFinalized}
+   12        /> <small> Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos
+      : JPG, PNG, WEBP, HEIC.
+   13        </small>
+   14        {!!previews.length && (
+   15          <div className={styles.previews}>
+   16            {previews.map((src, i) => (
+   17              <div key={src} className={styles.previewItem}> <img src=
+      {src}                 alt={`Pré-visualização ${i +1}`}
+   18                  className={styles.previewImage}
+   19                /> {!isFinalized && (
+   20                  <button type="button" className={styles.removeBtn}
+      onClick={() => removeFile(i)}>
+   21                    ×
+   22                  </button>
+   23                )} </div> ))}
+   24          </div>
+   25        )} </div> );
+   26    ```5. Atualizar `modules/specialist/components/VehicleChecklistModal.
+      tsx` para usar os novos componentes: 
+  `typescript // ... imports   import { ChecklistHeader } from
+  './Checklist/ChecklistHeader'; import { BasicInspectionForm } from
+  './Checklist/BasicInspectionForm';
+     import { ServiceCategoriesSection } from
+  './Checklist/ServiceCategoriesSection';
+     import { ImageUploadSection } from './Checklist/ImageUploadSection';
+     // ... restante do código
+
+     const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({ isOpen,
+       onClose,
+       vehicle,     onSaved,     onFinalized,
+     }) => {
+       // ... hooks e estados     return ( <Modal isOpen={isOpen}
+  onClose={handleClose} title={title}> <form className={styles.container}
+  onSubmit={handleSubmit}> <ChecklistHeader vehicle={vehicle}
+  isFinalized={isFinalized} />
+
+             <BasicInspectionForm
+               form={{               date: form.date,
+                 odometer: form.odometer,
+                 fuelLevel: form.fuelLevel, }}
+               setField={setField}             isFinalized={isFinalized}
+             />           <ServiceCategoriesSection
+               services={form.services}             setServiceFlag={(key, value) =>
+  setServiceFlag(key as any, value)} setServiceNotes={(key, value) =>
+  setServiceNotes(key as any, value)}
+               isFinalized={isFinalized} />
+
+             <ImageUploadSection             previews={previews}
+               handleFiles={handleFiles}
+               removeFile={removeFile}             isFinalized={isFinalized}
+             />           {/* ... restante do formulário */}
+           </form>
+         </Modal>
+       ); };
+
+     export default VehicleChecklistModal;
+   1 
+  Benefícios
+   - Separação clara de responsabilidades
+   - Componentes menores e mais focados
+   - Maior reusabilidade
+   - Código mais legível e manutenível## Etapa8: Criar Interfaces para os Serviços
+
+  ObjetivoSeguir o Princípio da Inversão de Dependência (DIP) e facilitar testes.
+
+  Tarefas1. Criar 
+  modules/specialist/interfaces/SpecialistVehicleServiceInterface.ts: 
+  `typescript export interface SpecialistVehicleServiceInterface {
+  confirmVehicleArrival(specialistId: string, vehicleId: string): Promise<{ success:
+  boolean; error?: string }>; startVehicleAnalysis(specialistId: string, vehicleId:
+  string): Promise<{ success: boolean; error?: string }>;
+     }   `
+
+   2. Criar modules/specialist/interfaces/SpecialistChecklistServiceInterface.ts:
+  `typescript export interface SpecialistChecklistServiceInterface {
+  saveChecklist(
+         specialistId: string,       payload: any
+       ): Promise<{ success: boolean; error?: string; inspectionId?: string }>;
+  finalizeChecklist(
+         specialistId: string,       vehicleId: string
+       ): Promise<{ success: boolean; error?: string }>; }
+     ``3. Atualizar modules/specialist/services/SpecialistVehicleService.ts` para
+  implementar a interface:
+  `typescript   import { SpecialistVehicleServiceInterface } from
+  '@/modules/specialist/interfaces/SpecialistVehicleServiceInterface'; export class
+  SpecialistVehicleService implements SpecialistVehicleServiceInterface { // ...
+  implementação
+     } `
+
+   4. Atualizar modules/specialist/services/SpecialistChecklistService.ts para
+      implementar a interface:
+  `typescript import { SpecialistChecklistServiceInterface } from
+  '@/modules/specialist/interfaces/SpecialistChecklistServiceInterface';   export
+  class SpecialistChecklistService implements SpecialistChecklistServiceInterface {
+       // ... implementação   }
+   1 
+  Benefícios
+   - Seguir o Princípio da Inversão de Dependência
+   - Facilitar testes com mocks
+   - Permitir fácil substituição de implementações- Melhorar a arquitetura geral
+
+  Etapa 9: Criar Factory para os Serviços
+
+  Objetivo
+  Centralizar a criação de serviços e facilitar injeção de dependências.### Tarefas
+   1. Criar modules/specialist/factories/ServiceFactory.ts:
+
+   1    import { SpecialistVehicleService } from
+     '@/modules/specialist/services/SpecialistVehicleService';
+   2    import { SpecialistChecklistService } from
+     '@/modules/specialist/services/SpecialistChecklistService';
+   3    export class ServiceFactory { static createSpecialistVehicleService():
+     SpecialistVehicleService { return new SpecialistVehicleService();
+   4      }
+   5      static createSpecialistChecklistService(): SpecialistChecklistService
+     { return new SpecialistChecklistService(); }
+   6    } ```
+   7 
+   2. Atualizar os endpoints da API para usar a factory:
+  `typescript   // Exemplo para confirm-arrival/route.ts   import { ServiceFactory }
+  from '@/modules/specialist/factories/ServiceFactory'; export const POST =
+  withSpecialistAuth(async (req: AuthenticatedRequest) => {
+       try {
+         const body = await req.json();
+         const vehicleId = (body?.vehicleId as string) || '';
+         if (!SpecialistValidationService.validateVehicleId(vehicleId)) { return
+  NextResponse.json({ error: 'vehicleId inválido' }, { status: 400 });
+         }
+         const vehicleService = ServiceFactory.createSpecialistVehicleService();
+         const result = await vehicleService.confirmVehicleArrival(req.user.id,
+  vehicleId);
+         if (!result.success) {         return NextResponse.json({ error:
+  result.error }, { status: 500 }); }
+
+         return NextResponse.json({ success: true });     } catch {       return
+  NextResponse.json({ error: 'Erro interno do servidor' }, { status:500 });     }
+     });   `
+
+  Benefícios- Centralizar a criação de serviços
+   - Facilitar injeção de dependências- Permitir fácil substituição de implementações
+   - Melhorar a arquitetura geral
+
+  Etapa 10: Criar Testes Unitários
+
+  ObjetivoGarantir a qualidade do código refatorado e facilitar manutenção futura.
+
+  Tarefas1. Criar modules/specialist/__tests__/SpecialistVehicleService.test.ts:   
+  `typescript   import { describe, it, expect, vi, beforeEach } from 'vitest';
+     import { SpecialistVehicleService } from
+  '@/modules/specialist/services/SpecialistVehicleService'; // Mocks
+  vi.mock('@/modules/common/services/SupabaseService', () => {     return {
+  SupabaseService: {
+           getInstance: () => ({           getAdminClient: () => ({
+  from: vi.fn().mockReturnThis(),
+               select: vi.fn().mockReturnThis(),             eq:
+  vi.fn().mockReturnThis(),
+               maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+               update: vi.fn().mockReturnThis(), }),
+           }), },
+       }; });
+
+     describe('SpecialistVehicleService', () => {
+       let service: SpecialistVehicleService;
+
+       beforeEach(() => { service = new SpecialistVehicleService(); });
+
+       describe('confirmVehicleArrival', () => {
+         it('should return error for invalid vehicleId', async () => {         const
+  result = await service.confirmVehicleArrival('specialist-id', 'invalid-id');
+  expect(result.success).toBe(false); expect(result.error).toBe('vehicleId
+  inválido'); });
+
+         // ... outros testes
+       }); });
+     ``2. Criar modules/specialist/__tests__/SpecialistChecklistService.test.ts`:
+
+    1    import { describe, it, expect, vi, beforeEach } from 'vitest'; import
+      { SpecialistChecklistService } from
+      '@/modules/specialist/services/SpecialistChecklistService';
+    2 
+    3    // Mocks vi.mock('@/modules/common/services/SupabaseService', () => { 
+      return {
+    4        SupabaseService: {
+    5          getInstance: () => ({ getAdminClient: () => ({ from: vi.fn().
+      mockReturnThis(),
+    6              select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis
+      (),
+    7              maybeSingle: vi.fn().mockResolvedValue({ data: null, error:
+      null }),             update: vi.fn().mockReturnThis(),
+    8              insert: vi.fn().mockReturnThis(),             delete: vi.fn
+      ().mockReturnThis(),
+    9            }),         }),
+   10        },     };
+   11    });
+   12    describe('SpecialistChecklistService', () => {
+   13      let service: SpecialistChecklistService; beforeEach(() => {
+      service = new SpecialistChecklistService();
+   14      });     describe('saveChecklist', () => {
+   15        it('should return error for invalid vehicleId', async () => {
+   16          const result = await service.saveChecklist('specialist-id', {
+      vehicleId: 'invalid-id',           date: '2023-01-01', odometer:10000,
+   17            fuelLevel: 'half'
+   18          }); expect(result.success).toBe(false); expect(result.error).
+      toBe('vehicleId inválido'); });
+   19 
+   20        // ... outros testes
+   21      }); });
+   22    ```### Benefícios
+   23 - Garantir a qualidade do código
+   24 - Facilitar refatorações futuras- Aumentar a confiança nas mudanças
+   25 - Melhorar a documentação implícita do código
+   26 
+  Considerações Finais
+
+  Este plano de refatoração segue uma abordagem incremental, garantindo que após
+  cada etapa o sistema continue funcional. As principais melhorias incluem:
+
+   1. Eliminação de duplicações através da centralização de validações e autorizações
+   2. Separação clara de responsabilidades seguindo os princípios SOLID
+   3. Melhoria na arquitetura modular com componentes e serviços bem definidos4.
+      Facilitação de testes com a criação de interfaces e testes unitários
+   5. Manutenção da funcionalidade durante todo o processo de refatoração
+
+  A implementação deste plano resultará em um código mais limpo, manutenível e
+  escalável, alinhado com os princípios definidos em
+  @docs/DEVELOPMENT_INSTRUCTIONS.md.
