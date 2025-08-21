@@ -6,111 +6,88 @@ import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import ClientTable from '@/modules/specialist/components/ClientTable';
-
 import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import { useToast } from '@/modules/common/components/ToastProvider';
 
 const SpecialistDashboard = () => {
+  const { showToast } = useToast();
   const [userName, setUserName] = useState('');
   const [loadingUser, setLoadingUser] = useState(true);
   const { clients, loading: loadingClients, error: clientsError } = useSpecialistClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
   const selectedClient = useMemo(
     () => clients.find(c => c.client_id === selectedClientId) || null,
     [clients, selectedClientId]
   );
+
   const {
     vehicles,
     loading: loadingVehicles,
     error: vehiclesError,
     refetch,
+    isSubmitting,
+    confirmVehicleArrival,
+    startVehicleAnalysis,
   } = useClientVehicles(selectedClientId || undefined);
+
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
-  const [confirming, setConfirming] = useState<Record<string, boolean>>({});
 
   const handleSelectClient = (clientId: string) => {
     setSelectedClientId(prev => (prev === clientId ? null : clientId));
   };
 
-  const openChecklist = async (vehicle: VehicleData) => {
-    const s = String((statusOverrides[vehicle.id] ?? vehicle.status) || '').toUpperCase();
+  const handleOpenChecklist = async (vehicle: VehicleData) => {
+    const s = String(vehicle.status || '').toUpperCase();
     const canOpen = s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
     if (!canOpen) return;
+
     try {
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      const resp = await fetch('/api/specialist/start-analysis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ vehicleId: vehicle.id }),
-      });
-      if (resp.ok) {
-        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: VehicleStatus.EM_ANALISE }));
-      }
-    } finally {
+      await startVehicleAnalysis(vehicle.id);
       setSelectedVehicle(vehicle);
       setChecklistOpen(true);
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Erro ao iniciar análise');
     }
   };
+
+  const handleConfirmArrival = async (vehicle: VehicleData) => {
+    const s = String(vehicle.status || '').toUpperCase();
+    const canConfirm =
+      s === VehicleStatus.AGUARDANDO_COLETA || s === VehicleStatus.AGUARDANDO_CHEGADA;
+    if (!canConfirm) return;
+
+    try {
+      await confirmVehicleArrival(vehicle.id);
+      showToast('success', 'Chegada do veículo confirmada!');
+    } catch (err) {
+      showToast('error', err instanceof Error ? err.message : 'Erro ao confirmar chegada');
+    }
+  };
+
   const closeChecklist = () => {
     setChecklistOpen(false);
     setSelectedVehicle(null);
   };
 
-  const confirmArrival = async (vehicle: VehicleData) => {
-    try {
-      const currentStatus = String(
-        (statusOverrides[vehicle.id] ?? vehicle.status) || ''
-      ).toUpperCase();
-      const canConfirm =
-        currentStatus === VehicleStatus.AGUARDANDO_COLETA ||
-        currentStatus === VehicleStatus.AGUARDANDO_CHEGADA;
-      if (!canConfirm) return;
-      setConfirming(prev => ({ ...prev, [vehicle.id]: true }));
-      const { data: session } = await supabase.auth.getSession();
-      const token = session.session?.access_token;
-      const resp = await fetch('/api/specialist/confirm-arrival', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ vehicleId: vehicle.id }),
-      });
-      if (resp.ok) {
-        setStatusOverrides(prev => ({ ...prev, [vehicle.id]: VehicleStatus.CHEGADA_CONFIRMADA }));
-        try {
-          refetch();
-        } catch {}
-      }
-    } finally {
-      setConfirming(prev => ({ ...prev, [vehicle.id]: false }));
-    }
-  };
-
   // Filtros de veículos (placa e status)
-  const uiVehicles = useMemo(() => {
-    return vehicles.map(v => ({ ...v, status: statusOverrides[v.id] ?? v.status }));
-  }, [vehicles, statusOverrides]);
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
   const filteredVehicles = useMemo(() => {
     const term = filterPlate.trim().toLowerCase();
-    return uiVehicles.filter(v => {
+    return vehicles.filter(v => {
       const matchesPlate = term ? v.plate.toLowerCase().includes(term) : true;
       const matchesStatus = filterStatus ? (v.status || '').toLowerCase() === filterStatus : true;
       return matchesPlate && matchesStatus;
     });
-  }, [uiVehicles, filterPlate, filterStatus]);
+  }, [vehicles, filterPlate, filterStatus]);
+
   const availableStatuses = useMemo(() => {
     const set = new Set<string>();
-    uiVehicles.forEach(v => v.status && set.add((v.status as string).toLowerCase()));
+    vehicles.forEach(v => v.status && set.add((v.status as string).toLowerCase()));
     return Array.from(set);
-  }, [uiVehicles]);
+  }, [vehicles]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -187,9 +164,9 @@ const SpecialistDashboard = () => {
                     setFilterStatus('');
                   }}
                   filteredVehicles={filteredVehicles}
-                  onOpenChecklist={openChecklist}
-                  onConfirmArrival={confirmArrival}
-                  confirming={confirming}
+                  onOpenChecklist={handleOpenChecklist} // Pass new handler
+                  onConfirmArrival={handleConfirmArrival} // Pass new handler
+                  confirming={isSubmitting} // Pass state from hook
                 />
               )}
             </div>
