@@ -29,7 +29,10 @@ interface UseClientVehiclesResult {
   totalCount: number;
 }
 
-export const useClientVehicles = (clientId?: string): UseClientVehiclesResult => {
+export const useClientVehicles = (
+  clientId?: string,
+  filters?: { plate: string; status: string }
+): UseClientVehiclesResult => {
   const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -41,8 +44,7 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
   const totalPages = useMemo(() => Math.ceil(totalCount / PAGE_SIZE), [totalCount]);
 
   const refetch = useCallback(() => {
-    // Refetch should respect the current page
-    setCurrentPage(1); // Or simply trigger the effect again
+    setCurrentPage(1); // Always refetch from page 1
   }, []);
 
   const updateVehicleStatus = (vehicleId: string, newStatus: string) => {
@@ -84,9 +86,9 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
   };
 
   useEffect(() => {
-    // Reset page to 1 when client changes
+    // Reset page to 1 when client or filters change
     setCurrentPage(1);
-  }, [clientId]);
+  }, [clientId, filters]);
 
   useEffect(() => {
     const fetchVehicles = async () => {
@@ -98,14 +100,23 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
       setLoading(true);
       setError(null);
       try {
+        const queryParams = new URLSearchParams();
+        queryParams.append('clientId', clientId);
+        queryParams.append('page', String(currentPage));
+        queryParams.append('pageSize', String(PAGE_SIZE));
+        if (filters?.plate) {
+          queryParams.append('plate', filters.plate);
+        }
+        if (filters?.status) {
+          queryParams.append('status', filters.status);
+        }
+
         const response = await get<{
           success: boolean;
           vehicles: VehicleData[];
           total_count: number;
           error?: string;
-        }>(
-          `/api/specialist/client-vehicles?clientId=${clientId}&page=${currentPage}&pageSize=${PAGE_SIZE}`
-        );
+        }>(`/api/specialist/client-vehicles?${queryParams.toString()}`);
 
         if (response.ok && response.data?.success) {
           setVehicles(response.data.vehicles || []);
@@ -121,7 +132,7 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
     };
 
     fetchVehicles();
-  }, [clientId, currentPage, get]);
+  }, [clientId, currentPage, get, filters]);
 
   return {
     vehicles,
