@@ -33,7 +33,10 @@ const SpecialistDashboard = () => {
     currentPage,
     setCurrentPage,
     totalPages,
-  } = useClientVehicles(selectedClientId || undefined);
+  } = useClientVehicles(selectedClientId || undefined, {
+    plate: filterPlate,
+    status: filterStatus,
+  });
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
@@ -78,14 +81,6 @@ const SpecialistDashboard = () => {
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('');
-  const filteredVehicles = useMemo(() => {
-    const term = filterPlate.trim().toLowerCase();
-    return vehicles.filter(v => {
-      const matchesPlate = term ? v.plate.toLowerCase().includes(term) : true;
-      const matchesStatus = filterStatus ? (v.status || '').toLowerCase() === filterStatus : true;
-      return matchesPlate && matchesStatus;
-    });
-  }, [vehicles, filterPlate, filterStatus]);
 
   const availableStatuses = useMemo(() => {
     const set = new Set<string>();
@@ -167,7 +162,9 @@ const SpecialistDashboard = () => {
                     setFilterPlate('');
                     setFilterStatus('');
                   }}
-                  filteredVehicles={filteredVehicles}
+                  // filteredVehicles is no longer needed as filtering is done by backend
+                  // vehicles prop now contains the already filtered and paginated list
+                  filteredVehicles={vehicles}
                   onOpenChecklist={handleOpenChecklist} // Pass new handler
                   onConfirmArrival={handleConfirmArrival} // Pass new handler
                   confirming={isSubmitting} // Pass state from hook
