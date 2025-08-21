@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
@@ -12,6 +12,8 @@ export interface VehicleData {
   status?: string;
 }
 
+const PAGE_SIZE = 10;
+
 interface UseClientVehiclesResult {
   vehicles: VehicleData[];
   loading: boolean;
@@ -20,17 +22,28 @@ interface UseClientVehiclesResult {
   refetch: () => void;
   confirmVehicleArrival: (vehicleId: string) => Promise<void>;
   startVehicleAnalysis: (vehicleId: string) => Promise<void>;
+  // Pagination state and handlers
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  totalPages: number;
+  totalCount: number;
 }
 
 export const useClientVehicles = (clientId?: string): UseClientVehiclesResult => {
   const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
-  const [triggerRefetch, setTriggerRefetch] = useState(0);
 
-  const refetch = useCallback(() => setTriggerRefetch(v => v + 1), []);
+  const totalPages = useMemo(() => Math.ceil(totalCount / PAGE_SIZE), [totalCount]);
+
+  const refetch = useCallback(() => {
+    // Refetch should respect the current page
+    setCurrentPage(1); // Or simply trigger the effect again
+  }, []);
 
   const updateVehicleStatus = (vehicleId: string, newStatus: string) => {
     setVehicles(prev => prev.map(v => (v.id === vehicleId ? { ...v, status: newStatus } : v)));
@@ -46,7 +59,6 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
       if (response.ok) {
         updateVehicleStatus(vehicleId, VehicleStatus.CHEGADA_CONFIRMADA);
       } else {
-        // Optionally bubble up the error to the UI
         throw new Error(response.data?.error || 'Falha ao confirmar chegada');
       }
     } finally {
@@ -55,7 +67,6 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
   };
 
   const startVehicleAnalysis = async (vehicleId: string) => {
-    // No submitting state change needed if it just opens a modal
     try {
       const response = await post<{ success: boolean; error?: string }>(
         '/api/specialist/start-analysis',
@@ -67,26 +78,38 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
         throw new Error(response.data?.error || 'Falha ao iniciar análise');
       }
     } catch (e) {
-      // Handle or throw error
       console.error(e);
       throw e;
     }
   };
 
   useEffect(() => {
+    // Reset page to 1 when client changes
+    setCurrentPage(1);
+  }, [clientId]);
+
+  useEffect(() => {
     const fetchVehicles = async () => {
       if (!clientId) {
         setVehicles([]);
+        setTotalCount(0);
         return;
       }
       setLoading(true);
       setError(null);
       try {
-        const response = await get<{ success: boolean; vehicles: VehicleData[]; error?: string }>(
-          `/api/specialist/client-vehicles?clientId=${clientId}`
+        const response = await get<{
+          success: boolean;
+          vehicles: VehicleData[];
+          total_count: number;
+          error?: string;
+        }>(
+          `/api/specialist/client-vehicles?clientId=${clientId}&page=${currentPage}&pageSize=${PAGE_SIZE}`
         );
+
         if (response.ok && response.data?.success) {
-          setVehicles(response.data.vehicles);
+          setVehicles(response.data.vehicles || []);
+          setTotalCount(response.data.total_count || 0);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
@@ -98,7 +121,7 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
     };
 
     fetchVehicles();
-  }, [clientId, get, triggerRefetch]);
+  }, [clientId, currentPage, get]);
 
   return {
     vehicles,
@@ -108,5 +131,10 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
     isSubmitting,
     confirmVehicleArrival,
     startVehicleAnalysis,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCount,
   };
 };
