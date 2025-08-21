@@ -126,7 +126,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
             <span className="value">{fmtDate(arrival)}</span>
           </div>
           <div className="detail">
-            <span className="label">Analista Responsável</span>
+            <span className="label">Especialista Responsável</span>
             <span className="value">{vehicle.analyst || 'N/A'}</span>
           </div>
           <div className="detail span-2">

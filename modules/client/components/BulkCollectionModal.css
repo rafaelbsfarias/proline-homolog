@@ -1,0 +1,37 @@
+.bcm-date-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 50%;
+}
+
+.bcm-date-input {
+  width: 100%;
+  padding: 8px 36px 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.bcm-calendar-btn {
+  position: absolute;
+  right: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #555;
+}
+.bcm-calendar-btn:hover { color: #111; }
+
+.bcm-hidden-date {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+

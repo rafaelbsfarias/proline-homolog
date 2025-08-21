@@ -86,6 +86,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [addresses, setAddresses] = useState<{ id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean }[]>([]);
   const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
   const [bulkAddressId, setBulkAddressId] = useState('');
+  // bulkEta (ISO YYYY-MM-DD)
   const [bulkEta, setBulkEta] = useState('');
   const [savingAll, setSavingAll] = useState(false);
   const [rowMethod, setRowMethod] = useState<Record<string, Method>>({});
@@ -95,6 +96,11 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const { post } = useAuthenticatedFetch();
   const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
   const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
+
+  // Helper: data mínima local (YYYY-MM-DD) para o input nativo
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const makeLocalIsoDate = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const minDateIsoLocal = makeLocalIsoDate();
 
   const fetchVehiclesCount = useCallback(async () => {
     try {
@@ -307,10 +313,9 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
       {showDetails && (
         <div className="vehicles-details" id="vehicles-details">
-          <h4>Detalhes dos Veículos:</h4>
-
           {vehicles.length > 0 && (
-            <div className="collection-controls">
+            <div className="collection-controls" aria-label="Opções de coleta em lote">
+              <h4>Opções de coleta em lote</h4>
               <div className="row">
                 <label>
                   <input type="radio" name="bulkMethod" checked={bulkMethod === 'collect_point'} onChange={() => setBulkMethod('collect_point')} /> Ponto de Coleta
@@ -339,7 +344,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                 </div>
               ) : (
                 <div className="row">
-                  <input type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+                  <input lang="pt-BR" type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={minDateIsoLocal} />
                   <button
                     className="save-button"
                     disabled={!bulkEta || savingAll}
@@ -351,6 +356,8 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
               )}
             </div>
           )}
+
+          <h4>Detalhes dos Veículos:</h4>
 
           {count > 0 && vehicles.length === 0 && (
             <p className="vehicles-hint">
@@ -445,7 +452,9 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           method={bulkModalOpen}
           vehicles={vehicles}
           addresses={addresses as any}
-          minDate={new Date().toISOString().split('T')[0]}
+          minDate={minDateIsoLocal}
+          initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}
+          initialEtaIso={bulkMethod === 'bring_to_yard' ? bulkEta : undefined}
           onApply={async (payload) => {
             const resp = await post('/api/client/set-vehicles-collection', payload);
             if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');

@@ -139,6 +139,9 @@
   padding: 6px 10px;
 }
 
+/* Campo de data com dd/mm/aaaa e ícone no modo em lote */
+/* removidos estilos de campo custom de data em lote para voltar ao input nativo */
+
 .vehicle-row-controls {
   display: grid;
   grid-template-columns: 1fr 1fr 120px;

@@ -1,0 +1,130 @@
+.rcm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 10000;
+  padding-top: 40px;
+}
+
+.rcm-modal {
+  background: #fff;
+  color: #222;
+  border-radius: 10px;
+  width: min(560px, 96vw);
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.rcm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.rcm-title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.rcm-close {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.rcm-method-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rcm-form-group {
+  margin-bottom: 12px;
+}
+
+.rcm-label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.rcm-input,
+.rcm-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.rcm-date-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 50%;
+}
+
+.rcm-date-input {
+  width: 100%;
+  padding: 8px 36px 8px 10px; /* espaço para o ícone */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.rcm-calendar-btn {
+  position: absolute;
+  right: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #555;
+}
+.rcm-calendar-btn:hover { color: #111; }
+
+.rcm-hidden-date {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.rcm-error {
+  color: #c62828;
+  margin-top: 6px;
+}
+
+.rcm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.rcm-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.rcm-btn-secondary {
+  border-color: #ccc;
+  background: #fafafa;
+}
+
+.rcm-btn-primary {
+  border-color: #1b5e20;
+  background: #2e7d32;
+  color: #fff;
+}

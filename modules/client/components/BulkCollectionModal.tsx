@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import './BulkCollectionModal.css';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -25,6 +26,8 @@ interface BulkCollectionModalProps {
   vehicles: VehicleItem[];
   addresses?: AddressItem[]; // required when method === 'collect_point'
   minDate?: string; // required when method === 'bring_to_yard'
+  initialAddressId?: string; // optional preselected address
+  initialEtaIso?: string; // optional preselected date in YYYY-MM-DD
   onApply: (payload: { method: Method; vehicleIds: string[]; addressId?: string; estimated_arrival_date?: string }) => Promise<void>;
 }
 
@@ -38,14 +41,18 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   addresses = [],
   minDate,
   onApply,
+  initialAddressId,
+  initialEtaIso,
 }) => {
   const [selectDefinicao, setSelectDefinicao] = useState(true);
   const [selectChegada, setSelectChegada] = useState(true);
   const [selectColeta, setSelectColeta] = useState(true);
   const [addressId, setAddressId] = useState('');
-  const [eta, setEta] = useState('');
+  const [eta, setEta] = useState(''); // ISO YYYY-MM-DD
+  const [etaBr, setEtaBr] = useState(''); // dd/mm/aaaa
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hiddenDateRef = useRef<HTMLInputElement | null>(null);
 
   const counts = useMemo(() => {
     let definicao = 0;
@@ -86,6 +93,17 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
     return () => { document.body.style.overflow = prev; };
   }, [isOpen]);
 
+  // Prefill values when opening
+  useEffect(() => {
+    if (!isOpen) return;
+    if (method === 'collect_point' && initialAddressId) setAddressId(initialAddressId);
+    if (method === 'bring_to_yard' && initialEtaIso) {
+      setEta(initialEtaIso);
+      const [y, m, d] = (initialEtaIso || '').split('-');
+      setEtaBr(initialEtaIso ? `${d}/${m}/${y}` : '');
+    }
+  }, [isOpen, method, initialAddressId, initialEtaIso]);
+
   if (!isOpen) return null;
 
   const node = (
@@ -114,7 +132,69 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         ) : (
           <div style={{ marginBottom: 12 }}>
             <label style={{ display: 'block', marginBottom: 6 }}>Data prevista de chegada ao pátio</label>
-            <input type="date" value={eta} onChange={e => setEta(e.target.value)} min={minDate} style={{ padding: '8px 10px' }} />
+            <div className="bcm-date-field">
+              <input
+                className="bcm-date-input"
+                type="text"
+                inputMode="numeric"
+                placeholder="dd/mm/aaaa"
+                value={etaBr}
+                onChange={e => {
+                  const only = e.target.value.replace(/\D+/g, '').slice(0, 8);
+                  const p1 = only.slice(0, 2);
+                  const p2 = only.slice(2, 4);
+                  const p3 = only.slice(4, 8);
+                  const formatted = only.length <= 2 ? p1 : only.length <= 4 ? `${p1}/${p2}` : `${p1}/${p2}/${p3}`;
+                  setEtaBr(formatted);
+                  if (only.length === 8) {
+                    const d = parseInt(only.slice(0, 2), 10);
+                    const m = parseInt(only.slice(2, 4), 10);
+                    const y = parseInt(only.slice(4, 8), 10);
+                    const dt = new Date(y, m - 1, d);
+                    if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
+                      const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                      setEta(iso);
+                    } else {
+                      setEta('');
+                    }
+                  } else {
+                    setEta('');
+                  }
+                }}
+                maxLength={10}
+              />
+              <button
+                type="button"
+                className="bcm-calendar-btn"
+                aria-label="Abrir calendário"
+                onClick={() => {
+                  const el = hiddenDateRef.current;
+                  if (!el) return;
+                  // @ts-ignore
+                  if (typeof el.showPicker === 'function') el.showPicker(); else { el.focus(); el.click(); }
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7 10h5v5H7z"></path>
+                  <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path>
+                </svg>
+              </button>
+              <input
+                ref={hiddenDateRef}
+                className="bcm-hidden-date"
+                type="date"
+                value={eta}
+                min={minDate}
+                onChange={e => {
+                  const iso = e.target.value;
+                  setEta(iso);
+                  const [y, m, d] = (iso || '').split('-');
+                  setEtaBr(iso ? `${d}/${m}/${y}` : '');
+                }}
+                aria-hidden
+                tabIndex={-1}
+              />
+            </div>
           </div>
         )}
 
