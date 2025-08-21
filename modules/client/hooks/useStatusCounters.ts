@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import type { Vehicle } from '@/modules/client/types';
+import type { VehicleItem } from '@/modules/client/types';
 import { statusOrder } from '@/modules/client/utils/status';
 
-export function useStatusCounters(vehicles: Vehicle[]) {
+export function useStatusCounters(vehicles: VehicleItem[]) {
   const statusOptions = useMemo(() => {
     return Array.from(new Set((vehicles || []).map(v => (v.status || '').trim()).filter(Boolean)));
   }, [vehicles]);
@@ -26,4 +26,3 @@ export function useStatusCounters(vehicles: Vehicle[]) {
 
   return { statusOptions, statusCounts, sorter };
 }
-

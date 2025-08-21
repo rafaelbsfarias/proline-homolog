@@ -1,0 +1,47 @@
+.vehicle-counter-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  background: #002e4c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(25, 119, 242, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-button:hover:not(:disabled) {
+  background: #06253c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 119, 242, 0.15);
+}
+
+.action-button:disabled {
+  background: #aab0bb;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .vehicle-counter-actions {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -1,5 +1,5 @@
-Plano de Refatoração do Domínio do EspecialistaApresento um plano de refatoração em 
-  etapas para alinhar o domínio do especialista com os princípios definidos em 
+Plano de Refatoração do Domínio do EspecialistaApresento um plano de refatoração em
+  etapas para alinhar o domínio do especialista com os princípios definidos em
   @docs/DEVELOPMENT_INSTRUCTIONS.md, mantendo o sistema funcional após cada etapa.
 
   Etapa 1: Centralizar Validações e Autorizações Comuns

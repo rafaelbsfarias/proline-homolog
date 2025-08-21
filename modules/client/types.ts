@@ -1,14 +1,4 @@
-export interface Vehicle {
-  id: string;
-  plate: string;
-  brand: string;
-  model: string;
-  year: number;
-  status: string;
-  created_at: string;
-  pickup_address_id?: string | null;
-  estimated_arrival_date?: string | null;
-}
+// Vehicle type aligned via alias to shared definition
 
 export interface AddressItem {
   id: string;
@@ -20,3 +10,8 @@ export interface AddressItem {
 
 export type Method = 'collect_point' | 'bring_to_yard';
 
+// Re-export types from the directory index to align with imports
+export type { VehicleItem } from './types/index';
+
+// Alias Vehicle to the shared VehicleItem shape to keep API consistent
+export type Vehicle = import('./types/index').VehicleItem;

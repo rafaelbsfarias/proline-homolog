@@ -1,20 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { VehicleItem } from '@/modules/client/types';
+import { VehicleInfo } from '@/modules/client/types';
 
-interface UseVehiclesResult {
-  count: number;
-  vehicles: VehicleItem[];
+interface UseClientVehiclesResult {
+  vehicles: VehicleInfo[];
   loading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-export const useVehicles = (onRefresh?: () => void): UseVehiclesResult => {
+export const useClientVehicles = (): UseClientVehiclesResult => {
   const { get } = useAuthenticatedFetch();
-  const [count, setCount] = useState(0);
-  const [vehicles, setVehicles] = useState<VehicleItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [vehicles, setVehicles] = useState<VehicleInfo[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [triggerRefetch, setTriggerRefetch] = useState(0);
 
@@ -27,15 +25,11 @@ export const useVehicles = (onRefresh?: () => void): UseVehiclesResult => {
       setLoading(true);
       setError(null);
       try {
-        const response = await get<{ success: boolean; vehicles: VehicleItem[]; count?: number; error?: string }>(
+        const response = await get<{ success: boolean; vehicles: VehicleInfo[]; error?: string }>(
           '/api/client/vehicles-count'
         );
         if (response.ok && response.data?.success) {
-          const vehicleList = response.data.vehicles || [];
-          const vehicleCount = response.data.count ?? vehicleList.length;
-          setVehicles(vehicleList);
-          setCount(vehicleCount);
-          onRefresh?.();
+          setVehicles(response.data.vehicles || []);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
@@ -47,7 +41,7 @@ export const useVehicles = (onRefresh?: () => void): UseVehiclesResult => {
     };
 
     fetchVehicles();
-  }, [get, triggerRefetch, onRefresh]);
+  }, [get, triggerRefetch]);
 
-  return { count, vehicles, loading, error, refetch };
+  return { vehicles, loading, error, refetch };
 };
