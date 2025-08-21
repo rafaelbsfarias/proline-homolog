@@ -17,6 +17,7 @@ interface Vehicle {
   status: string;
   created_at: string;
   pickup_address_id?: string | null;
+  estimated_arrival_date?: string | null;
 }
 
 interface VehiclesApiResponse {
@@ -86,7 +87,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const [addresses, setAddresses] = useState<{ id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean }[]>([]);
   const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
   const [bulkAddressId, setBulkAddressId] = useState('');
-  // bulkEta (ISO YYYY-MM-DD)
+  // bulkEta (ISO YYYY-MM-DD) — não exigido na abertura do modal
   const [bulkEta, setBulkEta] = useState('');
   const [savingAll, setSavingAll] = useState(false);
   const [rowMethod, setRowMethod] = useState<Record<string, Method>>({});
@@ -101,6 +102,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const pad2 = (n: number) => String(n).padStart(2, '0');
   const makeLocalIsoDate = (d = new Date()) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
   const minDateIsoLocal = makeLocalIsoDate();
+
 
   const fetchVehiclesCount = useCallback(async () => {
     try {
@@ -344,10 +346,9 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                 </div>
               ) : (
                 <div className="row">
-                  <input lang="pt-BR" type="date" value={bulkEta} onChange={e => setBulkEta(e.target.value)} min={minDateIsoLocal} />
                   <button
                     className="save-button"
-                    disabled={!bulkEta || savingAll}
+                    disabled={savingAll}
                     onClick={() => setBulkModalOpen('bring_to_yard')}
                   >
                     Levar ao pátio em lote
@@ -405,14 +406,32 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
                     {true && (
                       <div style={{ gridColumn: '1 / -1', fontSize: '0.85rem', opacity: 0.9 }}>
                         {(() => {
+                          const s = String(vehicle.status || '').toUpperCase();
+                          if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') {
+                            const eta = vehicle.estimated_arrival_date || '';
+                            const d = eta ? new Date(eta) : null;
+                            const label = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR') : '—';
+                            return (
+                              <span>
+                                Previsão de chegada: <b>{label}</b>
+                              </span>
+                            );
+                          }
                           const selId = vehicle.pickup_address_id || '';
                           const addr = addresses.find(a => a.id === selId);
                           const label = addr ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim() : '';
-                          return (
+                          if (s === 'AGUARDANDO COLETA') {
+                            return (
+                              <span>
+                                Ponto de coleta selecionado: <b>{label || 'Nenhum ponto selecionado'}</b>
+                              </span>
+                            );
+                          }
+                          return label ? (
                             <span>
-                              Ponto de coleta selecionado: <b>{label || 'Nenhum ponto selecionado'}</b>
+                              Ponto de coleta selecionado: <b>{label}</b>
                             </span>
-                          );
+                          ) : null;
                         })()}
                       </div>
                     )}
