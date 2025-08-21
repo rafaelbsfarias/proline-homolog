@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 export interface VehicleData {
   id: string;
@@ -11,33 +12,115 @@ export interface VehicleData {
   status?: string;
 }
 
+const PAGE_SIZE = 10;
+
 interface UseClientVehiclesResult {
   vehicles: VehicleData[];
   loading: boolean;
   error: string | null;
+  isSubmitting: Record<string, boolean>;
   refetch: () => void;
+  confirmVehicleArrival: (vehicleId: string) => Promise<void>;
+  startVehicleAnalysis: (vehicleId: string) => Promise<void>;
+  // Pagination state and handlers
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  totalPages: number;
+  totalCount: number;
 }
 
-export const useClientVehicles = (clientId?: string): UseClientVehiclesResult => {
-  const { get } = useAuthenticatedFetch();
+export const useClientVehicles = (
+  clientId?: string,
+  filters?: { plate: string; status: string }
+): UseClientVehiclesResult => {
+  const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [triggerRefetch, setTriggerRefetch] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
 
-  const refetch = () => setTriggerRefetch(v => v + 1);
+  const totalPages = useMemo(() => Math.ceil(totalCount / PAGE_SIZE), [totalCount]);
+
+  const refetch = useCallback(() => {
+    setCurrentPage(1); // Always refetch from page 1
+  }, []);
+
+  const updateVehicleStatus = (vehicleId: string, newStatus: string) => {
+    setVehicles(prev => prev.map(v => (v.id === vehicleId ? { ...v, status: newStatus } : v)));
+  };
+
+  const confirmVehicleArrival = async (vehicleId: string) => {
+    setIsSubmitting(prev => ({ ...prev, [vehicleId]: true }));
+    try {
+      const response = await post<{ success: boolean; error?: string }>(
+        '/api/specialist/confirm-arrival',
+        { vehicleId }
+      );
+      if (response.ok) {
+        updateVehicleStatus(vehicleId, VehicleStatus.CHEGADA_CONFIRMADA);
+      } else {
+        throw new Error(response.data?.error || 'Falha ao confirmar chegada');
+      }
+    } finally {
+      setIsSubmitting(prev => ({ ...prev, [vehicleId]: false }));
+    }
+  };
+
+  const startVehicleAnalysis = async (vehicleId: string) => {
+    try {
+      const response = await post<{ success: boolean; error?: string }>(
+        '/api/specialist/start-analysis',
+        { vehicleId }
+      );
+      if (response.ok) {
+        updateVehicleStatus(vehicleId, VehicleStatus.EM_ANALISE);
+      } else {
+        throw new Error(response.data?.error || 'Falha ao iniciar análise');
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+  };
+
+  useEffect(() => {
+    // Reset page to 1 when client or filters change
+    setCurrentPage(1);
+  }, [clientId, filters]);
 
   useEffect(() => {
     const fetchVehicles = async () => {
-      if (!clientId) return;
+      if (!clientId) {
+        setVehicles([]);
+        setTotalCount(0);
+        return;
+      }
       setLoading(true);
       setError(null);
       try {
-        const response = await get<{ success: boolean; vehicles: VehicleData[]; error?: string }>(
-          `/api/specialist/client-vehicles?clientId=${clientId}`
-        );
+        const queryParams = new URLSearchParams();
+        queryParams.append('clientId', clientId);
+        queryParams.append('page', String(currentPage));
+        queryParams.append('pageSize', String(PAGE_SIZE));
+        if (filters?.plate) {
+          queryParams.append('plate', filters.plate);
+        }
+        if (filters?.status) {
+          queryParams.append('status', filters.status);
+        }
+
+        const response = await get<{
+          success: boolean;
+          vehicles: VehicleData[];
+          total_count: number;
+          error?: string;
+        }>(`/api/specialist/client-vehicles?${queryParams.toString()}`);
+
         if (response.ok && response.data?.success) {
-          setVehicles(response.data.vehicles);
+          setVehicles(response.data.vehicles || []);
+          setTotalCount(response.data.total_count || 0);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
@@ -49,7 +132,20 @@ export const useClientVehicles = (clientId?: string): UseClientVehiclesResult =>
     };
 
     fetchVehicles();
-  }, [clientId, get, triggerRefetch]);
+  }, [clientId, currentPage, get, filters]);
 
-  return { vehicles, loading, error, refetch };
+  return {
+    vehicles,
+    loading,
+    error,
+    refetch,
+    isSubmitting,
+    confirmVehicleArrival,
+    startVehicleAnalysis,
+    // Pagination
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalCount,
+  };
 };

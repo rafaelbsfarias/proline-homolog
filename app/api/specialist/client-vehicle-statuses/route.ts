@@ -7,16 +7,10 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
 import { checkSpecialistClientLink } from '@/modules/specialist/utils/authorization';
 
-const DEFAULT_PAGE_SIZE = 10;
-
 export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
   try {
     const url = new URL(req.url);
     const clientId = url.searchParams.get('clientId') || '';
-    const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const pageSize = parseInt(url.searchParams.get('pageSize') || `${DEFAULT_PAGE_SIZE}`, 10);
-    const plateFilter = url.searchParams.get('plate') || '';
-    const statusFilter = url.searchParams.get('status') || '';
 
     if (!validateUUID(clientId)) {
       return NextResponse.json({ error: 'clientId inválido' }, { status: 400 });
@@ -30,23 +24,30 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Fetch paginated vehicles using the RPC function, passing filters
-    const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
-      p_client_id: clientId,
-      p_page_size: pageSize,
-      p_page_num: page,
-      p_plate_filter: plateFilter,
-      p_status_filter: statusFilter,
-    });
+    // Fetch distinct statuses for vehicles of this client
+    const { data, error } = (await supabase
+      .from('vehicles')
+      .select('status', { distinct: true })
+      .eq('client_id', clientId)
+      .not('status', 'is', null) // Exclude null statuses
+      .order('status', { ascending: true })) as {
+      data: { status: string }[] | null;
+      error: any;
+    };
 
     if (error) {
-      console.error('RPC Error fetching vehicles:', error);
-      return NextResponse.json({ error: 'Erro ao buscar veículos' }, { status: 500 });
+      console.error('Error fetching distinct statuses:', error);
+      return NextResponse.json({ error: 'Erro ao buscar status de veículos' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, ...data });
+    // Map and trim/lowercase statuses, then ensure uniqueness in case of DB inconsistencies
+    const uniqueStatuses = Array.from(
+      new Set((data || []).map(row => String(row.status).trim().toLowerCase()))
+    );
+
+    return NextResponse.json({ success: true, statuses: uniqueStatuses });
   } catch (e) {
-    console.error('GET client-vehicles error:', e);
+    console.error('GET client-vehicle-statuses error:', e);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 });

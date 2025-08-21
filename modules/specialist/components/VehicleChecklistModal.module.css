@@ -2,6 +2,23 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  /* Adicionado para responsividade */
+  height: 100%;
+}
+
+.content {
+  /* Faz esta área crescer e ocupar o espaço, permitindo a rolagem */
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 4px; /* Pequeno padding para a barra de rolagem não colar no conteúdo */
+  margin: -4px; /* Compensa o padding */
+}
+
+.actionsFooter {
+  /* Garante que o rodapé seja fixo na parte inferior */
+  flex-shrink: 0;
+  padding-top: 16px; /* Espaçamento para separar do conteúdo */
+  border-top: 1px solid #e5e7eb; /* Linha divisória */
 }
 
 .vehicleHeader {
