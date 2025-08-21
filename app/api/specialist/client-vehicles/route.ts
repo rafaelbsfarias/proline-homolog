@@ -15,6 +15,8 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const clientId = url.searchParams.get('clientId') || '';
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const pageSize = parseInt(url.searchParams.get('pageSize') || `${DEFAULT_PAGE_SIZE}`, 10);
+    const plateFilter = url.searchParams.get('plate') || '';
+    const statusFilter = url.searchParams.get('status') || '';
 
     if (!validateUUID(clientId)) {
       return NextResponse.json({ error: 'clientId inválido' }, { status: 400 });
@@ -28,11 +30,13 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Fetch paginated vehicles using the RPC function
+    // Fetch paginated vehicles using the RPC function, passing filters
     const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
       p_client_id: clientId,
       p_page_size: pageSize,
       p_page_num: page,
+      p_plate_filter: plateFilter,
+      p_status_filter: statusFilter,
     });
 
     if (error) {
