@@ -1,0 +1,36 @@
+.modalContent {
+  margin: 32px auto;
+  max-width: 960px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  padding: 16px;
+}
+
+.tableContainer { margin-top: 12px; overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 8px; border-bottom: 1px solid #eee; }
+
+.actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+.actions button { padding: 8px 12px; background: #072e4c; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+.actions button:disabled { opacity: .7; cursor: not-allowed; }
+
+.error { color: #b00020; }
+.success { color: #1b5e20; }
+
+
+.container { max-width: 1200px; margin: 32px auto; padding: 0 16px 32px; }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.backButton { background: none; border: none; color: #072e4c; cursor: pointer; font-size: 14px; }
+.title { margin: 0; font-size: 20px; font-weight: 600; }
+.note { margin: 4px 0 12px; color: #555; }
+.section { margin-top: 24px; }
+.sectionTitle { margin: 8px 0; font-size: 18px; }
+.tableWrap { overflow-x: auto; }
+.thLeft { text-align: left; }
+.thCenter { text-align: center; }
+.alignCenter { text-align: center; }
+.alignRight { text-align: right; }
+.bold { font-weight: 700; }
+.primaryBtn { padding: 8px 12px; background: #072e4c; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+.primaryBtn:disabled { opacity: .7; cursor: not-allowed; }
