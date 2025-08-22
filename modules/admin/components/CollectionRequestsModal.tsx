@@ -4,13 +4,12 @@ import MessageModal from '@/modules/common/components/MessageModal';
 import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import styles from './CollectionRequestsModal.module.css';
 
-interface CollectionRequest {
-  id: string;
+type CollectionGroup = {
+  id: string; // addressId
   address: string;
   vehicle_count: number;
   current_fee: number | null;
-  status: string;
-}
+};
 
 interface CollectionRequestsModalProps {
   isOpen: boolean;
@@ -27,8 +26,8 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { get, post } = useAuthenticatedFetch();
-  const [collectionRequests, setCollectionRequests] = useState<CollectionRequest[]>([]);
+  const { get } = useAuthenticatedFetch();
+  const [collectionRequests, setCollectionRequests] = useState<CollectionGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,15 +38,9 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await get<{ success: boolean; collectionRequests: CollectionRequest[]; error?: string }>(`/api/admin/collection-requests/${clientId}`);
+      const response = await get<{ success: boolean; groups: { addressId: string; address: string; vehicle_count: number; collection_fee: number | null }[]; error?: string }>(`/api/admin/client-collections-summary/${clientId}`);
       if (response.ok && response.data?.success) {
-        setCollectionRequests(response.data.collectionRequests);
-        // Initialize fees state with current_fee values
-        const initialFees: Record<string, number | undefined> = {};
-        response.data.collectionRequests.forEach(req => {
-          initialFees[req.id] = req.current_fee ?? undefined;
-        });
-        setFees(initialFees);
+        ((() => { const groups = (response.data.groups || []).map(g => ({ id: g.addressId, address: g.address, vehicle_count: g.vehicle_count, current_fee: g.collection_fee })); setCollectionRequests(groups); const initialFees: Record<string, number | undefined> = {}; groups.forEach(req => { initialFees[req.id] = req.current_fee ?? undefined; }); setFees(initialFees); })())
       } else {
         setError(response.data?.error || response.error || 'Erro ao buscar solicitações de coleta');
       }
@@ -72,33 +65,7 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     }));
   };
 
-  const handleSubmitFees = async () => {
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      for (const collectionRequest of collectionRequests) {
-        const newFee = fees[collectionRequest.id];
-        // Only send update if fee has changed or is being set for the first time
-        if (newFee !== undefined && newFee !== collectionRequest.current_fee) {
-          const response = await post('/api/admin/set-collection-fee', {
-            collectionId: collectionRequest.id,
-            collectionFeePerVehicle: newFee,
-          });
-          if (!response.ok) {
-            throw new Error(response.error || `Erro ao salvar valor para ${collectionRequest.address}`);
-          }
-        }
-      }
-      setMessage('Valores de coleta atualizados com sucesso!');
-      fetchCollectionRequests(); // Re-fetch to update current_fee values
-      onSuccess?.();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido ao salvar valores');
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* removed handleSubmitFees (no persistence for address-based fees yet) */
 
   if (!isOpen) return null;
 
@@ -132,12 +99,7 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
                     <td>{req.address}</td>
                     <td>{req.vehicle_count}</td>
                     <td>
-                      <CurrencyInput
-                        value={fees[req.id]}
-                        onChange={value => handleFeeChange(req.id, value)}
-                        placeholder="0,00"
-                        disabled={loading}
-                      />
+                      {fees[req.id] !== undefined ? fees[req.id]!.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
                     </td>
                   </tr>
                 ))}
@@ -147,9 +109,6 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
         )}
 
         <div className={styles.actions}>
-          <button onClick={handleSubmitFees} disabled={loading}>
-            {loading ? 'Salvando...' : 'Salvar Valores'}
-          </button>
           <button onClick={onClose} disabled={loading}>
             Fechar
           </button>
