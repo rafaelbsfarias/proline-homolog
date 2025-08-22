@@ -63,7 +63,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
       const s = normalize(v.status);
       if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') definicao += 1;
       else if (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO') chegada += 1;
-      else if (s === 'AGUARDANDO COLETA') coleta += 1;
+      else if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') coleta += 1;
     });
     return { definicao, chegada, coleta };
   }, [vehicles]);
@@ -74,7 +74,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
       const s = normalize(v.status);
       if (selectDefinicao && s === 'AGUARDANDO DEFINIÇÃO DE COLETA') selected.push(v.id);
       else if (selectChegada && (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO')) selected.push(v.id);
-      else if (selectColeta && s === 'AGUARDANDO COLETA') selected.push(v.id);
+      else if (selectColeta && (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO')) selected.push(v.id);
     });
     return selected;
   }, [vehicles, selectDefinicao, selectChegada, selectColeta]);

@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
     // Guard: only allow status changes from allowed current statuses
     const allowedPrevious = new Set([
       'AGUARDANDO DEFINIÇÃO DE COLETA',
+      'PONTO DE COLETA SELECIONADO',
       'AGUARDANDO COLETA',
       'AGUARDANDO CHEGADA DO VEÍCULO',
     ]);
@@ -94,7 +95,9 @@ export async function POST(req: NextRequest) {
     // Build update payload
     const payload: Record<string, unknown> = {};
     if (method === 'collect_point') {
-      payload.status = 'AGUARDANDO COLETA';
+      // Quando o cliente define um endereço de coleta, o status passa a ser
+      // "PONTO DE COLETA SELECIONADO" ("AGUARDANDO COLETA" será usado em outra etapa do fluxo)
+      payload.status = 'PONTO DE COLETA SELECIONADO';
       payload.pickup_address_id = addressId!;
       payload.estimated_arrival_date = null; // clear any previous client-arrival date
     } else {
