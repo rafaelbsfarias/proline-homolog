@@ -27,7 +27,7 @@ export default function BulkCollectionControls({ method, setMethod, addressId, s
         <div className="row">
           <select value={addressId} onChange={e => setAddressId(e.target.value)}>
             <option value="">Selecione um ponto de coleta</option>
-            {addresses.map(a => (
+            {(addresses || []).filter(a => a.is_collect_point).map(a => (
               <option key={a.id} value={a.id}>
                 {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
               </option>
@@ -47,4 +47,3 @@ export default function BulkCollectionControls({ method, setMethod, addressId, s
     </div>
   );
 }
-
