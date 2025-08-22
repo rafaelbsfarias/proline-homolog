@@ -4,7 +4,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import { supabase } from '@/modules/common/services/supabaseClient';
 import './VehicleCollectionControls.css';
 import CollectPointSelect from './CollectPointSelect';
-import DatePickerBR from './DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR';
 
 type Vehicle = { id: string; plate: string; status?: string };
 type Address = { id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean };

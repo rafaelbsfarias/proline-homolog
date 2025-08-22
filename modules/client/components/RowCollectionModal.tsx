@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RowCollectionModal.css';
-import DatePickerBR from './DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import CollectPointSelect from './CollectPointSelect';
 
 type Method = 'collect_point' | 'bring_to_yard';

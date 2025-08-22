@@ -34,3 +34,6 @@
 .bold { font-weight: 700; }
 .primaryBtn { padding: 8px 12px; background: #072e4c; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
 .primaryBtn:disabled { opacity: .7; cursor: not-allowed; }
+
+/* Layout para total + botão salvar lado a lado */
+.totalRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-type FeeItem = { addressId: string; fee: number };
+type FeeItem = { addressId: string; fee: number; date?: string };
 
 export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -80,16 +80,23 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
 
-    // After saving fees, update vehicles statuses for the selected addresses
-    if (addrIds.length) {
-      const { error: updVehiclesErr } = await admin
-        .from('vehicles')
-        .update({ status: 'AGUARDANDO APROVAÇÃO DA COLETA' })
-        .eq('client_id', clientId)
-        .in('pickup_address_id', addrIds)
-        .eq('status', 'PONTO DE COLETA SELECIONADO');
-      if (updVehiclesErr) {
-        logger.error('update-vehicles-status-error', { error: updVehiclesErr.message, clientId });
+    // After saving fees, update vehicles statuses only for addresses with fee AND date
+    const eligible = (fees || []).filter(f => typeof f.fee === 'number' && f.date);
+    if (eligible.length) {
+      for (const f of eligible) {
+        try {
+          const { error: updVehiclesErr } = await admin
+            .from('vehicles')
+            .update({ status: 'AGUARDANDO APROVAÇÃO DA COLETA', estimated_arrival_date: f.date as any })
+            .eq('client_id', clientId)
+            .eq('pickup_address_id', f.addressId)
+            .eq('status', 'PONTO DE COLETA SELECIONADO');
+          if (updVehiclesErr) {
+            logger.error('update-vehicles-status-error', { error: updVehiclesErr.message, clientId, addressId: f.addressId });
+          }
+        } catch (e: any) {
+          logger.error('update-vehicles-status-exception', { error: e?.message, clientId, addressId: f.addressId });
+        }
       }
     }
 

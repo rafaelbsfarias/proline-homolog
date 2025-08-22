@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import styles from './page.module.css';
+import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import modalStyles from '@/modules/admin/components/CollectionRequestsModal.module.css';
 import Header from '@/modules/admin/components/Header';
 
 type CollectionGroup = {
@@ -16,7 +18,7 @@ type CollectionGroup = {
 
 type ApprovalGroup = CollectionGroup & { statuses?: { status: string; count: number }[] };
 
-type ClientSummary = { taxa_operacao?: number; percentual_fipe?: number };
+type ClientSummary = { taxa_operacao?: number; percentual_fipe?: number; parqueamento?: number };
 type StatusTotal = { status: string; count: number };
 
 type ApiResponse = {
@@ -54,6 +56,9 @@ const Page = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [fees, setFees] = useState<Record<string, number | undefined>>({});
+  const [dates, setDates] = useState<Record<string, string>>({});
+  const [vehiclesModal, setVehiclesModal] = useState<{ addressId: string; address: string } | null>(null);
+  const [vehiclesList, setVehiclesList] = useState<{ id: string; plate: string; brand: string; model: string; year?: number; status?: string }[]>([]);
 
   const fetchCollectionRequests = useCallback(async () => {
     if (!id) return;
@@ -74,6 +79,7 @@ const Page = () => {
           initialFees[req.id] = req.current_fee ?? undefined;
         });
         setFees(initialFees);
+        setDates({});
         const ag = (response.data.approvalGroups || []).map((g) => ({
           id: g.addressId,
           address: g.address,
@@ -104,6 +110,23 @@ const Page = () => {
     setFees((prev) => ({ ...prev, [collectionId]: value }));
   };
 
+  // Salvamento por linha foi removido; mantemos um único botão de salvar geral
+
+  const openVehiclesModal = async (addressId: string, address: string) => {
+    setVehiclesModal({ addressId, address });
+    try {
+      setVehiclesList([]);
+      const { supabase } = await import('@/modules/common/services/supabaseClient');
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('id, plate, brand, model, year, status, created_at')
+        .eq('client_id', id)
+        .eq('pickup_address_id', addressId)
+        .order('created_at', { ascending: false });
+      if (!error) setVehiclesList(data || []);
+    } catch {}
+  };
+
   const handleSubmitFees = async () => {
     try {
       setLoading(true);
@@ -112,8 +135,8 @@ const Page = () => {
       const payload = {
         clientId: id,
         fees: collectionRequests
-          .map((req) => ({ addressId: req.id, fee: fees[req.id] }))
-          .filter((x): x is { addressId: string; fee: number } => typeof x.fee === 'number'),
+          .map((req) => ({ addressId: req.id, fee: fees[req.id], date: dates[req.id] || undefined }))
+          .filter((x): x is { addressId: string; fee: number; date?: string } => typeof x.fee === 'number'),
       };
       const resp = await post('/api/admin/set-address-collection-fees', payload);
       if (!resp.ok) throw new Error((resp as any).error || 'Erro ao salvar valores');
@@ -145,13 +168,22 @@ const Page = () => {
                 <th className={styles.thCenter}>Veículos</th>
                 <th className={styles.thCenter}>Valor da coleta (R$)</th>
                 <th className={styles.thCenter}>Total estimado (R$)</th>
+                <th className={styles.thCenter}>Data de Coleta</th>
               </tr>
             </thead>
             <tbody>
               {collectionRequests.map((req) => (
                 <tr key={req.id}>
                   <td>{req.address}</td>
-                  <td className={styles.alignCenter}>{req.vehicle_count}</td>
+                  <td className={styles.alignCenter}>
+                    <button
+                      className={styles.primaryBtn}
+                      style={{ background: 'transparent', color: '#072e4c', textDecoration: 'underline', padding: 0 }}
+                      onClick={() => openVehiclesModal(req.id, req.address)}
+                    >
+                      {req.vehicle_count}
+                    </button>
+                  </td>
                   <td className={styles.alignCenter}>
                     <CurrencyInput
                       value={fees[req.id]}
@@ -168,19 +200,33 @@ const Page = () => {
                         })
                       : '-'}
                   </td>
+                  <td className={styles.alignCenter}>
+<DatePickerBR
+  valueIso={dates[req.id] || ''}
+  onChangeIso={(v) => setDates((prev) => ({ ...prev, [req.id]: v }))}
+  ariaLabel={`Data de coleta para ${req.address}`}
+/>
+                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={3} className={styles.alignRight + ' ' + styles.bold}>Total estimado geral:</td>
+                <td colSpan={4} className={styles.alignRight + ' ' + styles.bold}>Total estimado geral:</td>
                 <td className={styles.bold}>
-                  {collectionRequests
-                    .reduce(
-                      (acc, r) => acc + (typeof fees[r.id] === 'number' ? fees[r.id]! * (r.vehicle_count || 0) : 0),
-                      0
-                    )
-                    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  <div className={styles.totalRow}>
+                    <span>
+                      {collectionRequests
+                        .reduce(
+                          (acc, r) => acc + (typeof fees[r.id] === 'number' ? fees[r.id]! * (r.vehicle_count || 0) : 0),
+                          0
+                        )
+                        .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                    <button className={styles.primaryBtn} onClick={handleSubmitFees} disabled={loading}>
+                      {loading ? 'Salvando...' : 'Salvar'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tfoot>
@@ -204,7 +250,15 @@ const Page = () => {
                 {approvalGroups.map((g) => (
                   <tr key={g.id}>
                     <td>{g.address}</td>
-                    <td className={styles.alignCenter}>{g.vehicle_count}</td>
+                  <td className={styles.alignCenter}>
+                    <button
+                      className={styles.primaryBtn}
+                      style={{ background: 'transparent', color: '#072e4c', textDecoration: 'underline', padding: 0 }}
+                      onClick={() => openVehiclesModal(g.id, g.address)}
+                    >
+                      {g.vehicle_count}
+                    </button>
+                  </td>
                     <td>{(g.statuses || []).map((s) => `${s.status} (${s.count})`).join(', ') || '-'}</td>
                     <td className={styles.alignCenter}>
                       {typeof g.current_fee === 'number'
@@ -232,10 +286,13 @@ const Page = () => {
           </div>
         </div>
 
+        {/* Botão global removido: agora está ao lado do total na tabela */}
+
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Resumo do cliente</h2>
           <div className={styles.summaryRow}>
             <div className={styles.summaryItem}><b>Taxa de operação:</b> {typeof clientSummary?.taxa_operacao === 'number' ? clientSummary.taxa_operacao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</div>
+            <div className={styles.summaryItem}><b>Parqueamento:</b> {typeof clientSummary?.parqueamento === 'number' ? clientSummary.parqueamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</div>
             <div className={styles.summaryItem}><b>Percentual da FIPE:</b> {typeof clientSummary?.percentual_fipe === 'number' ? `${clientSummary.percentual_fipe.toFixed(2)}%` : '-'}</div>
           </div>
         </div>
@@ -263,12 +320,40 @@ const Page = () => {
         </div>
 
         <div className={styles.actions}>
-          <button className={styles.primaryBtn} onClick={handleSubmitFees} disabled={loading}>
-            {loading ? 'Salvando...' : 'Salvar Valores'}
-          </button>
           {error && <div className={styles.error}>{error}</div>}
           {message && <div className={styles.success}>{message}</div>}
         </div>
+
+        {vehiclesModal && (
+          <div className={modalStyles.modalOverlay} role="dialog" aria-modal="true">
+            <div className={modalStyles.modalContent}>
+              <button className={modalStyles.closeButton} onClick={() => setVehiclesModal(null)}>&times;</button>
+              <h2>Veículos em {vehiclesModal.address}</h2>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.thLeft}>Placa</th>
+                      <th className={styles.thLeft}>Modelo</th>
+                      <th className={styles.thCenter}>Ano</th>
+                      <th className={styles.thLeft}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vehiclesList.map((v) => (
+                      <tr key={v.id}>
+                        <td>{v.plate}</td>
+                        <td>{v.brand} {v.model}</td>
+                        <td className={styles.alignCenter}>{v.year || '-'}</td>
+                        <td>{v.status || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

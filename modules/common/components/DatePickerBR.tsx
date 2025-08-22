@@ -101,4 +101,3 @@ export default function DatePickerBR({ valueIso, minIso, onChangeIso, placeholde
     </div>
   );
 }
-

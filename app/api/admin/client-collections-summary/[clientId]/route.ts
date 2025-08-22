@@ -162,12 +162,12 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
     }
 
 
-    // Load client contract summary
+    // Load client contract summary (include parqueamento)
     let clientSummary: any = null;
     try {
       const { data: clientRow } = await admin
         .from('clients')
-        .select('taxa_operacao, percentual_fipe')
+        .select('taxa_operacao, percentual_fipe, parqueamento')
         .eq('profile_id', clientId)
         .maybeSingle();
       if (clientRow) clientSummary = clientRow;
