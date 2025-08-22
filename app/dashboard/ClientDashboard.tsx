@@ -14,7 +14,7 @@ interface ProfileData {
   }[];
 }
 
-import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 
 const ClientDashboard = () => {
   const [accepted, setAccepted] = useState(false);
