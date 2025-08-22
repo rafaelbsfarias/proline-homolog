@@ -45,7 +45,15 @@ const DataPanel: React.FC = () => {
       const response = await get<ClientsWithCollectionSummaryResponse>('/api/admin/clients-with-collection-summary');
       if (!isMounted) return;
       if (response.ok && response.data?.success) {
-        setClients(response.data.clients);
+        const sorted = [...(response.data.clients || [])].sort((a, b) => {
+          const ac = (a.collection_requests_count ?? 0);
+          const bc = (b.collection_requests_count ?? 0);
+          if (bc !== ac) return bc - ac;
+          const av = (a.vehicle_count ?? 0);
+          const bv = (b.vehicle_count ?? 0);
+          return bv - av;
+        });
+        setClients(sorted);
       } else {
         setError(response.data?.error || response.error || 'Erro ao buscar dados');
       }

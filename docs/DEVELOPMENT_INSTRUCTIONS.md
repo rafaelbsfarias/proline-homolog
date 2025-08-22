@@ -23,3 +23,6 @@ Mantenha o código limpo, após uma correção de código verique duas vezes se 
 para trás
 
 o deploy e feito na vercel
+
+toda migration de ve idempotente
+toda migration deve ser criada com supabase migration new

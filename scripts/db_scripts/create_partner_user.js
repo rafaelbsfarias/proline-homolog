@@ -86,6 +86,7 @@ async function createPartnerUser() {
         cnpj: cnpj,
         company_name: companyName,
         is_active: true,
+        category: 'Oficina Mecânica',
       },
       { onConflict: 'profile_id' }
     );

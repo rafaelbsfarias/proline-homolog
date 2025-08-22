@@ -98,7 +98,7 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
     const approvalStatus = 'AGUARDANDO APROVAÇÃO DA COLETA';
     const { data: vehiclesApproval, error: vehApprErr } = await admin
       .from('vehicles')
-      .select('id, client_id, status, pickup_address_id')
+      .select('id, client_id, status, pickup_address_id, estimated_arrival_date')
       .eq('client_id', clientId)
       .eq('status', approvalStatus)
       .not('pickup_address_id', 'is', null);
@@ -107,9 +107,17 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
     let approvalTotal: number = 0;
     if (!vehApprErr && vehiclesApproval && vehiclesApproval.length) {
       const byAddress2 = new Map<string, number>();
+      const dateByAddress: Record<string, string | null> = {};
       (vehiclesApproval || []).forEach((v: any) => {
         const aid = v.pickup_address_id as string;
         byAddress2.set(aid, (byAddress2.get(aid) || 0) + 1);
+        const d = v.estimated_arrival_date ? String(v.estimated_arrival_date) : null;
+        // prefer the earliest date if multiple; simple min by string works for YYYY-MM-DD
+        if (d) {
+          if (!dateByAddress[aid] || d < (dateByAddress[aid] as string)) {
+            dateByAddress[aid] = d;
+          }
+        }
       });
       const addressIds2 = Array.from(byAddress2.keys());
       // Load labels for approval addresses
@@ -157,17 +165,18 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
         const fee = feeByLabel2.get(lbl) ?? null;
         const statuses = Object.entries(statusMap[aid] || {}).map(([status, count]) => ({ status, count }));
         if (typeof fee === 'number') approvalTotal += fee * count;
-        return { addressId: aid, address: lbl, vehicle_count: count, collection_fee: fee, statuses };
+        const collection_date = dateByAddress[aid] || null;
+        return { addressId: aid, address: lbl, vehicle_count: count, collection_fee: fee, statuses, collection_date };
       });
     }
 
 
-    // Load client contract summary (include parqueamento)
+    // Load client contract summary (include parqueamento, quilometragem)
     let clientSummary: any = null;
     try {
       const { data: clientRow } = await admin
         .from('clients')
-        .select('taxa_operacao, percentual_fipe, parqueamento')
+        .select('taxa_operacao, percentual_fipe, parqueamento, quilometragem')
         .eq('profile_id', clientId)
         .maybeSingle();
       if (clientRow) clientSummary = clientRow;

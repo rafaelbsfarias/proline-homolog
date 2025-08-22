@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import VehicleDetailsModal from './VehicleDetailsModal';
+import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
 import RowCollectionModal from './RowCollectionModal';
 import BulkCollectionModal from './BulkCollectionModal';
@@ -60,7 +60,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
   const filteredVehicles = (vehicles || []).filter(v => {
     const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
-    const statusOk = filterStatus ? ((v.status || '').toLowerCase() === filterStatus.toLowerCase()) : true;
+            const statusOk = filterStatus ? ((v.status ?? '').toLowerCase() === filterStatus.toLowerCase()) : true;
     return plateOk && statusOk;
   });
 
@@ -174,7 +174,25 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
             setShowModal(false);
             setSelectedVehicle(null);
           }}
-          vehicle={selectedVehicle}
+          vehicle={selectedVehicle ? {
+            plate: selectedVehicle.plate,
+            brand: selectedVehicle.brand,
+            model: selectedVehicle.model,
+            year: selectedVehicle.year,
+            color: selectedVehicle.color,
+            status: selectedVehicle.status ?? '',
+            created_at: selectedVehicle.created_at,
+            fipe_value: selectedVehicle.fipe_value,
+            client_name: undefined,
+            analyst: undefined,
+            arrival_forecast: undefined,
+            current_km: undefined,
+            params: undefined,
+            notes: undefined,
+            estimated_arrival_date: selectedVehicle.estimated_arrival_date,
+            current_odometer: selectedVehicle.current_odometer,
+            fuel_level: selectedVehicle.fuel_level,
+          } : null}
         />
       )}
 

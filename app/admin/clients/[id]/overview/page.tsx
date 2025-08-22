@@ -7,6 +7,7 @@ import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import styles from './page.module.css';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import modalStyles from '@/modules/admin/components/CollectionRequestsModal.module.css';
+import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import Header from '@/modules/admin/components/Header';
 
 type CollectionGroup = {
@@ -16,9 +17,9 @@ type CollectionGroup = {
   current_fee: number | null;
 };
 
-type ApprovalGroup = CollectionGroup & { statuses?: { status: string; count: number }[] };
+type ApprovalGroup = CollectionGroup & { statuses?: { status: string; count: number }[]; collection_date?: string | null };
 
-type ClientSummary = { taxa_operacao?: number; percentual_fipe?: number; parqueamento?: number };
+type ClientSummary = { taxa_operacao?: number; percentual_fipe?: number; parqueamento?: number; quilometragem?: number };
 type StatusTotal = { status: string; count: number };
 
 type ApiResponse = {
@@ -58,7 +59,8 @@ const Page = () => {
   const [fees, setFees] = useState<Record<string, number | undefined>>({});
   const [dates, setDates] = useState<Record<string, string>>({});
   const [vehiclesModal, setVehiclesModal] = useState<{ addressId: string; address: string } | null>(null);
-  const [vehiclesList, setVehiclesList] = useState<{ id: string; plate: string; brand: string; model: string; year?: number; status?: string }[]>([]);
+  const [vehiclesList, setVehiclesList] = useState<{ id: string; plate: string; brand: string; model: string; year?: number; status?: string; color?: string; created_at?: string; fipe_value?: number; current_odometer?: number | null; estimated_arrival_date?: string | null }[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
 
   const fetchCollectionRequests = useCallback(async () => {
     if (!id) return;
@@ -86,6 +88,7 @@ const Page = () => {
           vehicle_count: g.vehicle_count,
           current_fee: g.collection_fee,
           statuses: g.statuses,
+          collection_date: (g as any).collection_date ?? null,
         }));
         setApprovalGroups(ag);
         setApprovalTotal(response.data.approvalTotal || 0);
@@ -113,17 +116,25 @@ const Page = () => {
   // Salvamento por linha foi removido; mantemos um único botão de salvar geral
 
   const openVehiclesModal = async (addressId: string, address: string) => {
-    setVehiclesModal({ addressId, address });
     try {
       setVehiclesList([]);
       const { supabase } = await import('@/modules/common/services/supabaseClient');
       const { data, error } = await supabase
         .from('vehicles')
-        .select('id, plate, brand, model, year, status, created_at')
+        .select('id, plate, brand, model, year, color, status, created_at, fipe_value, current_odometer, estimated_arrival_date')
         .eq('client_id', id)
         .eq('pickup_address_id', addressId)
         .order('created_at', { ascending: false });
-      if (!error) setVehiclesList(data || []);
+      if (error) return;
+      const list = data || [];
+      if (list.length === 1) {
+        const v = list[0];
+        setSelectedVehicle({ ...v, year: v.year || 0, created_at: v.created_at || new Date().toISOString() } as any);
+        setVehiclesModal(null);
+      } else {
+        setVehiclesList(list);
+        setVehiclesModal({ addressId, address });
+      }
     } catch {}
   };
 
@@ -136,7 +147,7 @@ const Page = () => {
         clientId: id,
         fees: collectionRequests
           .map((req) => ({ addressId: req.id, fee: fees[req.id], date: dates[req.id] || undefined }))
-          .filter((x): x is { addressId: string; fee: number; date?: string } => typeof x.fee === 'number'),
+          .filter((x): x is { addressId: string; fee: number; date: string | undefined } => typeof x.fee === 'number'),
       };
       const resp = await post('/api/admin/set-address-collection-fees', payload);
       if (!resp.ok) throw new Error((resp as any).error || 'Erro ao salvar valores');
@@ -201,11 +212,15 @@ const Page = () => {
                       : '-'}
                   </td>
                   <td className={styles.alignCenter}>
-<DatePickerBR
-  valueIso={dates[req.id] || ''}
-  onChangeIso={(v) => setDates((prev) => ({ ...prev, [req.id]: v }))}
-  ariaLabel={`Data de coleta para ${req.address}`}
-/>
+                    <DatePickerBR
+                      valueIso={dates[req.id] || ''}
+                      onChangeIso={(v) => setDates((prev) => ({ ...prev, [req.id]: v }))}
+                      ariaLabel={`Data de coleta para ${req.address}`}
+                      containerClass={styles.datePicker}
+                      inputClass={styles.dateInput}
+                      buttonClass={styles.dateBtn}
+                      hiddenInputClass={styles.hiddenDateNative}
+                    />
                   </td>
                 </tr>
               ))}
@@ -241,7 +256,7 @@ const Page = () => {
                 <tr>
                   <th className={styles.thLeft}>Ponto de coleta</th>
                   <th className={styles.thCenter}>Veículos</th>
-                  <th className={styles.thLeft}>Status</th>
+                  <th className={styles.thCenter}>Data de coleta</th>
                   <th className={styles.thCenter}>Valor por endereço (R$)</th>
                   <th className={styles.thCenter}>Total por endereço (R$)</th>
                 </tr>
@@ -250,16 +265,20 @@ const Page = () => {
                 {approvalGroups.map((g) => (
                   <tr key={g.id}>
                     <td>{g.address}</td>
-                  <td className={styles.alignCenter}>
-                    <button
-                      className={styles.primaryBtn}
-                      style={{ background: 'transparent', color: '#072e4c', textDecoration: 'underline', padding: 0 }}
-                      onClick={() => openVehiclesModal(g.id, g.address)}
-                    >
-                      {g.vehicle_count}
-                    </button>
-                  </td>
-                    <td>{(g.statuses || []).map((s) => `${s.status} (${s.count})`).join(', ') || '-'}</td>
+                    <td className={styles.alignCenter}>
+                      <button
+                        className={styles.primaryBtn}
+                        style={{ background: 'transparent', color: '#072e4c', textDecoration: 'underline', padding: 0 }}
+                        onClick={() => openVehiclesModal(g.id, g.address)}
+                      >
+                        {g.vehicle_count}
+                      </button>
+                    </td>
+                    <td className={styles.alignCenter}>
+                      {(g.collection_date && String(g.collection_date).length >= 10)
+                        ? `${String(g.collection_date).slice(8,10)}/${String(g.collection_date).slice(5,7)}/${String(g.collection_date).slice(0,4)}`
+                        : '-'}
+                    </td>
                     <td className={styles.alignCenter}>
                       {typeof g.current_fee === 'number'
                         ? g.current_fee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -293,6 +312,9 @@ const Page = () => {
           <div className={styles.summaryRow}>
             <div className={styles.summaryItem}><b>Taxa de operação:</b> {typeof clientSummary?.taxa_operacao === 'number' ? clientSummary.taxa_operacao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</div>
             <div className={styles.summaryItem}><b>Parqueamento:</b> {typeof clientSummary?.parqueamento === 'number' ? clientSummary.parqueamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</div>
+            <div className={styles.summaryItem}><b>Quilometragem:</b> {(
+              (clientSummary as any)?.quilometragem !== undefined && (clientSummary as any)?.quilometragem !== null && String((clientSummary as any)?.quilometragem) !== ''
+            ) ? `${Number((clientSummary as any).quilometragem).toLocaleString('pt-BR')} km` : '-'}</div>
             <div className={styles.summaryItem}><b>Percentual da FIPE:</b> {typeof clientSummary?.percentual_fipe === 'number' ? `${clientSummary.percentual_fipe.toFixed(2)}%` : '-'}</div>
           </div>
         </div>
@@ -337,6 +359,7 @@ const Page = () => {
                       <th className={styles.thLeft}>Modelo</th>
                       <th className={styles.thCenter}>Ano</th>
                       <th className={styles.thLeft}>Status</th>
+                      <th className={styles.thCenter}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -346,6 +369,9 @@ const Page = () => {
                         <td>{v.brand} {v.model}</td>
                         <td className={styles.alignCenter}>{v.year || '-'}</td>
                         <td>{v.status || '-'}</td>
+                        <td className={styles.alignCenter}>
+                          <button className={styles.primaryBtn} onClick={() => setSelectedVehicle({ ...v, year: v.year || 0, created_at: v.created_at || new Date().toISOString() })}>Ver detalhes</button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -354,6 +380,8 @@ const Page = () => {
             </div>
           </div>
         )}
+
+        <VehicleDetailsModal isOpen={!!selectedVehicle} vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} />
       </div>
     </>
   );

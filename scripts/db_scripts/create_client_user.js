@@ -90,13 +90,18 @@ async function createClientUser() {
     }
     console.log(`Perfil em public.profiles criado/atualizado para ID: ${userId}`);
 
-    // 3. Criar entrada na tabela public.clients
+    // 3. Criar entrada na tabela public.clients (com inteiros para contratos)
     const { error: clientError } = await supabase.from('clients').upsert(
       {
         profile_id: userId,
         document_type: documentType,
         document_number: documentNumber,
         company_name: companyName,
+        // garantir inteiros
+        percentual_fipe: 50, // inteiro
+        taxa_operacao: 10,   // inteiro
+        parqueamento: 25,    // inteiro
+        quilometragem: 100,  // inteiro
       },
       { onConflict: 'profile_id' }
     );

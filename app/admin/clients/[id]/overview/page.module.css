@@ -37,3 +37,9 @@
 
 /* Layout para total + botão salvar lado a lado */
 .totalRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* Date picker (BR) styles */
+.datePicker { display: inline-flex; align-items: center; gap: 6px; }
+.dateInput { padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px; }
+.dateBtn { background: none; border: 1px solid #ddd; padding: 4px 6px; border-radius: 4px; cursor: pointer; color: #072e4c; }
+.hiddenDateNative { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); overflow: hidden; }
