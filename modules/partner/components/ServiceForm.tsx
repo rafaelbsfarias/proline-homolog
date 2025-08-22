@@ -1,33 +1,20 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React from 'react';
+import type { ServiceData } from '../services/partnerClientService';
 
 interface ServiceFormProps {
-  onSubmit: (data: {
-    name: string;
-    description: string;
-    estimated_days: number;
-    price: number;
-  }) => void;
+  onSubmit: (data: ServiceData) => void;
+  formId: string;
 }
 
-export interface ServiceFormRef {
-  submitForm: () => void;
-}
-
-const ServiceForm = forwardRef<ServiceFormRef, ServiceFormProps>(({ onSubmit }, ref) => {
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useImperativeHandle(ref, () => ({
-    submitForm: () => {
-      formRef.current?.requestSubmit();
-    },
-  }));
-
+const ServiceForm: React.FC<ServiceFormProps> = ({ onSubmit, formId }) => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const data = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
+      // O campo 'estimated_days' não existe no formulário original, removendo para alinhar.
+      // Se for necessário, deve ser adicionado ao JSX do formulário.
       estimated_days: Number(formData.get('estimated_days')),
       price: Number(formData.get('price')),
     };
@@ -35,7 +22,7 @@ const ServiceForm = forwardRef<ServiceFormRef, ServiceFormProps>(({ onSubmit }, 
   };
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit}>
+    <form id={formId} onSubmit={handleSubmit}>
       <div>
         <label htmlFor="name">Nome do Serviço</label>
         <input type="text" id="name" name="name" required />
@@ -54,8 +41,6 @@ const ServiceForm = forwardRef<ServiceFormRef, ServiceFormProps>(({ onSubmit }, 
       </div>
     </form>
   );
-});
-
-ServiceForm.displayName = 'ServiceForm';
+};
 
 export default ServiceForm;

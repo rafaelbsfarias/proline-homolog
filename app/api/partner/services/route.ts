@@ -4,9 +4,6 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 
 async function createServiceHandler(req: AuthenticatedRequest) {
   try {
-    console.log('=== CREATE SERVICE HANDLER ===');
-    console.log('Partner:', req.user.email);
-
     const body = await req.json();
     const { name, description, price } = body;
 
@@ -32,14 +29,12 @@ async function createServiceHandler(req: AuthenticatedRequest) {
       .single();
 
     if (error) {
-      console.error('Erro ao criar serviço:', error);
+      // TODO: Adicionar log de erro real aqui (e.g., Sentry, Pino)
       return new Response(JSON.stringify({ error: 'Erro ao criar serviço' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('Serviço criado com sucesso:', data.id);
 
     return new Response(
       JSON.stringify({
@@ -52,7 +47,7 @@ async function createServiceHandler(req: AuthenticatedRequest) {
       }
     );
   } catch (error) {
-    console.error('Erro em create service:', error);
+    // TODO: Adicionar log de erro real aqui (e.g., Sentry, Pino)
     return new Response(JSON.stringify({ error: 'Erro interno do servidor' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
