@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import VehicleRegistrationModalBase from '@/modules/vehicles/components/VehicleRegistrationModalBase';
-import type { Vehicle, VehicleRegistrationBaseProps } from '@/modules/vehicles/components/types';
+import VehicleRegistrationModalBase, { Vehicle, VehicleRegistrationBaseProps } from '@/modules/vehicles/components/VehicleRegistrationModalBase';
 
 type Props = Omit<VehicleRegistrationBaseProps, 'userRole'>;
 
