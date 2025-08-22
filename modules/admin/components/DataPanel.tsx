@@ -69,14 +69,10 @@ const DataPanel: React.FC = () => {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '8px' }}>Empresa</th>{' '}
-                {/* Changed header */}
-                <th style={{ textAlign: 'center', padding: '8px' }}>Veículos cadastrados</th>{' '}
-                {/* Swapped position */}
-                <th style={{ textAlign: 'left', padding: '8px' }}>Especialista(s)</th>{' '}
-                {/* Swapped position */}
-                <th style={{ textAlign: 'center', padding: '8px' }}>Coleta</th>{' '}
-                {/* New column for collection requests */}
+                <th style={{ textAlign: 'left', padding: '8px' }}>Empresa</th>
+                <th style={{ textAlign: 'center', padding: '8px' }}>Veículos cadastrados</th>
+                <th style={{ textAlign: 'center', padding: '8px' }}>Coleta</th>
+                <th style={{ textAlign: 'left', padding: '8px' }}>Especialista(s)</th>
                 <th style={{ width: 40 }}></th>
               </tr>
             </thead>
@@ -84,19 +80,12 @@ const DataPanel: React.FC = () => {
               {clients.map(client => (
                 <tr key={client.id}>
                   <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                    {client.company_name} {/* Display company_name */}
+                    {client.company_name}
                   </td>
-                  <td
-                    style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}
-                  >
-                    {client.vehicle_count ?? '-'} {/* Swapped position */}
+                  <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}>
+                    {client.vehicle_count ?? '-'}
                   </td>
-                  <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                    {client.specialist_names || 'Nenhum'} {/* Swapped position */}
-                  </td>
-                  <td
-                    style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}
-                  >
+                  <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}>
                     {client.collection_requests_count && client.collection_requests_count > 0 ? (
                       <button
                         title="Ver solicitações de coleta"
@@ -112,7 +101,7 @@ const DataPanel: React.FC = () => {
                           lineHeight: 1,
                         }}
                         onClick={() => {
-                          setSelectedClientForCollectionModal({ id: client.id, full_name: client.full_name });
+                          setSelectedClientForCollectionModal({ id: client.id, full_name: (client as any).company_name || client.full_name });
                           setCollectionModalOpen(true);
                         }}
                       >
@@ -121,6 +110,9 @@ const DataPanel: React.FC = () => {
                     ) : (
                       '-'
                     )}
+                  </td>
+                  <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                    {client.specialist_names || 'Nenhum'}
                   </td>
                   <td style={{ textAlign: 'center', borderBottom: '1px solid #eee' }}>
                     <button
@@ -140,9 +132,7 @@ const DataPanel: React.FC = () => {
                         setSpecialistModalOpen(true);
                       }}
                     >
-                      <span aria-label="Adicionar especialista" role="img">
-                        ＋
-                      </span>
+                      <span aria-label="Adicionar especialista" role="img">＋</span>
                     </button>
                   </td>
                 </tr>

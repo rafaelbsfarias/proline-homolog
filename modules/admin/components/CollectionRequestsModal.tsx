@@ -121,10 +121,9 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Endereço</th>
+                  <th>Ponto de coleta</th>
                   <th>Veículos</th>
-                  <th>Valor por Veículo (R$)</th>
-                  <th>Total Estimado (R$)</th>
+                  <th>Valor da coleta (R$)</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,11 +138,6 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
                         placeholder="0,00"
                         disabled={loading}
                       />
-                    </td>
-                    <td>
-                      {(fees[req.id] !== undefined && req.vehicle_count !== undefined)
-                        ? (fees[req.id]! * req.vehicle_count).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                        : '-'}
                     </td>
                   </tr>
                 ))}

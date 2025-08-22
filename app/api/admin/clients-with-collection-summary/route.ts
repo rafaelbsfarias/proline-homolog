@@ -33,22 +33,22 @@ async function handler(req: AuthenticatedRequest) {
       return NextResponse.json({ success: true, clients: [] });
     }
 
-    // 2) Aggregate collection requests per client
-    const { data: collections, error: collErr } = await admin
-      .from('vehicle_collections')
+    // 2) Aggregate per client how many vehicles are in "PONTO DE COLETA SELECIONADO"
+    const { data: vehicles, error: vehErr } = await admin
+      .from('vehicles')
       .select('id, client_id, status')
       .in('client_id', ids)
-      .eq('status', 'requested');
+      .eq('status', 'PONTO DE COLETA SELECIONADO');
 
-    if (collErr) {
-      logger.error('summary:collections_error', { error: collErr.message });
+    if (vehErr) {
+      logger.error('summary:vehicles_error', { error: vehErr.message });
       // Do not fail entirely; return base clients with zero collection count
       const merged = clients.map((c: any) => ({ ...c, collection_requests_count: 0 }));
       return NextResponse.json({ success: true, clients: merged });
     }
 
     const counts = new Map<string, number>();
-    (collections || []).forEach((row: any) => {
+    (vehicles || []).forEach((row: any) => {
       const cid = row.client_id as string;
       counts.set(cid, (counts.get(cid) || 0) + 1);
     });
@@ -70,4 +70,3 @@ async function handler(req: AuthenticatedRequest) {
 }
 
 export const GET = withAdminAuth(handler);
-
