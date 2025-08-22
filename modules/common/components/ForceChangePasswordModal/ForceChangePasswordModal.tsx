@@ -7,6 +7,7 @@ interface ForceChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onError: (message: string) => void;
 }
 
 const passwordSchema = z
@@ -29,6 +30,7 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  onError,
 }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -52,10 +54,42 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
 
     setLoading(true);
 
+    //   try {
+    //     const { error: updateError } = await supabase.auth.updateUser({ password });
+    //     if (updateError) {
+    //       setErrors({ password: updateError.message });
+    //       setLoading(false);
+    //       return;
+    //     }
+
+    //     const { data: sessionData } = await supabase.auth.getSession();
+    //     const userId = sessionData.session?.user.id;
+    //     if (!userId) throw new Error('Usuário não encontrado.');
+
+    //     const { error: profileError } = await supabase
+    //       .from('profiles')
+    //       .update({ must_change_password: false })
+    //       .eq('id', userId);
+
+    //     if (profileError) {
+    //       setErrors({ password: 'Senha alterada, mas falha ao atualizar perfil.' });
+    //     } else {
+    //       onSuccess();
+    //       onClose();
+    //     }
+    //   } catch (err) {
+    //     console.error(err);
+    //     setErrors({ password: 'Erro inesperado. Tente novamente.' });
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
     try {
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) {
-        setErrors({ password: updateError.message });
+        // Aqui é erro da requisição mesmo
+        if (onError) onError(updateError.message);
+        setErrors({ password: updateError.message }); // mantém também no input
         setLoading(false);
         return;
       }
@@ -70,19 +104,21 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
         .eq('id', userId);
 
       if (profileError) {
+        if (onError) onError('Senha alterada, mas falha ao atualizar perfil.');
         setErrors({ password: 'Senha alterada, mas falha ao atualizar perfil.' });
       } else {
         onSuccess();
         onClose();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setErrors({ password: 'Erro inesperado. Tente novamente.' });
+      // Esse catch captura qualquer erro inesperado da requisição
+      if (onError) onError(err.message || 'Erro inesperado. Tente novamente.');
+      setErrors({ password: err.message || 'Erro inesperado. Tente novamente.' });
     } finally {
       setLoading(false);
     }
   };
-
   if (!isOpen) return null;
 
   return (

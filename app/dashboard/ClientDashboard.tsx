@@ -27,6 +27,8 @@ const ClientDashboard = () => {
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -314,6 +316,10 @@ const ClientDashboard = () => {
           setShowForceChangePasswordModal(false);
           setShowSuccessModal(true);
         }}
+        onError={message => {
+          setErrorMessage(message);
+          setShowErrorModal(true);
+        }}
       />
 
       {showSuccessModal && (
@@ -322,6 +328,15 @@ const ClientDashboard = () => {
           message="Sua senha foi atualizada com sucesso."
           variant="success"
           onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
+      {showErrorModal && (
+        <MessageModal
+          title="Erro"
+          message={errorMessage}
+          variant="error"
+          onClose={() => setShowErrorModal(false)}
         />
       )}
     </div>
