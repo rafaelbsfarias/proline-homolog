@@ -8,22 +8,11 @@ import ActionButton from '@/modules/partner/components/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
 import ServiceModal from '@/modules/partner/components/ServiceModal';
 import ContractAcceptanceView from '@/modules/partner/components/ContractAcceptanceView';
-import { usePartnerDashboard } from '@/modules/partner/hooks/usePartnerDashboard';
-
-// As definições de tipo podem ser movidas para um arquivo de tipos compartilhado no futuro
-interface PendingQuote {
-  id: number;
-  client: string;
-  service: string;
-  date: string;
-}
-
-interface InProgressService {
-  id: number;
-  client: string;
-  service: string;
-  status: string;
-}
+import {
+  usePartnerDashboard,
+  type PendingQuote,
+  type InProgressService,
+} from '@/modules/partner/hooks/usePartnerDashboard';
 
 const PartnerDashboard = () => {
   const router = useRouter();
@@ -74,15 +63,15 @@ const PartnerDashboard = () => {
 
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client', header: 'Cliente' },
-    { key: 'service', header: 'Serviço' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
     { key: 'date', header: 'Data' },
   ];
 
   const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client', header: 'Cliente' },
-    { key: 'service', header: 'Serviço' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
     { key: 'status', header: 'Status' },
   ];
 
