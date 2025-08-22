@@ -102,7 +102,7 @@ const PartnerDashboard = () => {
           >
             <p style={{ color: '#666', fontSize: '1.15rem' }}>Bem-vindo, {userName}!</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <ActionButton onClick={() => router.push('/dashboard/#')}>
+              <ActionButton onClick={() => router.push('/dashboard/services')}>
                 Serviços Cadastrados
               </ActionButton>
               <ActionButton onClick={() => setShowAddServiceModal(true)}>

@@ -7,6 +7,7 @@ import {
   importServicesFromCsv,
   type ServiceData,
 } from '../services/partnerClientService';
+import styles from './ServiceModal.module.css';
 
 interface ServiceModalProps {
   isOpen: boolean;
@@ -21,13 +22,14 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
   const [csvImportMessage, setCsvImportMessage] = useState('');
   const [formMessage, setFormMessage] = useState('');
   const [isImporting, setIsImporting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Estado para o submit do formulário
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const csvFileInputRef = useRef<HTMLInputElement>(null);
   const { authenticatedFetch } = useAuthenticatedFetch();
 
   useEffect(() => {
     if (!isOpen) {
+      // Reset states when modal is closed
       setCsvImportMessage('');
       setFormMessage('');
       setSelectedCsvFile(null);
@@ -93,28 +95,18 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
     <Modal isOpen={isOpen} onClose={onClose} title="Gerenciar Serviços">
       <ServiceForm formId={ADD_SERVICE_FORM_ID} onSubmit={handleSubmit} />
 
-      <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+      <div className={styles.footer}>
         {selectedCsvFile && (
-          <p style={{ marginBottom: '10px' }}>
+          <p className={styles.selectedFile}>
             Arquivo selecionado: <strong>{selectedCsvFile.name}</strong>
           </p>
         )}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className={styles.buttonGroup}>
           <button
-            type="submit" // Alterado para submit
-            form={ADD_SERVICE_FORM_ID} // Associa ao formulário
+            type="submit"
+            form={ADD_SERVICE_FORM_ID}
             disabled={isSubmitting}
-            style={{
-              background: '#28a745',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '1.13rem',
-              border: 0,
-              borderRadius: 6,
-              padding: '10px 32px',
-              cursor: 'pointer',
-              opacity: isSubmitting ? 0.7 : 1,
-            }}
+            className={`${styles.button} ${styles.buttonPrimary}`}
           >
             {isSubmitting ? 'Adicionando...' : 'Adicionar Serviço'}
           </button>
@@ -128,17 +120,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
           <button
             onClick={handleImportCsvClick}
             disabled={isImporting}
-            style={{
-              background: '#002E4C',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '1.13rem',
-              border: 0,
-              borderRadius: 6,
-              padding: '10px 32px',
-              cursor: 'pointer',
-              opacity: isImporting ? 0.7 : 1,
-            }}
+            className={`${styles.button} ${styles.buttonSecondary}`}
           >
             {isImporting ? 'Processando...' : 'Importar .csv'}
           </button>
@@ -146,28 +128,18 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
             <button
               onClick={handleConfirmCsvImport}
               disabled={isImporting}
-              style={{
-                background: '#007bff',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '1.13rem',
-                border: 0,
-                borderRadius: 6,
-                padding: '10px 32px',
-                cursor: 'pointer',
-              }}
+              className={`${styles.button} ${styles.buttonConfirm}`}
             >
               Confirmar Importação
             </button>
           )}
         </div>
-        {formMessage && <p style={{ color: 'red', marginTop: '10px' }}>{formMessage}</p>}
+        {formMessage && <p className={`${styles.message} ${styles.errorMessage}`}>{formMessage}</p>}
         {csvImportMessage && (
           <p
-            style={{
-              color: csvImportMessage.startsWith('Erro') ? 'red' : 'green',
-              marginTop: '10px',
-            }}
+            className={`${styles.message} ${
+              csvImportMessage.startsWith('Erro') ? styles.errorMessage : styles.successMessage
+            }`}
           >
             {csvImportMessage}
           </p>

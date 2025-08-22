@@ -4,17 +4,20 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { handleApiError } from '@/lib/utils/apiErrorHandlers';
 import { DatabaseError } from '@/lib/utils/errors';
 
-async function getDashboardData(req: AuthenticatedRequest) {
+async function listPartnerServices(req: AuthenticatedRequest) {
   try {
     const partnerId = req.user.id;
     const supabase = SupabaseService.getInstance().getAdminClient();
 
-    const { data, error } = await supabase.rpc('get_partner_dashboard_data', {
-      p_partner_id: partnerId,
-    });
+    // A tabela correta, baseada nas migrações, é `partner_services`
+    const { data, error } = await supabase
+      .from('partner_services')
+      .select('id, name, description, price, category')
+      .eq('partner_id', partnerId)
+      .order('created_at', { ascending: false });
 
     if (error) {
-      throw new DatabaseError(`Falha ao buscar dados do dashboard: ${error.message}`);
+      throw new DatabaseError(`Falha ao listar os serviços do parceiro: ${error.message}`);
     }
 
     return NextResponse.json(data);
@@ -23,4 +26,4 @@ async function getDashboardData(req: AuthenticatedRequest) {
   }
 }
 
-export const GET = withPartnerAuth(getDashboardData);
+export const GET = withPartnerAuth(listPartnerServices);

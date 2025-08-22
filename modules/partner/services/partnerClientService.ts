@@ -4,8 +4,8 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 export interface ServiceData {
   name: string;
   description: string;
-  estimated_days: number;
   price: number;
+  category?: string; // Categoria como texto livre e opcional
 }
 
 export interface ImportResult {
