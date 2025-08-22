@@ -1,6 +1,7 @@
 // modules/client/components/VehicleRegistrationModal.tsx
 'use client';
-import VehicleRegistrationModalBase, { VehicleRegistrationBaseProps } from '@/modules/vehicles/components/VehicleRegistrationModalBase';
+import VehicleRegistrationModalBase from '@/modules/vehicles/components/VehicleRegistrationModalBase';
+import type { VehicleRegistrationBaseProps } from '@/modules/vehicles/components/types';
 
 type Props = Omit<VehicleRegistrationBaseProps, 'userRole' | 'hiddenFields'>;
 
