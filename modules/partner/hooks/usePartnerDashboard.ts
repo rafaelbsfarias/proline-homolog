@@ -50,7 +50,7 @@ export function usePartnerDashboard() {
         .eq('partner_id', user.id)
         .maybeSingle();
 
-      // TODO: Implementar a busca real dos dados de serviços e solicitações
+      // A busca real dos dados de serviços e solicitações será implementada futuramente.
       // Por enquanto, os dados de contagem e listas permanecerão zerados/vazios.
 
       setDashboardData({

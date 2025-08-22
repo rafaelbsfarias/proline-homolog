@@ -60,8 +60,7 @@ const PartnerDashboard = () => {
       });
 
       if (error) {
-        // TODO: Adicionar feedback de erro para o usuário
-        console.error('Erro ao aceitar contrato:', error);
+        // A futura implementação de feedback ao usuário (ex: Toast) deve ser inserida aqui.
       } else {
         reloadData(); // Recarrega os dados do dashboard
       }
