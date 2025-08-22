@@ -1,8 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+const PUBLIC_ROUTES = ['/login', '/cadastro', '/recuperar-senha', '/signup'];
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next(); // const em vez de let
+  const response = NextResponse.next();
+  const { pathname } = request.nextUrl;
+
+  const isPublic = PUBLIC_ROUTES.some(route => pathname.startsWith(route));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,26 +26,25 @@ export async function middleware(request: NextRequest) {
   );
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('[middleware] pathname:', pathname, '| user:', user ? user.email : null);
 
-    const isAuthPage =
-      request.nextUrl.pathname.startsWith('/login') ||
-      request.nextUrl.pathname.startsWith('/cadastro');
-
-    const isProtectedRoute =
-      request.nextUrl.pathname.startsWith('/dashboard') ||
-      request.nextUrl.pathname.startsWith('/admin');
-
-    if (!user && isProtectedRoute) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    // Se não autenticado e não está em rota pública, redireciona para login
+    if (!user && !isPublic) {
+      console.log('[middleware] Usuário não autenticado, redirecionando para /login');
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
     }
 
-    if (user && isAuthPage) {
+    // Se autenticado e está em rota pública, redireciona para dashboard
+    if (user && isPublic) {
+      console.log('[middleware] Usuário autenticado acessando rota pública, redirecionando para /dashboard');
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error('[middleware] Erro ao verificar autenticação:', error);
+  }
 
   return response;
 }
