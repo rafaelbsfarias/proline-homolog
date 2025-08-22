@@ -26,7 +26,7 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { get } = useAuthenticatedFetch();
+  const { get, post } = useAuthenticatedFetch();
   const [collectionRequests, setCollectionRequests] = useState<CollectionGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +65,30 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     }));
   };
 
-  /* removed handleSubmitFees (no persistence for address-based fees yet) */
+  
+  const handleSubmitFees = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+      const payload = {
+        clientId,
+        fees: collectionRequests
+          .map(req => ({ addressId: req.id, fee: fees[req.id] }))
+          .filter((x): x is { addressId: string; fee: number } => typeof x.fee === 'number'),
+      };
+      const resp = await post('/api/admin/set-address-collection-fees', payload);
+      if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar valores');
+      setMessage('Valores de coleta atualizados com sucesso!');
+      await fetchCollectionRequests();
+      onSuccess?.();
+    } catch (e: any) {
+      setError(e?.message || 'Erro ao salvar valores');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   if (!isOpen) return null;
 
@@ -99,7 +122,12 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
                     <td>{req.address}</td>
                     <td>{req.vehicle_count}</td>
                     <td>
-                      {fees[req.id] !== undefined ? fees[req.id]!.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                      <CurrencyInput
+                        value={fees[req.id]}
+                        onChange={value => handleFeeChange(req.id, value)}
+                        placeholder="0,00"
+                        disabled={loading}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -109,9 +137,10 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
         )}
 
         <div className={styles.actions}>
-          <button onClick={onClose} disabled={loading}>
-            Fechar
+          <button onClick={handleSubmitFees} disabled={loading}>
+            {loading ? "Salvando..." : "Salvar Valores"}
           </button>
+          <button onClick={onClose} disabled={loading}>Fechar</button>
         </div>
 
         {message && <MessageModal message={message} onClose={() => setMessage(null)} variant="success" />}
