@@ -1,5 +1,5 @@
-import type { EmailServiceInterface, EmailOptions } from './EmailServiceInterface';
 import { getLogger, ILogger } from '@/modules/logger';
+import { EmailServiceInterface, EmailOptions } from '../EmailServiceInterface';
 
 const logger: ILogger = getLogger('MailpitEmailService');
 

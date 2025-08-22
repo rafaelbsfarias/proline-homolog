@@ -1,4 +1,4 @@
-import { ResendEmailService } from './ResendEmailService';
+import { ResendEmailService } from './email/ResendEmailService';
 import type { EmailServiceInterface } from './EmailServiceInterface';
 
 /**

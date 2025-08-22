@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import { ResendEmailService } from '@/modules/common/services/ResendEmailService';
+import { ResendEmailService } from '@/modules/common/services/email/ResendEmailService';
 import { getLogger, ILogger } from '@/modules/logger';
 import { generateTemporaryPassword } from '@/lib/security/passwordUtils';
 import { User } from '@supabase/supabase-js';
