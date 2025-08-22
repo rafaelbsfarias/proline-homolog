@@ -2,11 +2,11 @@
 'use client';
 
 import React from 'react';
-import MessageModal from '@/modules/common/components/MessageModal';
 import './VehicleRegistrationModal.css';
 import type { VehicleRegistrationBaseProps } from './types';
 import { useVehicleRegistrationForm } from '../hooks/useVehicleRegistrationForm';
 import { VehicleFormFields } from './VehicleFormFields';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 
 function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
   const {
@@ -15,7 +15,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
     onSuccess,
     userRole,
     hiddenFields,
-  // initialVehicle, // removido pois não existe na props
+    // initialVehicle, // removido pois não existe na props
   } = props;
   const {
     formData,
@@ -29,7 +29,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
     handleSubmit,
     error,
     success,
-  setError,
+    setError,
     setSuccess,
   } = useVehicleRegistrationForm({
     isOpen,
@@ -45,7 +45,9 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Cadastrar Novo Veículo</h2>
-          <button className="close-button" onClick={onClose} disabled={loading}>✕</button>
+          <button className="close-button" onClick={onClose} disabled={loading}>
+            ✕
+          </button>
         </div>
         <VehicleFormFields
           formData={formData}
@@ -60,7 +62,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
           handleSubmit={handleSubmit}
           onClose={onClose}
         />
-  {error && <MessageModal message={error} onClose={() => setError(null)} variant="error" />}
+        {error && <MessageModal message={error} onClose={() => setError(null)} variant="error" />}
         {success && (
           <MessageModal
             title="Sucesso"

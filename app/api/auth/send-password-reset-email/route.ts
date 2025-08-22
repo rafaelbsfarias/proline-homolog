@@ -18,8 +18,21 @@ export async function POST(req: NextRequest) {
     const resendEmailService = new ResendEmailService();
 
     // Generate the password reset link using Supabase Admin API
-    const { data, error: generateLinkError } =
-      await supabaseAdmin.auth.admin.generatePasswordResetLink(email);
+    // const { data, error: generateLinkError } = await supabaseAdmin.auth.admin.generateLink({
+    //   type: 'recovery',
+    //   email: email,
+    //   options: {
+    //     redirectTo: `${process.env.APP_URL}/reset-password`,
+    //   },
+    // });
+
+    const { data, error: generateLinkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?email=${email}`,
+      },
+    });
 
     if (generateLinkError) {
       logger.error(`Error generating password reset link for ${email}:`, generateLinkError);
@@ -29,8 +42,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!data?.properties?.email_redirect_to) {
-      logger.error(`No email_redirect_to found in generated link for ${email}.`);
+    if (!data?.properties?.action_link) {
+      logger.error(`No action_link found in generatedlink for ${email}.`);
       return NextResponse.json(
         { error: 'Erro interno: Link de redefinição inválido.' },
         { status: 500 }
@@ -38,22 +51,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract the token from the generated link
-    const resetLink = data.properties.email_redirect_to;
-    const url = new URL(resetLink);
-    const token = url.searchParams.get('token');
+    // const resetLink = data?.properties?.action_link;
+    // const url = new URL(resetLink);
+    // const token = url.searchParams.get('token');
 
+    // if (!token) {
+    //   logger.error(`Token not found in generated link for ${email}. Link: ${token}`);
+    //   return NextResponse.json(
+    //     { error: 'Erro interno: Token de redefinição não encontrado.' },
+    //     { status: 500 }
+    //   );
+    // }
+
+    // Extract the token from the generated link
+    const actionLink = data?.properties?.action_link;
+    const url = new URL(actionLink);
+    const token = url.searchParams.get('token');
     if (!token) {
-      logger.error(`Token not found in generated link for ${email}. Link: ${resetLink}`);
+      logger.error(`Token not found in generated link for ${email}. Link: ${actionLink}`);
       return NextResponse.json(
         { error: 'Erro interno: Token de redefinição não encontrado.' },
         { status: 500 }
       );
     }
 
-    // Send the email using ResendEmailService
-    await resendEmailService.sendPasswordResetEmail(email, token);
+    // Agora sim monta o link final para o front
+    //const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#token=${token}`;
+    //const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?email=${encodeURIComponent(email)}#token=${token}`;
 
-    logger.info(`Password reset email sent to ${email} via Resend.`);
+    // Send the email using ResendEmailService
+    //await resendEmailService.sendPasswordResetEmail(email, resetLink);
+
+    //logger.debug(`Password reset email sent to ${email} via Resend.`);
+
+    // Send the email using ResendEmailService
+    //await resendEmailService.sendPasswordResetEmail(email, resetLink);
+
+    // logger.info(`Password reset email sent to ${email} via Resend.`);
     return NextResponse.json({
       success: true,
       message: 'Email de redefinição enviado com sucesso!',

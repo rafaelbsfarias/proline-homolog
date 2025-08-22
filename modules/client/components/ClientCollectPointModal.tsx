@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React from 'react';
 import AddressModalBase, { AddressFormValues } from '@/modules/common/components/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -39,4 +39,3 @@ export default function ClientCollectPointModal({ isOpen, onClose, onSuccess }: 
     />
   );
 }
-

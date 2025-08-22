@@ -1,3 +1,4 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { DatabaseError, NotFoundError, ValidationError } from '@/modules/common/errors';
 import { sanitizeString, validateCEP } from '@/modules/common/utils/inputSanitization';
@@ -47,12 +48,27 @@ export class ClientAddressService {
 
     if (profileError || !profile || (profile.role !== 'client' && profile.role !== 'partner')) {
       const verb = action === 'cadastrar' ? 'cadastrar' : 'editar';
-      throw new NotFoundError(`Acesso negado. Apenas clientes e parceiros podem ${verb} endereços.`);
+      throw new NotFoundError(
+        `Acesso negado. Apenas clientes e parceiros podem ${verb} endereços.`
+      );
     }
   }
 
-  private validateAddressInput({ street, number, neighborhood, city, state, zip_code }: Partial<ClientAddressData>) {
-    if (!street?.trim() || !number?.trim() || !neighborhood?.trim() || !city?.trim() || !state?.trim()) {
+  private validateAddressInput({
+    street,
+    number,
+    neighborhood,
+    city,
+    state,
+    zip_code,
+  }: Partial<ClientAddressData>) {
+    if (
+      !street?.trim() ||
+      !number?.trim() ||
+      !neighborhood?.trim() ||
+      !city?.trim() ||
+      !state?.trim()
+    ) {
       throw new ValidationError('Campos obrigatórios não informados.');
     }
     if (!zip_code?.trim() || !validateCEP(zip_code)) {
@@ -61,7 +77,18 @@ export class ClientAddressService {
   }
 
   private buildPayload(base: ClientAddressData) {
-    const { clientId, street, number, neighborhood, city, state, zip_code, complement, is_collect_point, is_main_address } = base;
+    const {
+      clientId,
+      street,
+      number,
+      neighborhood,
+      city,
+      state,
+      zip_code,
+      complement,
+      is_collect_point,
+      is_main_address,
+    } = base;
     return {
       profile_id: clientId,
       street: sanitizeString(street),
@@ -139,9 +166,9 @@ export class ClientAddressService {
   async updateAddress(addressId: string, clientId: string, data: Partial<ClientAddressData>) {
     await this.ensureClientOrPartner(clientId, 'editar');
     this.validateAddressInput(data);
-    
+
     const supabase = this.supabaseService.getAdminClient();
-    
+
     const payload: Record<string, any> = {};
     if (data.street !== undefined) payload.street = sanitizeString(data.street);
     if (data.number !== undefined) payload.number = sanitizeString(data.number);
@@ -154,7 +181,8 @@ export class ClientAddressService {
       }
       payload.zip_code = sanitizeString(data.zip_code);
     }
-    if (data.complement !== undefined) payload.complement = data.complement ? sanitizeString(data.complement) : null;
+    if (data.complement !== undefined)
+      payload.complement = data.complement ? sanitizeString(data.complement) : null;
     if (data.is_collect_point !== undefined) payload.is_collect_point = !!data.is_collect_point;
     if (data.is_main_address !== undefined) {
       payload.is_main_address = !!data.is_main_address;

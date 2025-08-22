@@ -148,7 +148,7 @@ export class AuthService implements AuthServiceInterface {
    */
   async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch('/api/auth/send-password-reset-email', {
+      const response = await fetch('/api/auth/request-password-reset', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

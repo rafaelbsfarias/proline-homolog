@@ -30,7 +30,16 @@ export interface EmailServiceInterface {
   /**
    * Envia email de recuperação de senha
    */
-  sendPasswordResetEmail(email: string, resetToken: string): Promise<void>;
+  sendPasswordResetEmail(email: string, resetUrl: string): Promise<void>;
+
+  /**
+   * Envia email com senha temporária para reset.
+   */
+  sendTemporaryPasswordForReset(
+    recipientEmail: string,
+    recipientName: string,
+    temporaryPassword: string
+  ): Promise<void>;
 
   /**
    * Envia email de boas-vindas com senha temporária.

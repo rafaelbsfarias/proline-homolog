@@ -5,10 +5,12 @@ import { supabase } from '../../modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
-import '@/modules/client/components/ClientDashboard.css';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 
 interface ProfileData {
   full_name: string;
+  must_change_password: boolean;
   clients: {
     parqueamento?: number;
     taxa_operacao?: number;
@@ -25,6 +27,10 @@ const ClientDashboard = () => {
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -34,7 +40,11 @@ const ClientDashboard = () => {
       if (user) {
         // Fetch profile and client data in parallel
         const [profileResponse, clientResponse] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+          supabase
+            .from('profiles')
+            .select('full_name, must_change_password')
+            .eq('id', user.id)
+            .single(),
           supabase
             .from('clients')
             .select('parqueamento, taxa_operacao')
@@ -49,6 +59,7 @@ const ClientDashboard = () => {
           setUserName(profile.full_name || '');
           setProfileData({
             full_name: profile.full_name || '',
+            must_change_password: profile.must_change_password,
             clients: [
               {
                 parqueamento: clientData?.parqueamento,
@@ -56,6 +67,10 @@ const ClientDashboard = () => {
               },
             ],
           });
+
+          if (profile.must_change_password) {
+            setShowForceChangePasswordModal(true);
+          }
         } else {
         }
 
@@ -240,24 +255,14 @@ const ClientDashboard = () => {
         </main>
       ) : (
         <main className="dashboard-main">
-          <h1 className="dashboard-title">
-            Painel do Cliente
-          </h1>
-          <p className="dashboard-welcome">
-            Bem-vindo, {userName}!
-          </p>
+          <h1 className="dashboard-title">Painel do Cliente</h1>
+          <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
           <div className="dashboard-actions">
-            <button
-              onClick={() => setShowCadastrarVeiculoModal(true)}
-              className="dashboard-btn"
-            >
+            <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
               Cadastrar Novo Veículo
             </button>
-            <button
-              onClick={() => setShowAddCollectPointModal(true)}
-              className="dashboard-btn"
-            >
+            <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
               Adicionar Ponto de Coleta
             </button>
           </div>
@@ -273,11 +278,36 @@ const ClientDashboard = () => {
         onClose={() => setShowCadastrarVeiculoModal(false)}
         onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
       />
-      <ClientCollectPointModal
-        isOpen={showAddCollectPointModal}
-        onClose={() => setShowAddCollectPointModal(false)}
-        onSuccess={() => {}}
+      <ForceChangePasswordModal
+        isOpen={showForceChangePasswordModal}
+        onClose={() => setShowForceChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowForceChangePasswordModal(false);
+          setShowSuccessModal(true);
+        }}
+        onError={message => {
+          setErrorMessage(message);
+          setShowErrorModal(true);
+        }}
       />
+
+      {showSuccessModal && (
+        <MessageModal
+          title="Sucesso!"
+          message="Sua senha foi atualizada com sucesso."
+          variant="success"
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
+      {showErrorModal && (
+        <MessageModal
+          title="Erro"
+          message={errorMessage}
+          variant="error"
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

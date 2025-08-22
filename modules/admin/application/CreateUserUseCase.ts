@@ -11,6 +11,7 @@ import {
 } from '@/modules/common/utils/inputSanitization';
 import { ConflictError, DatabaseError, DomainError, ValidationError } from '@/lib/utils/errors';
 import { User } from '@supabase/supabase-js'; // Assuming User type from Supabase
+import { generateTemporaryPassword } from '@/lib/security/passwordUtils';
 
 const logger = getLogger('CreateUserUseCase');
 
@@ -99,7 +100,7 @@ export class CreateUserUseCase {
     let authUserId: string | undefined;
 
     try {
-      temporaryPassword = this.generateTemporaryPassword();
+      temporaryPassword = generateTemporaryPassword();
       logger.info('Creating user in Supabase Auth.');
       const { data: authUser, error: authError } = await this.supabase.auth.admin.createUser({
         email: sanitizedEmail,
@@ -247,14 +248,6 @@ export class CreateUserUseCase {
       logger.error('CreateUserUseCase failed:', error);
       throw error;
     }
-  }
-
-  // Helper para gerar senha temporária
-  private generateTemporaryPassword(): string {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    let out = '';
-    for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
-    return out;
   }
 
   // Helper para mapear role para um nome amigável
