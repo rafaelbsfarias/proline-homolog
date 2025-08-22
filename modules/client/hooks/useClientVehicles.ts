@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { VehicleInfo } from '@/modules/client/types';
+import { VehicleInfo } from '@/modules/client/types/index';
 
 interface UseClientVehiclesResult {
   vehicles: VehicleInfo[];
@@ -34,7 +34,9 @@ export const useClientVehicles = (): UseClientVehiclesResult => {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro de rede ou desconhecido ao buscar veículos.');
+        setError(
+          err instanceof Error ? err.message : 'Erro de rede ou desconhecido ao buscar veículos.'
+        );
       } finally {
         setLoading(false);
       }

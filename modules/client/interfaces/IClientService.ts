@@ -1,4 +1,4 @@
-import { VehicleData } from '../types';
+import { VehicleData } from 'modules/client/types/index';
 import { Result } from '@/modules/common/types/domain';
 
 export interface IClientService {

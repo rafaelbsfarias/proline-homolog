@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import MessageModal from '@/modules/common/components/MessageModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import styles from './CollectionRequestsModal.module.css';
 import { getLogger } from '@/modules/logger/logger';
-
 
 type CollectionGroup = {
   id: string; // addressId
@@ -36,7 +35,10 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
   const [collectionRequests, setCollectionRequests] = useState<CollectionGroup[]>([]);
   const [approvalGroups, setApprovalGroups] = useState<ApprovalGroup[]>([]);
   const [approvalTotal, setApprovalTotal] = useState<number>(0);
-  const [clientSummary, setClientSummary] = useState<{ taxa_operacao?: number; percentual_fipe?: number } | null>(null);
+  const [clientSummary, setClientSummary] = useState<{
+    taxa_operacao?: number;
+    percentual_fipe?: number;
+  } | null>(null);
   const [statusTotals, setStatusTotals] = useState<{ status: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,17 +50,49 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await get<{ success: boolean; groups: { addressId: string; address: string; vehicle_count: number; collection_fee: number | null }[]; approvalGroups?: { addressId: string; address: string; vehicle_count: number; collection_fee: number | null; statuses?: { status: string; count: number }[] }[]; approvalTotal?: number; clientSummary?: { taxa_operacao?: number; percentual_fipe?: number }; statusTotals?: { status: string; count: number }[]; error?: string }>(`/api/admin/client-collections-summary/${clientId}`);
+      const response = await get<{
+        success: boolean;
+        groups: {
+          addressId: string;
+          address: string;
+          vehicle_count: number;
+          collection_fee: number | null;
+        }[];
+        approvalGroups?: {
+          addressId: string;
+          address: string;
+          vehicle_count: number;
+          collection_fee: number | null;
+          statuses?: { status: string; count: number }[];
+        }[];
+        approvalTotal?: number;
+        clientSummary?: { taxa_operacao?: number; percentual_fipe?: number };
+        statusTotals?: { status: string; count: number }[];
+        error?: string;
+      }>(`/api/admin/client-collections-summary/${clientId}`);
       logger.info('API response', response);
       if (response.ok && response.data?.success) {
-        ((() => {
-          const groups = (response.data.groups || []).map(g => ({ id: g.addressId, address: g.address, vehicle_count: g.vehicle_count, current_fee: g.collection_fee }));
+        (() => {
+          const groups = (response.data.groups || []).map(g => ({
+            id: g.addressId,
+            address: g.address,
+            vehicle_count: g.vehicle_count,
+            current_fee: g.collection_fee,
+          }));
           logger.debug('Groups', groups);
           setCollectionRequests(groups);
           const initialFees: Record<string, number | undefined> = {};
-          groups.forEach(req => { initialFees[req.id] = req.current_fee ?? undefined; });
+          groups.forEach(req => {
+            initialFees[req.id] = req.current_fee ?? undefined;
+          });
           setFees(initialFees);
-          const ag = (response.data.approvalGroups || []).map(g => ({ id: g.addressId, address: g.address, vehicle_count: g.vehicle_count, current_fee: g.collection_fee, statuses: g.statuses }));
+          const ag = (response.data.approvalGroups || []).map(g => ({
+            id: g.addressId,
+            address: g.address,
+            vehicle_count: g.vehicle_count,
+            current_fee: g.collection_fee,
+            statuses: g.statuses,
+          }));
           logger.debug('ApprovalGroups', ag);
           setApprovalGroups(ag);
           logger.debug('ApprovalTotal', response.data.approvalTotal);
@@ -67,7 +101,7 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
           setClientSummary(response.data.clientSummary || null);
           logger.debug('StatusTotals', response.data.statusTotals);
           setStatusTotals(response.data.statusTotals || []);
-        })())
+        })();
       } else {
         logger.error('API error', response.data?.error || response.error);
         setError(response.data?.error || response.error || 'Erro ao buscar solicitações de coleta');
@@ -94,7 +128,6 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     }));
   };
 
-  
   const handleSubmitFees = async () => {
     try {
       setLoading(true);
@@ -118,7 +151,6 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
     }
   };
 
-
   if (!isOpen) return null;
 
   return (
@@ -129,7 +161,7 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
         </button>
         <h2>Visão geral da {clientName}</h2>
 
-        <p style={{ marginTop: 4, color: "#555" }}>Defina os valores de coleta por ponto abaixo.</p>
+        <p style={{ marginTop: 4, color: '#555' }}>Defina os valores de coleta por ponto abaixo.</p>
         <div className={styles.tableContainer}>
           <table className={styles.table}>
             <thead>
@@ -154,15 +186,31 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
                     />
                   </td>
                   <td>
-                    {typeof fees[req.id] === 'number' ? (fees[req.id]! * (req.vehicle_count || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}
+                    {typeof fees[req.id] === 'number'
+                      ? (fees[req.id]! * (req.vehicle_count || 0)).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })
+                      : '-'}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600 }}>Total estimado geral:</td>
-                <td style={{ fontWeight: 700 }}>{collectionRequests.reduce((acc, r) => acc + ((typeof fees[r.id] === 'number') ? (fees[r.id]! * (r.vehicle_count || 0)) : 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600 }}>
+                  Total estimado geral:
+                </td>
+                <td style={{ fontWeight: 700 }}>
+                  {collectionRequests
+                    .reduce(
+                      (acc, r) =>
+                        acc +
+                        (typeof fees[r.id] === 'number' ? fees[r.id]! * (r.vehicle_count || 0) : 0),
+                      0
+                    )
+                    .toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -184,16 +232,36 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
                 <tr key={g.id}>
                   <td>{g.address}</td>
                   <td>{g.vehicle_count}</td>
-                  <td>{(g.statuses || []).map(s => `${s.status} (${s.count})`).join(", ") || "-"}</td>
-                  <td>{typeof g.current_fee === "number" ? g.current_fee.toLocaleString('pt-BR', { style: "currency", currency: "BRL" }) : "-"}</td>
-                  <td>{typeof g.current_fee === "number" ? (g.current_fee * (g.vehicle_count || 0)).toLocaleString('pt-BR', { style: "currency", currency: "BRL" }) : "-"}</td>
+                  <td>
+                    {(g.statuses || []).map(s => `${s.status} (${s.count})`).join(', ') || '-'}
+                  </td>
+                  <td>
+                    {typeof g.current_fee === 'number'
+                      ? g.current_fee.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })
+                      : '-'}
+                  </td>
+                  <td>
+                    {typeof g.current_fee === 'number'
+                      ? (g.current_fee * (g.vehicle_count || 0)).toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })
+                      : '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={4} style={{ textAlign: "right", fontWeight: 600 }}>Total geral da coleta:</td>
-                <td style={{ fontWeight: 700 }}>{approvalTotal.toLocaleString('pt-BR', { style: "currency", currency: "BRL" })}</td>
+                <td colSpan={4} style={{ textAlign: 'right', fontWeight: 600 }}>
+                  Total geral da coleta:
+                </td>
+                <td style={{ fontWeight: 700 }}>
+                  {approvalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -201,8 +269,21 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
         <div style={{ marginTop: 16 }}>
           <h3>Resumo do cliente</h3>
           <div style={{ display: 'flex', gap: 24, color: '#333' }}>
-            <div><b>Taxa de operação:</b> {typeof clientSummary?.taxa_operacao === 'number' ? clientSummary.taxa_operacao.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-'}</div>
-            <div><b>Percentual da FIPE:</b> {typeof clientSummary?.percentual_fipe === 'number' ? `${clientSummary.percentual_fipe.toFixed(2)}%` : '-'}</div>
+            <div>
+              <b>Taxa de operação:</b>{' '}
+              {typeof clientSummary?.taxa_operacao === 'number'
+                ? clientSummary.taxa_operacao.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })
+                : '-'}
+            </div>
+            <div>
+              <b>Percentual da FIPE:</b>{' '}
+              {typeof clientSummary?.percentual_fipe === 'number'
+                ? `${clientSummary.percentual_fipe.toFixed(2)}%`
+                : '-'}
+            </div>
           </div>
         </div>
         <div className={styles.tableContainer}>
@@ -227,12 +308,16 @@ const CollectionRequestsModal: React.FC<CollectionRequestsModalProps> = ({
 
         <div className={styles.actions}>
           <button onClick={handleSubmitFees} disabled={loading}>
-            {loading ? "Salvando..." : "Salvar Valores"}
+            {loading ? 'Salvando...' : 'Salvar Valores'}
           </button>
-          <button onClick={onClose} disabled={loading}>Fechar</button>
+          <button onClick={onClose} disabled={loading}>
+            Fechar
+          </button>
         </div>
 
-        {message && <MessageModal message={message} onClose={() => setMessage(null)} variant="success" />}
+        {message && (
+          <MessageModal message={message} onClose={() => setMessage(null)} variant="success" />
+        )}
       </div>
     </div>
   );

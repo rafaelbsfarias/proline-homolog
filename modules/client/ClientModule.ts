@@ -1,5 +1,5 @@
-import { IClientModule } from '../interfaces/IClientModule';
-import { ClientService } from './ClientService';
+import { IClientModule } from './interfaces/IClientModule';
+import { ClientService } from './services/ClientService';
 
 export class ClientModule implements IClientModule {
   readonly moduleName = 'client';
