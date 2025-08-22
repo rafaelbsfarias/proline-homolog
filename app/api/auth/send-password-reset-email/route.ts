@@ -67,7 +67,6 @@ export async function POST(req: NextRequest) {
     const actionLink = data?.properties?.action_link;
     const url = new URL(actionLink);
     const token = url.searchParams.get('token');
-
     if (!token) {
       logger.error(`Token not found in generated link for ${email}. Link: ${actionLink}`);
       return NextResponse.json(
