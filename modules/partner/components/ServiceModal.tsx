@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Modal from '@/modules/common/components/Modal';
-import ServiceForm, { ServiceFormRef } from './ServiceForm';
+import ServiceForm from './ServiceForm';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import {
+  addService,
+  importServicesFromCsv,
+  type ServiceData,
+} from '../services/partnerClientService';
+import styles from './ServiceModal.module.css';
 
 interface ServiceModalProps {
   isOpen: boolean;
@@ -9,24 +15,25 @@ interface ServiceModalProps {
   onServiceAdded: () => void;
 }
 
+const ADD_SERVICE_FORM_ID = 'add-service-form';
+
 const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceAdded }) => {
   const [selectedCsvFile, setSelectedCsvFile] = useState<File | null>(null);
   const [csvImportMessage, setCsvImportMessage] = useState('');
-  // NOVO: Estado para mensagens do formulário de adição de serviço (substitui o alert).
   const [formMessage, setFormMessage] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const csvFileInputRef = useRef<HTMLInputElement>(null);
-  const serviceFormRef = useRef<ServiceFormRef>(null);
-
   const { authenticatedFetch } = useAuthenticatedFetch();
 
-  // Efeito para limpar as mensagens quando o modal for fechado.
   useEffect(() => {
     if (!isOpen) {
+      // Reset states when modal is closed
       setCsvImportMessage('');
       setFormMessage('');
       setSelectedCsvFile(null);
+      setIsSubmitting(false);
     }
   }, [isOpen]);
 
@@ -54,30 +61,14 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
     setCsvImportMessage('Importando...');
     setFormMessage('');
 
-    const formData = new FormData();
-    formData.append('csvFile', selectedCsvFile);
-
     try {
-      // CORRIGIDO: A variável 'result' agora é usada para criar a mensagem de sucesso.
-      const result = await authenticatedFetch<{ addedCount: number; failedCount: number }>(
-        '/api/partner/services/import-csv',
-        {
-          method: 'POST',
-          body: formData,
-        }
+      const result = await importServicesFromCsv(authenticatedFetch, selectedCsvFile);
+      setCsvImportMessage(
+        `Importação concluída! Adicionados: ${result.addedCount}, Falhas: ${result.failedCount}.`
       );
-
-      if (result.data) {
-        setCsvImportMessage(
-          `Importação concluída! Adicionados: ${result.data.addedCount}, Falhas: ${result.data.failedCount}.`
-        );
-      } else {
-        setCsvImportMessage(`Importação concluída!`);
-      }
       onServiceAdded();
       setSelectedCsvFile(null);
     } catch (error) {
-      // CORRIGIDO: console.error removido.
       const errorMessage = error instanceof Error ? error.message : 'Ocorreu um erro inesperado.';
       setCsvImportMessage(`Erro: ${errorMessage}`);
     } finally {
@@ -85,57 +76,39 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
     }
   };
 
-  const handleSubmit = async (serviceData: {
-    name: string;
-    description: string;
-    estimated_days: number;
-    price: number;
-  }) => {
-    setFormMessage(''); // Limpa mensagens anteriores
+  const handleSubmit = async (serviceData: ServiceData) => {
+    setFormMessage('');
+    setIsSubmitting(true);
     try {
-      await authenticatedFetch('/api/partner/services', {
-        method: 'POST',
-        body: JSON.stringify(serviceData),
-      });
-
-      // CORRIGIDO: console.info removido.
-      onClose(); // Fecha o modal em caso de sucesso
+      await addService(authenticatedFetch, serviceData);
+      onClose();
       onServiceAdded();
     } catch (error) {
-      // CORRIGIDO: console.error e alert removidos. O erro agora é exibido no estado 'formMessage'.
       const errorMessage = error instanceof Error ? error.message : 'Falha ao adicionar serviço.';
       setFormMessage(`Erro: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Gerenciar Serviços">
-      <ServiceForm ref={serviceFormRef} onSubmit={handleSubmit} />
+      <ServiceForm formId={ADD_SERVICE_FORM_ID} onSubmit={handleSubmit} />
 
-      <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
+      <div className={styles.footer}>
         {selectedCsvFile && (
-          <p style={{ marginBottom: '10px' }}>
+          <p className={styles.selectedFile}>
             Arquivo selecionado: <strong>{selectedCsvFile.name}</strong>
           </p>
         )}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div className={styles.buttonGroup}>
           <button
-            type="button"
-            onClick={() => {
-              serviceFormRef.current?.submitForm();
-            }}
-            style={{
-              background: '#28a745',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '1.13rem',
-              border: 0,
-              borderRadius: 6,
-              padding: '10px 32px',
-              cursor: 'pointer',
-            }}
+            type="submit"
+            form={ADD_SERVICE_FORM_ID}
+            disabled={isSubmitting}
+            className={`${styles.button} ${styles.buttonPrimary}`}
           >
-            Adicionar Serviço
+            {isSubmitting ? 'Adicionando...' : 'Adicionar Serviço'}
           </button>
           <input
             type="file"
@@ -147,17 +120,7 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
           <button
             onClick={handleImportCsvClick}
             disabled={isImporting}
-            style={{
-              background: '#002E4C',
-              color: '#fff',
-              fontWeight: 600,
-              fontSize: '1.13rem',
-              border: 0,
-              borderRadius: 6,
-              padding: '10px 32px',
-              cursor: 'pointer',
-              opacity: isImporting ? 0.7 : 1,
-            }}
+            className={`${styles.button} ${styles.buttonSecondary}`}
           >
             {isImporting ? 'Processando...' : 'Importar .csv'}
           </button>
@@ -165,29 +128,18 @@ const ServiceModal: React.FC<ServiceModalProps> = ({ isOpen, onClose, onServiceA
             <button
               onClick={handleConfirmCsvImport}
               disabled={isImporting}
-              style={{
-                background: '#007bff',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '1.13rem',
-                border: 0,
-                borderRadius: 6,
-                padding: '10px 32px',
-                cursor: 'pointer',
-              }}
+              className={`${styles.button} ${styles.buttonConfirm}`}
             >
               Confirmar Importação
             </button>
           )}
         </div>
-        {/* CORRIGIDO: Renderiza a mensagem de erro do formulário ou a mensagem de importação */}
-        {formMessage && <p style={{ color: 'red', marginTop: '10px' }}>{formMessage}</p>}
+        {formMessage && <p className={`${styles.message} ${styles.errorMessage}`}>{formMessage}</p>}
         {csvImportMessage && (
           <p
-            style={{
-              color: csvImportMessage.startsWith('Erro') ? 'red' : 'green',
-              marginTop: '10px',
-            }}
+            className={`${styles.message} ${
+              csvImportMessage.startsWith('Erro') ? styles.errorMessage : styles.successMessage
+            }`}
           >
             {csvImportMessage}
           </p>

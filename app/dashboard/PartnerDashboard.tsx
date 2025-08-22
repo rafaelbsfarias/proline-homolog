@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
@@ -8,88 +8,35 @@ import ActionButton from '@/modules/partner/components/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
 import ServiceModal from '@/modules/partner/components/ServiceModal';
 import ContractAcceptanceView from '@/modules/partner/components/ContractAcceptanceView';
-
-interface PendingQuote {
-  id: number;
-  client: string;
-  service: string;
-  date: string;
-}
-
-interface InProgressService {
-  id: number;
-  client: string;
-  service: string;
-  status: string;
-}
+import {
+  usePartnerDashboard,
+  type PendingQuote,
+  type InProgressService,
+} from '@/modules/partner/hooks/usePartnerDashboard';
 
 const PartnerDashboard = () => {
   const router = useRouter();
-  const [contractAccepted, setContractAccepted] = useState(false);
-  const [contractContent, setContractContent] = useState('');
-  const [contractSignedAt, setContractSignedAt] = useState<string | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [pendingQuotesCount, setPendingQuotesCount] = useState(0);
-  const [inProgressServicesCount, setInProgressServicesCount] = useState(0);
-
-  const [pendingQuotes, setPendingQuotes] = useState<PendingQuote[]>([]);
-  const [inProgressServices, setInProgressServices] = useState<InProgressService[]>([]);
-
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
+  const [checked, setChecked] = useState(false); // Para o checkbox do contrato
+  const [isAcceptingContract, setIsAcceptingContract] = useState(false);
 
-  const fetchDashboardData = useCallback(async () => {
-    setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-      setUserName(profile?.full_name || '');
-
-      const { data: acceptance } = await supabase
-        .from('contract_partners')
-        .select('created_at, content')
-        .eq('partner_id', user.id)
-        .maybeSingle();
-
-      setContractAccepted(!!acceptance);
-      if (acceptance) {
-        setContractContent(acceptance.content || '');
-        setContractSignedAt(acceptance.created_at);
-      } else {
-        setContractContent(PARTNER_CONTRACT_CONTENT);
-      }
-
-      // Dados mockados para visualização
-      setPendingQuotesCount(5);
-      setInProgressServicesCount(3);
-      setPendingQuotes([
-        { id: 1, client: 'Cliente A', service: 'Serviço X', date: '2025-08-01' },
-        { id: 2, client: 'Cliente B', service: 'Serviço Y', date: '2025-08-02' },
-      ]);
-      setInProgressServices([
-        { id: 101, client: 'Cliente C', service: 'Serviço Z', status: 'Em Andamento' },
-        { id: 102, client: 'Cliente D', service: 'Serviço W', status: 'Aguardando Peças' },
-      ]);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+  const {
+    loading,
+    userName,
+    contractAccepted,
+    contractContent,
+    contractSignedAt,
+    pendingQuotesCount,
+    inProgressServicesCount,
+    pendingQuotes,
+    inProgressServices,
+    reloadData,
+  } = usePartnerDashboard();
 
   async function handleAcceptContract() {
     if (!checked) return;
 
-    setLoading(true);
+    setIsAcceptingContract(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -102,13 +49,12 @@ const PartnerDashboard = () => {
       });
 
       if (error) {
-        // Adicionar feedback para o usuário aqui, se desejar
+        // A futura implementação de feedback ao usuário (ex: Toast) deve ser inserida aqui.
       } else {
-        setContractAccepted(true);
-        fetchDashboardData(); // Recarrega os dados do dashboard
+        reloadData(); // Recarrega os dados do dashboard
       }
     }
-    setLoading(false);
+    setIsAcceptingContract(false);
   }
 
   if (loading) {
@@ -117,15 +63,15 @@ const PartnerDashboard = () => {
 
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client', header: 'Cliente' },
-    { key: 'service', header: 'Serviço' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
     { key: 'date', header: 'Data' },
   ];
 
   const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client', header: 'Cliente' },
-    { key: 'service', header: 'Serviço' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
     { key: 'status', header: 'Status' },
   ];
 
@@ -138,13 +84,13 @@ const PartnerDashboard = () => {
           checked={checked}
           setChecked={setChecked}
           handleAcceptContract={handleAcceptContract}
-          loading={loading}
+          loading={isAcceptingContract}
           contractSignedAt={contractSignedAt}
         />
       ) : (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
-            Painel do Parceiro - teste
+            Painel do Parceiro
           </h1>
           <div
             style={{
@@ -156,7 +102,7 @@ const PartnerDashboard = () => {
           >
             <p style={{ color: '#666', fontSize: '1.15rem' }}>Bem-vindo, {userName}!</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <ActionButton onClick={() => router.push('/dashboard/#')}>
+              <ActionButton onClick={() => router.push('/dashboard/services')}>
                 Serviços Cadastrados
               </ActionButton>
               <ActionButton onClick={() => setShowAddServiceModal(true)}>
@@ -186,7 +132,7 @@ const PartnerDashboard = () => {
           <ServiceModal
             isOpen={showAddServiceModal}
             onClose={() => setShowAddServiceModal(false)}
-            onServiceAdded={fetchDashboardData}
+            onServiceAdded={reloadData} // Usa a função de recarregamento do hook
           />
         </main>
       )}
