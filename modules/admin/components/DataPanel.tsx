@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import CollectionRequestsModal from './CollectionRequestsModal';
 import AddSpecialistToClientModal from './AddSpecialistToClientModal';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -80,7 +81,13 @@ const DataPanel: React.FC = () => {
               {clients.map(client => (
                 <tr key={client.id}>
                   <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                    {client.company_name}
+                    <Link
+                      href={`/admin/clients/${client.id}/overview`}
+                      style={{ color: '#072E4C', textDecoration: 'underline' }}
+                      title="Ver visão geral do cliente"
+                    >
+                      {client.company_name}
+                    </Link>
                   </td>
                   <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}>
                     {client.vehicle_count ?? '-'}

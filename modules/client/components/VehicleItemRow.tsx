@@ -26,7 +26,7 @@ export default function VehicleItemRow({ vehicle, addresses, onOpenDetails, onOp
     const selId = vehicle.pickup_address_id || '';
     const addr = addresses.find(a => a.id === selId);
     const label = addr ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim() : '';
-    if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') {
+    if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO' || s === 'AGUARDANDO APROVAÇÃO DA COLETA') {
       return (
         <span>
           Ponto de coleta selecionado: <b>{label || 'Nenhum ponto selecionado'}</b>

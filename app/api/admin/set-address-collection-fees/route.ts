@@ -79,6 +79,20 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       }
     }
 
+
+    // After saving fees, update vehicles statuses for the selected addresses
+    if (addrIds.length) {
+      const { error: updVehiclesErr } = await admin
+        .from('vehicles')
+        .update({ status: 'AGUARDANDO APROVAÇÃO DA COLETA' })
+        .eq('client_id', clientId)
+        .in('pickup_address_id', addrIds)
+        .eq('status', 'PONTO DE COLETA SELECIONADO');
+      if (updVehiclesErr) {
+        logger.error('update-vehicles-status-error', { error: updVehiclesErr.message, clientId });
+      }
+    }
+
     return NextResponse.json({ success: true, updated });
   } catch (e: any) {
     logger.error('unhandled', { error: e?.message });
