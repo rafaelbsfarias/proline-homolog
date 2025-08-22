@@ -40,9 +40,8 @@ const DataPanel: React.FC = () => {
     async function fetchData() {
       setLoading(true);
       setError(null);
-      const response = await get<ClientsWithCollectionSummaryResponse>(
-        '/api/admin/clients-with-collection-summary'
-      );
+      // Use aggregated endpoint with vehicle counts + collection requests summary
+      const response = await get<ClientsWithCollectionSummaryResponse>('/api/admin/clients-with-collection-summary');
       if (!isMounted) return;
       if (response.ok && response.data?.success) {
         setClients(response.data.clients);
