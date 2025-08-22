@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styles from './AddUserModal.module.css'; // Reutilizando estilos do modal de usuário
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import MessageModal from '@/modules/common/components/MessageModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { maskCNPJ, maskPhone } from '@/modules/common/utils/maskers';
 import CurrencyInput from '@/modules/common/components/CurrencyInput'; // Import CurrencyInput
 

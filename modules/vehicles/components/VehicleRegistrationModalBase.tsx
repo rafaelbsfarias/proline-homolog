@@ -2,8 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { validatePlate, formatPlateInput, PLATE_ERROR_MESSAGES } from '@/modules/common/utils/plateValidation';
-import MessageModal from '@/modules/common/components/MessageModal';
+import {
+  validatePlate,
+  formatPlateInput,
+  PLATE_ERROR_MESSAGES,
+} from '@/modules/common/utils/plateValidation';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import ClientSearch from '@/modules/common/components/ClientSearch';
 import './VehicleRegistrationModal.css';
 
@@ -162,7 +166,8 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
     setError(null);
     setSuccess(false);
 
-    const endpoint = userRole === 'admin' ? '/api/admin/create-vehicle' : '/api/client/create-vehicle';
+    const endpoint =
+      userRole === 'admin' ? '/api/admin/create-vehicle' : '/api/client/create-vehicle';
     const payload = {
       ...(userRole === 'admin' && { clientId: selectedClient!.id }),
       plate: formData.plate.trim().toUpperCase(),
@@ -173,7 +178,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
       initialKm: formData.initialKm ? Number(formData.initialKm) : undefined,
       fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
       observations: formData.observations.trim() || undefined,
-      ...(userRole === 'admin' && { estimated_arrival_date: formData.estimated_arrival_date || undefined }),
+      ...(userRole === 'admin' && {
+        estimated_arrival_date: formData.estimated_arrival_date || undefined,
+      }),
     };
 
     try {
@@ -229,14 +236,18 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Cadastrar Novo Veículo</h2>
-          <button className="close-button" onClick={handleClose} disabled={loading}>✕</button>
+          <button className="close-button" onClick={handleClose} disabled={loading}>
+            ✕
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="vehicle-form">
           {userRole === 'admin' && (
             <div className="form-row">
               <div className="form-group full-width">
-                <label htmlFor="clientSearch" className="required">Cliente</label>
+                <label htmlFor="clientSearch" className="required">
+                  Cliente
+                </label>
                 <ClientSearch
                   selectedClient={selectedClient}
                   onClientSelect={handleClientSelect}
@@ -250,7 +261,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="plate" className="required">Placa</label>
+              <label htmlFor="plate" className="required">
+                Placa
+              </label>
               <input
                 type="text"
                 id="plate"
@@ -267,7 +280,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
             </div>
 
             <div className="form-group">
-              <label htmlFor="year" className="required">Ano</label>
+              <label htmlFor="year" className="required">
+                Ano
+              </label>
               <input
                 type="number"
                 id="year"
@@ -287,7 +302,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="brand" className="required">Marca</label>
+              <label htmlFor="brand" className="required">
+                Marca
+              </label>
               <input
                 type="text"
                 id="brand"
@@ -302,7 +319,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
               {errors.brand && <span className="error-message">{errors.brand}</span>}
             </div>
             <div className="form-group">
-              <label htmlFor="model" className="required">Modelo</label>
+              <label htmlFor="model" className="required">
+                Modelo
+              </label>
               <input
                 type="text"
                 id="model"
@@ -320,7 +339,9 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="color" className="required">Cor</label>
+              <label htmlFor="color" className="required">
+                Cor
+              </label>
               <input
                 type="text"
                 id="color"
@@ -405,7 +426,12 @@ const VehicleRegistrationModalBase: React.FC<VehicleRegistrationBaseProps> = ({
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={handleClose} disabled={loading} className="cancel-button">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={loading}
+              className="cancel-button"
+            >
               Cancelar
             </button>
             <button type="submit" disabled={loading} className="submit-button">

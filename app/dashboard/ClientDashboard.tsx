@@ -4,6 +4,8 @@ import Header from '@/modules/admin/components/Header';
 import { supabase } from '../../modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 
 interface ProfileData {
   full_name: string;
@@ -13,8 +15,6 @@ interface ProfileData {
     taxa_operacao?: number;
   }[];
 }
-
-import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 
 const ClientDashboard = () => {
   const [accepted, setAccepted] = useState(false);
@@ -26,6 +26,7 @@ const ClientDashboard = () => {
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -311,8 +312,18 @@ const ClientDashboard = () => {
         onClose={() => setShowForceChangePasswordModal(false)}
         onSuccess={() => {
           setShowForceChangePasswordModal(false);
+          setShowSuccessModal(true);
         }}
       />
+
+      {showSuccessModal && (
+        <MessageModal
+          title="Sucesso!"
+          message="Sua senha foi atualizada com sucesso."
+          variant="success"
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import MessageModal from '@/modules/common/components/MessageModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { validateCEP, sanitizeString } from '@/modules/common/utils/inputSanitization';
 import '@/modules/vehicles/components/VehicleRegistrationModal.css';
 
