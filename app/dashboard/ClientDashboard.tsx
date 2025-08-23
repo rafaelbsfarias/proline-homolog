@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
-import { supabase } from '../../modules/common/services/supabaseClient';
+import { supabase } from '@/modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import '@/modules/client/components/ClientDashboard.css';
+import VehicleCollectionSection from '@/modules/client/components/VehicleCollectionSection';
 
 interface ProfileData {
   full_name: string;
@@ -17,7 +19,7 @@ interface ProfileData {
   }[];
 }
 
-const ClientDashboard = () => {
+const ClientDashboard: React.FC = () => {
   const [accepted, setAccepted] = useState(false);
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
@@ -34,11 +36,8 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Fetch profile and client data in parallel
         const [profileResponse, clientResponse] = await Promise.all([
           supabase
             .from('profiles')
@@ -74,7 +73,6 @@ const ClientDashboard = () => {
         } else {
         }
 
-        // Verifica aceite do contrato
         const { data: acceptance } = await supabase
           .from('client_contract_acceptance')
           .select('accepted_at')
@@ -89,16 +87,13 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     const fetchVehicleCount = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (token) {
         try {
           const response = await fetch('/api/client/vehicles-count', {
             headers: { Authorization: `Bearer ${token}` },
           });
-
           if (response.ok) {
             const vehicleData = await response.json();
             const count =
@@ -107,34 +102,26 @@ const ClientDashboard = () => {
                 : vehicleData.vehicle_count || 0;
             setVehicleCount(count);
           }
-        } catch (error) {}
+        } catch {}
       }
     };
-
     fetchVehicleCount();
   }, [profileData]);
 
   async function handleAcceptContract() {
     setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      if (!profileData || !profileData.clients || profileData.clients.length === 0) {
+      if (!profileData?.clients?.length) {
         setLoading(false);
         return;
       }
-
       const contentToSend = JSON.stringify(profileData.clients[0]);
-
-      // Tenta usar a RPC; se indisponível, faz upsert direto como fallback
-      const { data, error } = await supabase.rpc('accept_client_contract', {
+      const { error } = await supabase.rpc('accept_client_contract', {
         p_client_id: user.id,
         p_content: contentToSend,
       });
-
       if (error) {
-        // Fallback: upsert direto, caso a função não exista no banco
         const { error: upsertError } = await supabase.from('client_contract_acceptance').upsert(
           {
             client_id: user.id,
@@ -148,15 +135,12 @@ const ClientDashboard = () => {
           return;
         }
       }
-
       setAccepted(true);
     }
     setLoading(false);
   }
 
-  if (loading) {
-    return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-  }
+  if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
 
   if (!profileData) {
     return (
@@ -171,25 +155,13 @@ const ClientDashboard = () => {
       <Header />
       {!accepted ? (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
-          <h1
-            style={{
-              fontSize: 2.4 + 'rem',
-              fontWeight: 600,
-              marginBottom: 8,
-              textAlign: 'center',
-              color: '#333',
-            }}
-          >
+          <h1 style={{ fontSize: '2.4rem', fontWeight: 600, marginBottom: 8, textAlign: 'center', color: '#333' }}>
             Termos do Contrato
           </h1>
-          <p
-            style={{ textAlign: 'center', color: '#666', fontSize: 1.15 + 'rem', marginBottom: 32 }}
-          >
+          <p style={{ textAlign: 'center', color: '#666', fontSize: '1.15rem', marginBottom: 32 }}>
             Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
           </p>
-          <div
-            style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}
-          >
+          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
             <div
               style={{
                 background: '#fafafa',
@@ -201,30 +173,19 @@ const ClientDashboard = () => {
                 marginBottom: 32,
               }}
             >
-              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>
-                Detalhes do Serviço
-              </h2>
+              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>Detalhes do Serviço</h2>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Parqueamento:</b> R${' '}
-                {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
+                <b>Parqueamento:</b> R$ {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
               </div>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Taxa de Operação:</b> R${' '}
-                {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
+                <b>Taxa de Operação:</b> R$ {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
               </div>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>...</div>
               <div style={{ color: '#888', fontSize: '1.08rem', marginTop: 18 }}>
                 Demais termos e condições serão detalhados em documento anexo.
               </div>
               <div style={{ marginTop: 32 }}>
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '1.08rem',
-                    color: '#222',
-                  }}
-                >
+                <label style={{ display: 'flex', alignItems: 'center', fontSize: '1.08rem', color: '#222' }}>
                   <input
                     type="checkbox"
                     checked={checked}
@@ -267,12 +228,18 @@ const ClientDashboard = () => {
             </button>
           </div>
 
-          {/* Contador de Veículos (inclui controles de coleta/entrega integrados) */}
+          {/* Meus Veículos */}
           <div className="dashboard-counter">
             <VehicleCounter key={refreshVehicleCounter} />
           </div>
+
+          {/* Coleta de Veículos */}
+          <div className="dashboard-counter">
+            <VehicleCollectionSection />
+          </div>
         </main>
       )}
+
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}

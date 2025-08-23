@@ -38,49 +38,53 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
     });
 
     const addressIds = Array.from(byAddress.keys());
-    if (!addressIds.length) {
-      return NextResponse.json({ success: true, groups: [] });
-    }
-
+    // Removida a condicional que retornava prematuramente
+    
     // Load address labels
-    const { data: addrs, error: addrErr } = await admin
-      .from('addresses')
-      .select('id, street, number, city')
-      .in('id', addressIds);
-
-    if (addrErr) {
-      logger.error('addresses-error', { error: addrErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao buscar endereços' }, { status: 500 });
-    }
-
+    let addrs: any[] = [];
+    let addrLabelMap = new Map<string, string>();
     const label = (a: any) => `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
+    
+    if (addressIds.length > 0) {
+      const { data, error: addrErr } = await admin
+        .from('addresses')
+        .select('id, street, number, city')
+        .in('id', addressIds);
 
-    const addrLabelMap = new Map<string, string>();
-    addressIds.forEach(aid => {
-      const a = (addrs || []).find((x: any) => x.id === aid);
-      addrLabelMap.set(aid, label(a));
-    });
+      if (addrErr) {
+        logger.error('addresses-error', { error: addrErr.message });
+        return NextResponse.json({ success: false, error: 'Erro ao buscar endereços' }, { status: 500 });
+      }
+      
+      addrs = data || [];
+      addressIds.forEach(aid => {
+        const a = addrs.find((x: any) => x.id === aid);
+        addrLabelMap.set(aid, label(a));
+      });
+    }
 
     // Load any saved fees for these address labels
-    const labels = Array.from(addrLabelMap.values()).filter(Boolean);
-    const feeByLabel = new Map<string, number>();
-    if (labels.length) {
-      const { data: feeRows, error: feeErr } = await admin
-        .from('vehicle_collections')
-        .select('collection_address, collection_fee_per_vehicle')
-        .eq('client_id', clientId)
-        .eq('status', 'requested')
-        .in('collection_address', labels);
-      if (feeErr) {
-        logger.warn('fees-load-error', { error: feeErr.message });
-      } else {
-        (feeRows || []).forEach((r: any) => {
-          const addr = r?.collection_address;
-          const fee = r?.collection_fee_per_vehicle;
-          if (addr && typeof fee === 'number') {
-            feeByLabel.set(addr, Number(fee));
-          }
-        });
+    let feeByLabel = new Map<string, number>();
+    if (addressIds.length > 0) {
+      const labels = Array.from(addrLabelMap.values()).filter(Boolean);
+      if (labels.length) {
+        const { data: feeRows, error: feeErr } = await admin
+          .from('vehicle_collections')
+          .select('collection_address, collection_fee_per_vehicle')
+          .eq('client_id', clientId)
+          .eq('status', 'requested')
+          .in('collection_address', labels);
+        if (feeErr) {
+          logger.warn('fees-load-error', { error: feeErr.message });
+        } else {
+          (feeRows || []).forEach((r: any) => {
+            const addr = r?.collection_address;
+            const fee = r?.collection_fee_per_vehicle;
+            if (addr && typeof fee === 'number') {
+              feeByLabel.set(addr, Number(fee));
+            }
+          });
+        }
       }
     }
 
