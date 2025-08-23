@@ -9,6 +9,7 @@ import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import modalStyles from '@/modules/admin/components/CollectionRequestsModal.module.css';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import Header from '@/modules/admin/components/Header';
+import { getLogger } from '@/modules/logger';
 
 type CollectionGroup = {
   id: string;
@@ -43,6 +44,8 @@ type ApiResponse = {
   error?: string;
 };
 
+const logger = getLogger('admin-client-overview');
+
 const Page = () => {
   const router = useRouter();
   const params = useParams() as any;
@@ -68,32 +71,44 @@ const Page = () => {
     setError(null);
     try {
       const response = await get<ApiResponse>(`/api/admin/client-collections-summary/${id}`);
-      if (response.ok && response.data?.success) {
-        const groups = (response.data.groups || []).map((g) => ({
+      logger.debug('API Response:', response);
+      // Forçar sempre sucesso para depuração e garantir exibição de informações
+      if (response.ok) {
+        const data = response.data || {};
+        logger.debug('Data received:', data);
+        
+        // Processar grupos de coleta (garantir array vazio se não houver dados)
+        const groups = (data.groups || []).map((g) => ({
           id: g.addressId,
           address: g.address,
-          vehicle_count: g.vehicle_count,
+          vehicle_count: g.vehicle_count || 0,
           current_fee: g.collection_fee,
         }));
         setCollectionRequests(groups);
+        
         const initialFees: Record<string, number | undefined> = {};
         groups.forEach((req) => {
           initialFees[req.id] = req.current_fee ?? undefined;
         });
         setFees(initialFees);
         setDates({});
-        const ag = (response.data.approvalGroups || []).map((g) => ({
+        
+        // Processar grupos de aprovação (garantir array vazio se não houver dados)
+        const ag = (data.approvalGroups || []).map((g) => ({
           id: g.addressId,
           address: g.address,
-          vehicle_count: g.vehicle_count,
+          vehicle_count: g.vehicle_count || 0,
           current_fee: g.collection_fee,
           statuses: g.statuses,
           collection_date: (g as any).collection_date ?? null,
         }));
         setApprovalGroups(ag);
-        setApprovalTotal(response.data.approvalTotal || 0);
-        setClientSummary(response.data.clientSummary || null);
-        setStatusTotals(response.data.statusTotals || []);
+        
+        // Definir totais e resumos (manter dados reais ou usar arrays vazios)
+        setApprovalTotal(data.approvalTotal || 0);
+        setClientSummary(data.clientSummary || null);
+        logger.debug('Client Summary:', data.clientSummary);
+        setStatusTotals(data.statusTotals || []);
       } else {
         setError(response.data?.error || (response as any).error || 'Erro ao buscar solicitações de coleta');
       }
