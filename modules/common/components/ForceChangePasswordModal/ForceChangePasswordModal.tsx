@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './ForceChangePasswordModal.module.css';
 import { useForceChangePassword } from '@/modules/common/hooks/ForceChangePassword/useForceChangePassword';
+import ErrorMessage from '../ErroMessage/ErrorMessage';
 
 interface ForceChangePasswordModalProps {
   isOpen: boolean;
@@ -50,7 +51,7 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
                 }));
               }}
             />
-            {errors.password && <p className={styles.error}>{errors.password}</p>}
+            <ErrorMessage message={errors.password} />
           </div>
 
           <div className={styles.formGroup}>
@@ -67,7 +68,7 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
                 }));
               }}
             />
-            {errors.confirmPassword && <p className={styles.error}>{errors.confirmPassword}</p>}
+            <ErrorMessage message={errors.confirmPassword} />
           </div>
 
           <div className={styles.buttonGroup}>
