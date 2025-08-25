@@ -435,3 +435,4 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
 }
 
 export default VehicleRegistrationModalBase;
+export type { Vehicle, VehicleRegistrationBaseProps };

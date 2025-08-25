@@ -19,6 +19,9 @@ export function createServerSupabaseClient() {
           const cookieStore = await cookies();
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         },
+        remove(name, options) {
+          cookieStore.set(name, '', { ...options, expires: new Date(0) });
+        },
       },
     }
   );
