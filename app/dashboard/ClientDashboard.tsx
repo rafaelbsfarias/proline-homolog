@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import styles from '@/modules/common/components/SignupPage.module.css';
+import styles from '@/modules/common/components/SignUp/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';

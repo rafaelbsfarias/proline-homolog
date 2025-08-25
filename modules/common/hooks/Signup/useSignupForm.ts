@@ -1,13 +1,7 @@
 import { useState } from 'react';
 import { callSignupApi } from '../../services/signupApiService';
-import {
-  formatCNPJ,
-  formatPhone,
-  validateCompanyName,
-  validateFullName,
-  validatePassword,
-} from '../../validators/signupValidators';
-import { validateCNPJ, validateEmail, validatePhone } from '../../utils/inputSanitization';
+import { formatCNPJ, formatPhone } from '../../validators/signupValidators';
+import { z } from 'zod';
 
 export interface SignupFormState {
   fullName: string;
@@ -18,6 +12,123 @@ export interface SignupFormState {
   cnpj: string;
   phone: string;
 }
+
+const signupSchema = z
+  .object({
+    fullName: z.string(),
+    email: z.string(),
+    password: z.string(),
+    confirmPassword: z.string(),
+    companyName: z.string(),
+    cnpj: z.string(),
+    phone: z.string(),
+  })
+  .superRefine((data, ctx) => {
+    // fullName
+    if (!data.fullName.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O nome completo é obrigatório',
+        path: ['fullName'],
+      });
+    } else if (data.fullName.length < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Nome completo deve ter pelo menos 3 caracteres',
+        path: ['fullName'],
+      });
+    }
+
+    // email
+    if (!data.email.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O e-mail é obrigatório',
+        path: ['email'],
+      });
+    } else if (!/^\S+@\S+\.\S+$/.test(data.email)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'E-mail inválido',
+        path: ['email'],
+      });
+    }
+
+    // password
+    if (!data.password.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A senha é obrigatória',
+        path: ['password'],
+      });
+    } else if (data.password.length < 6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A senha deve ter no mínimo 6 caracteres',
+        path: ['password'],
+      });
+    }
+
+    // confirmPassword
+    if (!data.confirmPassword.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A confirmação de senha é obrigatória',
+        path: ['confirmPassword'],
+      });
+    } else if (data.confirmPassword !== data.password) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'As senhas não coincidem',
+        path: ['confirmPassword'],
+      });
+    }
+
+    // companyName
+    if (!data.companyName.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A razão social é obrigatória',
+        path: ['companyName'],
+      });
+    } else if (data.companyName.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Razão social inválida',
+        path: ['companyName'],
+      });
+    }
+
+    // CNPJ
+    if (!data.cnpj.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O CNPJ é obrigatório',
+        path: ['cnpj'],
+      });
+    } else if (!/^\d{14}$/.test(data.cnpj.replace(/\D/g, ''))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CNPJ inválido',
+        path: ['cnpj'],
+      });
+    }
+
+    // phone
+    if (!data.phone.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O telefone é obrigatório',
+        path: ['phone'],
+      });
+    } else if (!/^\d{10,11}$/.test(data.phone.replace(/\D/g, ''))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Telefone inválido',
+        path: ['phone'],
+      });
+    }
+  });
 
 export const useSignupForm = () => {
   const [form, setForm] = useState<SignupFormState>({
@@ -30,7 +141,10 @@ export const useSignupForm = () => {
     phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof SignupFormState, string>>>(
+    {}
+  );
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,38 +158,28 @@ export const useSignupForm = () => {
     }
 
     setForm(prev => ({ ...prev, [name]: formattedValue }));
-    setError(null); // Limpa o erro ao digitar
+    setFieldErrors(prev => ({ ...prev, [name]: undefined })); // limpa erro ao digitar
   };
 
   const validateForm = (): boolean => {
-    const validations = [
-      validateFullName(form.fullName),
-      validateCompanyName(form.companyName),
-      validateCNPJ(form.cnpj),
-      validateEmail(form.email),
-      validatePhone(form.phone),
-      validatePassword(form.password),
-    ];
+    const result = signupSchema.safeParse(form);
 
-    const firstError = validations.find(v => v !== null);
-    if (firstError && typeof firstError === 'string') {
-      setError(firstError);
+    if (!result.success) {
+      const fieldErrors: Partial<Record<keyof SignupFormState, string>> = {};
+      result.error.errors.forEach(err => {
+        const field = err.path[0] as keyof SignupFormState;
+        fieldErrors[field] = err.message;
+      });
+      setFieldErrors(fieldErrors);
       return false;
     }
 
-    if (form.password !== form.confirmPassword) {
-      setError('As senhas não coincidem.');
-      return false;
-    }
-
+    setFieldErrors({});
     return true;
   };
 
   const handleSubmit = async () => {
-    setError(null);
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     setSuccess(false);
@@ -95,7 +199,7 @@ export const useSignupForm = () => {
         phone: '',
       });
     } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro desconhecido.');
+      setGlobalError(err.message || 'Ocorreu um erro desconhecido.');
     } finally {
       setIsLoading(false);
     }
@@ -104,11 +208,13 @@ export const useSignupForm = () => {
   return {
     form,
     isLoading,
-    error,
+    fieldErrors,
+    globalError,
     success,
     handleChange,
     handleSubmit,
-    setSuccess, // Para controlar o modal de sucesso externamente
-    setError, // Para limpar o erro externamente
+    setSuccess,
+    setFieldErrors,
+    setGlobalError,
   };
 };

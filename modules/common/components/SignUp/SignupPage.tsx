@@ -1,15 +1,26 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSignupForm } from '../hooks/Signup/useSignupForm';
-import { EyeIcon } from './EyeIcon';
-import Modal from './Modal';
+import { useSignupForm } from '../../hooks/Signup/useSignupForm';
+import { EyeIcon } from '../EyeIcon';
+import Modal from '../Modal';
 import styles from './SignupPage.module.css';
+import ErrorMessage from '../ErroMessage/ErrorMessage';
 
 const SignupPage: React.FC = () => {
   const router = useRouter();
-  const { form, isLoading, error, success, handleChange, handleSubmit, setError, setSuccess } =
-    useSignupForm();
+  const {
+    form,
+    isLoading,
+    fieldErrors,
+    globalError,
+    success,
+    handleChange,
+    handleSubmit,
+    setFieldErrors,
+    setGlobalError,
+    setSuccess,
+  } = useSignupForm();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -22,13 +33,13 @@ const SignupPage: React.FC = () => {
   return (
     <div className={styles.signupContainer}>
       {/* Modal de Erro */}
-      <Modal isOpen={!!error} onClose={() => setError(null)}>
+      <Modal isOpen={!!globalError} onClose={() => setGlobalError(null)}>
         <h3 style={{ marginBottom: 18, color: '#e53935' }}>Erro ao cadastrar</h3>
-        <div style={{ color: '#222', fontSize: '1.08rem', marginBottom: 24 }}>{error}</div>
+        <div style={{ color: '#222', fontSize: '1.08rem', marginBottom: 24 }}>{globalError}</div>
         <button
           className={styles.submitButton}
           style={{ width: 280, margin: '0 auto', display: 'block' }}
-          onClick={() => setError(null)}
+          onClick={() => setGlobalError(null)}
         >
           OK
         </button>
@@ -72,9 +83,9 @@ const SignupPage: React.FC = () => {
             name="fullName"
             value={form.fullName}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
+          <ErrorMessage message={fieldErrors.fullName} />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="companyName">Razão Social</label>
@@ -84,9 +95,9 @@ const SignupPage: React.FC = () => {
             name="companyName"
             value={form.companyName}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
+          <ErrorMessage message={fieldErrors.companyName} />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="cnpj">CNPJ</label>
@@ -96,9 +107,9 @@ const SignupPage: React.FC = () => {
             name="cnpj"
             value={form.cnpj}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
+          <ErrorMessage message={fieldErrors.cnpj} />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="email">Email</label>
@@ -108,9 +119,9 @@ const SignupPage: React.FC = () => {
             name="email"
             value={form.email}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
+          <ErrorMessage message={fieldErrors.email} />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="phone">Telefone</label>
@@ -120,9 +131,9 @@ const SignupPage: React.FC = () => {
             name="phone"
             value={form.phone}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
+          <ErrorMessage message={fieldErrors.phone} />
         </div>
         <div className={styles.inputGroup} style={{ position: 'relative' }}>
           <label htmlFor="password">Senha</label>
@@ -132,7 +143,6 @@ const SignupPage: React.FC = () => {
             name="password"
             value={form.password}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
           <button
@@ -151,6 +161,7 @@ const SignupPage: React.FC = () => {
           >
             <EyeIcon open={showPassword} />
           </button>
+          <ErrorMessage message={fieldErrors.password} />
         </div>
         <div className={styles.inputGroup} style={{ position: 'relative' }}>
           <label htmlFor="confirmPassword">Confirme a senha</label>
@@ -160,7 +171,6 @@ const SignupPage: React.FC = () => {
             name="confirmPassword"
             value={form.confirmPassword}
             onChange={handleChange}
-            required
             disabled={isLoading}
           />
           <button
@@ -179,6 +189,7 @@ const SignupPage: React.FC = () => {
           >
             <EyeIcon open={showConfirmPassword} />
           </button>
+          <ErrorMessage message={fieldErrors.confirmPassword} />
         </div>
 
         <button type="submit" className={styles.submitButton} disabled={isLoading || success}>

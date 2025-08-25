@@ -1,4 +1,4 @@
-import { SignupFormState } from '../hooks/useSignupForm';
+import { SignupFormState } from '@/modules/common/hooks/Signup/useSignupForm';
 
 /**
  * Client-side service to handle the API call for user signup.

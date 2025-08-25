@@ -62,6 +62,10 @@ export class SignupService {
       });
 
       if (clientError) {
+        // Check for unique constraint violation on document_number
+        if (clientError.message.includes('clients_document_number_key')) {
+          throw new ConflictError('Este CNPJ já está cadastrado.');
+        }
         throw new DatabaseError(`Erro ao criar client: ${clientError.message}`);
       }
 
