@@ -12,7 +12,7 @@ import VehicleCollectionSection from '@/modules/client/components/VehicleCollect
 
 interface ProfileData {
   full_name: string;
-  must_change_password: boolean;
+  must_change_password?: boolean; // Made optional to prevent type errors
   clients: {
     parqueamento?: number;
     taxa_operacao?: number;
@@ -27,9 +27,9 @@ const ClientDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
-  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -53,8 +53,16 @@ const ClientDashboard: React.FC = () => {
           .single();
 
         const [profileResponse, clientResponse] = await Promise.all([
-          profilePromise,
-          clientPromise,
+          supabase
+            .from('profiles')
+            .select('full_name, must_change_password')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('clients')
+            .select('parqueamento, taxa_operacao')
+            .eq('profile_id', user.id)
+            .single(),
         ]);
 
         interface ProfileResponseShape {
@@ -115,7 +123,6 @@ const ClientDashboard: React.FC = () => {
           if (profile.must_change_password) {
             setShowForceChangePasswordModal(true);
           }
-        } else {
         }
 
         const { data: acceptance } = await supabase

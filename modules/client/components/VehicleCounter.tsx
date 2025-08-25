@@ -59,8 +59,12 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   const { statusOptions, statusCounts, sorter } = useStatusCounters(vehicles);
 
   const filteredVehicles = (vehicles || []).filter(v => {
-    const plateOk = filterPlate ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase()) : true;
-            const statusOk = filterStatus ? ((v.status ?? '').toLowerCase() === filterStatus.toLowerCase()) : true;
+    const plateOk = filterPlate
+      ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase())
+      : true;
+    const statusOk = filterStatus
+      ? (v.status ?? '').toLowerCase() === filterStatus.toLowerCase()
+      : true;
     return plateOk && statusOk;
   });
 
@@ -80,7 +84,9 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
   if (error) {
     return (
       <div className="vehicle-counter error">
-        <div className="counter-icon" aria-hidden>⚠️</div>
+        <div className="counter-icon" aria-hidden>
+          ⚠️
+        </div>
         <div className="counter-content">
           <h3>Erro</h3>
           <p>{error}</p>
@@ -97,7 +103,9 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
       <div className="counter-header">
         <div className="counter-content">
           <h3>Meus Veículos</h3>
-          <div className="counter-number" aria-live="polite">{count}</div>
+          <div className="counter-number" aria-live="polite">
+            {count}
+          </div>
           <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
@@ -119,7 +127,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           </button>
           {count > 0 && (
             <button
-              onClick={() => setShowDetails((v) => !v)}
+              onClick={() => setShowDetails(v => !v)}
               className="details-button"
               title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
               aria-expanded={showDetails}
@@ -140,7 +148,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
               addressId={bulkAddressId}
               setAddressId={setBulkAddressId}
               saving={savingAll}
-              onOpenModal={(m) => setBulkModalOpen(m)}
+              onOpenModal={m => setBulkModalOpen(m)}
               addresses={addresses as any}
             />
           )}
@@ -154,13 +162,16 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           )}
 
           <div className="vehicles-list">
-            {filteredVehicles.map((vehicle) => (
+            {filteredVehicles.map(vehicle => (
               <VehicleItemRow
                 key={vehicle.id}
                 vehicle={vehicle}
                 addresses={addresses as any}
-                onOpenDetails={(v) => { setSelectedVehicle(v); setShowModal(true); }}
-                onOpenRowModal={(v) => setRowModalVehicle(v)}
+                onOpenDetails={v => {
+                  setSelectedVehicle(v);
+                  setShowModal(true);
+                }}
+                onOpenRowModal={v => setRowModalVehicle(v)}
               />
             ))}
           </div>
@@ -174,25 +185,29 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
             setShowModal(false);
             setSelectedVehicle(null);
           }}
-          vehicle={selectedVehicle ? {
-            plate: selectedVehicle.plate,
-            brand: selectedVehicle.brand,
-            model: selectedVehicle.model,
-            year: selectedVehicle.year,
-            color: selectedVehicle.color,
-            status: selectedVehicle.status ?? '',
-            created_at: selectedVehicle.created_at,
-            fipe_value: selectedVehicle.fipe_value,
-            client_name: undefined,
-            analyst: undefined,
-            arrival_forecast: undefined,
-            current_km: undefined,
-            params: undefined,
-            notes: undefined,
-            estimated_arrival_date: selectedVehicle.estimated_arrival_date,
-            current_odometer: selectedVehicle.current_odometer,
-            fuel_level: selectedVehicle.fuel_level,
-          } : null}
+          vehicle={
+            selectedVehicle
+              ? {
+                  plate: selectedVehicle.plate,
+                  brand: selectedVehicle.brand,
+                  model: selectedVehicle.model,
+                  year: selectedVehicle.year,
+                  color: selectedVehicle.color,
+                  status: selectedVehicle.status ?? '',
+                  created_at: selectedVehicle.created_at,
+                  fipe_value: selectedVehicle.fipe_value,
+                  client_name: undefined,
+                  analyst: undefined,
+                  arrival_forecast: undefined,
+                  current_km: undefined,
+                  params: undefined,
+                  notes: undefined,
+                  estimated_arrival_date: selectedVehicle.estimated_arrival_date,
+                  current_odometer: selectedVehicle.current_odometer,
+                  fuel_level: selectedVehicle.fuel_level,
+                }
+              : null
+          }
         />
       )}
 
@@ -206,7 +221,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           minDate={minDateIsoLocal}
           initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}
           initialEtaIso={bulkMethod === 'bring_to_yard' ? bulkEta : undefined}
-          onApply={async (payload) => {
+          onApply={async payload => {
             const resp = await post('/api/client/set-vehicles-collection', payload);
             if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
             refetch();
@@ -221,7 +236,7 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
           vehicle={{ id: rowModalVehicle.id, pickup_address_id: rowModalVehicle.pickup_address_id }}
           addresses={addresses as any}
           minDate={minDateIsoLocal}
-          onApply={async (payload) => {
+          onApply={async payload => {
             const resp = await post('/api/client/set-vehicles-collection', payload);
             if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
             refetch();

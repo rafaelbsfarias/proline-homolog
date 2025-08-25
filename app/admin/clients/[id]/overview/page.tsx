@@ -10,6 +10,8 @@ import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsMod
 import Header from '@/modules/admin/components/Header';
 import { getLogger } from '@/modules/logger';
 
+const logger = getLogger('ClientOverviewPage');
+
 type CollectionGroup = {
   id: string;
   address: string;
@@ -67,7 +69,11 @@ type ApiResponse = {
   error?: string;
 };
 
-const logger = getLogger('admin-client-overview');
+type PaymentsResponse = {
+  success?: boolean;
+  payments?: Array<{ address: string; fee: number | null; paid_at?: string | null }>;
+  error?: string;
+};
 
 const Page = () => {
   const router = useRouter();
@@ -115,6 +121,9 @@ const Page = () => {
     }[]
   >([]);
   const [selectedVehicle, setSelectedVehicle] = useState<any | null>(null);
+  const [payments, setPayments] = useState<
+    Array<{ address: string; fee: number | null; paid_at?: string | null }>
+  >([]);
 
   const fetchCollectionRequests = useCallback(async () => {
     if (!id) return;
@@ -143,12 +152,8 @@ const Page = () => {
         });
         setFees(initialFees);
         setDates({});
-
-        // Processar grupos de aprovação (garantir array vazio se não houver dados)
         const ag = (data.approvalGroups || []).map(g => ({
-          // unique row id must include date to avoid merging same-address rows
-          id: `${g.addressId}${(g as any).collection_date ? '|' + (g as any).collection_date : '|no-date'}`,
-          addressIdReal: g.addressId,
+          id: g.addressId,
           address: g.address,
           vehicle_count: g.vehicle_count || 0,
           current_fee: g.collection_fee,
@@ -191,6 +196,18 @@ const Page = () => {
     fetchCollectionRequests();
     setMessage(null);
   }, [id, fetchCollectionRequests]);
+
+  const fetchPayments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const resp = await get<PaymentsResponse>(`/api/admin/collection-payments/${id}`);
+      if (resp.ok && resp.data?.success) setPayments(resp.data.payments || []);
+    } catch {}
+  }, [id, get]);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
 
   const handleFeeChange = (collectionId: string, value: number | undefined) => {
     setFees(prev => ({ ...prev, [collectionId]: value }));
@@ -247,6 +264,22 @@ const Page = () => {
       await fetchCollectionRequests();
     } catch (e: any) {
       setError(e?.message || 'Erro ao salvar valores');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmPayments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setMessage(null);
+      const resp = await post(`/api/admin/confirm-collection-payment/${id}`, {});
+      if (!resp.ok) throw new Error((resp as any).error || 'Erro ao confirmar pagamento');
+      await Promise.all([fetchCollectionRequests(), fetchPayments()]);
+      setMessage('Pagamento confirmado com sucesso.');
+    } catch (e: any) {
+      setError(e?.message || 'Erro ao confirmar pagamento');
     } finally {
       setLoading(false);
     }
@@ -383,9 +416,7 @@ const Page = () => {
                           textDecoration: 'underline',
                           padding: 0,
                         }}
-                        onClick={() =>
-                          openVehiclesModal((g as any).addressIdReal || g.id, g.address)
-                        }
+                        onClick={() => openVehiclesModal(g.id, g.address)}
                       >
                         {g.vehicle_count}
                       </button>
@@ -638,6 +669,40 @@ const Page = () => {
                 : '-'}
             </div>
           </div>
+        </div>
+
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Pagamentos realizados</h2>
+          {payments.length === 0 ? (
+            <p>Nenhum pagamento confirmado.</p>
+          ) : (
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.thLeft}>Ponto de coleta</th>
+                    <th className={styles.thCenter}>Fee por veículo (R$)</th>
+                    <th className={styles.thCenter}>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p, idx) => (
+                    <tr key={idx}>
+                      <td>{p.address}</td>
+                      <td className={styles.alignCenter}>
+                        {typeof p.fee === 'number'
+                          ? p.fee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                          : '-'}
+                      </td>
+                      <td className={styles.alignCenter}>
+                        {p.paid_at ? new Date(p.paid_at).toLocaleString('pt-BR') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <div className={styles.section}>

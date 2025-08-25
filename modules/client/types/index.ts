@@ -30,6 +30,8 @@ export interface VehicleItem {
   fuel_level?: string;
   estimated_arrival_date?: string | null;
   pickup_address_id?: string | null;
+  collection_value?: number;
+  collection_value_status?: 'pending' | 'approved' | 'rejected';
 }
 
 export interface AddressItem {
