@@ -5,9 +5,9 @@
 // ========================================================================================
 
 import { Entity, AggregateRoot, DomainEvent } from '../../common/types/domain';
-import { Email } from '../../common/domain/Email';
-import { Password } from '../../common/domain/Password';
-import { UserRole } from '../../common/domain/UserRole';
+import { Email } from '@/modules/common/domain/Email';
+import { Password } from '@/modules/common/domain/Password';
+import { UserRole } from '@/modules/common/domain/UserRole';
 
 /**
  * User Status Enum

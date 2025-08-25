@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
-import { supabase } from '../../modules/common/services/supabaseClient';
+import { supabase } from '@/modules/common/services/supabaseClient';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
 import VehicleCounter from '@/modules/client/components/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import '@/modules/client/components/ClientDashboard.css';
+import VehicleCollectionSection from '@/modules/client/components/VehicleCollectionSection';
 
 interface ProfileData {
   full_name: string;
@@ -17,7 +19,7 @@ interface ProfileData {
   }[];
 }
 
-const ClientDashboard = () => {
+const ClientDashboard: React.FC = () => {
   const [accepted, setAccepted] = useState(false);
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
@@ -38,28 +40,70 @@ const ClientDashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Fetch profile and client data in parallel
+        // Buscar perfil com fallback caso a coluna must_change_password não exista
+        const profilePromise = supabase
+          .from('profiles')
+          .select('full_name, must_change_password')
+          .eq('id', user.id)
+          .single();
+        const clientPromise = supabase
+          .from('clients')
+          .select('parqueamento, taxa_operacao')
+          .eq('profile_id', user.id)
+          .single();
+
         const [profileResponse, clientResponse] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('full_name, must_change_password')
-            .eq('id', user.id)
-            .single(),
-          supabase
-            .from('clients')
-            .select('parqueamento, taxa_operacao')
-            .eq('profile_id', user.id)
-            .single(),
+          profilePromise,
+          clientPromise,
         ]);
 
-        const { data: profile } = profileResponse;
+        interface ProfileResponseShape {
+          data?: { full_name?: string; must_change_password?: boolean };
+          error?: unknown;
+        }
+        const profileResp = profileResponse as ProfileResponseShape;
+        const profileError = profileResp.error;
+        let profile = profileResp.data ?? null;
+        if (profileError) {
+          // Normalize error to string for environments where profileError is not typed
+          const getStringProp = (obj: unknown, prop: string): string | undefined => {
+            if (typeof obj === 'object' && obj !== null && prop in obj) {
+              try {
+                const r = obj as Record<string, unknown>;
+                return r[prop] !== undefined ? String(r[prop]) : undefined;
+              } catch {
+                return undefined;
+              }
+            }
+            return undefined;
+          };
+
+          const msg = (
+            getStringProp(profileError, 'message') || String(profileError || '')
+          ).toLowerCase();
+          // Fallback: ambientes sem a coluna must_change_password
+          const code = getStringProp(profileError, 'code');
+          if (
+            msg.includes('must_change_password') ||
+            msg.includes('column') ||
+            code === 'PGRST100'
+          ) {
+            const fallback = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', user.id)
+              .single();
+            profile = fallback.data ? { ...fallback.data, must_change_password: false } : null;
+          }
+        }
+
         const { data: clientData } = clientResponse;
 
         if (profile) {
           setUserName(profile.full_name || '');
           setProfileData({
             full_name: profile.full_name || '',
-            must_change_password: profile.must_change_password,
+            must_change_password: !!profile.must_change_password,
             clients: [
               {
                 parqueamento: clientData?.parqueamento,
@@ -74,7 +118,6 @@ const ClientDashboard = () => {
         } else {
         }
 
-        // Verifica aceite do contrato
         const { data: acceptance } = await supabase
           .from('client_contract_acceptance')
           .select('accepted_at')
@@ -98,7 +141,6 @@ const ClientDashboard = () => {
           const response = await fetch('/api/client/vehicles-count', {
             headers: { Authorization: `Bearer ${token}` },
           });
-
           if (response.ok) {
             const vehicleData = await response.json();
             const count =
@@ -107,10 +149,9 @@ const ClientDashboard = () => {
                 : vehicleData.vehicle_count || 0;
             setVehicleCount(count);
           }
-        } catch (error) {}
+        } catch {}
       }
     };
-
     fetchVehicleCount();
   }, [profileData]);
 
@@ -120,21 +161,16 @@ const ClientDashboard = () => {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      if (!profileData || !profileData.clients || profileData.clients.length === 0) {
+      if (!profileData?.clients?.length) {
         setLoading(false);
         return;
       }
-
       const contentToSend = JSON.stringify(profileData.clients[0]);
-
-      // Tenta usar a RPC; se indisponível, faz upsert direto como fallback
-      const { data, error } = await supabase.rpc('accept_client_contract', {
+      const { error } = await supabase.rpc('accept_client_contract', {
         p_client_id: user.id,
         p_content: contentToSend,
       });
-
       if (error) {
-        // Fallback: upsert direto, caso a função não exista no banco
         const { error: upsertError } = await supabase.from('client_contract_acceptance').upsert(
           {
             client_id: user.id,
@@ -148,15 +184,12 @@ const ClientDashboard = () => {
           return;
         }
       }
-
       setAccepted(true);
     }
     setLoading(false);
   }
 
-  if (loading) {
-    return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-  }
+  if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
 
   if (!profileData) {
     return (
@@ -173,7 +206,7 @@ const ClientDashboard = () => {
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
           <h1
             style={{
-              fontSize: 2.4 + 'rem',
+              fontSize: '2.4rem',
               fontWeight: 600,
               marginBottom: 8,
               textAlign: 'center',
@@ -182,9 +215,7 @@ const ClientDashboard = () => {
           >
             Termos do Contrato
           </h1>
-          <p
-            style={{ textAlign: 'center', color: '#666', fontSize: 1.15 + 'rem', marginBottom: 32 }}
-          >
+          <p style={{ textAlign: 'center', color: '#666', fontSize: '1.15rem', marginBottom: 32 }}>
             Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
           </p>
           <div
@@ -267,12 +298,18 @@ const ClientDashboard = () => {
             </button>
           </div>
 
-          {/* Contador de Veículos (inclui controles de coleta/entrega integrados) */}
+          {/* Meus Veículos */}
           <div className="dashboard-counter">
             <VehicleCounter key={refreshVehicleCounter} />
           </div>
+
+          {/* Coleta de Veículos */}
+          <div className="dashboard-counter">
+            <VehicleCollectionSection />
+          </div>
         </main>
       )}
+
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}

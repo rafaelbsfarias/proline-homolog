@@ -57,11 +57,11 @@ export default defineConfig({
         password: '123qwe',
       },
       testPartner: {
-        email: 'parceiro@prolineauto.com.br',
+        email: 'partner@prolineauto.com.br',
         password: '123qwe',
       },
       testSpecialist: {
-        email: 'especialista@prolineauto.com.br',
+        email: 'specialist@prolineauto.com.br',
         password: '123qwe',
       },
     },

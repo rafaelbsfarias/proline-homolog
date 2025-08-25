@@ -203,9 +203,6 @@ export class GetCurrentUserUseCase implements UseCase<string, UserInfo> {
   }
 }
 
-/**
- * Caso de uso: Listar todos os usuários
- */
 export class GetAllUsersUseCase implements UseCase<void, UserInfo[]> {
   constructor(private readonly userRepository: IUserRepository) {}
 

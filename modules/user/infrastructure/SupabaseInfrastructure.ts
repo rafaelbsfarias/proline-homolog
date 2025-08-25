@@ -12,7 +12,7 @@ import {
   IDomainEventPublisher,
 } from '../services/UserApplicationService';
 import { User, UserStatus } from '../models/User';
-import { Password } from '../../common/domain/Password';
+import { Password } from '@/modules/common/domain/Password';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
