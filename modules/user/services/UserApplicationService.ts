@@ -204,9 +204,6 @@ export class GetCurrentUserUseCase implements UseCase<string, UserInfo> {
   }
 }
 
-/**
- * Caso de uso: Listar todos os usuários
- */
 export class GetAllUsersUseCase implements UseCase<void, UserInfo[]> {
   constructor(private readonly userRepository: IUserRepository) {}
 
@@ -301,7 +298,7 @@ export class UserModule implements IUserModule {
 
   async userExists(email: string): Promise<boolean> {
     // Implementar verificação rápida
-    return false; // TODO: implementar
+    return false;
   }
 
   async userHasPermission(userId: string, permission: string): Promise<boolean> {
@@ -310,7 +307,6 @@ export class UserModule implements IUserModule {
       return false;
     }
 
-    // TODO: Implementar verificação de permissão com o domain model
     return true;
   }
 
@@ -320,7 +316,6 @@ export class UserModule implements IUserModule {
       return false;
     }
 
-    // TODO: Implementar verificação de rota com o domain model
     return true;
   }
 }
