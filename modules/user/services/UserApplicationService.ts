@@ -7,8 +7,8 @@
 import { UseCase, Result, createSuccess, createError } from '../../common/types/domain';
 import { IUserModule, UserAuth, UserInfo } from '../../common/types/interfaces';
 import { User, UserRegistrationData, UserStatus } from '../models/User';
-import { Email } from '../../../app/value-objects/Email';
-import { Password } from '../../../app/value-objects/Password';
+import { Email } from '@/modules/common/domain/Email';
+import { Password } from '@/modules/common/domain/Password';
 
 /**
  * Interface para repositório de usuários

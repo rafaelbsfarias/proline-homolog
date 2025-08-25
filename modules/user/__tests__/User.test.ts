@@ -6,8 +6,8 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { User, UserStatus, UserRegistrationData } from '../models/User';
-import { Email } from '../../../app/value-objects/Email';
-import { UserRole } from '../../../app/value-objects/UserRole';
+import { Email } from '@/modules/common/domain/Email';
+import { UserRole } from '@/modules/common/domain/UserRole';
 
 describe('User Domain Entity', () => {
   let validUserData: UserRegistrationData;

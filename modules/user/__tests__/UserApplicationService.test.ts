@@ -17,7 +17,7 @@ import {
   IDomainEventPublisher,
 } from '../services/UserApplicationService';
 import { User, UserStatus, UserRegistrationData } from '../models/User';
-import { Password } from '../../../app/value-objects/Password';
+import { Password } from '@/modules/common/domain/Password';
 
 // ========================================================================================
 // MOCKS

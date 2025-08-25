@@ -15,7 +15,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
     const clientId: string | undefined = body?.clientId;
-    const fees: Array<{ addressId: string; fee: number; date?: string }> = Array.isArray(body?.fees) ? body.fees : [];
+    const fees: Array<{ addressId: string; fee: number; date?: string }> = Array.isArray(body?.fees)
+      ? body.fees
+      : [];
     if (!clientId || !fees.length) {
       return NextResponse.json({ success: false, error: 'Dados inválidos' }, { status: 400 });
     }
@@ -30,7 +32,10 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .in('id', addrIds);
     if (addrErr) {
       logger.error('addr-error', { error: addrErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao buscar endereços' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar endereços' },
+        { status: 500 }
+      );
     }
     const label = (a: any) =>
       `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
@@ -44,18 +49,21 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         collection_address: addrLabel,
         collection_fee_per_vehicle: item.fee,
         collection_date: item.date ?? null,
-        status: 'requested',                // volta/permanece como solicitado até o cliente aprovar
+        status: 'requested', // volta/permanece como solicitado até o cliente aprovar
       };
     });
 
     const { data: rows, error: upErr } = await admin
       .from('vehicle_collections')
-      .upsert(upsertPayload, { onConflict: 'client_id,collection_address' })
+      .upsert(upsertPayload, { onConflict: 'client_id,collection_address,collection_date' })
       .select('id, collection_address');
 
     if (upErr) {
       logger.error('upsert-error', { error: upErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao salvar valores de coleta' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao salvar valores de coleta' },
+        { status: 500 }
+      );
     }
 
     // Mapa label -> collection_id retornado pelo upsert
@@ -80,22 +88,31 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
             ...(collId ? { collection_id: collId } : {}),
           })
           .eq('client_id', clientId)
-          .eq('pickup_address_id', f.addressId)
-          // se quiser forçar só quando vieram do passo anterior:
-          // .eq('status', 'PONTO DE COLETA SELECIONADO')
-          ;
-
+          .eq('pickup_address_id', f.addressId);
+        // se quiser forçar só quando vieram do passo anterior:
+        // .eq('status', 'PONTO DE COLETA SELECIONADO')
         if (updVehiclesErr) {
-          logger.error('update-vehicles-status-error', { error: updVehiclesErr.message, clientId, addressId: f.addressId });
+          logger.error('update-vehicles-status-error', {
+            error: updVehiclesErr.message,
+            clientId,
+            addressId: f.addressId,
+          });
         }
       } catch (e: any) {
-        logger.error('update-vehicles-status-exception', { error: e?.message, clientId, addressId: f.addressId });
+        logger.error('update-vehicles-status-exception', {
+          error: e?.message,
+          clientId,
+          addressId: f.addressId,
+        });
       }
     }
 
     return NextResponse.json({ success: true, updated: upsertPayload.length });
   } catch (e: any) {
     logger.error('unhandled', { error: e?.message });
-    return NextResponse.json({ success: false, error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 });

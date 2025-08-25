@@ -23,7 +23,10 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     if (vehErr) {
       logger.error('vehicles-error', { error: vehErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao buscar veículos' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar veículos' },
+        { status: 500 }
+      );
     }
 
     // Agrupar veículos por endereço de coleta
@@ -36,12 +39,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const addressIds = Array.from(byAddress.keys());
     if (!addressIds.length) {
-      return NextResponse.json({ 
-        success: true, 
-        approvalTotal: 0, 
-        count: 0, 
-        dates: [], 
-        groups: [] 
+      return NextResponse.json({
+        success: true,
+        approvalTotal: 0,
+        count: 0,
+        dates: [],
+        groups: [],
       });
     }
 
@@ -53,10 +56,14 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     if (addrErr) {
       logger.error('addresses-error', { error: addrErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao buscar endereços' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar endereços' },
+        { status: 500 }
+      );
     }
 
-    const label = (a: any) => `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
+    const label = (a: any) =>
+      `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
 
     const addrLabelMap = new Map<string, string>();
     addressIds.forEach(aid => {
@@ -64,13 +71,13 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       addrLabelMap.set(aid, label(a));
     });
 
-    // Carregar taxas salvas para esses endereços
+    // Carregar taxas salvas para esses endereços (mapeadas por endereco|data)
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
-    let feeByLabel = new Map<string, number>();
+    const feeByAddrDate = new Map<string, number>();
     if (labels.length) {
       const { data: feeRows, error: feeErr } = await admin
         .from('vehicle_collections')
-        .select('collection_address, collection_fee_per_vehicle')
+        .select('collection_address, collection_fee_per_vehicle, collection_date')
         .eq('client_id', userId)
         .eq('status', 'requested')
         .in('collection_address', labels);
@@ -80,9 +87,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         (feeRows || []).forEach((r: any) => {
           const addr = r?.collection_address;
           const fee = r?.collection_fee_per_vehicle;
-          if (addr && typeof fee === 'number') {
-            feeByLabel.set(addr, Number(fee));
-          }
+          const date = r?.collection_date ? String(r.collection_date) : '';
+          if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
         });
       }
     }
@@ -91,7 +97,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const groups = addressIds.map(aid => {
       const lbl = addrLabelMap.get(aid) || '';
       const info = byAddress.get(aid) || { count: 0, date: null };
-      const fee = feeByLabel.get(lbl) ?? null;
+      const fee = feeByAddrDate.get(`${lbl}|${info.date || ''}`) ?? null;
       return {
         addressId: aid,
         address: lbl,
@@ -105,7 +111,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     let approvalTotal = 0;
     let totalCount = 0;
     const dates: string[] = [];
-    
+
     groups.forEach(g => {
       totalCount += g.vehicle_count;
       if (typeof g.collection_fee === 'number' && g.collection_date) {
@@ -114,12 +120,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      approvalTotal, 
-      count: totalCount, 
-      dates: [...new Set(dates)], 
-      groups 
+    return NextResponse.json({
+      success: true,
+      approvalTotal,
+      count: totalCount,
+      dates: [...new Set(dates)],
+      groups,
     });
   } catch (e: any) {
     logger.error('unhandled', { error: e?.message });
@@ -133,7 +139,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     const userId = req.user.id;
     const { addressId, new_date } = await req.json();
     if (!addressId || !new_date) {
-      return NextResponse.json({ success: false, error: 'addressId e new_date são obrigatórios' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'addressId e new_date são obrigatórios' },
+        { status: 400 }
+      );
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
@@ -144,7 +153,9 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .select('id, street, number, city')
       .eq('id', addressId)
       .maybeSingle();
-    const addressLabel = addr ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim() : '';
+    const addressLabel = addr
+      ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim()
+      : '';
 
     // atualizar veículos
     const { error: updVehErr } = await admin
@@ -155,7 +166,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .in('status', ['AGUARDANDO APROVAÇÃO DA COLETA', 'APROVAÇÃO NOVA DATA']);
     if (updVehErr) {
       logger.error('vehicles-update-error', { error: updVehErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao atualizar veículos' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao atualizar veículos' },
+        { status: 500 }
+      );
     }
 
     // atualizar linha em vehicle_collections (se existir)

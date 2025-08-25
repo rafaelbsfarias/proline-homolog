@@ -13,12 +13,25 @@ async function getProfileHandler(req: AuthenticatedRequest) {
     const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Fetch profile data
-    const { data: profile, error: profileError } = await supabase
+    // Buscar perfil; fallback se must_change_password não existir
+    let { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('full_name, email, role, must_change_password')
       .eq('id', clientUser?.id)
       .single();
 
+    if (profileError) {
+      const msg = String(profileError.message || '').toLowerCase();
+      if (msg.includes('must_change_password') || msg.includes('column')) {
+        const fb = await supabase
+          .from('profiles')
+          .select('full_name, email, role')
+          .eq('id', clientUser?.id)
+          .single();
+        profile = fb.data ? { ...fb.data, must_change_password: false } : null;
+        profileError = fb.error;
+      }
+    }
     if (profileError) {
       logger.error(`Error fetching profile for ${clientUser?.id}:`, profileError);
       return NextResponse.json(

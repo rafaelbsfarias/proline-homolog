@@ -36,29 +36,74 @@ const ClientDashboard: React.FC = () => {
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
+        // Buscar perfil com fallback caso a coluna must_change_password não exista
+        const profilePromise = supabase
+          .from('profiles')
+          .select('full_name, must_change_password')
+          .eq('id', user.id)
+          .single();
+        const clientPromise = supabase
+          .from('clients')
+          .select('parqueamento, taxa_operacao')
+          .eq('profile_id', user.id)
+          .single();
+
         const [profileResponse, clientResponse] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('full_name, must_change_password')
-            .eq('id', user.id)
-            .single(),
-          supabase
-            .from('clients')
-            .select('parqueamento, taxa_operacao')
-            .eq('profile_id', user.id)
-            .single(),
+          profilePromise,
+          clientPromise,
         ]);
 
-        const { data: profile } = profileResponse;
+        interface ProfileResponseShape {
+          data?: { full_name?: string; must_change_password?: boolean };
+          error?: unknown;
+        }
+        const profileResp = profileResponse as ProfileResponseShape;
+        const profileError = profileResp.error;
+        let profile = profileResp.data ?? null;
+        if (profileError) {
+          // Normalize error to string for environments where profileError is not typed
+          const getStringProp = (obj: unknown, prop: string): string | undefined => {
+            if (typeof obj === 'object' && obj !== null && prop in obj) {
+              try {
+                const r = obj as Record<string, unknown>;
+                return r[prop] !== undefined ? String(r[prop]) : undefined;
+              } catch {
+                return undefined;
+              }
+            }
+            return undefined;
+          };
+
+          const msg = (
+            getStringProp(profileError, 'message') || String(profileError || '')
+          ).toLowerCase();
+          // Fallback: ambientes sem a coluna must_change_password
+          const code = getStringProp(profileError, 'code');
+          if (
+            msg.includes('must_change_password') ||
+            msg.includes('column') ||
+            code === 'PGRST100'
+          ) {
+            const fallback = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', user.id)
+              .single();
+            profile = fallback.data ? { ...fallback.data, must_change_password: false } : null;
+          }
+        }
+
         const { data: clientData } = clientResponse;
 
         if (profile) {
           setUserName(profile.full_name || '');
           setProfileData({
             full_name: profile.full_name || '',
-            must_change_password: profile.must_change_password,
+            must_change_password: !!profile.must_change_password,
             clients: [
               {
                 parqueamento: clientData?.parqueamento,
@@ -87,7 +132,9 @@ const ClientDashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchVehicleCount = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (token) {
         try {
@@ -110,7 +157,9 @@ const ClientDashboard: React.FC = () => {
 
   async function handleAcceptContract() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       if (!profileData?.clients?.length) {
         setLoading(false);
@@ -155,13 +204,23 @@ const ClientDashboard: React.FC = () => {
       <Header />
       {!accepted ? (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
-          <h1 style={{ fontSize: '2.4rem', fontWeight: 600, marginBottom: 8, textAlign: 'center', color: '#333' }}>
+          <h1
+            style={{
+              fontSize: '2.4rem',
+              fontWeight: 600,
+              marginBottom: 8,
+              textAlign: 'center',
+              color: '#333',
+            }}
+          >
             Termos do Contrato
           </h1>
           <p style={{ textAlign: 'center', color: '#666', fontSize: '1.15rem', marginBottom: 32 }}>
             Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
           </p>
-          <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}>
+          <div
+            style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}
+          >
             <div
               style={{
                 background: '#fafafa',
@@ -173,19 +232,30 @@ const ClientDashboard: React.FC = () => {
                 marginBottom: 32,
               }}
             >
-              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>Detalhes do Serviço</h2>
+              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>
+                Detalhes do Serviço
+              </h2>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Parqueamento:</b> R$ {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
+                <b>Parqueamento:</b> R${' '}
+                {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
               </div>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Taxa de Operação:</b> R$ {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
+                <b>Taxa de Operação:</b> R${' '}
+                {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
               </div>
               <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>...</div>
               <div style={{ color: '#888', fontSize: '1.08rem', marginTop: 18 }}>
                 Demais termos e condições serão detalhados em documento anexo.
               </div>
               <div style={{ marginTop: 32 }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontSize: '1.08rem', color: '#222' }}>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontSize: '1.08rem',
+                    color: '#222',
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={checked}
