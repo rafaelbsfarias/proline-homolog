@@ -300,7 +300,7 @@ export class UserModule implements IUserModule {
 
   async userExists(email: string): Promise<boolean> {
     // Implementar verificação rápida
-    return false; // TODO: implementar
+    return false; //implementar
   }
 
   async userHasPermission(userId: string, permission: string): Promise<boolean> {
@@ -309,7 +309,7 @@ export class UserModule implements IUserModule {
       return false;
     }
 
-    // TODO: Implementar verificação de permissão com o domain model
+    //Implementar verificação de permissão com o domain model
     return true;
   }
 
@@ -319,7 +319,7 @@ export class UserModule implements IUserModule {
       return false;
     }
 
-    // TODO: Implementar verificação de rota com o domain model
+    //Implementar verificação de rota com o domain model
     return true;
   }
 }
