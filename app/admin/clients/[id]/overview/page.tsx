@@ -10,6 +10,8 @@ import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsMod
 import Header from '@/modules/admin/components/Header';
 import { getLogger } from '@/modules/logger';
 
+const logger = getLogger('ClientOverviewPage');
+
 type CollectionGroup = {
   id: string;
   address: string;
@@ -150,7 +152,7 @@ const Page = () => {
         });
         setFees(initialFees);
         setDates({});
-        const ag = (response.data.approvalGroups || []).map(g => ({
+        const ag = (data.approvalGroups || []).map(g => ({
           id: g.addressId,
           address: g.address,
           vehicle_count: g.vehicle_count || 0,

@@ -30,7 +30,6 @@ const ClientDashboard: React.FC = () => {
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
   const [vehicleCount, setVehicleCount] = useState(0);
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
-  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
