@@ -9,6 +9,7 @@ import { Email } from '@/modules/common/domain/Email';
 import { Password } from '@/modules/common/domain/Password';
 import { UserRole } from '@/modules/common/domain/UserRole';
 
+/**teste */
 /**
  * User Status Enum
  */
