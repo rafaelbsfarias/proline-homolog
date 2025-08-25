@@ -28,7 +28,10 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
 
     if (vehErr) {
       logger.error('vehicles-error', { error: vehErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao buscar veículos' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar veículos' },
+        { status: 500 }
+      );
     }
 
     const byAddress = new Map<string, number>();
@@ -39,12 +42,13 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
 
     const addressIds = Array.from(byAddress.keys());
     // Removida a condicional que retornava prematuramente
-    
+
     // Load address labels
     let addrs: any[] = [];
-    let addrLabelMap = new Map<string, string>();
-    const label = (a: any) => `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
-    
+    const addrLabelMap = new Map<string, string>();
+    const label = (a: any) =>
+      `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
+
     if (addressIds.length > 0) {
       const { data, error: addrErr } = await admin
         .from('addresses')
@@ -53,9 +57,12 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
 
       if (addrErr) {
         logger.error('addresses-error', { error: addrErr.message });
-        return NextResponse.json({ success: false, error: 'Erro ao buscar endereços' }, { status: 500 });
+        return NextResponse.json(
+          { success: false, error: 'Erro ao buscar endereços' },
+          { status: 500 }
+        );
       }
-      
+
       addrs = data || [];
       addressIds.forEach(aid => {
         const a = addrs.find((x: any) => x.id === aid);
@@ -64,7 +71,7 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
     }
 
     // Load any saved fees for these address labels
-    let feeByLabel = new Map<string, number>();
+    const feeByLabel = new Map<string, number>();
     if (addressIds.length > 0) {
       const labels = Array.from(addrLabelMap.values()).filter(Boolean);
       if (labels.length) {
@@ -146,7 +153,8 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
           .in('collection_address', labels2);
         if (!feeErr2) {
           (feeRows2 || []).forEach((r: any) => {
-            const addr = r?.collection_address; const fee = r?.collection_fee_per_vehicle;
+            const addr = r?.collection_address;
+            const fee = r?.collection_fee_per_vehicle;
             if (addr && typeof fee === 'number') feeByLabel2.set(addr, Number(fee));
           });
         }
@@ -159,7 +167,8 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
         .in('pickup_address_id', addressIds2);
       const statusMap: Record<string, Record<string, number>> = {};
       (statusRows || []).forEach((row: any) => {
-        const aid = row.pickup_address_id as string; const st = String(row.status || '').toUpperCase();
+        const aid = row.pickup_address_id as string;
+        const st = String(row.status || '').toUpperCase();
         statusMap[aid] = statusMap[aid] || {};
         statusMap[aid][st] = (statusMap[aid][st] || 0) + 1;
       });
@@ -167,13 +176,22 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
         const lbl = addrLabelMap2.get(aid) || '';
         const count = byAddress2.get(aid) || 0;
         const fee = feeByLabel2.get(lbl) ?? null;
-        const statuses = Object.entries(statusMap[aid] || {}).map(([status, count]) => ({ status, count }));
+        const statuses = Object.entries(statusMap[aid] || {}).map(([status, count]) => ({
+          status,
+          count,
+        }));
         if (typeof fee === 'number') approvalTotal += fee * count;
         const collection_date = dateByAddress[aid] || null;
-        return { addressId: aid, address: lbl, vehicle_count: count, collection_fee: fee, statuses, collection_date };
+        return {
+          addressId: aid,
+          address: lbl,
+          vehicle_count: count,
+          collection_fee: fee,
+          statuses,
+          collection_date,
+        };
       });
     }
-
 
     // Load client contract summary (include parqueamento, quilometragem)
     let clientSummary: any = null;
@@ -195,19 +213,32 @@ async function handler(req: AuthenticatedRequest, ctx: any) {
         .eq('client_id', clientId);
       const totals: Record<string, number> = {};
       (allStatusRows || []).forEach((row: any) => {
-        const st = String(row?.status || '').toUpperCase().trim();
+        const st = String(row?.status || '')
+          .toUpperCase()
+          .trim();
         if (!st) return;
-        totals[st] = ((totals[st] || 0) + 1)
-      })
-      statusTotals = Object.entries(totals).map(([k,v]) => ({ status: k as string, count: v as number }))
+        totals[st] = (totals[st] || 0) + 1;
+      });
+      statusTotals = Object.entries(totals).map(([k, v]) => ({
+        status: k as string,
+        count: v as number,
+      }));
     } catch {}
 
-    return NextResponse.json({ success: true, groups, approvalGroups, approvalTotal, clientSummary, statusTotals });
-    
-
+    return NextResponse.json({
+      success: true,
+      groups,
+      approvalGroups,
+      approvalTotal,
+      clientSummary,
+      statusTotals,
+    });
   } catch (e: any) {
     logger.error('unhandled', { error: e?.message });
-    return NextResponse.json({ success: false, error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }
 

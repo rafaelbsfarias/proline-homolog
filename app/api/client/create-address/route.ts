@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ClientAddressService } from '@/modules/client/services/ClientAddressService';
 import { getLogger } from '@/modules/logger';
 
@@ -42,10 +41,7 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           .filter(Boolean)
           .join(', '),
       });
-      return NextResponse.json(
-        { error: 'Campos obrigatórios não informados.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Campos obrigatórios não informados.' }, { status: 400 });
     }
 
     const clientId = req.user.id;

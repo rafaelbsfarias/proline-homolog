@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import {
   sanitizeString,

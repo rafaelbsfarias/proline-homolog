@@ -13,7 +13,6 @@ import {
   ValidationError,
   AppError,
 } from '@/modules/common/errors';
-import { PLATE_ERROR_MESSAGES } from '@/modules/common/utils/plateValidation'; // Keep for specific error messages
 
 async function cadastrarVeiculoHandler(req: NextRequest) {
   try {

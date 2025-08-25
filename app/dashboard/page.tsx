@@ -30,14 +30,6 @@ const DashboardPage: React.FC = () => {
     fetchRole();
   }, [router]);
 
-  const handleClearAuth = async () => {
-    await SupabaseService.clearAllAuth();
-  };
-
-  const handleDebugAuth = () => {
-    SupabaseService.debugAuth();
-  };
-
   if (loading) return <div>Carregando dashboard...</div>;
   if (!role) return <div>Usuário sem role definida.</div>;
 

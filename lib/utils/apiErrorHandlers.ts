@@ -8,7 +8,7 @@ import {
   ValidationError,
 } from './errors';
 import { getLogger, ILogger } from '@/modules/logger';
-import { SYSTEM_MESSAGES, AUTH_MESSAGES } from '@/app/constants/messages';
+import { SYSTEM_MESSAGES } from '@/app/constants/messages';
 
 const logger: ILogger = getLogger('ApiErrorHandlers');
 

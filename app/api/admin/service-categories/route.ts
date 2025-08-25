@@ -17,7 +17,7 @@ function slugify(input: string): string {
     .slice(0, 40);
 }
 
-export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
+export const GET = withAdminAuth(async () => {
   const supabase = SupabaseService.getInstance().getAdminClient();
   const { data, error } = await supabase
     .from('service_categories')

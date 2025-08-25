@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAdminAuth } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger, ILogger } from '@/modules/logger';
 
 const logger: ILogger = getLogger('AdminUsersWithProfilesStatusAPI');
 
-export const GET = withAdminAuth(async (_req: NextRequest) => {
+export const GET = withAdminAuth(async () => {
   logger.info('Handler started');
   try {
     const supabase = SupabaseService.getInstance().getAdminClient();

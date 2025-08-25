@@ -3,13 +3,11 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger, ILogger } from '@/modules/logger';
 import { randomUUID } from 'crypto';
-import { ClientVehicleService } from '@/modules/client/services/ClientVehicleService';
 
 const logger: ILogger = getLogger('api:client:vehicles-count');
-const vehicleService = new ClientVehicleService();
 
-export const revalidate = 0;             // sem cache
-export const dynamic = 'force-dynamic';  // sempre dinâmico
+export const revalidate = 0; // sem cache
+export const dynamic = 'force-dynamic'; // sempre dinâmico
 
 export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
   const startedAt = Date.now();
@@ -17,9 +15,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
   // helper p/ incluir requestId em todos os logs
   const log = {
-    info: (msg: string, meta?: Record<string, unknown>) => logger.info(msg, { requestId, ...(meta || {}) }),
-    warn: (msg: string, meta?: Record<string, unknown>) => logger.warn(msg, { requestId, ...(meta || {}) }),
-    error: (msg: string, meta?: Record<string, unknown>) => logger.error(msg, { requestId, ...(meta || {}) }),
+    info: (msg: string, meta?: Record<string, unknown>) =>
+      logger.info(msg, { requestId, ...(meta || {}) }),
+    warn: (msg: string, meta?: Record<string, unknown>) =>
+      logger.warn(msg, { requestId, ...(meta || {}) }),
+    error: (msg: string, meta?: Record<string, unknown>) =>
+      logger.error(msg, { requestId, ...(meta || {}) }),
   };
 
   try {
@@ -68,7 +69,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     // 2) vehicles do cliente (FK: vehicles.client_id -> clients.profile_id)
     const { data: vehicles, error: vehErr } = await supabase
       .from('vehicles')
-      .select(`
+      .select(
+        `
         id,
         plate,
         brand,
@@ -82,7 +84,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         estimated_arrival_date,
         current_odometer,
         fuel_level
-      `)
+      `
+      )
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 

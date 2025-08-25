@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
-import { getSupabaseServiceKey, getSupabaseUrl } from '@/modules/common/utils/environmentSecurity';
 import { sanitizeString } from '@/modules/common/utils/inputSanitization';
 
 /**

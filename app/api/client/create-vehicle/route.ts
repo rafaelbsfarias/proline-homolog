@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ClientVehicleService } from '@/modules/client/services/ClientVehicleService';
 import { getLogger } from '@/modules/logger';
 import { ValidationError, NotFoundError, DatabaseError, AppError } from '@/modules/common/errors';
@@ -16,22 +15,19 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       hasBody: !!body,
     });
 
-    const {
-      plate,
-      brand,
-      model,
-      color,
-      year,
-      initialKm,
-      fipe_value,
-      observations,
-    } = body ?? {};
+    const { plate, brand, model, color, year, initialKm, fipe_value, observations } = body ?? {};
 
     // Validação de campos obrigatórios
     if (!plate || !brand || !model || !color || !year) {
       logger.warn('missing_required_fields', {
         userId: req.user?.id?.slice(0, 8),
-        missing: [!plate && 'plate', !brand && 'brand', !model && 'model', !color && 'color', !year && 'year']
+        missing: [
+          !plate && 'plate',
+          !brand && 'brand',
+          !model && 'model',
+          !color && 'color',
+          !year && 'year',
+        ]
           .filter(Boolean)
           .join(', '),
       });

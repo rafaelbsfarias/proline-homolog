@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     if (user && isAuthPage) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
-  } catch (error) {}
+  } catch (e) {}
 
   return response;
 }
