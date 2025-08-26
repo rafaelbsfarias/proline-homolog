@@ -1,10 +1,19 @@
 // modules/common/services/AuthProvider.tsx
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef, // Import useRef
+  ReactNode,
+} from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { SupabaseService } from './SupabaseService';
 import { authService } from './AuthService'; // Correct import
+import { useRouter, usePathname } from 'next/navigation';
+import { RouteProtector } from '../components/ProtectedRoute';
 
 interface AuthContextType {
   user: User | null;
@@ -21,6 +30,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const PUBLIC_PATHS = ['/login', '/cadastro', '/recuperar-senha', '/confirm-email'];
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -28,11 +39,16 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Use a ref to hold the user state for access inside the interval without re-triggering the effect.
+  const userRef = useRef(user);
+  userRef.current = user;
 
   useEffect(() => {
     const supabase = SupabaseService.getInstance().getClient();
 
-    // Single responsibility: apenas gerenciar auth state
     const initializeAuth = async () => {
       try {
         const {
@@ -49,20 +65,46 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initializeAuth();
 
-    // Clean auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
       setLoading(false);
+      if (!session?.user) {
+        router.push('/login'); // redireciona se não houver sessão
+      }
     });
 
-    return () => subscription?.unsubscribe();
-  }, []);
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session && userRef.current !== null) {
+        setUser(null);
+        router.push('/login'); // 🔑 aqui redireciona o usuário
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+
+    window.addEventListener('focus', checkSession);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      subscription?.unsubscribe();
+      window.removeEventListener('focus', checkSession);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [router]);
 
   const login = async (email: string, password: string) => {
     const supabase = SupabaseService.getInstance().getClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
     if (error) return { success: false, error: error.message };
 
@@ -74,6 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const supabase = SupabaseService.getInstance().getClient();
     await supabase.auth.signOut();
     setUser(null);
+    router.push('/login');
   };
 
   const signUp = async (email: string, password: string, userData: any) => {
@@ -102,7 +145,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         resetPassword,
       }}
     >
-      {children}
+      {loading ? (
+        <div className="flex items-center justify-center h-screen">Carregando...</div>
+      ) : (
+        <RouteProtector>{children}</RouteProtector>
+      )}
     </AuthContext.Provider>
   );
 }
