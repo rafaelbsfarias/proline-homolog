@@ -8,7 +8,7 @@ import VehicleCounter from '@/modules/client/components/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import '@/modules/client/components/ClientDashboard.css';
-import VehicleCollectionSection from '@/modules/client/components/VehicleCollectionSection';
+import VehicleCollectionSection from '@/modules/client/components/collection/VehicleCollectionSection';
 
 interface ProfileData {
   full_name: string;

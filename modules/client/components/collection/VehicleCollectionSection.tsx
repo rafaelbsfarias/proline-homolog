@@ -56,7 +56,6 @@ const VehicleCollectionSection: React.FC = () => {
 
   useEffect(() => {
     loadSummary();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -72,10 +71,15 @@ const VehicleCollectionSection: React.FC = () => {
               <> no momento não há sugestões pendentes.</>
             ) : (
               <>
-                {groups.map((g) => (
+                {groups.map(g => (
                   <div
                     key={g.addressId}
-                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 12,
+                    }}
                   >
                     <span>
                       - localizados no endereço {g.address || g.addressId} no dia{' '}
@@ -95,7 +99,9 @@ const VehicleCollectionSection: React.FC = () => {
                       <button
                         className="refresh-button"
                         onClick={() =>
-                          setRescheduleOpenFor(rescheduleOpenFor === g.addressId ? null : g.addressId)
+                          setRescheduleOpenFor(
+                            rescheduleOpenFor === g.addressId ? null : g.addressId
+                          )
                         }
                         aria-expanded={rescheduleOpenFor === g.addressId}
                         title="Sugerir outra data para este endereço"
@@ -182,7 +188,7 @@ const VehicleCollectionSection: React.FC = () => {
             <select
               id="payment-method"
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
+              onChange={e => setPaymentMethod(e.target.value as any)}
               aria-label="Selecionar forma de pagamento"
             >
               <option value="boleto">Boleto</option>
@@ -192,12 +198,15 @@ const VehicleCollectionSection: React.FC = () => {
           </div>
 
           {paymentMethod === 'boleto' && (
-            <div style={{ marginTop: 8, opacity: 0.9 }}>O boleto será gerado após a aprovação. (mock)</div>
+            <div style={{ marginTop: 8, opacity: 0.9 }}>
+              O boleto será gerado após a aprovação. (mock)
+            </div>
           )}
 
           {paymentMethod === 'cartao' && (
             <div style={{ marginTop: 8, opacity: 0.9 }}>
-              Pagamento com cartão (mock).<br />
+              Pagamento com cartão (mock).
+              <br />
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <input placeholder="Número do cartão" />
                 <input placeholder="MM/AA" style={{ width: 90 }} />
@@ -207,7 +216,9 @@ const VehicleCollectionSection: React.FC = () => {
           )}
 
           {paymentMethod === 'qrcode' && (
-            <div style={{ marginTop: 8, opacity: 0.9 }}>Exibir QR Code (mock) para pagamento instantâneo.</div>
+            <div style={{ marginTop: 8, opacity: 0.9 }}>
+              Exibir QR Code (mock) para pagamento instantâneo.
+            </div>
           )}
         </div>
       )}

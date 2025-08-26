@@ -1,45 +1,105 @@
-.modalContent {
-  margin: 32px auto;
-  max-width: 960px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  padding: 16px;
+/* Minimal styles to match existing admin overview look-and-feel */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
 }
 
-.tableContainer { margin-top: 12px; overflow-x: auto; }
-.table { width: 100%; border-collapse: collapse; }
-.table th, .table td { padding: 8px; border-bottom: 1px solid #eee; }
+.title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
 
-.actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
-.actions button { padding: 8px 12px; background: #072e4c; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-.actions button:disabled { opacity: .7; cursor: not-allowed; }
+.note {
+  color: #666;
+  margin-bottom: 18px;
+}
 
-.error { color: #b00020; }
-.success { color: #1b5e20; }
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
 
+.muted {
+  color: #777;
+  margin: -6px 0 10px 0;
+}
 
-.container { max-width: 1200px; margin: 32px auto; padding: 0 16px 32px; }
-.header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.backButton { background: none; border: none; color: #072e4c; cursor: pointer; font-size: 14px; }
-.title { margin: 0; font-size: 20px; font-weight: 600; }
-.note { margin: 4px 0 12px; color: #555; }
-.section { margin-top: 24px; }
-.sectionTitle { margin: 8px 0; font-size: 18px; }
-.tableWrap { overflow-x: auto; }
-.thLeft { text-align: left; }
-.thCenter { text-align: center; }
-.alignCenter { text-align: center; }
-.alignRight { text-align: right; }
-.bold { font-weight: 700; }
-.primaryBtn { padding: 8px 12px; background: #072e4c; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
-.primaryBtn:disabled { opacity: .7; cursor: not-allowed; }
+.tableWrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
 
-/* Layout para total + botão salvar lado a lado */
-.totalRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.table,
+.subtable {
+  width: 100%;
+  border-collapse: collapse;
+}
 
-/* Date picker (BR) styles */
-.datePicker { display: inline-flex; align-items: center; gap: 6px; }
-.dateInput { padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; width: 140px; }
-.dateBtn { background: none; border: 1px solid #ddd; padding: 4px 6px; border-radius: 4px; cursor: pointer; color: #072e4c; }
-.hiddenDateNative { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); overflow: hidden; }
+.table th,
+.table td,
+.subtable th,
+.subtable td {
+  border-top: 1px solid #e5e7eb;
+  padding: 10px 8px;
+}
+
+.table thead th,
+.subtable thead th {
+  border-top: none;
+  text-align: left;
+  color: #374151;
+  font-weight: 600;
+}
+
+.thLeft {
+  text-align: left;
+}
+.thCenter {
+  text-align: center;
+}
+.estimatedTotal {
+  font-weight: 600;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.actions button,
+.rowActions button {
+  background: #002e4c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.actions button:disabled,
+.rowActions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+}
+
+.totalsRow {
+  text-align: right;
+  font-weight: 600;
+}
+.nowrap {
+  white-space: nowrap;
+}

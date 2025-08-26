@@ -13,16 +13,19 @@ escalabilidade do código:
 - **Arquitetura Modular:** Organizar o código em módulos independentes e coesos, facilitando a
   manutenção, escalabilidade e reusabilidade. Cada módulo deve ter responsabilidades bem definidas e
   interfaces claras.
+- **Criação de Componentes:** Todos os componentes devem seguir o composition pattern. As páginas principais atuarão como "containers" que compõem múltiplos componentes filhos, cada um gerenciando uma parte específica do fluxo. Modais serão
 
-Esse é um projeto REACT/TS e deve seguir as melhores praticas para um desenvolvimento seguro
 
-Considerar sempre que o ambiente está em produção, debugs devem ser removidos logo após a resolução
+
+- Esse é um projeto **REACT/TS** e deve seguir as melhores praticas para um desenvolvimento seguro
+
+- Considerar sempre que o ambiente está em produção, debugs devem ser removidos logo após a resolução
 do problema
 
-Mantenha o código limpo, após uma correção de código verique duas vezes se não está deixando sujeira
+- Mantenha o código limpo, após uma correção de código verique duas vezes se não está deixando sujeira
 para trás
 
-o deploy e feito na vercel
+- o deploy e feito na vercel
 
-toda migration de ve idempotente
-toda migration deve ser criada com supabase migration new
+- toda **migration** deve ser **idempotente**
+- toda migration deve ser criada com **supabase migration new**

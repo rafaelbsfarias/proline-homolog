@@ -1,0 +1,63 @@
+.collectionSection {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+}
+
+.vehicleList {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.listHeader,
+.vehicleItem {
+  display: grid;
+  grid-template-columns: 32px 1fr 140px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.listHeader {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+.vehicleItem:nth-child(odd) {
+  background: #fcfcfd;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.radioGroup {
+  display: flex;
+  gap: 16px;
+}
+
+.inlineControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.button {
+  padding: 8px 12px;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

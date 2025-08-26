@@ -12,29 +12,17 @@ export const VehicleCounterActions: React.FC<VehicleCounterActionsProps> = ({
   onCreateVehicle,
   onCreateAddress,
   onRefresh,
-  loading
+  loading,
 }) => {
   return (
-    <div className={styles.actions}>
-      <button
-        onClick={onCreateVehicle}
-        className={styles.actionButton}
-        disabled={loading}
-      >
+    <div className={styles['vehicle-counter-actions']}>
+      <button onClick={onCreateVehicle} className={styles['action-button']} disabled={loading}>
         ➕ Cadastrar Veículo
       </button>
-      <button
-        onClick={onCreateAddress}
-        className={styles.actionButton}
-        disabled={loading}
-      >
+      <button onClick={onCreateAddress} className={styles['action-button']} disabled={loading}>
         📍 Adicionar Endereço
       </button>
-      <button
-        onClick={onRefresh}
-        className={styles.actionButton}
-        disabled={loading}
-      >
+      <button onClick={onRefresh} className={styles['action-button']} disabled={loading}>
         🔄 Atualizar
       </button>
     </div>

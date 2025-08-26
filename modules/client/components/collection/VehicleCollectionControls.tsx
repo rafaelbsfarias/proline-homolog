@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { supabase } from '@/modules/common/services/supabaseClient';
@@ -7,7 +7,13 @@ import CollectPointSelect from './CollectPointSelect';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
 
 type Vehicle = { id: string; plate: string; status?: string };
-type Address = { id: string; street: string | null; number: string | null; city: string | null; is_collect_point: boolean };
+type Address = {
+  id: string;
+  street: string | null;
+  number: string | null;
+  city: string | null;
+  is_collect_point: boolean;
+};
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -35,7 +41,7 @@ export default function VehicleCollectionControls() {
       setLoading(true);
       setError(null);
       try {
-        const resp = await get<{ vehicles?: Vehicle[]; data?: any }>("/api/client/vehicles-count");
+        const resp = await get<{ vehicles?: Vehicle[]; data?: any }>('/api/client/vehicles-count');
         if (resp.ok) {
           const list = (resp.data?.vehicles || resp.data?.data?.vehicles || []) as Vehicle[];
           setVehicles(list);
@@ -138,7 +144,7 @@ export default function VehicleCollectionControls() {
           <div className="vcc-inline">
             <DatePickerBR
               valueIso={bulkEta}
-              minIso={`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`}
+              minIso={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
               onChangeIso={setBulkEta}
               inputClass="vcc-input"
               buttonClass="vcc-btn"
@@ -158,7 +164,9 @@ export default function VehicleCollectionControls() {
               <select
                 className="vcc-select"
                 value={rowMethod[v.id] || 'collect_point'}
-                onChange={e => setRowMethod(prev => ({ ...prev, [v.id]: e.target.value as Method }))}
+                onChange={e =>
+                  setRowMethod(prev => ({ ...prev, [v.id]: e.target.value as Method }))
+                }
               >
                 <option value="collect_point">Ponto de Coleta</option>
                 <option value="bring_to_yard">Vou levar ao pátio</option>
@@ -167,8 +175,8 @@ export default function VehicleCollectionControls() {
             {rowMethod[v.id] === 'bring_to_yard' ? (
               <DatePickerBR
                 valueIso={rowEta[v.id] || ''}
-                minIso={`${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`}
-                onChangeIso={(iso) => setRowEta(prev => ({ ...prev, [v.id]: iso }))}
+                minIso={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`}
+                onChangeIso={iso => setRowEta(prev => ({ ...prev, [v.id]: iso }))}
                 inputClass="vcc-input"
                 buttonClass="vcc-btn"
               />
@@ -176,7 +184,7 @@ export default function VehicleCollectionControls() {
               <CollectPointSelect
                 addresses={collectAddresses as any}
                 value={rowAddress[v.id] || ''}
-                onChange={(val) => setRowAddress(prev => ({ ...prev, [v.id]: val }))}
+                onChange={val => setRowAddress(prev => ({ ...prev, [v.id]: val }))}
                 className="vcc-select"
                 placeholder="Selecione um ponto"
               />
@@ -186,9 +194,9 @@ export default function VehicleCollectionControls() {
                 className="vcc-btn"
                 onClick={() => applyRow(v)}
                 disabled={
-                  savingRow[v.id] ||
-                  (rowMethod[v.id] === 'collect_point' && !(rowAddress[v.id])) ||
-                  (rowMethod[v.id] === 'bring_to_yard' && !(rowEta[v.id]))
+                  !!savingRow[v.id] ||
+                  (rowMethod[v.id] === 'collect_point' && !rowAddress[v.id]) ||
+                  (rowMethod[v.id] === 'bring_to_yard' && !rowEta[v.id])
                 }
               >
                 Salvar
