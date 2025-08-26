@@ -13,7 +13,7 @@ import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { SupabaseService } from './SupabaseService';
 import { authService } from './AuthService'; // Correct import
 import { useRouter, usePathname } from 'next/navigation';
-import { RouteProtector } from '../components/ProtectedRoute';
+import { RouteProtector } from '../components/RouteProtector/ProtectedRoute';
 
 interface AuthContextType {
   user: User | null;
@@ -42,7 +42,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Use a ref to hold the user state for access inside the interval without re-triggering the effect.
   const userRef = useRef(user);
   userRef.current = user;
 
@@ -145,11 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         resetPassword,
       }}
     >
-      {loading ? (
-        <div className="flex items-center justify-center h-screen">Carregando...</div>
-      ) : (
-        <RouteProtector>{children}</RouteProtector>
-      )}
+      <RouteProtector>{children}</RouteProtector>
     </AuthContext.Provider>
   );
 }

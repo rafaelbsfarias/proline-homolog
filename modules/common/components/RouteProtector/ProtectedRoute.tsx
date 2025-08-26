@@ -1,8 +1,9 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '../services/AuthProvider';
+import { useAuth } from '../../services/AuthProvider';
 import React from 'react';
+import { Loading } from '../Loading/Loading';
 
 interface Props {
   children: React.ReactNode;
@@ -18,7 +19,7 @@ export const RouteProtector: React.FC<Props> = ({ children }) => {
   const isPublic = PUBLIC_PATHS.some(path => pathname.startsWith(path));
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">Carregando...</div>;
+    return <Loading />;
   }
 
   if (!isPublic && !user) {
