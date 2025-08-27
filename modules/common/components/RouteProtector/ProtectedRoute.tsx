@@ -9,13 +9,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-const PUBLIC_PATHS = [
-  '/login',
-  '/cadastro',
-  '/recuperar-senha',
-  '/confirm-email',
-  '/auth/callback',
-];
+const PUBLIC_PATHS = ['/login', '/cadastro', '/recuperar-senha', '/confirm-email'];
 
 export const RouteProtector: React.FC<Props> = ({ children }) => {
   const { user, loading } = useAuth();
