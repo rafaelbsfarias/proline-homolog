@@ -67,7 +67,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
 
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
       {loading ? (
-        <p style={{ marginTop: 8 }}>Carregando veículos...</p>
+        <p style={{ marginTop: 8 }}>veículos...</p>
       ) : vehicles.length === 0 ? (
         <p style={{ marginTop: 8 }}>Nenhum veículo cadastrado para este cliente.</p>
       ) : (

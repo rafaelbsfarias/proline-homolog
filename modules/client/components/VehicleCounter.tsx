@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
@@ -16,6 +16,7 @@ import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/u
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 // Types moved to modules/client/types.ts
 
@@ -23,12 +24,15 @@ import VehicleItemRow from './VehicleItemRow';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 // Status helpers moved to utils
 
-export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
+export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
   const { count, vehicles, loading, error, refetch } = useVehicles(onRefresh);
+
+  console.log('VehicleCounter render', { vehicles });
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -70,16 +74,20 @@ export default function VehicleCounter({ onRefresh }: VehicleCounterProps) {
 
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
 
-  if (loading) {
-    return (
-      <div className="vehicle-counter loading" role="status" aria-live="polite">
-        <div className="counter-content">
-          <h3>Carregando...</h3>
-          <p>Contando seus veículos</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="vehicle-counter loading" role="status" aria-live="polite">
+  //       <div className="counter-content">
+  //         <h3>Carregando...</h3>
+  //         <p>Contando seus veículos</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   if (error) {
     return (

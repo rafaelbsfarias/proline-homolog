@@ -9,6 +9,7 @@ import ForceChangePasswordModal from '@/modules/common/components/ForceChangePas
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import '@/modules/client/components/ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/VehicleCollectionSection';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 interface ProfileData {
   full_name: string;
@@ -33,6 +34,11 @@ const ClientDashboard: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
+
+  const [vehicleCounterLoading, setVehicleCounterLoading] = useState(false);
+  const [collectionSectionLoading, setCollectionSectionLoading] = useState(false);
+
+  const isComponentLoading = vehicleCounterLoading || collectionSectionLoading;
 
   useEffect(() => {
     async function fetchUserAndAcceptance() {
@@ -196,20 +202,17 @@ const ClientDashboard: React.FC = () => {
     setLoading(false);
   }
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-
-  if (!profileData) {
-    return (
-      <div style={{ padding: 48, textAlign: 'center' }}>
-        <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
-      </div>
-    );
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      {!accepted ? (
+
+      {isComponentLoading ? (
+        <Loading />
+      ) : !profileData ? (
+        <div style={{ padding: 48, textAlign: 'center' }}>
+          <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
+        </div>
+      ) : !accepted ? (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
           <h1
             style={{
@@ -307,12 +310,15 @@ const ClientDashboard: React.FC = () => {
 
           {/* Meus Veículos */}
           <div className="dashboard-counter">
-            <VehicleCounter key={refreshVehicleCounter} />
+            <VehicleCounter
+              key={refreshVehicleCounter}
+              onLoadingChange={setVehicleCounterLoading}
+            />
           </div>
 
           {/* Coleta de Veículos */}
           <div className="dashboard-counter">
-            <VehicleCollectionSection />
+            <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
           </div>
         </main>
       )}
