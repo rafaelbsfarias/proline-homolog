@@ -1,8 +1,15 @@
-.loading-page {
+.loadingPage {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  width: 100vw;
-  background-color: #f0f4f8;
+  width: 100%;
+  background: #f0f8f2;
+}
+
+.loadingContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 200px;
+  max-height: 200px;
 }
