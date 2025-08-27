@@ -69,9 +69,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
       setLoading(false);
-      if (!session?.user) {
-        router.push('/login'); // redireciona se não houver sessão
-      }
     });
 
     const checkSession = async () => {
