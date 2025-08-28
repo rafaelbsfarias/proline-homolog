@@ -65,8 +65,8 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
               </td>
               <td className={styles.thCenter}>
                 <DatePickerBR
-                  value={dates[req.addressId] || ''}
-                  onChange={v => setDates(prev => ({ ...prev, [req.addressId]: v }))}
+                  valueIso={dates[req.addressId] || ''}
+                  onChangeIso={v => setDates(prev => ({ ...prev, [req.addressId]: v }))}
                 />
               </td>
             </tr>
