@@ -2,7 +2,7 @@ drop extension if exists "pg_net";
 
 drop index if exists "public"."uniq_main_address_per_profile";
 
-alter table "public"."partners" add column "category" text;
+alter table "public"."partners" add column if not exists "category" text;
 
 set check_function_bodies = off;
 

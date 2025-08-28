@@ -57,7 +57,7 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       setGroups(Array.isArray(resp.data.groups) ? resp.data.groups : []);
     }
     setLoading(false);
-    onLoadingChange?.(loading);
+    onLoadingChange?.(false);
   };
 
   useEffect(() => {

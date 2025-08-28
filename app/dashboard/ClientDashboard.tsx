@@ -206,7 +206,7 @@ const ClientDashboard: React.FC = () => {
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
 
-      {isComponentLoading ? (
+      {loading ? (
         <Loading />
       ) : !profileData ? (
         <div style={{ padding: 48, textAlign: 'center' }}>
@@ -308,17 +308,20 @@ const ClientDashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Meus Veículos */}
-          <div className="dashboard-counter">
-            <VehicleCounter
-              key={refreshVehicleCounter}
-              onLoadingChange={setVehicleCounterLoading}
-            />
-          </div>
+          {isComponentLoading && <Loading />}
+          <div style={{ visibility: isComponentLoading ? 'hidden' : 'visible' }}>
+            {/* Meus Veículos */}
+            <div className="dashboard-counter">
+              <VehicleCounter
+                key={refreshVehicleCounter}
+                onLoadingChange={setVehicleCounterLoading}
+              />
+            </div>
 
-          {/* Coleta de Veículos */}
-          <div className="dashboard-counter">
-            <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+            {/* Coleta de Veículos */}
+            <div className="dashboard-counter">
+              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+            </div>
           </div>
         </main>
       )}
