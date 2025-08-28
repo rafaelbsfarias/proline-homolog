@@ -12,7 +12,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     const userId = req.user.id;
     const { addressId } = await req.json();
     if (!addressId) {
-      return NextResponse.json({ success: false, error: 'addressId é obrigatório' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'addressId é obrigatório' },
+        { status: 400 }
+      );
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
@@ -23,18 +26,23 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .select('id, street, number, city')
       .eq('id', addressId)
       .maybeSingle();
-    const addressLabel = addr ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim() : '';
+    const addressLabel = addr
+      ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim()
+      : '';
 
     // atualizar veículos
     const { error: updVehErr } = await admin
       .from('vehicles')
-      .update({ status: 'COLETA APROVADA' })
+      .update({ status: 'AGUARDANDO COLETA' })
       .eq('client_id', userId)
       .eq('pickup_address_id', addressId)
       .in('status', ['AGUARDANDO APROVAÇÃO DA COLETA', 'APROVAÇÃO NOVA DATA']);
     if (updVehErr) {
       logger.error('vehicles-update-error', { error: updVehErr.message });
-      return NextResponse.json({ success: false, error: 'Erro ao aprovar coleta' }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao aprovar coleta' },
+        { status: 500 }
+      );
     }
 
     // marcar collection como approved

@@ -5,13 +5,20 @@ export interface UseDatePickerParams {
   valueIso: string;
   onChangeIso: (iso: string) => void;
   minIso?: string;
+  disabledDatesIso?: string[];
 }
 
-export const useDatePickerBR = ({ valueIso, onChangeIso, minIso }: UseDatePickerParams) => {
+export const useDatePickerBR = ({
+  valueIso,
+  onChangeIso,
+  minIso,
+  disabledDatesIso,
+}: UseDatePickerParams) => {
   const nativeRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const min = useMemo(() => minIso || todayLocalIso(), [minIso]);
+  const disabledSet = useMemo(() => new Set(disabledDatesIso || []), [disabledDatesIso]);
 
   const [valueBr, setValueBr] = useState('');
   useEffect(() => setValueBr(isoToBr(valueIso || '')), [valueIso]);
@@ -62,13 +69,14 @@ export const useDatePickerBR = ({ valueIso, onChangeIso, minIso }: UseDatePicker
     setViewMonth(next.getMonth());
   };
 
-  const days = buildMonthDays(viewYear, viewMonth, min);
+  const days = buildMonthDays(viewYear, viewMonth, min, disabledSet);
 
   return {
     // props/state
     nativeRef,
     buttonRef,
     min,
+    disabledSet,
     valueBr,
     setValueBr,
     applyIso,

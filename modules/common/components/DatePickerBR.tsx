@@ -10,6 +10,7 @@ type Props = {
   valueIso: string;
   onChangeIso: (iso: string) => void;
   minIso?: string;
+  disabledDatesIso?: string[];
   containerClass?: string;
   inputClass?: string;
   buttonClass?: string;
@@ -22,6 +23,7 @@ export default function DatePickerBR({
   valueIso,
   onChangeIso,
   minIso,
+  disabledDatesIso,
   containerClass,
   inputClass,
   buttonClass,
@@ -29,7 +31,7 @@ export default function DatePickerBR({
   placeholder = 'dd/mm/aaaa',
   ariaLabel,
 }: Props) {
-  const state = useDatePickerBR({ valueIso, onChangeIso, minIso });
+  const state = useDatePickerBR({ valueIso, onChangeIso, minIso, disabledDatesIso });
 
   return (
     <div

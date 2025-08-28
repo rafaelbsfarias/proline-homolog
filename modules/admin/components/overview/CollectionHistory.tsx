@@ -19,7 +19,6 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
             <th>Data</th>
             <th>Valor por veículo (R$)</th>
             <th>Status</th>
-            <th>Pagamento</th>
           </tr>
         </thead>
         <tbody>
@@ -36,7 +35,6 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
                   : '-'}
               </td>
               <td>{r.status || '-'}</td>
-              <td>{r.payment_received ? 'Recebido' : 'Pendente'}</td>
             </tr>
           ))}
         </tbody>

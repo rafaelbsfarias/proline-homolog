@@ -17,7 +17,24 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
   const [fees, setFees] = useState<Record<string, number | undefined>>(() =>
     Object.fromEntries(requests.map(r => [r.addressId, r.collection_fee ?? undefined]))
   );
-  const [dates, setDates] = useState<Record<string, string>>({});
+  const [dates, setDates] = useState<Record<string, string>>(() =>
+    Object.fromEntries(requests.map(r => [r.addressId, r.collection_date || '']))
+  );
+
+  // Mantém as datas informadas pelo cliente pré-carregadas quando os pedidos mudarem,
+  // sem sobrescrever edições já feitas pelo administrador.
+  React.useEffect(() => {
+    setDates(prev => {
+      const next = { ...prev } as Record<string, string>;
+      for (const r of requests) {
+        const key = r.addressId;
+        const current = next[key];
+        const clientDate = r.collection_date || '';
+        if (!current && clientDate) next[key] = clientDate;
+      }
+      return next;
+    });
+  }, [requests]);
 
   const total = useMemo(
     () =>

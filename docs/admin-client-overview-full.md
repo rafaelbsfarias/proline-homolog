@@ -51,16 +51,13 @@ Desenvolver uma página abrangente no painel administrativo que permita aos admi
   - Número de veículos
   - Valor total da coleta
   - Data prevista de coleta
-  - Status de pagamento (pendente/pago)
 
 #### 2.2.2 Funcionalidades
-- Permitir confirmação de recebimento do pagamento
 - Visualizar detalhes dos veículos associados a cada coleta
 - Filtrar coletas por período
 
 #### 2.2.3 Regras de Negócio
-- Somente administradores podem confirmar o recebimento do pagamento
-- Após confirmação de pagamento, o status da coleta muda para "AGUARDANDO COLETA"
+- Após aprovação da coleta pelo cliente, o status da coleta muda para "AGUARDANDO COLETA"
 
 ### 2.3 Seção de Histórico de Coletas
 
@@ -122,12 +119,11 @@ PARA que o cliente possa aprovar e agendar a coleta
 ```
 COMO administrador do sistema ProLine Hub
 QUERO visualizar as coletas aprovadas por um cliente
-PARA confirmar o recebimento do pagamento e preparar a coleta
+PARA preparar a coleta
 ```
 
 **Critérios de Aceitação:**
 - Deve listar todas as coletas com status "COLETA APROVADA"
-- Deve permitir confirmar o recebimento do pagamento
 - Deve exibir detalhes dos veículos em cada coleta
 
 ### 3.3 User Story - Histórico de Coletas
@@ -187,7 +183,6 @@ interface ApprovedCollectionGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null;
-  payment_status: 'pending' | 'paid';
 }
 
 interface CollectionHistoryItem {
@@ -292,7 +287,7 @@ POST /api/admin/set-address-collection-fees
 2. **PONTO DE COLETA SELECIONADO** → Cliente definiu ponto de coleta
 3. **AGUARDANDO APROVAÇÃO DA COLETA** → Admin definiu valor, aguardando aprovação do cliente
 4. **COLETA APROVADA** → Cliente aprovou a coleta
-5. **AGUARDANDO COLETA** → Pagamento confirmado, aguardando coleta
+5. **AGUARDANDO COLETA** → Coleta aprovada pelo cliente, aguardando coleta
 6. **AGUARDANDO CHEGADA DO CLIENTE** → Notificação enviada para o cliente
 7. **AGUARDANDO CHEGADA DO VEÍCULO** → Cliente confirmou que está a caminho
 8. **CHEGADA CONFIRMADA** → Especialista confirmou chegada do veículo
@@ -364,27 +359,25 @@ graph TD
 ### 8.2 Fluxo de Dados
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant Page
-    participant Hook
-    participant API
-    participant DB
+    participant Admin as Administrador
+    participant Page as AdminClientOverviewPage
+    participant Hook as useClientOverview
+    participant API as API Routes
+    participant DB as Banco de Dados
     
     Admin->>Page: Acessa página do cliente
     Page->>Hook: Solicita dados do cliente
-    Hook->>API: GET /api/admin/client-collections-summary
-    API->>DB: Busca dados das tabelas
+    Hook->>API: GET /api/admin/client-collections-summary/{clientId}
+    API->>DB: Consulta dados de coleta
     DB-->>API: Retorna dados
-    API-->>Hook: Processa e formata dados
-    Hook-->>Page: Dados formatados
-    Page->>Admin: Renderiza interface
+    API-->>Hook: Dados formatados
+    Hook-->>Page: Dados para exibição
+    Page->>Admin: Renderiza interface com dados
     
     Admin->>Page: Define valores de coleta
-    Page->>Hook: Solicita salvamento
-    Hook->>API: POST /api/admin/set-address-collection-fees
-    API->>DB: Atualiza dados
+    Page->>API: POST /api/admin/set-address-collection-fees
+    API->>DB: Atualiza valores de coleta
     DB-->>API: Confirmação
-    API-->>Hook: Sucesso
-    Hook-->>Page: Atualiza estado
+    API-->>Page: Sucesso
     Page->>Admin: Feedback visual
 ```

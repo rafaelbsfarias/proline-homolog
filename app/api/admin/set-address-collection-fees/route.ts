@@ -71,7 +71,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     (rows || []).forEach((r: any) => labelToCollectionId.set(String(r.collection_address), r.id));
 
     // 3) Atualizar veículos somente para itens com fee e date definidos
-    //    -> status 'AGUARDANDO APROVAÇÃO DA COLETA', estimated_arrival_date e (opcional) collection_id
+    //    -> se a data proposta pelo admin diferir da data original do cliente,
+    //       marcar como 'SOLICITAÇÃO DE MUDANÇA DE DATA'; caso contrário,
+    //       'AGUARDANDO APROVAÇÃO DA COLETA'.
     const eligible = (fees || []).filter(f => typeof f.fee === 'number' && f.date);
     for (const f of eligible) {
       try {
@@ -80,11 +82,26 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         const addrLabel = label(addr);
         const collId = labelToCollectionId.get(addrLabel) || null;
 
+        // Determinar status conforme mudança de data: comparar f.date com a data original do(s) veículo(s)
+        let statusToSet = 'AGUARDANDO APROVAÇÃO DA COLETA';
+        try {
+          const { data: vehsAtAddr } = await admin
+            .from('vehicles')
+            .select('estimated_arrival_date')
+            .eq('client_id', clientId)
+            .eq('pickup_address_id', f.addressId);
+          if (vehsAtAddr && vehsAtAddr.length) {
+            const allEqual = vehsAtAddr.every(
+              (v: any) => String(v.estimated_arrival_date || '') === String(f.date || '')
+            );
+            if (!allEqual) statusToSet = 'SOLICITAÇÃO DE MUDANÇA DE DATA';
+          }
+        } catch {}
+
         const { error: updVehiclesErr } = await admin
           .from('vehicles')
           .update({
-            status: 'AGUARDANDO APROVAÇÃO DA COLETA',
-            estimated_arrival_date: f.date as any,
+            status: statusToSet,
             ...(collId ? { collection_id: collId } : {}),
           })
           .eq('client_id', clientId)

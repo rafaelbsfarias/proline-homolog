@@ -41,7 +41,11 @@ const Page = () => {
         setError(null);
         const resp = await post(`/api/admin/set-address-collection-fees`, {
           clientId,
-          fees: rows,
+          fees: rows.map(r => ({
+            addressId: r.collectionId,
+            fee: r.collectionFeePerVehicle,
+            date: r.date,
+          })),
         });
         if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar valores');
         setMessage('Valores de coleta atualizados com sucesso!');

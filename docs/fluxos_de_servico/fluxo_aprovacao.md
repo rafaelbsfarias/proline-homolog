@@ -20,10 +20,9 @@ sequenceDiagram
     Admin->>Sistema: Define valor da coleta por veículo
     note right of Sistema: Status do Veículo: "Aguardando aprovação da coleta"
 
-    Cliente->>Sistema: Aprova proposta de coleta e seleciona pagamento (mock)
+    Cliente->>Sistema: Aprova proposta de coleta
     note right of Sistema: Status do Veículo: "Coleta aprovada"
 
-    Admin->>Sistema: Confirma recebimento do pagamento
     note right of Sistema: Status do Veículo: "Aguardando coleta"
 
     Especialista->>Sistema: Confirma a entrega do veículo no pátio

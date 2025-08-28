@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePendingApprovalVehicles } from '@/modules/client/hooks/usePendingApprovalVehicles';
 import RejectionModal from './RejectionModal';
 import RescheduleModal from './RescheduleModal';
+import { makeLocalIsoDate } from '@/modules/client/utils/date';
 
 // Os modais serão importados aqui no futuro
 // import { RejectionModal } from './RejectionModal';
@@ -14,6 +15,7 @@ const PendingApprovalSection = () => {
   const [showRescheduleModalFor, setShowRescheduleModalFor] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+  const todayIso = makeLocalIsoDate();
 
   if (loading) return <p>Carregando propostas de coleta...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
@@ -79,6 +81,14 @@ const PendingApprovalSection = () => {
             setRescheduling(false);
           }
         }}
+        minIso={todayIso}
+        disabledDatesIso={(() => {
+          const g = groups.find(x => x.addressId === showRescheduleModalFor);
+          const arr: string[] = [];
+          if (g?.collection_date) arr.push(g.collection_date);
+          if ((g as any)?.original_date) arr.push((g as any).original_date as string);
+          return arr.filter(Boolean) as string[];
+        })()}
       />
     </div>
   );

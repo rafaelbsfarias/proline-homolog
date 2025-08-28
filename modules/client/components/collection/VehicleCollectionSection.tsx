@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
-import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
+import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
 
 type Group = {
   addressId: string;
@@ -14,18 +14,8 @@ type Group = {
 };
 
 const VehicleCollectionSection: React.FC = () => {
-  const { get, post } = useAuthenticatedFetch();
-  const [loading, setLoading] = useState(true);
-
-  // resumo/valores
-  const [approvalTotal, setApprovalTotal] = useState<number>(0);
-  const [count, setCount] = useState<number>(0);
-
-  // grupos por endereço para a mensagem
-  const [groups, setGroups] = useState<Group[]>([]);
-
-  // marcar dias no calendário
-  const [highlightDates, setHighlightDates] = useState<string[]>([]);
+  const { groups, approvalTotal, count, highlightDates, loading, approveAll, reschedule, reload } =
+    useClientCollectionSummary();
 
   // UI: reagendamento e pagamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
@@ -34,28 +24,7 @@ const VehicleCollectionSection: React.FC = () => {
 
   const minIso = makeLocalIsoDate();
 
-  const loadSummary = async () => {
-    setLoading(true);
-    const resp = await get<{
-      success: boolean;
-      approvalTotal?: number;
-      count?: number;
-      dates?: string[];
-      groups?: Group[];
-      error?: string;
-    }>('/api/client/collection-summary');
-    if (resp.ok && resp.data?.success) {
-      setApprovalTotal(Number(resp.data.approvalTotal || 0));
-      setCount(Number(resp.data.count || 0));
-      setHighlightDates(Array.isArray(resp.data.dates) ? resp.data.dates : []);
-      setGroups(Array.isArray(resp.data.groups) ? resp.data.groups : []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    loadSummary();
-  }, []);
+  // dados do card movidos para o hook; HTML/CSS preservados
 
   return (
     <div className="vehicle-counter">
@@ -83,6 +52,14 @@ const VehicleCollectionSection: React.FC = () => {
                     <span>
                       - localizados no endereço {g.address || g.addressId} no dia{' '}
                       {g.collection_date ? formatDateBR(g.collection_date) : 'a definir'}
+                      {(g as any)?.original_date &&
+                        g.collection_date &&
+                        (g as any).original_date !== g.collection_date && (
+                          <em style={{ color: '#a00', marginLeft: 6, fontStyle: 'italic' }}>
+                            (Nova data proposta pelo administrador; sua escolha inicial foi{' '}
+                            {formatDateBR((g as any).original_date as string)})
+                          </em>
+                        )}
                       {typeof g.collection_fee === 'number' && (
                         <>
                           {' '}
@@ -120,6 +97,14 @@ const VehicleCollectionSection: React.FC = () => {
               <DatePickerBR
                 valueIso={newDateIso}
                 minIso={minIso}
+                disabledDatesIso={(() => {
+                  const g = groups.find(x => x.addressId === rescheduleOpenFor);
+                  const arr: string[] = [];
+                  if (g?.collection_date) arr.push(g.collection_date);
+                  // @ts-ignore original_date may be provided by API
+                  if ((g as any)?.original_date) arr.push((g as any).original_date as string);
+                  return arr.filter(Boolean) as string[];
+                })()}
                 onChangeIso={setNewDateIso}
                 ariaLabel="Selecionar nova data"
               />
@@ -127,14 +112,11 @@ const VehicleCollectionSection: React.FC = () => {
                 className="refresh-button"
                 onClick={async () => {
                   if (!newDateIso || !rescheduleOpenFor) return;
-                  const resp2 = await post('/api/client/collection-reschedule', {
-                    addressId: rescheduleOpenFor,
-                    new_date: newDateIso,
-                  });
-                  if (resp2.ok) {
+                  const ok = await reschedule(rescheduleOpenFor, newDateIso);
+                  if (ok) {
                     setRescheduleOpenFor(null);
                     setNewDateIso('');
-                    await loadSummary(); // atualiza grupos/valores
+                    await reload(); // atualiza grupos/valores
                   }
                 }}
               >
@@ -161,11 +143,8 @@ const VehicleCollectionSection: React.FC = () => {
               style={{ marginLeft: 8 }}
               onClick={async () => {
                 if (!groups.length) return;
-                // aprova por endereço
-                for (const g of groups) {
-                  await post('/api/client/collection-approve', { addressId: g.addressId });
-                }
-                await loadSummary();
+                await approveAll();
+                await reload();
               }}
               disabled={!groups.length || loading}
             >

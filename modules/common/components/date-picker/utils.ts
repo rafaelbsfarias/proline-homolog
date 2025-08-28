@@ -24,7 +24,8 @@ export type DateCell = { iso?: string; label?: string; disabled?: boolean };
 export const buildMonthDays = (
   year: number,
   monthZeroBased: number,
-  minIso: string
+  minIso: string,
+  disabledSet?: Set<string>
 ): DateCell[] => {
   const first = new Date(year, monthZeroBased, 1);
   const last = new Date(year, monthZeroBased + 1, 0);
@@ -33,7 +34,8 @@ export const buildMonthDays = (
   for (let i = 0; i < startPad; i++) items.push({});
   for (let d = 1; d <= last.getDate(); d++) {
     const iso = `${year}-${pad2(monthZeroBased + 1)}-${pad2(d)}`;
-    items.push({ iso, label: String(d), disabled: iso < minIso });
+    const disabled = iso < minIso || (disabledSet ? disabledSet.has(iso) : false);
+    items.push({ iso, label: String(d), disabled });
   }
   return items;
 };

@@ -13,6 +13,7 @@ const PendingDefinitionSection = () => {
   );
   const [addressId, setAddressId] = useState<string>('');
   const [estimatedDate, setEstimatedDate] = useState<string>('');
+  const [collectDate, setCollectDate] = useState<string>(''); // data preferencial do cliente para coleta em ponto
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSelectVehicle = (id: string) => {
@@ -36,9 +37,15 @@ const PendingDefinitionSection = () => {
       showToast('warning', 'Selecione ao menos um veículo.');
       return;
     }
-    if (collectionType === 'collect_point' && !addressId) {
-      showToast('warning', 'Selecione um ponto de coleta.');
-      return;
+    if (collectionType === 'collect_point') {
+      if (!addressId) {
+        showToast('warning', 'Selecione um ponto de coleta.');
+        return;
+      }
+      if (!collectDate) {
+        showToast('warning', 'Informe a data preferencial de coleta.');
+        return;
+      }
     }
     if (collectionType === 'bring_to_yard' && !estimatedDate) {
       showToast('warning', 'Informe a data estimada para levar ao pátio.');
@@ -50,7 +57,12 @@ const PendingDefinitionSection = () => {
       vehicleIds: selectedVehicleIds,
       method: collectionType,
       addressId: collectionType === 'collect_point' ? addressId : undefined,
-      estimated_arrival_date: collectionType === 'bring_to_yard' ? estimatedDate : undefined,
+      estimated_arrival_date:
+        collectionType === 'bring_to_yard'
+          ? estimatedDate
+          : collectionType === 'collect_point'
+            ? collectDate
+            : undefined,
     });
 
     if (result.success) {
@@ -58,6 +70,7 @@ const PendingDefinitionSection = () => {
       setSelectedVehicleIds([]);
       setAddressId('');
       setEstimatedDate('');
+      setCollectDate('');
     } else {
       showToast('error', `Erro: ${result.error}`);
     }
@@ -149,6 +162,14 @@ const PendingDefinitionSection = () => {
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                Data preferencial:
+                <input
+                  type="date"
+                  value={collectDate}
+                  onChange={e => setCollectDate(e.target.value)}
+                />
               </label>
             </div>
           )}

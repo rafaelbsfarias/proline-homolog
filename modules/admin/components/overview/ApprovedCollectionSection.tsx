@@ -55,18 +55,7 @@ const ApprovedCollectionSection: React.FC<Props> = ({
                     })
                   : '-'}
               </td>
-              <td>
-                <div className={styles.rowActions}>
-                  <button
-                    disabled={loading}
-                    onClick={() =>
-                      onMarkPaid({ clientId, address: g.address, date: g.collection_date || null })
-                    }
-                  >
-                    {loading ? 'Confirmando...' : 'Confirmar pagamento'}
-                  </button>
-                </div>
-              </td>
+              <td>{/* Botão de confirmação de pagamento removido conforme solicitação */}</td>
             </tr>
           ))}
         </tbody>

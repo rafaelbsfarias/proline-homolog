@@ -7,6 +7,7 @@ export interface CollectionPricingRequest {
   address: string;
   vehicle_count: number;
   collection_fee: number | null;
+  collection_date?: string | null;
 }
 
 export interface PendingApprovalGroup {
@@ -76,6 +77,7 @@ export const useClientOverview = (clientId: string) => {
         address: g.address,
         vehicle_count: g.vehicle_count ?? 0,
         collection_fee: typeof g.collection_fee === 'number' ? Number(g.collection_fee) : null,
+        collection_date: g.collection_date || null,
       }));
 
       const pendingApprovals: PendingApprovalGroup[] = (d.approvalGroups || []).map((g: any) => ({

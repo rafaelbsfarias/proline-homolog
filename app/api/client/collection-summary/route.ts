@@ -13,12 +13,16 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const userId = req.user.id;
     const admin = SupabaseService.getInstance().getAdminClient();
 
-    // Buscar veículos com status 'AGUARDANDO APROVAÇÃO DA COLETA'
+    // Buscar veículos com status pendente de aprovação pelo cliente
     const { data: vehicles, error: vehErr } = await admin
       .from('vehicles')
       .select('id, client_id, status, pickup_address_id, estimated_arrival_date')
       .eq('client_id', userId)
-      .eq('status', 'AGUARDANDO APROVAÇÃO DA COLETA')
+      .in('status', [
+        'AGUARDANDO APROVAÇÃO DA COLETA',
+        'SOLICITAÇÃO DE MUDANÇA DE DATA',
+        'APROVAÇÃO NOVA DATA',
+      ])
       .not('pickup_address_id', 'is', null);
 
     if (vehErr) {
@@ -30,11 +34,11 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     }
 
     // Agrupar veículos por endereço de coleta
-    const byAddress = new Map<string, { count: number; date: string | null }>();
+    const byAddress = new Map<string, { count: number; original_date: string | null }>();
     (vehicles || []).forEach((v: any) => {
-      const aid = v.pickup_address_id as string;
-      const current = byAddress.get(aid) || { count: 0, date: v.estimated_arrival_date };
-      byAddress.set(aid, { count: current.count + 1, date: current.date });
+      const aid = String(v.pickup_address_id);
+      const current = byAddress.get(aid) || { count: 0, original_date: v.estimated_arrival_date };
+      byAddress.set(aid, { count: current.count + 1, original_date: current.original_date });
     });
 
     const addressIds = Array.from(byAddress.keys());
@@ -71,9 +75,10 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       addrLabelMap.set(aid, label(a));
     });
 
-    // Carregar taxas salvas para esses endereços (mapeadas por endereco|data)
+    // Carregar taxas/datas propostas pelo admin (vehicle_collections) para esses endereços
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
     const feeByAddrDate = new Map<string, number>();
+    const proposedDateByAddr = new Map<string, string | null>();
     if (labels.length) {
       const { data: feeRows, error: feeErr } = await admin
         .from('vehicle_collections')
@@ -89,6 +94,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
           const fee = r?.collection_fee_per_vehicle;
           const date = r?.collection_date ? String(r.collection_date) : '';
           if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
+          if (addr) proposedDateByAddr.set(addr, date || null);
         });
       }
     }
@@ -96,14 +102,18 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     // Criar grupos
     const groups = addressIds.map(aid => {
       const lbl = addrLabelMap.get(aid) || '';
-      const info = byAddress.get(aid) || { count: 0, date: null };
-      const fee = feeByAddrDate.get(`${lbl}|${info.date || ''}`) ?? null;
+      const info = byAddress.get(aid) || ({ count: 0, original_date: null } as any);
+      const proposed = proposedDateByAddr.get(lbl) || null;
+      // buscar fee usando a data proposta; se não houver, cair para sem data
+      const fee =
+        feeByAddrDate.get(`${lbl}|${proposed || ''}`) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
       return {
         addressId: aid,
         address: lbl,
         vehicle_count: info.count,
         collection_fee: fee,
-        collection_date: info.date,
+        collection_date: proposed, // data proposta pelo admin
+        original_date: info.original_date || null, // data inicial do cliente
       };
     });
 

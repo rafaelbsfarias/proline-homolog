@@ -7,6 +7,7 @@ export interface PendingApprovalGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null;
+  original_date?: string | null;
 }
 
 export const usePendingApprovalVehicles = () => {
