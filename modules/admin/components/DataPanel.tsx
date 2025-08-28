@@ -17,18 +17,24 @@ interface ClientVehicleCount {
   collection_requests_count: number | null; // New field for collection requests
 }
 
-const DataPanel: React.FC = () => {
+interface DataPanelProps {
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+const DataPanel: React.FC<DataPanelProps> = ({ onLoadingChange }) => {
   const [clients, setClients] = useState<ClientVehicleCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [specialistModalOpen, setSpecialistModalOpen] = useState(false);
-  const [selectedClientForSpecialistModal, setSelectedClientForSpecialistModal] = useState<{ id: string; full_name: string } | null>(
-    null
-  );
+  const [selectedClientForSpecialistModal, setSelectedClientForSpecialistModal] = useState<{
+    id: string;
+    full_name: string;
+  } | null>(null);
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
-  const [selectedClientForCollectionModal, setSelectedClientForCollectionModal] = useState<{ id: string; full_name: string } | null>(
-    null
-  );
+  const [selectedClientForCollectionModal, setSelectedClientForCollectionModal] = useState<{
+    id: string;
+    full_name: string;
+  } | null>(null);
 
   const { get } = useAuthenticatedFetch();
   interface ClientsWithCollectionSummaryResponse {
@@ -36,21 +42,27 @@ const DataPanel: React.FC = () => {
     clients: ClientVehicleCount[];
     error?: string;
   }
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
   useEffect(() => {
     let isMounted = true;
     async function fetchData() {
       setLoading(true);
       setError(null);
       // Use aggregated endpoint with vehicle counts + collection requests summary
-      const response = await get<ClientsWithCollectionSummaryResponse>('/api/admin/clients-with-collection-summary');
+      const response = await get<ClientsWithCollectionSummaryResponse>(
+        '/api/admin/clients-with-collection-summary'
+      );
       if (!isMounted) return;
       if (response.ok && response.data?.success) {
         const sorted = [...(response.data.clients || [])].sort((a, b) => {
-          const ac = (a.collection_requests_count ?? 0);
-          const bc = (b.collection_requests_count ?? 0);
+          const ac = a.collection_requests_count ?? 0;
+          const bc = b.collection_requests_count ?? 0;
           if (bc !== ac) return bc - ac;
-          const av = (a.vehicle_count ?? 0);
-          const bv = (b.vehicle_count ?? 0);
+          const av = a.vehicle_count ?? 0;
+          const bv = b.vehicle_count ?? 0;
           return bv - av;
         });
         setClients(sorted);
@@ -97,10 +109,14 @@ const DataPanel: React.FC = () => {
                       {client.company_name}
                     </Link>
                   </td>
-                  <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}>
+                  <td
+                    style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}
+                  >
                     {client.vehicle_count ?? '-'}
                   </td>
-                  <td style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}>
+                  <td
+                    style={{ textAlign: 'center', padding: '8px', borderBottom: '1px solid #eee' }}
+                  >
                     {client.collection_requests_count && client.collection_requests_count > 0 ? (
                       <button
                         title="Ver solicitações de coleta"
@@ -116,7 +132,10 @@ const DataPanel: React.FC = () => {
                           lineHeight: 1,
                         }}
                         onClick={() => {
-                          setSelectedClientForCollectionModal({ id: client.id, full_name: (client as any).company_name || client.full_name });
+                          setSelectedClientForCollectionModal({
+                            id: client.id,
+                            full_name: (client as any).company_name || client.full_name,
+                          });
                           setCollectionModalOpen(true);
                         }}
                       >
@@ -143,11 +162,16 @@ const DataPanel: React.FC = () => {
                         lineHeight: 1,
                       }}
                       onClick={() => {
-                        setSelectedClientForSpecialistModal({ id: client.id, full_name: client.full_name });
+                        setSelectedClientForSpecialistModal({
+                          id: client.id,
+                          full_name: client.full_name,
+                        });
                         setSpecialistModalOpen(true);
                       }}
                     >
-                      <span aria-label="Adicionar especialista" role="img">＋</span>
+                      <span aria-label="Adicionar especialista" role="img">
+                        ＋
+                      </span>
                     </button>
                   </td>
                 </tr>
