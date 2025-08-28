@@ -35,8 +35,8 @@ const ClientDashboard: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
 
-  const [vehicleCounterLoading, setVehicleCounterLoading] = useState(false);
-  const [collectionSectionLoading, setCollectionSectionLoading] = useState(false);
+  const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
+  const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
 
   const isComponentLoading = vehicleCounterLoading || collectionSectionLoading;
 
@@ -202,115 +202,122 @@ const ClientDashboard: React.FC = () => {
     setLoading(false);
   }
 
+  const showOverallLoader = loading || (accepted && isComponentLoading);
+
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
 
-      {loading ? (
-        <Loading />
-      ) : !profileData ? (
-        <div style={{ padding: 48, textAlign: 'center' }}>
-          <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
-        </div>
-      ) : !accepted ? (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
-          <h1
-            style={{
-              fontSize: '2.4rem',
-              fontWeight: 600,
-              marginBottom: 8,
-              textAlign: 'center',
-              color: '#333',
-            }}
-          >
-            Termos do Contrato
-          </h1>
-          <p style={{ textAlign: 'center', color: '#666', fontSize: '1.15rem', marginBottom: 32 }}>
-            Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
-          </p>
-          <div
-            style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}
-          >
-            <div
+      {showOverallLoader && <Loading />}
+
+      <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
+        {!profileData ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
+          </div>
+        ) : !accepted ? (
+          <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
+            <h1
               style={{
-                background: '#fafafa',
-                borderRadius: 12,
-                boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
-                padding: '36px 32px 32px 32px',
-                minWidth: 600,
-                maxWidth: 900,
-                marginBottom: 32,
+                fontSize: '2.4rem',
+                fontWeight: 600,
+                marginBottom: 8,
+                textAlign: 'center',
+                color: '#333',
               }}
             >
-              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>
-                Detalhes do Serviço
-              </h2>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Parqueamento:</b> R${' '}
-                {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
-              </div>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Taxa de Operação:</b> R${' '}
-                {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
-              </div>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>...</div>
-              <div style={{ color: '#888', fontSize: '1.08rem', marginTop: 18 }}>
-                Demais termos e condições serão detalhados em documento anexo.
-              </div>
-              <div style={{ marginTop: 32 }}>
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '1.08rem',
-                    color: '#222',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={e => setChecked(e.target.checked)}
-                    style={{ marginRight: 8 }}
-                  />
-                  Li e concordo com os termos do contrato
-                </label>
-              </div>
-              <button
-                className={styles.submitButton}
+              Termos do Contrato
+            </h1>
+            <p
+              style={{ textAlign: 'center', color: '#666', fontSize: '1.15rem', marginBottom: 32 }}
+            >
+              Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
+            </p>
+            <div
+              style={{
+                maxWidth: 1200,
+                margin: '0 auto',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <div
                 style={{
-                  marginTop: 24,
-                  background: '#aab0bb',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: '1.13rem',
-                  opacity: checked ? 1 : 0.7,
-                  cursor: checked ? 'pointer' : 'not-allowed',
+                  background: '#fafafa',
+                  borderRadius: 12,
+                  boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
+                  padding: '36px 32px 32px 32px',
+                  minWidth: 600,
+                  maxWidth: 900,
+                  marginBottom: 32,
                 }}
-                disabled={!checked || loading}
-                onClick={handleAcceptContract}
               >
-                Aceitar Contrato
+                <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>
+                  Detalhes do Serviço
+                </h2>
+                <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
+                  <b>Parqueamento:</b> R${' '}
+                  {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
+                </div>
+                <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
+                  <b>Taxa de Operação:</b> R${' '}
+                  {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
+                </div>
+                <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>...</div>
+                <div style={{ color: '#888', fontSize: '1.08rem', marginTop: 18 }}>
+                  Demais termos e condições serão detalhados em documento anexo.
+                </div>
+                <div style={{ marginTop: 32 }}>
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      fontSize: '1.08rem',
+                      color: '#222',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={e => setChecked(e.target.checked)}
+                      style={{ marginRight: 8 }}
+                    />
+                    Li e concordo com os termos do contrato
+                  </label>
+                </div>
+                <button
+                  className={styles.submitButton}
+                  style={{
+                    marginTop: 24,
+                    background: '#aab0bb',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '1.13rem',
+                    opacity: checked ? 1 : 0.7,
+                    cursor: checked ? 'pointer' : 'not-allowed',
+                  }}
+                  disabled={!checked || loading}
+                  onClick={handleAcceptContract}
+                >
+                  Aceitar Contrato
+                </button>
+              </div>
+            </div>
+          </main>
+        ) : (
+          <main className="dashboard-main">
+            <h1 className="dashboard-title">Painel do Cliente</h1>
+            <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
+
+            <div className="dashboard-actions">
+              <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
+                Cadastrar Novo Veículo
+              </button>
+              <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
+                Adicionar Ponto de Coleta
               </button>
             </div>
-          </div>
-        </main>
-      ) : (
-        <main className="dashboard-main">
-          <h1 className="dashboard-title">Painel do Cliente</h1>
-          <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
-          <div className="dashboard-actions">
-            <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
-              Cadastrar Novo Veículo
-            </button>
-            <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
-              Adicionar Ponto de Coleta
-            </button>
-          </div>
-
-          {isComponentLoading && <Loading />}
-          <div style={{ visibility: isComponentLoading ? 'hidden' : 'visible' }}>
-            {/* Meus Veículos */}
             <div className="dashboard-counter">
               <VehicleCounter
                 key={refreshVehicleCounter}
@@ -318,13 +325,12 @@ const ClientDashboard: React.FC = () => {
               />
             </div>
 
-            {/* Coleta de Veículos */}
             <div className="dashboard-counter">
               <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
             </div>
-          </div>
-        </main>
-      )}
+          </main>
+        )}
+      </div>
 
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
