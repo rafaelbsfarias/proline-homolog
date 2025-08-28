@@ -2,6 +2,7 @@ import React from 'react';
 import type { VehicleData } from '../hooks/useClientVehicles';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import Pagination from '@/modules/common/components/Pagination';
+import Spinner from '@/modules/common/components/Spinner/Spinner';
 
 interface VehicleSectionProps {
   clientName: string;
@@ -67,7 +68,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
 
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
       {loading ? (
-        <p style={{ marginTop: 8 }}>veículos...</p>
+        <Spinner size={30} />
       ) : vehicles.length === 0 ? (
         <p style={{ marginTop: 8 }}>Nenhum veículo cadastrado para este cliente.</p>
       ) : (

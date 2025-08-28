@@ -27,7 +27,12 @@ const ClientDashboard = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
-  const { vehicles, loading: loadingVehicles, error: vehiclesError, refetch: refetchVehicles } = useVehicles();
+  const {
+    vehicles,
+    loading: loadingVehicles,
+    error: vehiclesError,
+    refetch: refetchVehicles,
+  } = useVehicles();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -192,21 +197,18 @@ const ClientDashboard = () => {
               onRefresh={refetchVehicles}
               loading={loadingVehicles}
             />
-            
+
             <VehicleCounterActions
               onCreateVehicle={() => setShowCadastrarVeiculoModal(true)}
               onCreateAddress={() => setShowAddCollectPointModal(true)}
               onRefresh={refetchVehicles}
               loading={loadingVehicles}
             />
-            
+
             {vehiclesError && (
-              <VehicleCounterError
-                error={vehiclesError}
-                onRetry={refetchVehicles}
-              />
+              <VehicleCounterError error={vehiclesError} onRetry={refetchVehicles} />
             )}
-            
+
             <div className={styles.vehiclesSection}>
               <h2 className={styles.sectionTitle}>Meus Veículos</h2>
               {vehicles.length === 0 ? (
@@ -230,8 +232,12 @@ const ClientDashboard = () => {
                         </span>
                       </div>
                       <div className={styles.vehicleMeta}>
-                        <span className={styles.vehicleDate}>Cadastrado em {new Date(vehicle.created_at).toLocaleDateString('pt-BR')}</span>
-                        <span className={styles.vehicleStatus}>{vehicle.status || 'Sem status'}</span>
+                        <span className={styles.vehicleDate}>
+                          Cadastrado em {new Date(vehicle.created_at).toLocaleDateString('pt-BR')}
+                        </span>
+                        <span className={styles.vehicleStatus}>
+                          {vehicle.status || 'Sem status'}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -240,13 +246,13 @@ const ClientDashboard = () => {
             </div>
           </div>
         )}
-        
+
         <VehicleRegistrationModal
           isOpen={showCadastrarVeiculoModal}
           onClose={() => setShowCadastrarVeiculoModal(false)}
           onSuccess={handleVehicleCreated}
         />
-        
+
         <ClientCollectPointModal
           isOpen={showAddCollectPointModal}
           onClose={() => setShowAddCollectPointModal(false)}

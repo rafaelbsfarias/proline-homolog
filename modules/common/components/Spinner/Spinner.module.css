@@ -1,0 +1,16 @@
+.spinner {
+  border: 4px solid #f3f3f3; /* fundo do círculo, mais fino */
+  border-top: 4px solid #002e4c; /* cor da parte girando */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: auto; /* centraliza */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
