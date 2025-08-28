@@ -9,6 +9,7 @@ import ClientTable from '@/modules/specialist/components/ClientTable';
 import VehicleSection from '@/modules/specialist/components/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
@@ -110,91 +111,92 @@ const SpecialistDashboard = () => {
     fetchUser();
   }, []);
 
-  if (loadingUser || loadingClients) {
-    return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-  }
-
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
-          Painel do Especialista
-        </h1>
-        <p style={{ color: '#666', fontSize: '1.15rem', marginBottom: 24 }}>
-          Bem-vindo, {userName}!
-        </p>
 
+      {loadingUser || loadingClients ? (
         <div
           style={{
-            background: '#fff',
-            borderRadius: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-            padding: '36px 22px',
-            maxWidth: '90vw',
-            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '80vh',
           }}
         >
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-            Meus Clientes Associados
-          </h2>
-          {clientsError ? (
-            <p style={{ color: 'red' }}>Erro ao carregar clientes: {clientsError}</p>
-          ) : clients.length === 0 ? (
-            <p>Nenhum cliente associado a você ainda.</p>
-          ) : (
-            <div>
-              <ClientTable
-                clients={clients}
-                selectedClientId={selectedClientId}
-                onSelectClient={handleSelectClient}
-              />
-
-              {selectedClient && (
-                <VehicleSection
-                  clientName={selectedClient.client_full_name}
-                  vehicles={vehicles}
-                  loading={loadingVehicles}
-                  error={vehiclesError}
-                  onRefetch={refetch}
-                  filterPlate={filterPlate}
-                  onFilterPlateChange={setFilterPlate}
-                  filterStatus={filterStatus}
-                  onFilterStatusChange={setFilterStatus}
-                  availableStatuses={availableStatuses}
-                  onClearFilters={() => {
-                    setFilterPlate('');
-                    setFilterStatus('');
-                  }}
-                  // filteredVehicles is no longer needed as filtering is done by backend
-                  // vehicles prop now contains the already filtered and paginated list
-                  filteredVehicles={vehicles}
-                  onOpenChecklist={handleOpenChecklist} // Pass new handler
-                  onConfirmArrival={handleConfirmArrival} // Pass new handler
-                  confirming={isSubmitting} // Pass state from hook
-                  // Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              )}
-            </div>
-          )}
+          <Loading />
         </div>
-      </main>
+      ) : (
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
+            Painel do Especialista
+          </h1>
+          <p style={{ color: '#666', fontSize: '1.15rem', marginBottom: 24 }}>
+            Bem-vindo, {userName}!
+          </p>
+
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              padding: '36px 22px',
+              maxWidth: '90vw',
+              margin: '0 auto',
+            }}
+          >
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
+              Meus Clientes Associados
+            </h2>
+
+            {clientsError ? (
+              <p style={{ color: 'red' }}>Erro ao carregar clientes: {clientsError}</p>
+            ) : clients.length === 0 ? (
+              <p>Nenhum cliente associado a você ainda.</p>
+            ) : (
+              <div>
+                <ClientTable
+                  clients={clients}
+                  selectedClientId={selectedClientId}
+                  onSelectClient={handleSelectClient}
+                />
+
+                {selectedClient && (
+                  <VehicleSection
+                    clientName={selectedClient.client_full_name}
+                    vehicles={vehicles}
+                    loading={loadingVehicles}
+                    error={vehiclesError}
+                    onRefetch={refetch}
+                    filterPlate={filterPlate}
+                    onFilterPlateChange={setFilterPlate}
+                    filterStatus={filterStatus}
+                    onFilterStatusChange={setFilterStatus}
+                    availableStatuses={availableStatuses}
+                    onClearFilters={() => {
+                      setFilterPlate('');
+                      setFilterStatus('');
+                    }}
+                    filteredVehicles={vehicles}
+                    onOpenChecklist={handleOpenChecklist}
+                    onConfirmArrival={handleConfirmArrival}
+                    confirming={isSubmitting}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+      )}
+
       <VehicleChecklistModal
         isOpen={checklistOpen}
         onClose={closeChecklist}
-        onSaved={() => {
-          try {
-            refetch();
-          } catch {}
-        }}
-        onFinalized={() => {
-          try {
-            refetch();
-          } catch {}
-        }}
+        onSaved={() => refetch()}
+        onFinalized={() => refetch()}
         vehicle={
           selectedVehicle
             ? {
