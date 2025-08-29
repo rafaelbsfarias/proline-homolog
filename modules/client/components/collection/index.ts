@@ -8,5 +8,8 @@ export { default as CollectionTotal } from './CollectionSummary/CollectionTotal'
 export { default as RescheduleFlow } from './RescheduleFlow/RescheduleFlow';
 export { default as RescheduleModal } from './RescheduleFlow/RescheduleModal';
 
+// Export calendar components
+export { default as CalendarMonth } from './Calendar/CalendarMonth';
+
 // Export types
 export type * from './types';

@@ -51,3 +51,7 @@ export interface RescheduleModalProps {
   minIso: string;
   loading?: boolean;
 }
+
+export interface CalendarMonthProps {
+  highlightDates: string[];
+}
