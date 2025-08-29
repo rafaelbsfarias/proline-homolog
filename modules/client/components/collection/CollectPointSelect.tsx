@@ -1,12 +1,6 @@
 import React from 'react';
 import type { AddressItem } from '@/modules/client/types';
-
-export function addressLabel(a: AddressItem): string {
-  const street = a.street || '';
-  const number = a.number ? `, ${a.number}` : '';
-  const city = a.city ? ` - ${a.city}` : '';
-  return `${street}${number}${city}`.trim();
-}
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 interface Props {
   addresses: AddressItem[];
@@ -29,7 +23,7 @@ export default function CollectPointSelect({
       <option value="">{placeholder}</option>
       {options.map(a => (
         <option key={a.id} value={a.id}>
-          {addressLabel(a)}
+          {formatAddressLabel(a)}
         </option>
       ))}
     </select>

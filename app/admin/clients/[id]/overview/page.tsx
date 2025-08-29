@@ -9,10 +9,9 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 
 import { useClientOverview } from '@/modules/admin/hooks/useClientOverview';
 import CollectionPricingSection from '@/modules/admin/components/overview/CollectionPricingSection';
-import PendingApprovalSection from '@/modules/admin/components/overview/PendingApprovalSection';
 import ApprovedCollectionSection from '@/modules/admin/components/overview/ApprovedCollectionSection';
 import CollectionHistory from '@/modules/admin/components/overview/CollectionHistory';
-import DateChangeRequestedSection from '@/modules/admin/components/overview/DateChangeRequestedSection';
+// PendingApprovalSection and DateChangeRequestedSection were replaced by unified section
 import AdminDateAdequacyFlow from '@/modules/admin/components/overview/AdminDateAdequacyFlow';
 import DatePendingUnifiedSection from '@/modules/admin/components/overview/DatePendingUnifiedSection';
 

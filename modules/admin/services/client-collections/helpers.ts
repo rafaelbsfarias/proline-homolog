@@ -1,2 +1,3 @@
-export const labelOf = (a: any) =>
-  `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
+import { formatAddressLabel } from '@/modules/common/utils/address';
+
+export const labelOf = (a: any) => formatAddressLabel(a);

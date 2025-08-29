@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 const logger = getLogger('api:admin:set-address-collection-fees');
 
@@ -37,13 +38,11 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         { status: 500 }
       );
     }
-    const label = (a: any) =>
-      `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
 
     // 2) Montar upsert (client_id + collection_address) com fee + date
     const upsertPayload = fees.map(item => {
       const a = (addrs || []).find((x: any) => x.id === item.addressId);
-      const addrLabel = label(a);
+      const addrLabel = formatAddressLabel(a);
       return {
         client_id: clientId,
         collection_address: addrLabel,
@@ -78,7 +77,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       try {
         const addr = (addrs || []).find((x: any) => x.id === f.addressId);
         if (!addr) continue;
-        const addrLabel = label(addr);
+        const addrLabel = formatAddressLabel(addr);
         const collId = labelToCollectionId.get(addrLabel) || null;
 
         const { error: updVehiclesErr } = await admin

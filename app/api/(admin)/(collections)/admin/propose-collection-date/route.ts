@@ -3,6 +3,7 @@ import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 const logger = getLogger('api:admin:propose-collection-date');
 
@@ -34,9 +35,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     if (addrErr || !addr) {
       return NextResponse.json({ success: false, error: 'Endereço inválido' }, { status: 400 });
     }
-    const label = (a: any) =>
-      `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
-    const addressLabel = label(addr);
+    const addressLabel = formatAddressLabel(addr);
 
     // 2) Verificar existência de precificação (fee) antes de permitir propor data
     // Mantém status como 'requested' (aguardando aprovação do cliente)
@@ -45,7 +44,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .select('id, collection_fee_per_vehicle')
       .eq('client_id', clientId)
       .eq('collection_address', addressLabel)
-      .eq('status', 'requested')
+      .in('status', [STATUS.REQUESTED, STATUS.APPROVED])
+      .order('collection_date', { ascending: false, nullsLast: true })
+      .limit(1)
       .maybeSingle();
     if (vcErr) {
       logger.warn('load_collection_failed', { error: vcErr.message, clientId, addressLabel });
@@ -55,10 +56,27 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     const hasFee =
       typeof vcRow?.collection_fee_per_vehicle === 'number' && vcRow.collection_fee_per_vehicle > 0;
     if (!vcRow?.id || !hasFee) {
-      return NextResponse.json(
-        { success: false, error: 'Precifique o endereço antes de propor uma data de coleta.' },
-        { status: 400 }
-      );
+      // Fallback: tentar localizar por ILIKE no endereço (compat labels antigas)
+      const { data: altRows } = await admin
+        .from('vehicle_collections')
+        .select('id, collection_fee_per_vehicle')
+        .eq('client_id', clientId)
+        .ilike('collection_address', addressLabel)
+        .in('status', [STATUS.REQUESTED, STATUS.APPROVED])
+        .order('collection_date', { ascending: false, nullsLast: true })
+        .limit(1);
+      const altRow = Array.isArray(altRows) && altRows.length ? altRows[0] : null;
+      const altHasFee =
+        typeof altRow?.collection_fee_per_vehicle === 'number' &&
+        altRow.collection_fee_per_vehicle > 0;
+      if (!altRow?.id || !altHasFee) {
+        return NextResponse.json(
+          { success: false, error: 'Precifique o endereço antes de propor uma data de coleta.' },
+          { status: 400 }
+        );
+      }
+      // Usa o registro alternativo
+      (vcRow as any).id = altRow.id;
     }
 
     // 3) Atualizar proposta de data na vehicle_collections existente

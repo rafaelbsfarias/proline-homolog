@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { STATUS } from '@/modules/common/constants/status';
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 const logger = getLogger('api:client:collection-approve');
 export const dynamic = 'force-dynamic';
@@ -26,17 +28,15 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .select('id, street, number, city')
       .eq('id', addressId)
       .maybeSingle();
-    const addressLabel = addr
-      ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim()
-      : '';
+    const addressLabel = formatAddressLabel(addr);
 
     // atualizar veículos
     const { error: updVehErr } = await admin
       .from('vehicles')
-      .update({ status: 'AGUARDANDO COLETA' })
+      .update({ status: STATUS.AGUARDANDO_COLETA })
       .eq('client_id', userId)
       .eq('pickup_address_id', addressId)
-      .in('status', ['AGUARDANDO APROVAÇÃO DA COLETA', 'APROVAÇÃO NOVA DATA']);
+      .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.APROVACAO_NOVA_DATA]);
     if (updVehErr) {
       logger.error('vehicles-update-error', { error: updVehErr.message });
       return NextResponse.json(
@@ -49,10 +49,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     if (addressLabel) {
       await admin
         .from('vehicle_collections')
-        .update({ status: 'approved' })
+        .update({ status: STATUS.APPROVED })
         .eq('client_id', userId)
         .eq('collection_address', addressLabel)
-        .eq('status', 'requested');
+        .eq('status', STATUS.REQUESTED);
     }
 
     return NextResponse.json({ success: true });
