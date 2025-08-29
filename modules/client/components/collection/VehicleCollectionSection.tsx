@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
+import { formatTotalCurrencyBR } from '@/modules/common/utils/format';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import CalendarMonth from './CalendarMonth';
@@ -13,6 +14,7 @@ type Group = {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null; // ISO
+  original_date?: string | null;
 };
 
 const VehicleCollectionSection: React.FC = () => {
@@ -22,6 +24,8 @@ const VehicleCollectionSection: React.FC = () => {
   // UI: reagendamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
   const [newDateIso, setNewDateIso] = useState<string>('');
+  const [busyApprove, setBusyApprove] = useState(false);
+  const [busyReschedule, setBusyReschedule] = useState<Record<string, boolean>>({});
   // Card mantém apenas aprovação e reagendamento
   const [feedback, setFeedback] = useState<{
     type: 'success' | 'error';
@@ -30,6 +34,7 @@ const VehicleCollectionSection: React.FC = () => {
 
   const handleRescheduleSubmit = async () => {
     if (!newDateIso || !rescheduleOpenFor) return;
+    setBusyReschedule(prev => ({ ...prev, [rescheduleOpenFor]: true }));
     const ok = await reschedule(rescheduleOpenFor, newDateIso);
     if (ok) {
       setRescheduleOpenFor(null);
@@ -39,10 +44,12 @@ const VehicleCollectionSection: React.FC = () => {
     } else {
       setFeedback({ type: 'error', msg: 'Falha ao enviar a nova data.' });
     }
+    setBusyReschedule(prev => ({ ...prev, [rescheduleOpenFor!]: false }));
   };
 
   const handleApproveAll = async () => {
     if (!groups.length) return;
+    setBusyApprove(true);
     const ok = await approveAll();
     if (ok) {
       setFeedback({ type: 'success', msg: 'Coleta confirmada com sucesso.' });
@@ -50,6 +57,7 @@ const VehicleCollectionSection: React.FC = () => {
     } else {
       setFeedback({ type: 'error', msg: 'Não foi possível confirmar a coleta.' });
     }
+    setBusyApprove(false);
   };
 
   const minIso = makeLocalIsoDate();
@@ -82,23 +90,16 @@ const VehicleCollectionSection: React.FC = () => {
                     <span>
                       - localizados no endereço {g.address || g.addressId} no dia{' '}
                       {g.collection_date ? formatDateBR(g.collection_date) : 'a definir'}
-                      {(g as any)?.original_date &&
+                      {g.original_date &&
                         g.collection_date &&
-                        (g as any).original_date !== g.collection_date && (
+                        g.original_date !== g.collection_date && (
                           <em style={{ color: '#a00', marginLeft: 6, fontStyle: 'italic' }}>
                             (Nova data proposta pelo administrador; sua escolha inicial foi{' '}
-                            {formatDateBR((g as any).original_date as string)})
+                            {formatDateBR(g.original_date as string)})
                           </em>
                         )}
                       {typeof g.collection_fee === 'number' && (
-                        <>
-                          {' '}
-                          no valor de{' '}
-                          {(g.collection_fee * g.vehicle_count).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
-                        </>
+                        <> no valor de {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count)}</>
                       )}
                     </span>
                     <span>
@@ -138,8 +139,13 @@ const VehicleCollectionSection: React.FC = () => {
                 onChangeIso={setNewDateIso}
                 ariaLabel="Selecionar nova data"
               />
-              <button className="refresh-button" onClick={handleRescheduleSubmit}>
-                Enviar sugestão
+              <button
+                className="refresh-button"
+                onClick={handleRescheduleSubmit}
+                aria-busy={!!busyReschedule[rescheduleOpenFor]}
+                disabled={!!busyReschedule[rescheduleOpenFor]}
+              >
+                {busyReschedule[rescheduleOpenFor] ? 'Enviando…' : 'Enviar sugestão'}
               </button>
             </div>
           )}
@@ -161,9 +167,10 @@ const VehicleCollectionSection: React.FC = () => {
               className="refresh-button"
               style={{ marginLeft: 8 }}
               onClick={handleApproveAll}
-              disabled={!groups.length || loading}
+              aria-busy={busyApprove}
+              disabled={!groups.length || loading || busyApprove}
             >
-              aqui
+              {busyApprove ? 'Confirmando…' : 'aqui'}
             </button>
           </div>
         </div>
