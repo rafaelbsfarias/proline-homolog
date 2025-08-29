@@ -38,21 +38,47 @@ export async function buildPricingRequests(
   }
 
   const feeByAddrDate = new Map<string, number>();
+  const proposedByAddr = new Map<string, string>();
+  const latestRowByAddr = new Map<string, { id: number; fee: number | null; date: string }>();
   if (addressIds.length > 0) {
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
     if (labels.length) {
       const { data: feeRows } = await admin
         .from('vehicle_collections')
-        .select('collection_address, collection_fee_per_vehicle, collection_date')
+        .select('id, collection_address, collection_fee_per_vehicle, collection_date')
         .eq('client_id', clientId)
         .eq('status', 'requested')
         .in('collection_address', labels);
+      const latestIdByAddr = new Map<string, { id: number; date: string }>();
       (feeRows || []).forEach((r: any) => {
         const addr = r?.collection_address;
         const fee = r?.collection_fee_per_vehicle;
         const date = r?.collection_date ? String(r.collection_date) : '';
         if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
+        if (addr && date) {
+          const idNum = typeof r?.id === 'number' ? r.id : Number(r?.id || 0);
+          const prev = latestIdByAddr.get(addr);
+          if (!prev || idNum > prev.id) latestIdByAddr.set(addr, { id: idNum, date });
+          const prevRow = latestRowByAddr.get(addr);
+          if (!prevRow || idNum > prevRow.id)
+            latestRowByAddr.set(addr, {
+              id: idNum,
+              fee: typeof fee === 'number' ? Number(fee) : null,
+              date,
+            });
+        } else if (addr) {
+          // even without date, maintain latest fee if available
+          const idNum = typeof r?.id === 'number' ? r.id : Number(r?.id || 0);
+          const prevRow = latestRowByAddr.get(addr);
+          if (!prevRow || idNum > prevRow.id)
+            latestRowByAddr.set(addr, {
+              id: idNum,
+              fee: typeof fee === 'number' ? Number(fee) : null,
+              date: '',
+            });
+        }
       });
+      latestIdByAddr.forEach((v, addr) => proposedByAddr.set(addr, v.date));
     }
   }
 
@@ -60,13 +86,15 @@ export async function buildPricingRequests(
     const lbl = addrLabelMap.get(aid) || '';
     const clientDate = dateByAddress.get(aid) || '';
     const feeKey = `${lbl}|${clientDate}`;
-    const fee = feeByAddrDate.get(feeKey) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
+    const lastFee = latestRowByAddr.get(lbl)?.fee ?? null;
+    const fee = lastFee ?? feeByAddrDate.get(feeKey) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
     return {
       addressId: aid,
       address: lbl,
       vehicle_count: byAddress.get(aid) || 0,
       collection_fee: fee,
       collection_date: clientDate || null,
+      proposed_date: proposedByAddr.get(lbl) || null,
     };
   });
 }

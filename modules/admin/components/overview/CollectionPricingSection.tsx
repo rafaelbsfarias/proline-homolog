@@ -1,40 +1,37 @@
 import React, { useMemo, useState } from 'react';
 import { CollectionPricingRequest } from '@/modules/admin/hooks/useClientOverview';
 import CurrencyInput from '@/modules/common/components/CurrencyInput';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
+import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { isoToBr } from '@/modules/common/components/date-picker/utils';
 
 interface Props {
   clientId: string;
   requests: CollectionPricingRequest[];
-  onSave: (
-    rows: { collectionId: string; collectionFeePerVehicle: number; date?: string }[]
-  ) => Promise<void>;
+  onSave: (rows: { collectionId: string; collectionFeePerVehicle: number }[]) => Promise<void>;
   loading?: boolean;
+  onRefresh?: () => Promise<void> | void;
 }
 
-const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave, loading }) => {
+const CollectionPricingSection: React.FC<Props> = ({
+  clientId,
+  requests,
+  onSave,
+  loading,
+  onRefresh,
+}) => {
+  const { post } = useAuthenticatedFetch();
   const [fees, setFees] = useState<Record<string, number | undefined>>(() =>
     Object.fromEntries(requests.map(r => [r.addressId, r.collection_fee ?? undefined]))
   );
-  const [dates, setDates] = useState<Record<string, string>>(() =>
-    Object.fromEntries(requests.map(r => [r.addressId, r.collection_date || '']))
+  const [proposingFor, setProposingFor] = useState<{ addressId: string; address: string } | null>(
+    null
   );
-
-  // Mantém as datas informadas pelo cliente pré-carregadas quando os pedidos mudarem,
-  // sem sobrescrever edições já feitas pelo administrador.
-  React.useEffect(() => {
-    setDates(prev => {
-      const next = { ...prev } as Record<string, string>;
-      for (const r of requests) {
-        const key = r.addressId;
-        const current = next[key];
-        const clientDate = r.collection_date || '';
-        if (!current && clientDate) next[key] = clientDate;
-      }
-      return next;
-    });
-  }, [requests]);
+  const [proposedDate, setProposedDate] = useState<string>('');
+  const [proposeLoading, setProposeLoading] = useState(false);
+  const [proposeError, setProposeError] = useState<string | null>(null);
+  const [proposeMessage, setProposeMessage] = useState<string | null>(null);
 
   const total = useMemo(
     () =>
@@ -54,7 +51,8 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
             <th className={styles.thCenter}>Veículos</th>
             <th className={styles.thCenter}>Valor da coleta (R$)</th>
             <th className={styles.thCenter}>Total estimado (R$)</th>
-            <th className={styles.thCenter}>Data de Coleta</th>
+            <th className={styles.thCenter}>Data da coleta</th>
+            <th className={styles.thCenter}>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -81,10 +79,24 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
                   : '-'}
               </td>
               <td className={styles.thCenter}>
-                <DatePickerBR
-                  valueIso={dates[req.addressId] || ''}
-                  onChangeIso={v => setDates(prev => ({ ...prev, [req.addressId]: v }))}
-                />
+                {req.proposed_date
+                  ? isoToBr(req.proposed_date)
+                  : req.collection_date
+                    ? isoToBr(req.collection_date)
+                    : '-'}
+              </td>
+              <td className={styles.thCenter}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProposingFor({ addressId: req.addressId, address: req.address });
+                    setProposedDate('');
+                    setProposeError(null);
+                    setProposeMessage(null);
+                  }}
+                >
+                  Propor nova data
+                </button>
               </td>
             </tr>
           ))}
@@ -97,6 +109,7 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
             <td className={styles.estimatedTotal}>
               {total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </td>
+            <td />
             <td />
           </tr>
         </tfoot>
@@ -111,7 +124,6 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
                 .map(r => ({
                   collectionId: r.addressId,
                   collectionFeePerVehicle: Number(fees[r.addressId] || 0),
-                  date: dates[r.addressId] || undefined,
                 }))
                 .filter(
                   x =>
@@ -124,6 +136,67 @@ const CollectionPricingSection: React.FC<Props> = ({ clientId, requests, onSave,
           {loading ? 'Salvando...' : 'Salvar'}
         </button>
       </div>
+
+      {proposingFor && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+        >
+          <div style={{ background: '#fff', padding: '1rem', borderRadius: 8, minWidth: 360 }}>
+            <h4 style={{ marginTop: 0, marginBottom: '.5rem' }}>Propor nova data</h4>
+            <p style={{ marginTop: 0 }}>Endereço: {proposingFor.address}</p>
+            <div style={{ margin: '8px 0 16px' }}>
+              <DatePickerBR valueIso={proposedDate} onChangeIso={setProposedDate} />
+            </div>
+            {proposeError && (
+              <div style={{ color: '#b00020', marginBottom: 8 }}>{proposeError}</div>
+            )}
+            {proposeMessage && (
+              <div style={{ color: '#0b8043', marginBottom: 8 }}>{proposeMessage}</div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" disabled={proposeLoading} onClick={() => setProposingFor(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={proposeLoading || !proposedDate}
+                onClick={async () => {
+                  setProposeLoading(true);
+                  setProposeError(null);
+                  setProposeMessage(null);
+                  try {
+                    const resp = await post(`/api/admin/propose-collection-date`, {
+                      clientId,
+                      addressId: proposingFor.addressId,
+                      new_date: proposedDate,
+                    });
+                    if (!resp.ok) throw new Error(resp.error || 'Falha ao propor data');
+                    setProposeMessage('Proposta enviado com sucesso.');
+                    if (onRefresh) await onRefresh();
+                    setTimeout(() => setProposingFor(null), 700);
+                  } catch (e: any) {
+                    setProposeError(e.message || 'Falha ao propor data');
+                  } finally {
+                    setProposeLoading(false);
+                  }
+                }}
+              >
+                {proposeLoading ? 'Enviando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ export interface CollectionPricingRequest {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date?: string | null;
+  proposed_date?: string | null;
 }
 
 export interface PendingApprovalGroup {

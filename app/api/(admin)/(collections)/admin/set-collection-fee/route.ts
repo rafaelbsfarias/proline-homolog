@@ -12,12 +12,16 @@ export const revalidate = 0;
 
 const setCollectionFeeSchema = z.object({
   collectionId: z.string().uuid({ message: 'ID da coleta inválido' }),
-  collectionFeePerVehicle: z.number().nonnegative({ message: 'Valor da coleta deve ser um número não negativo' }),
+  collectionFeePerVehicle: z
+    .number()
+    .nonnegative({ message: 'Valor da coleta deve ser um número não negativo' }),
 });
 
 async function setCollectionFeeHandler(req: AuthenticatedRequest) {
   const adminUser = req.user;
-  logger.info(`Handler started by admin: ${adminUser?.email} (${adminUser?.id}) to set collection fee.`);
+  logger.info(
+    `Handler started by admin: ${adminUser?.email} (${adminUser?.id}) to set collection fee.`
+  );
 
   try {
     const rawData = await req.json();
@@ -39,7 +43,10 @@ async function setCollectionFeeHandler(req: AuthenticatedRequest) {
     logger.info(`Updating collection ${collectionId} with fee ${collectionFeePerVehicle}.`);
     const { data, error } = await supabase
       .from('vehicle_collections')
-      .update({ collection_fee_per_vehicle: collectionFeePerVehicle, updated_at: new Date().toISOString() })
+      .update({
+        collection_fee_per_vehicle: collectionFeePerVehicle,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', collectionId)
       .select()
       .single();
@@ -53,7 +60,11 @@ async function setCollectionFeeHandler(req: AuthenticatedRequest) {
     }
 
     logger.info(`Collection fee for ${collectionId} updated successfully.`);
-    return NextResponse.json({ success: true, message: 'Valor da coleta atualizado com sucesso!', collection: data });
+    return NextResponse.json({
+      success: true,
+      message: 'Valor da coleta atualizado com sucesso!',
+      collection: data,
+    });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error('Internal server error in setCollectionFeeHandler:', errorMessage, error);
