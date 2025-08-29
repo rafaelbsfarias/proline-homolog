@@ -34,3 +34,20 @@ export interface CollectionTotalProps {
   total: number;
   count: number;
 }
+
+// Tipos para RescheduleFlow
+export interface RescheduleFlowProps {
+  isOpen: boolean;
+  addressId: string | null;
+  onClose: () => void;
+  onRescheduleSuccess: () => void;
+  minIso: string;
+}
+
+export interface RescheduleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (dateIso: string) => void;
+  minIso: string;
+  loading?: boolean;
+}

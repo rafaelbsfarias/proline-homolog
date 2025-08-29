@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
-import { CollectionSummary } from './collection';
+import { CollectionSummary, RescheduleFlow } from './collection';
 
 type Group = {
   addressId: string;
@@ -34,7 +33,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
 
   // UI: reagendamento e pagamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
-  const [newDateIso, setNewDateIso] = useState<string>('');
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'boleto' | 'cartao' | 'qrcode'>('boleto');
 
@@ -92,34 +90,16 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
           />
 
           {/* Campo de data (canto direito) quando o cliente escolher "Sugerir outra data" */}
-          {rescheduleOpenFor && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <DatePickerBR
-                valueIso={newDateIso}
-                minIso={minIso}
-                onChangeIso={setNewDateIso}
-                ariaLabel="Selecionar nova data"
-              />
-              <button
-                className="refresh-button"
-                onClick={async () => {
-                  if (!newDateIso || !rescheduleOpenFor) return;
-                  const resp2 = await post('/api/client/collection-reschedule', {
-                    addressId: rescheduleOpenFor,
-                    new_date: newDateIso,
-                  });
-                  if (resp2.ok) {
-                    setShowPayment(false); // volta a esconder pagamento
-                    setRescheduleOpenFor(null);
-                    setNewDateIso('');
-                    await loadSummary(); // atualiza grupos/valores
-                  }
-                }}
-              >
-                Enviar sugestão
-              </button>
-            </div>
-          )}
+          <RescheduleFlow
+            isOpen={!!rescheduleOpenFor}
+            addressId={rescheduleOpenFor}
+            onClose={() => setRescheduleOpenFor(null)}
+            onRescheduleSuccess={async () => {
+              setShowPayment(false);
+              await loadSummary();
+            }}
+            minIso={minIso}
+          />
         </div>
 
         <div className="counter-actions" />

@@ -4,5 +4,9 @@ export { default as CollectionGroupsList } from './CollectionSummary/CollectionG
 export { default as CollectionGroupItem } from './CollectionSummary/CollectionGroupItem';
 export { default as CollectionTotal } from './CollectionSummary/CollectionTotal';
 
+// Export reschedule flow components
+export { default as RescheduleFlow } from './RescheduleFlow/RescheduleFlow';
+export { default as RescheduleModal } from './RescheduleFlow/RescheduleModal';
+
 // Export types
 export type * from './types';
