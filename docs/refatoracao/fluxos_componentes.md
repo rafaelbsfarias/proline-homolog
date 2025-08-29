@@ -107,7 +107,7 @@ Este documento estabelece a relação entre os fluxos de serviço documentados e
 ### 5.4 Administrador - PendingApprovalSection
 - **Status gerenciado**: "Coleta aprovada"
 - **Ações possíveis**:
-  - Confirmar recebimento do pagamento → "Aguardando coleta"
+  - (Nenhuma ação necessária - status avança automaticamente para "Aguardando coleta")
 
 ### 5.5 Administrador - ApprovedCollectionSection
 - **Status gerenciado**: "Aguardando coleta"

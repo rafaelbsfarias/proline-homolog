@@ -107,7 +107,6 @@ sequenceDiagram
     alt Aprovação
         Client->>System: Aprova coleta
         Note right of System: Status: "Coleta aprovada"
-        Admin->>System: Confirma recebimento do pagamento
         Note right of System: Status: "Aguardando coleta"
     else Rejeição
         Client->>System: Rejeita coleta
