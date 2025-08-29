@@ -149,15 +149,8 @@ export const useSignupForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    let formattedValue = value;
 
-    if (name === 'cnpj') {
-      formattedValue = formatCNPJ(value);
-    } else if (name === 'phone') {
-      formattedValue = formatPhone(value);
-    }
-
-    setForm(prev => ({ ...prev, [name]: formattedValue }));
+    setForm(prev => ({ ...prev, [name]: value }));
     setFieldErrors(prev => ({ ...prev, [name]: undefined })); // limpa erro ao digitar
   };
 

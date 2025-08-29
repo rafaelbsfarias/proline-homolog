@@ -1,11 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSignupForm } from '../../hooks/Signup/useSignupForm';
-import { EyeIcon } from '../EyeIcon';
 import Modal from '../Modal';
 import styles from './SignupPage.module.css';
 import ErrorMessage from '../ErroMessage/ErrorMessage';
+import Input from '../Input/Input';
 
 const SignupPage: React.FC = () => {
   const router = useRouter();
@@ -17,13 +17,9 @@ const SignupPage: React.FC = () => {
     success,
     handleChange,
     handleSubmit,
-    setFieldErrors,
     setGlobalError,
     setSuccess,
   } = useSignupForm();
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,119 +72,93 @@ const SignupPage: React.FC = () => {
 
       <form onSubmit={handleFormSubmit}>
         <div className={styles.inputGroup}>
-          <label htmlFor="fullName">Nome completo</label>
-          <input
-            type="text"
+          <Input
             id="fullName"
             name="fullName"
+            label="Nome completo"
             value={form.fullName}
             onChange={handleChange}
             disabled={isLoading}
+            className={fieldErrors.fullName ? styles.error : ''}
           />
           <ErrorMessage message={fieldErrors.fullName} />
         </div>
         <div className={styles.inputGroup}>
-          <label htmlFor="companyName">Razão Social</label>
-          <input
-            type="text"
+          <Input
             id="companyName"
             name="companyName"
+            label="Razão Social"
             value={form.companyName}
             onChange={handleChange}
             disabled={isLoading}
+            className={fieldErrors.companyName ? styles.error : ''}
           />
           <ErrorMessage message={fieldErrors.companyName} />
         </div>
         <div className={styles.inputGroup}>
-          <label htmlFor="cnpj">CNPJ</label>
-          <input
-            type="text"
+          <Input
             id="cnpj"
             name="cnpj"
+            label="CNPJ"
             value={form.cnpj}
             onChange={handleChange}
             disabled={isLoading}
+            mask="00.000.000/0000-00"
+            className={fieldErrors.cnpj ? styles.error : ''}
           />
           <ErrorMessage message={fieldErrors.cnpj} />
         </div>
         <div className={styles.inputGroup}>
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
+          <Input
             id="email"
             name="email"
+            label="Email"
+            type="email"
             value={form.email}
             onChange={handleChange}
             disabled={isLoading}
+            className={fieldErrors.email ? styles.error : ''}
           />
           <ErrorMessage message={fieldErrors.email} />
         </div>
         <div className={styles.inputGroup}>
-          <label htmlFor="phone">Telefone</label>
-          <input
-            type="tel"
+          <Input
             id="phone"
             name="phone"
+            label="Telefone"
+            type="tel"
             value={form.phone}
             onChange={handleChange}
             disabled={isLoading}
+            mask="(00) 00000-0000"
+            className={fieldErrors.phone ? styles.error : ''}
           />
           <ErrorMessage message={fieldErrors.phone} />
         </div>
-        <div className={styles.inputGroup} style={{ position: 'relative' }}>
-          <label htmlFor="password">Senha</label>
-          <input
-            type={showPassword ? 'text' : 'password'}
+        <div className={styles.inputGroup}>
+          <Input
             id="password"
             name="password"
+            label="Senha"
+            type="password"
             value={form.password}
             onChange={handleChange}
             disabled={isLoading}
+            className={fieldErrors.password ? styles.error : ''}
           />
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
-            onClick={() => setShowPassword(v => !v)}
-            style={{
-              position: 'absolute',
-              right: 12,
-              top: 38,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <EyeIcon open={showPassword} />
-          </button>
           <ErrorMessage message={fieldErrors.password} />
         </div>
-        <div className={styles.inputGroup} style={{ position: 'relative' }}>
-          <label htmlFor="confirmPassword">Confirme a senha</label>
-          <input
-            type={showConfirmPassword ? 'text' : 'password'}
+        <div className={styles.inputGroup}>
+          <Input
             id="confirmPassword"
             name="confirmPassword"
+            label="Confirme a senha"
+            type="password"
             value={form.confirmPassword}
             onChange={handleChange}
             disabled={isLoading}
+            className={fieldErrors.confirmPassword ? styles.error : ''}
           />
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label={showConfirmPassword ? 'Ocultar senha' : 'Exibir senha'}
-            onClick={() => setShowConfirmPassword(v => !v)}
-            style={{
-              position: 'absolute',
-              right: 12,
-              top: 38,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <EyeIcon open={showConfirmPassword} />
-          </button>
           <ErrorMessage message={fieldErrors.confirmPassword} />
         </div>
 
