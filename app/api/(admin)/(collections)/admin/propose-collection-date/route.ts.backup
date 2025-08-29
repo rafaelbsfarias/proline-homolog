@@ -47,21 +47,10 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     if (rowsErr) {
       logger.warn('load_collections_failed', { error: rowsErr.message, clientId, addressLabel });
     }
-    const candidates = (allRows || []).filter(
-      (r: {
-        collection_address?: string;
-        collection_date?: string;
-        collection_fee_per_vehicle?: number;
-        id?: string;
-        status?: string;
-      }) => normalizeAddressLabel(String(r.collection_address || '')) === needle
-    );
-    candidates.sort((a: any, b: any) =>
-      String(b.collection_date || '').localeCompare(String(a.collection_date || ''))
-    );
+    const candidates = (allRows || []).filter(r => normalizeAddressLabel(String(r.collection_address || '')) === needle);
+    candidates.sort((a: any, b: any) => String(b.collection_date || '').localeCompare(String(a.collection_date || '')));
     const vcRow = candidates[0] || null;
-    const hasFee =
-      typeof vcRow?.collection_fee_per_vehicle === 'number' && vcRow.collection_fee_per_vehicle > 0;
+    const hasFee = typeof vcRow?.collection_fee_per_vehicle === 'number' && vcRow.collection_fee_per_vehicle > 0;
     if (!vcRow?.id || !hasFee) {
       return NextResponse.json(
         { success: false, error: 'Precifique o endereço antes de propor uma data de coleta.' },

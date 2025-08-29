@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
-import { formatAddressLabel } from '@/modules/common/utils/address';
+import { formatAddressLabel, normalizeAddressLabel } from '@/modules/common/utils/address';
 import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:admin:accept-client-proposed-date');

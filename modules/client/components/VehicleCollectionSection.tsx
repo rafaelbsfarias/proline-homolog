@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
+import { CollectionSummary } from './collection';
 
 type Group = {
   addressId: string;
@@ -68,58 +69,27 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
     <div className="vehicle-counter">
       <div className="counter-header">
         <div className="counter-content" style={{ width: '100%' }}>
-          <h3>Coleta de Veículos</h3>
-
-          {/* Mensagem guiada */}
-          <div style={{ marginBottom: 8 }}>
-            Prezado(a), sugerimos a coleta dos veículos
-            {groups.length === 0 ? (
-              <> no momento não há sugestões pendentes.</>
-            ) : (
-              <>
-                {groups.map(g => (
-                  <div
-                    key={g.addressId}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <span>
-                      - localizados no endereço {g.address || g.addressId} no dia{' '}
-                      {g.collection_date ? formatDateBR(g.collection_date) : 'a definir'}
-                      {typeof g.collection_fee === 'number' && (
-                        <>
-                          {' '}
-                          no valor de{' '}
-                          {(g.collection_fee * g.vehicle_count).toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })}
-                        </>
-                      )}
-                    </span>
-                    <span>
-                      <button
-                        className="refresh-button"
-                        onClick={() =>
-                          setRescheduleOpenFor(
-                            rescheduleOpenFor === g.addressId ? null : g.addressId
-                          )
-                        }
-                        aria-expanded={rescheduleOpenFor === g.addressId}
-                        title="Sugerir outra data para este endereço"
-                      >
-                        Sugerir outra data
-                      </button>
-                    </span>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
+          <CollectionSummary
+            data={{
+              approvalTotal,
+              count,
+              groups,
+              highlightDates,
+            }}
+            loading={loading}
+            onRescheduleClick={addressId =>
+              setRescheduleOpenFor(rescheduleOpenFor === addressId ? null : addressId)
+            }
+            onApproveClick={async () => {
+              if (!groups.length) return;
+              // aprova por endereço
+              for (const g of groups) {
+                await post('/api/client/collection-approve', { addressId: g.addressId });
+              }
+              setShowPayment(true);
+              await loadSummary();
+            }}
+          />
 
           {/* Campo de data (canto direito) quando o cliente escolher "Sugerir outra data" */}
           {rescheduleOpenFor && (
@@ -150,35 +120,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
               </button>
             </div>
           )}
-
-          {/* Total consolidado */}
-          <div style={{ marginTop: 8, fontWeight: 600 }}>
-            {`Total a pagar (${count} veículo(s)): ${approvalTotal.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL',
-            })}`}
-          </div>
-
-          {/* Confirmar coleta → exibe meios de pagamento; status dos veículos passa para "COLETA APROVADA" */}
-          <div style={{ marginTop: 8 }}>
-            Para confirmar a coleta dos veículos clique
-            <button
-              className="refresh-button"
-              style={{ marginLeft: 8 }}
-              onClick={async () => {
-                if (!groups.length) return;
-                // aprova por endereço
-                for (const g of groups) {
-                  await post('/api/client/collection-approve', { addressId: g.addressId });
-                }
-                setShowPayment(true);
-                await loadSummary();
-              }}
-              disabled={!groups.length || loading}
-            >
-              aqui
-            </button>
-          </div>
         </div>
 
         <div className="counter-actions" />
@@ -192,7 +133,7 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
             <select
               id="payment-method"
               value={paymentMethod}
-              onChange={e => setPaymentMethod(e.target.value as any)}
+              onChange={e => setPaymentMethod(e.target.value as 'boleto' | 'cartao' | 'qrcode')}
               aria-label="Selecionar forma de pagamento"
             >
               <option value="boleto">Boleto</option>
