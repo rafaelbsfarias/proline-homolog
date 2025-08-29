@@ -19,6 +19,7 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
           <tr>
             <th>Endereço</th>
             <th>Data</th>
+            <th>Veículos</th>
             <th>Valor por veículo (R$)</th>
             <th>Status</th>
           </tr>
@@ -29,6 +30,9 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
               <td>{r.collection_address}</td>
               <td className={styles.nowrap}>
                 {r.collection_date ? isoToBr(r.collection_date) : '-'}
+              </td>
+              <td>
+                {r.vehicles && r.vehicles.length ? r.vehicles.map(v => v.plate).join(', ') : '-'}
               </td>
               <td className={styles.nowrap}>{formatCurrencyBR(r.collection_fee_per_vehicle)}</td>
               <td>{r.status || '-'}</td>

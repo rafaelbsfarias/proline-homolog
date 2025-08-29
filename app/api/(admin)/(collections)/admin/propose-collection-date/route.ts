@@ -37,7 +37,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
     const addressLabel = label(addr);
 
-    // 2) Atualizar/Inserir proposta de data na vehicle_collections
+    // 2) Verificar existência de precificação (fee) antes de permitir propor data
     // Mantém status como 'requested' (aguardando aprovação do cliente)
     const { data: vcRow, error: vcErr } = await admin
       .from('vehicle_collections')
@@ -50,6 +50,17 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       logger.warn('load_collection_failed', { error: vcErr.message, clientId, addressLabel });
     }
 
+    // Regra: só permite propor data se já existir uma coleção com fee definido (> 0)
+    const hasFee =
+      typeof vcRow?.collection_fee_per_vehicle === 'number' && vcRow.collection_fee_per_vehicle > 0;
+    if (!vcRow?.id || !hasFee) {
+      return NextResponse.json(
+        { success: false, error: 'Precifique o endereço antes de propor uma data de coleta.' },
+        { status: 400 }
+      );
+    }
+
+    // 3) Atualizar proposta de data na vehicle_collections existente
     if (vcRow?.id) {
       const { error } = await admin
         .from('vehicle_collections')
@@ -62,26 +73,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
           { status: 500 }
         );
       }
-    } else {
-      const { error } = await admin.from('vehicle_collections').upsert(
-        {
-          client_id: clientId,
-          collection_address: addressLabel,
-          collection_date: new_date,
-          status: 'requested',
-        },
-        { onConflict: 'client_id,collection_address,collection_date' }
-      );
-      if (error) {
-        logger.error('upsert_collection_failed', { error: error.message, clientId, addressLabel });
-        return NextResponse.json(
-          { success: false, error: 'Falha ao salvar proposta' },
-          { status: 500 }
-        );
-      }
     }
 
-    // 3) Atualizar veículos do cliente nesse endereço para indicar que há solicitação de mudança
+    // 4) Atualizar veículos do cliente nesse endereço para indicar que há solicitação de mudança
     // Não alteramos a estimated_arrival_date aqui — a nova data fica registrada na collection.
     const allowedPrev = ['PONTO DE COLETA SELECIONADO', 'AGUARDANDO APROVAÇÃO DA COLETA'];
     const { error: vehErr } = await admin

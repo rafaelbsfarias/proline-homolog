@@ -20,9 +20,10 @@ export async function enrichHistoryWithVehicleStatus(
 
   const { data: vehAll } = await admin
     .from('vehicles')
-    .select('pickup_address_id, status, estimated_arrival_date')
+    .select('pickup_address_id, status, estimated_arrival_date, plate')
     .eq('client_id', clientId);
   const counts = new Map<string, Record<string, number>>();
+  const vehiclesByKey = new Map<string, { plate: string; status: string }[]>();
   (vehAll || []).forEach((v: any) => {
     const aid = v?.pickup_address_id ? String(v.pickup_address_id) : '';
     if (!aid) return;
@@ -35,6 +36,9 @@ export async function enrichHistoryWithVehicleStatus(
     const bucket = counts.get(key) || {};
     bucket[st] = (bucket[st] || 0) + 1;
     counts.set(key, bucket);
+    const list = vehiclesByKey.get(key) || [];
+    list.push({ plate: String(v?.plate || '').toUpperCase(), status: st });
+    vehiclesByKey.set(key, list);
   });
 
   return history.map(row => {
@@ -42,7 +46,11 @@ export async function enrichHistoryWithVehicleStatus(
     const d = row.collection_date ? String(row.collection_date) : '';
     const key = `${aid}|${d}`;
     const bucket = counts.get(key);
-    if (!bucket || !Object.keys(bucket).length) return { ...row, status: '-' };
+    const vehicles = (vehiclesByKey.get(key) || [])
+      .slice()
+      .sort((a, b) => a.plate.localeCompare(b.plate));
+    if (!bucket || !Object.keys(bucket).length)
+      return { ...row, status: '-', vehicles } as HistoryRow;
     let chosen = '';
     let max = -1;
     Object.entries(bucket).forEach(([st, n]) => {
@@ -56,6 +64,6 @@ export async function enrichHistoryWithVehicleStatus(
       .map(([st, n]) => `${st} (${n})`)
       .join(', ');
     const display = others ? `${chosen} (+ ${others})` : chosen;
-    return { ...row, status: display };
+    return { ...row, status: display, vehicles } as HistoryRow;
   });
 }

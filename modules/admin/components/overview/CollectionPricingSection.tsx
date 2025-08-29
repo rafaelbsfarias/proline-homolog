@@ -10,7 +10,13 @@ import ProposeCollectionDateModal from './ProposeCollectionDateModal';
 interface Props {
   clientId: string;
   requests: CollectionPricingRequest[];
-  onSave: (rows: { collectionId: string; collectionFeePerVehicle: number }[]) => Promise<void>;
+  onSave: (
+    rows: {
+      collectionId: string;
+      collectionFeePerVehicle: number;
+      collectionDate?: string;
+    }[]
+  ) => Promise<void>;
   loading?: boolean;
   onRefresh?: () => Promise<void> | void;
 }
@@ -93,6 +99,14 @@ const CollectionPricingSection: React.FC<Props> = ({
               <td className={styles.thCenter}>
                 <button
                   type="button"
+                  disabled={
+                    !(typeof fees[req.addressId] === 'number' && Number(fees[req.addressId]) > 0)
+                  }
+                  title={
+                    typeof fees[req.addressId] === 'number' && Number(fees[req.addressId]) > 0
+                      ? 'Propor nova data'
+                      : 'Defina o valor da coleta antes de propor data'
+                  }
                   onClick={() => {
                     setProposingFor({ addressId: req.addressId, address: req.address });
                     setProposedDate(req.proposed_date || '');
@@ -127,6 +141,7 @@ const CollectionPricingSection: React.FC<Props> = ({
                 .map(r => ({
                   collectionId: r.addressId,
                   collectionFeePerVehicle: Number(fees[r.addressId] || 0),
+                  collectionDate: r.collection_date || undefined,
                 }))
                 .filter(
                   x =>

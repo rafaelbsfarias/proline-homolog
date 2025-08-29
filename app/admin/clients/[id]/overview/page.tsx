@@ -33,14 +33,20 @@ const Page = () => {
   } = useClientOverview(clientId);
 
   const onSavePricing = useCallback(
-    async (rows: { collectionId: string; collectionFeePerVehicle: number }[]) => {
+    async (
+      rows: { collectionId: string; collectionFeePerVehicle: number; collectionDate?: string }[]
+    ) => {
       try {
         setLoading(true);
         setMessage(null);
         setError(null);
         const resp = await post(`/api/admin/set-address-collection-fees`, {
           clientId,
-          fees: rows.map(r => ({ addressId: r.collectionId, fee: r.collectionFeePerVehicle })),
+          fees: rows.map(r => ({
+            addressId: r.collectionId,
+            fee: r.collectionFeePerVehicle,
+            date: r.collectionDate,
+          })),
         });
         if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar valores');
         setMessage('Valores de coleta atualizados com sucesso!');

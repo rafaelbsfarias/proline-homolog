@@ -70,10 +70,10 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     const labelToCollectionId = new Map<string, string>();
     (rows || []).forEach((r: any) => labelToCollectionId.set(String(r.collection_address), r.id));
 
-    // 3) Atualizar veículos somente para itens com fee e date definidos
-    //    -> PREÇOS: setar 'AGUARDANDO APROVAÇÃO DA COLETA' apenas para quem está em 'PONTO DE COLETA SELECIONADO'
-    //       (fluxo de mudança de data é endpoint separado)
-    const eligible = (fees || []).filter(f => typeof f.fee === 'number' && f.date);
+    // 3) Atualizar veículos após precificação
+    //    -> PREÇOS: setar 'AGUARDANDO APROVAÇÃO DA COLETA' para quem está em 'PONTO DE COLETA SELECIONADO'
+    //       Mesmo sem data (cliente já definiu uma estimativa), a aprovação do cliente vem depois.
+    const eligible = (fees || []).filter(f => typeof f.fee === 'number');
     for (const f of eligible) {
       try {
         const addr = (addrs || []).find((x: any) => x.id === f.addressId);

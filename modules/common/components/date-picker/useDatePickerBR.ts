@@ -46,17 +46,36 @@ export const useDatePickerBR = ({
 
   const openPicker = () => {
     const el = nativeRef.current as any;
+    let usedNative = false;
     if (el && typeof el.showPicker === 'function') {
-      el.focus();
-      el.showPicker();
-      return;
+      try {
+        const rect =
+          typeof el.getBoundingClientRect === 'function' ? el.getBoundingClientRect() : ({} as any);
+        const w = rect?.width ?? 0;
+        const h = rect?.height ?? 0;
+        const style =
+          typeof window !== 'undefined' && window.getComputedStyle
+            ? window.getComputedStyle(el)
+            : null;
+        const visible =
+          w > 0 && h > 0 && (!style || (style.visibility !== 'hidden' && style.opacity !== '0'));
+        if (visible) {
+          el.focus();
+          el.showPicker();
+          usedNative = true;
+        }
+      } catch {
+        // ignore and fallback
+      }
     }
-    const btn = buttonRef.current;
-    if (btn) {
-      const rect = btn.getBoundingClientRect();
-      setFallbackPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX });
+    if (!usedNative) {
+      const btn = buttonRef.current;
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        setFallbackPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX });
+      }
+      setFallbackOpen(true);
     }
-    setFallbackOpen(true);
   };
 
   const closeFallback = () => setFallbackOpen(false);

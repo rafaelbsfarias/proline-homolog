@@ -13,17 +13,21 @@ interface MessageModalProps {
 export const MessageModal: React.FC<MessageModalProps> = ({
   message,
   onClose,
-  title = 'Erro',
+  title,
   variant = 'error',
 }) => {
+  const effectiveTitle =
+    title ?? (variant === 'success' ? 'Sucesso' : variant === 'info' ? 'Informação' : 'Erro');
+
   const titleClass = [
     styles.title,
     variant === 'success' ? styles.titleSuccess : styles.titleError,
   ].join(' ');
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h2 className={titleClass}>{title}</h2>
+        <h2 className={titleClass}>{effectiveTitle}</h2>
         <p className={styles.message}>{message}</p>
         <button onClick={onClose}>OK</button>
       </div>

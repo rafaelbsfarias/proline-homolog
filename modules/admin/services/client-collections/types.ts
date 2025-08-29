@@ -37,6 +37,7 @@ export interface HistoryRow {
   collection_fee_per_vehicle: number | null;
   collection_date: string | null;
   status?: string;
+  vehicles?: { plate: string; status: string }[];
 }
 
 export interface ClientCollectionsSummaryResult {
