@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { useEffect, useState } from 'react';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
@@ -6,6 +6,7 @@ import ProfilePageBase from '@/modules/common/components/ProfilePageBase';
 import AddressesList from '@/modules/common/components/AddressesList';
 import AddressModalBase, { AddressFormValues } from '@/modules/common/components/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 type Role = 'client' | 'partner' | 'specialist' | 'admin';
 
@@ -50,7 +51,7 @@ export default function MeuPerfilPage() {
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
       {loading ? (
-        <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>
+        <Loading />
       ) : (
         <ProfilePageBase
           fullName={fullName}
@@ -59,7 +60,7 @@ export default function MeuPerfilPage() {
           showAddresses={role === 'client' || role === 'partner'}
           addressesNode={<AddressesList key={refreshKey} />}
           addressesActionsNode={
-            (role === 'client' || role === 'partner') ? (
+            role === 'client' || role === 'partner' ? (
               <button
                 onClick={() => setShowAddAddress(true)}
                 style={{

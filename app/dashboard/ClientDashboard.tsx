@@ -10,6 +10,16 @@ import VehicleCollectionSection from '@/modules/client/components/collection/Veh
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
 import ContractAcceptanceScreen from '@/modules/client/components/dashboard/ContractAcceptanceScreen';
+import { Loading } from '@/modules/common/components/Loading/Loading';
+
+interface ProfileData {
+  full_name: string;
+  must_change_password?: boolean; // Made optional to prevent type errors
+  clients: {
+    parqueamento?: number;
+    taxa_operacao?: number;
+  }[];
+}
 
 const ClientDashboard: React.FC = () => {
   const [checked, setChecked] = useState(false);
@@ -24,6 +34,11 @@ const ClientDashboard: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
+
+  const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
+  const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
+
+  const isComponentLoading = vehicleCounterLoading || collectionSectionLoading;
 
   useEffect(() => {
     if (profileData) {
@@ -40,54 +55,56 @@ const ClientDashboard: React.FC = () => {
     await acceptContract(contentToSend);
   }
 
-  if (loading) return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-
-  if (!profileData) {
-    return (
-      <div style={{ padding: 48, textAlign: 'center' }}>
-        <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
-      </div>
-    );
-  }
+  const showOverallLoader = loading || (accepted && isComponentLoading);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      {!accepted ? (
-        <ContractAcceptanceScreen
-          fullName={userName}
-          parqueamento={profileData?.clients[0]?.parqueamento}
-          taxaOperacao={profileData?.clients[0]?.taxa_operacao}
-          checked={checked}
-          setChecked={setChecked}
-          loading={loadingAcceptance}
-          onAccept={handleAcceptContract}
-        />
-      ) : (
-        <main className="dashboard-main">
-          <h1 className="dashboard-title">Painel do Cliente</h1>
-          <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
-          <div className="dashboard-actions">
-            <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
-              Cadastrar Novo Veículo
-            </button>
-            <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
-              Adicionar Ponto de Coleta
-            </button>
-          </div>
+      {showOverallLoader && <Loading />}
 
-          {/* Meus Veículos */}
-          <div className="dashboard-counter">
-            <VehicleCounter key={refreshVehicleCounter} />
+      <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
+        {!profileData ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
           </div>
+        ) : !accepted ? (
+          <ContractAcceptanceScreen
+            fullName={userName}
+            parqueamento={profileData?.clients[0]?.parqueamento}
+            taxaOperacao={profileData?.clients[0]?.taxa_operacao}
+            checked={checked}
+            setChecked={setChecked}
+            loading={loadingAcceptance}
+            onAccept={handleAcceptContract}
+          />
+        ) : (
+          <main className="dashboard-main">
+            <h1 className="dashboard-title">Painel do Cliente</h1>
+            <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
-          {/* Coleta de Veículos */}
-          <div className="dashboard-counter">
-            <VehicleCollectionSection />
-          </div>
-        </main>
-      )}
+            <div className="dashboard-actions">
+              <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
+                Cadastrar Novo Veículo
+              </button>
+              <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
+                Adicionar Ponto de Coleta
+              </button>
+            </div>
+
+            <div className="dashboard-counter">
+              <VehicleCounter
+                key={refreshVehicleCounter}
+                onLoadingChange={setVehicleCounterLoading}
+              />
+            </div>
+
+            <div className="dashboard-counter">
+              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+            </div>
+          </main>
+        )}
+      </div>
 
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}

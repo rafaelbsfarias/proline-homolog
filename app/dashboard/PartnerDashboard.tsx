@@ -13,6 +13,7 @@ import {
   type PendingQuote,
   type InProgressService,
 } from '@/modules/partner/hooks/usePartnerDashboard';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const PartnerDashboard = () => {
   const router = useRouter();
@@ -57,10 +58,6 @@ const PartnerDashboard = () => {
     setIsAcceptingContract(false);
   }
 
-  if (loading) {
-    return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-  }
-
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
     { key: 'client_name', header: 'Cliente' },
@@ -78,7 +75,9 @@ const PartnerDashboard = () => {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      {!contractAccepted ? (
+      {loading ? (
+        <Loading />
+      ) : !contractAccepted ? (
         <ContractAcceptanceView
           contractContent={contractContent}
           checked={checked}

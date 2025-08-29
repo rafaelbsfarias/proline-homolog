@@ -3,10 +3,18 @@ import React, { useEffect, useState } from 'react';
 import styles from './Toolbar.module.css';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
-const VehiclesCounter: React.FC = () => {
+interface VehiclesCounterProps {
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+const VehiclesCounter: React.FC<VehiclesCounterProps> = ({ onLoadingChange }) => {
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const { get } = useAuthenticatedFetch();
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   useEffect(() => {
     const fetchCount = async () => {

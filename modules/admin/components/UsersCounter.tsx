@@ -4,12 +4,20 @@ import styles from './Toolbar.module.css';
 import { useRouter } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
-const UsersCounter: React.FC = () => {
+interface UsersCounterProps {
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+const UsersCounter: React.FC<UsersCounterProps> = ({ onLoadingChange }) => {
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { get } = useAuthenticatedFetch();
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   useEffect(() => {
     const fetchCount = async () => {
