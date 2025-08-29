@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import styles from '@/modules/common/components/LoginPage.module.css';
+import styles from '@/modules/common/components/Login/LoginPage.module.css';
 
 interface LoginOptionsProps {
   saveUser: boolean;

@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import styles from './LoginPage.module.css';
+import styles from '../components/Login/LoginPage.module.css';
 
 interface LoginHeaderProps {
   logoSrc?: string;

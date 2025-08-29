@@ -12,10 +12,10 @@ import { useAuthentication } from '@/modules/common/hooks/useAuthentication';
 import { useFormValidation } from '@/modules/common/hooks/useFormValidation';
 import { useLoginForm } from '@/modules/common/hooks/useLoginForm';
 import { NavigationService } from '@/modules/common/services/NavigationService';
-import { LoginHeader } from './LoginHeader';
-import { LoginForm } from './LoginForm';
-import { LoginOptions } from './LoginOptions';
-import styles from '@/modules/common/components/LoginPage.module.css';
+import { LoginHeader } from '../LoginHeader';
+import { LoginForm } from '../LoginForm';
+import { LoginOptions } from '../LoginOptions';
+import styles from '@/modules/common/components/Login/LoginPage.module.css';
 
 export const LoginPageContainer: React.FC = () => {
   const router = useRouter();
