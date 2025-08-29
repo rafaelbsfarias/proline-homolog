@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import CalendarMonth from './CalendarMonth';
 
 type Group = {
   addressId: string;
@@ -21,6 +23,34 @@ const VehicleCollectionSection: React.FC = () => {
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
   const [newDateIso, setNewDateIso] = useState<string>('');
   // Card mantém apenas aprovação e reagendamento
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    msg: string;
+  } | null>(null);
+
+  const handleRescheduleSubmit = async () => {
+    if (!newDateIso || !rescheduleOpenFor) return;
+    const ok = await reschedule(rescheduleOpenFor, newDateIso);
+    if (ok) {
+      setRescheduleOpenFor(null);
+      setNewDateIso('');
+      setFeedback({ type: 'success', msg: 'Solicitação de nova data enviada.' });
+      await reload();
+    } else {
+      setFeedback({ type: 'error', msg: 'Falha ao enviar a nova data.' });
+    }
+  };
+
+  const handleApproveAll = async () => {
+    if (!groups.length) return;
+    const ok = await approveAll();
+    if (ok) {
+      setFeedback({ type: 'success', msg: 'Coleta confirmada com sucesso.' });
+      await reload();
+    } else {
+      setFeedback({ type: 'error', msg: 'Não foi possível confirmar a coleta.' });
+    }
+  };
 
   const minIso = makeLocalIsoDate();
 
@@ -108,18 +138,7 @@ const VehicleCollectionSection: React.FC = () => {
                 onChangeIso={setNewDateIso}
                 ariaLabel="Selecionar nova data"
               />
-              <button
-                className="refresh-button"
-                onClick={async () => {
-                  if (!newDateIso || !rescheduleOpenFor) return;
-                  const ok = await reschedule(rescheduleOpenFor, newDateIso);
-                  if (ok) {
-                    setRescheduleOpenFor(null);
-                    setNewDateIso('');
-                    await reload(); // atualiza grupos/valores
-                  }
-                }}
-              >
+              <button className="refresh-button" onClick={handleRescheduleSubmit}>
                 Enviar sugestão
               </button>
             </div>
@@ -141,11 +160,7 @@ const VehicleCollectionSection: React.FC = () => {
             <button
               className="refresh-button"
               style={{ marginLeft: 8 }}
-              onClick={async () => {
-                if (!groups.length) return;
-                await approveAll();
-                await reload();
-              }}
+              onClick={handleApproveAll}
               disabled={!groups.length || loading}
             >
               aqui
@@ -168,78 +183,15 @@ const VehicleCollectionSection: React.FC = () => {
       >
         <CalendarMonth highlightDates={highlightDates} />
       </div>
+      {feedback && (
+        <MessageModal
+          variant={feedback.type}
+          message={feedback.msg}
+          onClose={() => setFeedback(null)}
+        />
+      )}
     </div>
   );
 };
 
 export default VehicleCollectionSection;
-
-/** Calendário simples do mês atual com destaque nas datas recebidas (YYYY-MM-DD) */
-function CalendarMonth({ highlightDates }: { highlightDates: string[] }) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth(); // 0..11
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startWeekday = firstDay.getDay(); // 0=Dom
-  const totalDays = lastDay.getDate();
-
-  const days: (number | null)[] = [];
-  for (let i = 0; i < startWeekday; i++) days.push(null);
-  for (let d = 1; d <= totalDays; d++) days.push(d);
-
-  const highlight = new Set(highlightDates || []);
-  const fmt = (d: number) =>
-    `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-  const cellStyle: React.CSSProperties = {
-    border: '1px solid rgba(255,255,255,0.12)',
-    minHeight: 56,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 600,
-    borderRadius: 6,
-  };
-
-  return (
-    <div>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 6,
-          marginBottom: 8,
-          opacity: 0.8,
-        }}
-      >
-        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((w, i) => (
-          <div key={`${w}-${i}`} style={{ textAlign: 'center', fontWeight: 600 }}>
-            {w}
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-        {days.map((d, idx) => {
-          if (d === null) return <div key={`e-${idx}`} />;
-          const dateStr = fmt(d);
-          const isHighlight = highlight.has(dateStr);
-          return (
-            <div
-              key={dateStr}
-              style={{
-                ...cellStyle,
-                background: isHighlight ? 'rgba(76, 175, 80, 0.35)' : 'transparent',
-              }}
-              aria-label={dateStr}
-              title={formatDateBR(dateStr)}
-            >
-              {d}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
