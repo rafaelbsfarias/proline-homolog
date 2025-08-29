@@ -10,6 +10,7 @@ export { default as RescheduleModal } from './RescheduleFlow/RescheduleModal';
 
 // Export calendar components
 export { default as CalendarMonth } from './Calendar/CalendarMonth';
+export { default as CollectionCalendar } from './CollectionCalendar';
 
 // Export types
 export type * from './types';
