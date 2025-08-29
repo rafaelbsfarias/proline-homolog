@@ -56,6 +56,12 @@ export async function POST(req: NextRequest) {
       if (!addressId) {
         return NextResponse.json({ error: 'Endereço de coleta é obrigatório' }, { status: 400 });
       }
+      if (!estimated_arrival_date) {
+        return NextResponse.json(
+          { error: 'Data preferencial de coleta é obrigatória' },
+          { status: 400 }
+        );
+      }
       const { data: addr, error: addrErr } = await admin
         .from('addresses')
         .select('id, profile_id, is_collect_point')
@@ -82,8 +88,8 @@ export async function POST(req: NextRequest) {
       logger.error('load-current-status-error', { error: curErr.message });
       return NextResponse.json({ error: 'Erro ao validar status atual' }, { status: 500 });
     }
-    const invalid = (currentVehicles || []).filter((v: { status?: string | null }) =>
-      !allowedPrevious.has(String((v?.status || '')).toUpperCase())
+    const invalid = (currentVehicles || []).filter(
+      (v: { status?: string | null }) => !allowedPrevious.has(String(v?.status || '').toUpperCase())
     );
     if (invalid.length) {
       return NextResponse.json(
@@ -95,15 +101,17 @@ export async function POST(req: NextRequest) {
     // Build update payload
     const payload: Record<string, unknown> = {};
     if (method === 'collect_point') {
-      // Quando o cliente define um endereço de coleta, o status passa a ser
-      // "PONTO DE COLETA SELECIONADO" ("AGUARDANDO COLETA" será usado em outra etapa do fluxo)
+      // Cliente escolhe ponto de coleta e data preferencial
       payload.status = 'PONTO DE COLETA SELECIONADO';
       payload.pickup_address_id = addressId!;
-      payload.estimated_arrival_date = null; // clear any previous client-arrival date
+      payload.estimated_arrival_date = estimated_arrival_date; // guardar data escolhida pelo cliente
     } else {
       // bring_to_yard
       if (!estimated_arrival_date) {
-        return NextResponse.json({ error: 'Data de previsão de chegada é obrigatória' }, { status: 400 });
+        return NextResponse.json(
+          { error: 'Data de previsão de chegada é obrigatória' },
+          { status: 400 }
+        );
       }
       payload.status = 'AGUARDANDO CHEGADA DO VEÍCULO';
       payload.estimated_arrival_date = estimated_arrival_date;

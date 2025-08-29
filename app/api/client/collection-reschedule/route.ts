@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:client:collection-reschedule');
 
@@ -35,10 +36,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     const addressLabel = labelAddress(addr);
 
     // 2) Atualizar veículos do cliente nesse endereço
-    const allowedPrev = ['AGUARDANDO APROVAÇÃO DA COLETA', 'APROVAÇÃO NOVA DATA'];
+    const allowedPrev = [STATUS.AGUARDANDO_APROVACAO, STATUS.APROVACAO_NOVA_DATA];
     const { error: vehErr } = await admin
       .from('vehicles')
-      .update({ estimated_arrival_date: new_date, status: 'APROVAÇÃO NOVA DATA' })
+      .update({ estimated_arrival_date: new_date, status: STATUS.APROVACAO_NOVA_DATA })
       .eq('client_id', userId)
       .eq('pickup_address_id', addressId)
       .in('status', allowedPrev);
@@ -48,28 +49,20 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Erro ao atualizar veículos' }, { status: 500 });
     }
 
-    // 3) Atualizar/Inserir em vehicle_collections
-    const { data: vcRow } = await admin
-      .from('vehicle_collections')
-      .select('id')
-      .eq('client_id', userId)
-      .eq('collection_address', addressLabel)
-      .maybeSingle();
-
-    if (vcRow?.id) {
-      const { error } = await admin
-        .from('vehicle_collections')
-        .update({ collection_date: new_date, status: 'requested' })
-        .eq('id', vcRow.id);
-      if (error) throw error;
-    } else {
-      const { error } = await admin.from('vehicle_collections').insert({
+    // 3) Upsert em vehicle_collections para evitar violação de unique constraint
+    // Unique key: (client_id, collection_address, collection_date)
+    const { error: upsertErr } = await admin.from('vehicle_collections').upsert(
+      {
         client_id: userId,
         collection_address: addressLabel,
         collection_date: new_date,
-        status: 'requested',
-      });
-      if (error) throw error;
+        status: STATUS.REQUESTED,
+      },
+      { onConflict: 'client_id,collection_address,collection_date' }
+    );
+    if (upsertErr) {
+      logger.error('vc-upsert', { error: upsertErr.message });
+      return NextResponse.json({ error: 'Erro ao salvar reagendamento' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

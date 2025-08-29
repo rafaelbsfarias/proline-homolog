@@ -2,6 +2,7 @@ import React from 'react';
 import type { Vehicle, AddressItem } from '@/modules/client/types';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR } from '@/modules/client/utils/date';
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 interface Props {
   vehicle: Vehicle;
@@ -42,9 +43,7 @@ export default function VehicleItemRow({
     }
     const selId = vehicle.pickup_address_id || '';
     const addr = addresses.find(a => a.id === selId);
-    const label = addr
-      ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim()
-      : '';
+    const label = addr ? formatAddressLabel(addr) : '';
     if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') {
       return (
         <span>
