@@ -11,10 +11,15 @@ export type CollectionGroup = {
   proposed_by?: 'client' | 'admin';
 };
 
-export function useClientCollectionSummary() {
+type UseClientCollectionSummaryOptions = {
+  onLoadingChange?: (loading: boolean) => void;
+};
+
+export function useClientCollectionSummary(options?: UseClientCollectionSummaryOptions) {
   const { get, post } = useAuthenticatedFetch();
 
   const [loading, setLoading] = useState<boolean>(true);
+  const { onLoadingChange } = options || {};
   const [approvalTotal, setApprovalTotal] = useState<number>(0);
   const [count, setCount] = useState<number>(0);
   const [groups, setGroups] = useState<CollectionGroup[]>([]);
@@ -22,6 +27,7 @@ export function useClientCollectionSummary() {
 
   const reload = useCallback(async () => {
     setLoading(true);
+    onLoadingChange?.(true);
     try {
       const resp = await get<{
         success: boolean;
@@ -39,6 +45,7 @@ export function useClientCollectionSummary() {
       }
     } finally {
       setLoading(false);
+      onLoadingChange?.(false);
     }
   }, [get]);
 

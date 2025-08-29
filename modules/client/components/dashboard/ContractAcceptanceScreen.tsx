@@ -1,5 +1,5 @@
 import React from 'react';
-import headerStyles from '@/modules/common/components/SignupPage.module.css';
+import headerStyles from '@/modules/common/components/SignUp/SignupPage.module.css';
 import css from './ContractAcceptanceScreen.module.css';
 
 interface Props {

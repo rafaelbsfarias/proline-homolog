@@ -17,9 +17,13 @@ type Group = {
   original_date?: string | null;
 };
 
-const VehicleCollectionSection: React.FC = () => {
+interface VehicleCollectionSectionProps {
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onLoadingChange }) => {
   const { groups, approvalTotal, count, highlightDates, loading, approveAll, reschedule, reload } =
-    useClientCollectionSummary();
+    useClientCollectionSummary({ onLoadingChange });
 
   // UI: reagendamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
