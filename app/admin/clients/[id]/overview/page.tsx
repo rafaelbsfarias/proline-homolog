@@ -14,6 +14,7 @@ import ApprovedCollectionSection from '@/modules/admin/components/overview/Appro
 import CollectionHistory from '@/modules/admin/components/overview/CollectionHistory';
 import DateChangeRequestedSection from '@/modules/admin/components/overview/DateChangeRequestedSection';
 import AdminDateAdequacyFlow from '@/modules/admin/components/overview/AdminDateAdequacyFlow';
+import DatePendingUnifiedSection from '@/modules/admin/components/overview/DatePendingUnifiedSection';
 
 const Page = () => {
   const params = useParams<{ id: string }>();
@@ -32,6 +33,8 @@ const Page = () => {
     pricingRequests = [],
     pendingApprovals = [],
     rescheduleGroups = [],
+    datePendingGroups = [],
+    datePendingTotal = 0,
     approvedCollections = [],
     approvalTotal = 0,
     approvedTotal = 0,
@@ -95,13 +98,11 @@ const Page = () => {
           onAfterSaveAskDates={items => setDateCheckItems(items)}
         />
 
-        {/* 2) Aguardando aprovação do cliente */}
-        <PendingApprovalSection groups={pendingApprovals} total={approvalTotal} />
-
-        {/* 3) Mudança de data solicitada (cliente) */}
-        <DateChangeRequestedSection
+        {/* 2) Aprovação de nova data (unificado) */}
+        <DatePendingUnifiedSection
           clientId={clientId}
-          groups={rescheduleGroups}
+          groups={datePendingGroups || []}
+          total={datePendingTotal || 0}
           onRefresh={refetchData}
         />
 

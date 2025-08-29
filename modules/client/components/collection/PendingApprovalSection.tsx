@@ -23,32 +23,57 @@ const PendingApprovalSection = () => {
 
   return (
     <div className="collection-section">
-      <h3>Propostas de Coleta para Aprovação</h3>
+      <h3>Aprovação de Nova Data</h3>
       <p>Analise as propostas abaixo e escolha uma ação.</p>
       {groups.map(group => (
-        <div key={group.addressId} className="proposal-card">
-          <h4>Endereço: {group.address}</h4>
-          <p>Veículos: {group.vehicle_count}</p>
-          <p>
-            Data Sugerida:{' '}
-            {group.collection_date
-              ? new Date(group.collection_date).toLocaleDateString('pt-BR')
-              : 'A definir'}
-          </p>
-          <p>
-            Custo:{' '}
-            {group.collection_fee
-              ? group.collection_fee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-              : 'A definir'}
-          </p>
-          <div className="actions">
-            <button onClick={() => handleApprove(group.addressId)}>Aprovar</button>
-            <button onClick={() => setShowRejectionModalFor(group.addressId)}>Rejeitar</button>
-            <button onClick={() => setShowRescheduleModalFor(group.addressId)}>
-              Sugerir Nova Data
-            </button>
+        <details
+          key={`${group.addressId}|${group.collection_date || ''}`}
+          className="proposal-card"
+          open
+        >
+          <summary style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+            <span>
+              <b>Endereço:</b> {group.address}
+            </span>
+            <span>
+              <b>Veículos:</b> {group.vehicle_count}
+            </span>
+            <span>
+              <b>Data sugerida:</b>{' '}
+              {group.collection_date
+                ? new Date(group.collection_date).toLocaleDateString('pt-BR')
+                : 'A definir'}
+            </span>
+            <span>
+              <b>Origem:</b> {group.proposed_by === 'client' ? 'Cliente' : 'Admin'}
+            </span>
+            <span>
+              <b>Custo:</b>{' '}
+              {group.collection_fee
+                ? group.collection_fee.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })
+                : 'A definir'}
+            </span>
+          </summary>
+          <div style={{ marginTop: 8 }}>
+            <div style={{ fontSize: '0.95rem', color: '#444' }}>
+              {group.original_date && (
+                <div>
+                  <b>Data original:</b> {new Date(group.original_date).toLocaleDateString('pt-BR')}
+                </div>
+              )}
+            </div>
+            <div className="actions" style={{ marginTop: 12 }}>
+              <button onClick={() => handleApprove(group.addressId)}>Aprovar</button>
+              <button onClick={() => setShowRejectionModalFor(group.addressId)}>Rejeitar</button>
+              <button onClick={() => setShowRescheduleModalFor(group.addressId)}>
+                Sugerir Nova Data
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
       ))}
       {/* Modais */}
       <RejectionModal

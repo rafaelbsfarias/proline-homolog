@@ -17,6 +17,8 @@ export interface PendingApprovalGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null;
+  statuses?: { status: string; count: number }[];
+  proposed_by?: 'client' | 'admin';
 }
 
 export interface ApprovedCollectionGroup {
@@ -61,6 +63,8 @@ export interface OverviewData {
   statusTotals: { status: string; count: number }[];
   history: HistoryRow[];
   rescheduleGroups: DateChangeRequestGroup[];
+  datePendingGroups?: PendingApprovalGroup[]; // unificado (com proposed_by)
+  datePendingTotal?: number;
 }
 
 export const useClientOverview = (clientId: string) => {
@@ -90,13 +94,16 @@ export const useClientOverview = (clientId: string) => {
         proposed_date: g.proposed_date || null,
       }));
 
-      const pendingApprovals: PendingApprovalGroup[] = (d.approvalGroups || []).map((g: any) => ({
-        addressId: g.addressId,
-        address: g.address,
-        vehicle_count: g.vehicle_count ?? 0,
-        collection_fee: typeof g.collection_fee === 'number' ? Number(g.collection_fee) : null,
-        collection_date: g.collection_date || null,
-      }));
+      const pendingApprovalsRaw: PendingApprovalGroup[] = (d.approvalGroups || []).map(
+        (g: any) => ({
+          addressId: g.addressId,
+          address: g.address,
+          vehicle_count: g.vehicle_count ?? 0,
+          collection_fee: typeof g.collection_fee === 'number' ? Number(g.collection_fee) : null,
+          collection_date: g.collection_date || null,
+          statuses: Array.isArray(g.statuses) ? g.statuses : undefined,
+        })
+      );
 
       const approvedCollections: ApprovedCollectionGroup[] = (d.approvedGroups || []).map(
         (g: any) => ({
@@ -109,9 +116,28 @@ export const useClientOverview = (clientId: string) => {
         })
       );
 
+      // Unificar pendências de data, marcando origem
+      const adminPendings: PendingApprovalGroup[] = pendingApprovalsRaw.map(g => ({
+        ...g,
+        proposed_by: 'admin',
+      }));
+      const clientPendings: PendingApprovalGroup[] = (d.rescheduleGroups || []).map((g: any) => ({
+        addressId: g.addressId,
+        address: g.address,
+        vehicle_count: g.vehicle_count ?? 0,
+        collection_fee: typeof g.collection_fee === 'number' ? Number(g.collection_fee) : null,
+        collection_date: g.collection_date || null,
+        proposed_by: 'client',
+      }));
+      const datePendingGroups = [...adminPendings, ...clientPendings];
+      const datePendingTotal = datePendingGroups.reduce((acc, g) => {
+        const fee = typeof g.collection_fee === 'number' ? g.collection_fee : 0;
+        return acc + fee * (g.vehicle_count || 0);
+      }, 0);
+
       const payload: OverviewData = {
         pricingRequests,
-        pendingApprovals,
+        pendingApprovals: pendingApprovalsRaw,
         approvedCollections,
         approvalTotal: Number(d.approvalTotal || 0),
         approvedTotal: Number(d.approvedTotal || 0),
@@ -119,6 +145,8 @@ export const useClientOverview = (clientId: string) => {
         statusTotals: Array.isArray(d.statusTotals) ? d.statusTotals : [],
         history: Array.isArray(d.collectionHistory) ? d.collectionHistory : [],
         rescheduleGroups: Array.isArray(d.rescheduleGroups) ? d.rescheduleGroups : [],
+        datePendingGroups,
+        datePendingTotal,
       };
 
       setData(payload);
