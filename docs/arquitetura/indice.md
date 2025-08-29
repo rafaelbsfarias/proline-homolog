@@ -7,6 +7,7 @@
 ## 2. Princípios de Desenvolvimento
 
 - [Instruções de Desenvolvimento](../DEVELOPMENT_INSTRUCTIONS.md) - Princípios e diretrizes do projeto
+- [Implementação de Loading](loading-states.md) - Documentação sobre os estados de carregamento
 
 ## 3. Referências
 

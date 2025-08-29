@@ -23,13 +23,16 @@
 - [Fluxo de Mudança de Data](fluxos_de_servico/fluxo_mudanca_data.md) - Fluxo de mudança de data
 - [Fluxo de Rejeição](fluxos_de_servico/fluxo_rejeicao.md) - Fluxo de rejeição de coleta
 
-## 2. Diretrizes do Projeto
+## 2. Documentação de Componentes
+- [Input](components/Input.md) - Documentação do componente de Input reutilizável.
+
+## 3. Diretrizes do Projeto
 
 - [Instruções de Desenvolvimento](DEVELOPMENT_INSTRUCTIONS.md) - Princípios e diretrizes do projeto
 
-## 3. Documentação de Funcionalidades
+## 4. Documentação de Funcionalidades
 
-### 3.1 Visão Geral do Cliente (Admin)
+### 4.1 Visão Geral do Cliente (Admin)
 - [Documento Principal](admin-client-overview.md) - Visão geral do cliente no painel administrativo
 - [Especificação Técnica](admin-client-overview-spec.md) - Especificação técnica detalhada
 - [Documento Completo](admin-client-overview-full.md) - Documentação completa
@@ -38,13 +41,13 @@
 - [Especificação](ADMIN_CLIENT_OVERVIEW_SPEC.md) - Especificação da página
 - [Documento Completo](ADMIN_CLIENT_OVERVIEW_FULL.md) - Documentação completa
 
-## 4. Segurança
+## 5. Segurança
 
 - [Auditoria de Autenticação](security/auditoria-autenticacao.md) - Auditoria do sistema de autenticação
 - [Auditoria de Módulos](security/auditoria-lib-modulos.md) - Auditoria de segurança nos módulos
 - [Plano de Ação de Segurança de Rotas](security/plano-acao-seguranca-rotas.md) - Plano de ação para segurança de rotas
 - [Relatório de Rotas Completas](security/relatorio-rotas-completas.md) - Relatório completo de rotas do sistema
 
-## 5. Referências
+## 6. Referências
 
 - [Plano de Refatoração Original](refact) - Plano inicial de refatoração
