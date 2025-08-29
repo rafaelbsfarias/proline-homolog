@@ -19,6 +19,9 @@ interface Props {
   ) => Promise<void>;
   loading?: boolean;
   onRefresh?: () => Promise<void> | void;
+  onAfterSaveAskDates?: (
+    items: { addressId: string; address: string; dateIso?: string | null }[]
+  ) => void;
 }
 
 const CollectionPricingSection: React.FC<Props> = ({
@@ -27,6 +30,7 @@ const CollectionPricingSection: React.FC<Props> = ({
   onSave,
   loading,
   onRefresh,
+  onAfterSaveAskDates,
 }) => {
   const { post } = useAuthenticatedFetch();
   const [fees, setFees] = useState<Record<string, number | undefined>>(() =>
@@ -135,21 +139,41 @@ const CollectionPricingSection: React.FC<Props> = ({
       <div className={styles.actions}>
         <button
           disabled={loading}
-          onClick={() =>
-            onSave(
-              requests
-                .map(r => ({
-                  collectionId: r.addressId,
-                  collectionFeePerVehicle: Number(fees[r.addressId] || 0),
-                  collectionDate: r.collection_date || undefined,
-                }))
-                .filter(
-                  x =>
-                    typeof x.collectionFeePerVehicle === 'number' &&
-                    !Number.isNaN(x.collectionFeePerVehicle)
-                )
-            )
-          }
+          onClick={() => {
+            const payload = requests
+              .map(r => ({
+                collectionId: r.addressId,
+                collectionFeePerVehicle: Number(fees[r.addressId] || 0),
+                collectionDate: r.collection_date || undefined,
+                address: r.address,
+                proposedOrClientDate: r.proposed_date || r.collection_date || undefined,
+              }))
+              .filter(
+                x =>
+                  typeof x.collectionFeePerVehicle === 'number' &&
+                  !Number.isNaN(x.collectionFeePerVehicle)
+              );
+
+            // Inform parent which addresses to ask date adequacy for (only those with a date visible)
+            if (onAfterSaveAskDates) {
+              const items = payload
+                .filter(p => !!p.proposedOrClientDate && p.collectionFeePerVehicle > 0)
+                .map(p => ({
+                  addressId: p.collectionId,
+                  address: p.address,
+                  dateIso: p.proposedOrClientDate,
+                }));
+              if (items.length) onAfterSaveAskDates(items);
+            }
+
+            return onSave(
+              payload.map(({ collectionId, collectionFeePerVehicle, collectionDate }) => ({
+                collectionId,
+                collectionFeePerVehicle,
+                collectionDate,
+              }))
+            );
+          }}
         >
           {loading ? 'Salvando...' : 'Salvar'}
         </button>

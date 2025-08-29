@@ -15,6 +15,7 @@ import { buildPendingApprovalGroups } from './client-collections/groups/pendingA
 import { getStatusTotals } from './client-collections/statusTotals';
 import { loadHistory } from './client-collections/history/load';
 import { enrichHistoryWithVehicleStatus } from './client-collections/history/enrich';
+import { buildRescheduleGroups } from './client-collections/groups/reschedule';
 
 const logger = getLogger('api:admin:client-collections-summary');
 
@@ -27,6 +28,7 @@ export async function getClientCollectionsSummary(
   const { approvedGroups, approvedTotal } = await buildApprovedGroups(admin, clientId);
   const groups: CollectionPricingRequest[] = await buildPricingRequests(admin, clientId);
   const { approvalGroups, approvalTotal } = await buildPendingApprovalGroups(admin, clientId);
+  const rescheduleGroups = await buildRescheduleGroups(admin, clientId);
 
   // 2) Client contract summary
   let clientSummary: ClientSummary | null = null;
@@ -60,5 +62,6 @@ export async function getClientCollectionsSummary(
     clientSummary,
     statusTotals,
     collectionHistory,
+    rescheduleGroups,
   };
 }

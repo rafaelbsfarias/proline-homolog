@@ -28,6 +28,14 @@ export interface ApprovedCollectionGroup {
   status?: string;
 }
 
+export interface DateChangeRequestGroup {
+  addressId: string;
+  address: string;
+  vehicle_count: number;
+  collection_fee: number | null;
+  collection_date: string | null;
+}
+
 export interface ClientSummary {
   taxa_operacao?: number | null;
   percentual_fipe?: number | null;
@@ -52,6 +60,7 @@ export interface OverviewData {
   clientSummary: ClientSummary | null;
   statusTotals: { status: string; count: number }[];
   history: HistoryRow[];
+  rescheduleGroups: DateChangeRequestGroup[];
 }
 
 export const useClientOverview = (clientId: string) => {
@@ -109,6 +118,7 @@ export const useClientOverview = (clientId: string) => {
         clientSummary: d.clientSummary || null,
         statusTotals: Array.isArray(d.statusTotals) ? d.statusTotals : [],
         history: Array.isArray(d.collectionHistory) ? d.collectionHistory : [],
+        rescheduleGroups: Array.isArray(d.rescheduleGroups) ? d.rescheduleGroups : [],
       };
 
       setData(payload);

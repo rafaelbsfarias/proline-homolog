@@ -12,6 +12,8 @@ import CollectionPricingSection from '@/modules/admin/components/overview/Collec
 import PendingApprovalSection from '@/modules/admin/components/overview/PendingApprovalSection';
 import ApprovedCollectionSection from '@/modules/admin/components/overview/ApprovedCollectionSection';
 import CollectionHistory from '@/modules/admin/components/overview/CollectionHistory';
+import DateChangeRequestedSection from '@/modules/admin/components/overview/DateChangeRequestedSection';
+import AdminDateAdequacyFlow from '@/modules/admin/components/overview/AdminDateAdequacyFlow';
 
 const Page = () => {
   const params = useParams<{ id: string }>();
@@ -20,10 +22,16 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dateCheckItems, setDateCheckItems] = useState<
+    { addressId: string; address: string; dateIso?: string | null }[]
+  >([]);
+  const [dateCheckOpen, setDateCheckOpen] = useState(false);
+  const [pendingSuccessAfterFlow, setPendingSuccessAfterFlow] = useState<string | null>(null);
 
   const {
     pricingRequests = [],
     pendingApprovals = [],
+    rescheduleGroups = [],
     approvedCollections = [],
     approvalTotal = 0,
     approvedTotal = 0,
@@ -49,7 +57,13 @@ const Page = () => {
           })),
         });
         if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar valores');
-        setMessage('Valores de coleta atualizados com sucesso!');
+        // If we have date checks to ask, open the flow; defer success message until done
+        if (dateCheckItems.length) {
+          setPendingSuccessAfterFlow('Valores de coleta atualizados com sucesso!');
+          setDateCheckOpen(true);
+        } else {
+          setMessage('Valores de coleta atualizados com sucesso!');
+        }
         await refetchData();
       } catch (e: any) {
         setError(e.message || 'Erro ao salvar valores');
@@ -57,7 +71,7 @@ const Page = () => {
         setLoading(false);
       }
     },
-    [clientId, post, refetchData]
+    [clientId, post, refetchData, dateCheckItems]
   );
 
   const pageError = loadError || error;
@@ -78,15 +92,23 @@ const Page = () => {
           onSave={onSavePricing}
           loading={loading}
           onRefresh={refetchData}
+          onAfterSaveAskDates={items => setDateCheckItems(items)}
         />
 
         {/* 2) Aguardando aprovação do cliente */}
         <PendingApprovalSection groups={pendingApprovals} total={approvalTotal} />
 
-        {/* 3) Coletas aprovadas */}
+        {/* 3) Mudança de data solicitada (cliente) */}
+        <DateChangeRequestedSection
+          clientId={clientId}
+          groups={rescheduleGroups}
+          onRefresh={refetchData}
+        />
+
+        {/* 4) Coletas aprovadas */}
         <ApprovedCollectionSection groups={approvedCollections} total={approvedTotal} />
 
-        {/* 4) Histórico */}
+        {/* 5) Histórico */}
         <CollectionHistory history={history} />
 
         {message && (
@@ -94,6 +116,23 @@ const Page = () => {
         )}
         {pageError && !message && (
           <MessageModal message={pageError} onClose={() => setError(null)} variant="error" />
+        )}
+
+        {dateCheckOpen && (
+          <AdminDateAdequacyFlow
+            clientId={clientId}
+            items={dateCheckItems}
+            open={dateCheckOpen}
+            onClose={() => {
+              setDateCheckOpen(false);
+              setDateCheckItems([]);
+            }}
+            onDone={async () => {
+              if (pendingSuccessAfterFlow) setMessage(pendingSuccessAfterFlow);
+              setPendingSuccessAfterFlow(null);
+              await refetchData();
+            }}
+          />
         )}
       </div>
     </>

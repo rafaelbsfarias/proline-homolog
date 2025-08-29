@@ -25,6 +25,14 @@ export interface ApprovedCollectionGroup {
   status?: string;
 }
 
+export interface DateChangeRequestGroup {
+  addressId: string;
+  address: string;
+  vehicle_count: number;
+  collection_fee: number | null;
+  collection_date: string | null; // data proposta pelo cliente
+}
+
 export interface ClientSummary {
   taxa_operacao?: number | null;
   percentual_fipe?: number | null;
@@ -49,4 +57,5 @@ export interface ClientCollectionsSummaryResult {
   clientSummary: ClientSummary | null;
   statusTotals: { status: string; count: number }[];
   collectionHistory: HistoryRow[];
+  rescheduleGroups?: DateChangeRequestGroup[];
 }
