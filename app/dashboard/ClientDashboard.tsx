@@ -322,6 +322,13 @@ const ClientDashboard: React.FC = () => {
         onClose={() => setShowCadastrarVeiculoModal(false)}
         onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
       />
+      <ClientCollectPointModal
+        isOpen={showAddCollectPointModal}
+        onClose={() => setShowAddCollectPointModal(false)}
+        onSuccess={() => {
+          setShowAddCollectPointModal(false);
+        }}
+      />
       <ForceChangePasswordModal
         isOpen={showForceChangePasswordModal}
         onClose={() => setShowForceChangePasswordModal(false)}
