@@ -55,7 +55,16 @@ const ClientDashboard: React.FC = () => {
     await acceptContract(contentToSend);
   }
 
-  const showOverallLoader = loading || (accepted && isComponentLoading);
+  const [showOverallLoader, setShowOverallLoader] = useState(true);
+
+  useEffect(() => {
+    if (loading || (accepted && isComponentLoading)) {
+      setShowOverallLoader(true);
+    } else {
+      const timeout = setTimeout(() => setShowOverallLoader(false), 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [loading, accepted, isComponentLoading]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
