@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:admin:propose-collection-date');
 
@@ -77,10 +78,10 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     // 4) Atualizar veículos do cliente nesse endereço para indicar que há solicitação de mudança
     // Não alteramos a estimated_arrival_date aqui — a nova data fica registrada na collection.
-    const allowedPrev = ['PONTO DE COLETA SELECIONADO', 'AGUARDANDO APROVAÇÃO DA COLETA'];
+    const allowedPrev = [STATUS.PONTO_COLETA_SELECIONADO, STATUS.AGUARDANDO_APROVACAO];
     const { error: vehErr } = await admin
       .from('vehicles')
-      .update({ status: 'SOLICITAÇÃO DE MUDANÇA DE DATA' })
+      .update({ status: STATUS.SOLICITACAO_MUDANCA_DATA })
       .eq('client_id', clientId)
       .eq('pickup_address_id', addressId)
       .in('status', allowedPrev);

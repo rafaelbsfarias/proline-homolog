@@ -94,8 +94,9 @@ const VehicleCollectionSection: React.FC = () => {
                         g.collection_date &&
                         g.original_date !== g.collection_date && (
                           <em style={{ color: '#a00', marginLeft: 6, fontStyle: 'italic' }}>
-                            (Nova data proposta pelo administrador; sua escolha inicial foi{' '}
-                            {formatDateBR(g.original_date as string)})
+                            {g.proposed_by === 'client'
+                              ? `Você propôs uma nova data; a data anterior era ${formatDateBR(g.original_date)}`
+                              : `Nova data proposta pelo administrador; sua escolha inicial foi ${formatDateBR(g.original_date)}`}
                           </em>
                         )}
                       {typeof g.collection_fee === 'number' && (

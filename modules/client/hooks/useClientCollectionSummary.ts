@@ -8,6 +8,7 @@ export type CollectionGroup = {
   collection_fee: number | null;
   collection_date: string | null; // ISO
   original_date?: string | null;
+  proposed_by?: 'client' | 'admin';
 };
 
 export function useClientCollectionSummary() {

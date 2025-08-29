@@ -34,11 +34,20 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const byAddress = new Map<string, { count: number; original_date: string | null }>();
+    const byAddress = new Map<
+      string,
+      { count: number; original_date: string | null; clientProposed: boolean }
+    >();
     (vehicles || []).forEach((v: any) => {
       const aid = String(v.pickup_address_id);
-      const current = byAddress.get(aid) || { count: 0, original_date: v.estimated_arrival_date };
-      byAddress.set(aid, { count: current.count + 1, original_date: current.original_date });
+      const current =
+        byAddress.get(aid) ||
+        ({ count: 0, original_date: v.estimated_arrival_date, clientProposed: false } as any);
+      byAddress.set(aid, {
+        count: current.count + 1,
+        original_date: current.original_date,
+        clientProposed: current.clientProposed || v.status === STATUS.APROVACAO_NOVA_DATA,
+      });
     });
 
     const addressIds = Array.from(byAddress.keys());
@@ -96,7 +105,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const groups = addressIds.map(aid => {
       const lbl = addrLabelMap.get(aid) || '';
-      const info = byAddress.get(aid) || ({ count: 0, original_date: null } as any);
+      const info =
+        byAddress.get(aid) || ({ count: 0, original_date: null, clientProposed: false } as any);
       const proposed = proposedDateByAddr.get(lbl) || null;
       const fee =
         feeByAddrDate.get(`${lbl}|${proposed || ''}`) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
@@ -107,6 +117,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         collection_fee: fee,
         collection_date: proposed,
         original_date: info.original_date || null,
+        proposed_by: info.clientProposed ? 'client' : proposed ? 'admin' : undefined,
       };
     });
 
