@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 export interface UseIndividualApprovalReturn {
-  acceptProposal: (addressId: string) => Promise<boolean>;
-  rejectProposal: (addressId: string) => Promise<boolean>;
+  acceptProposal: (addressId: string, proposedBy?: 'client' | 'admin') => Promise<boolean>;
+  rejectProposal: (addressId: string, proposedBy?: 'client' | 'admin') => Promise<boolean>;
   accepting: boolean;
   rejecting: boolean;
   error: string | null;
+  canAcceptProposal: (proposedBy?: 'client' | 'admin') => boolean;
+  canRejectProposal: (proposedBy?: 'client' | 'admin') => boolean;
 }
 
 export const useIndividualApproval = (): UseIndividualApprovalReturn => {
@@ -17,7 +19,26 @@ export const useIndividualApproval = (): UseIndividualApprovalReturn => {
   const [rejecting, setRejecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const acceptProposal = async (addressId: string): Promise<boolean> => {
+  // Validação: cliente só pode aceitar propostas do admin
+  const canAcceptProposal = (proposedBy?: 'client' | 'admin'): boolean => {
+    return proposedBy === 'admin';
+  };
+
+  // Validação: cliente só pode rejeitar propostas do admin
+  const canRejectProposal = (proposedBy?: 'client' | 'admin'): boolean => {
+    return proposedBy === 'admin';
+  };
+
+  const acceptProposal = async (
+    addressId: string,
+    proposedBy?: 'client' | 'admin'
+  ): Promise<boolean> => {
+    // Validação antes de tentar aceitar
+    if (!canAcceptProposal(proposedBy)) {
+      setError('Você só pode aceitar propostas sugeridas pelo administrador');
+      return false;
+    }
+
     try {
       setAccepting(true);
       setError(null);
@@ -38,7 +59,16 @@ export const useIndividualApproval = (): UseIndividualApprovalReturn => {
     }
   };
 
-  const rejectProposal = async (addressId: string): Promise<boolean> => {
+  const rejectProposal = async (
+    addressId: string,
+    proposedBy?: 'client' | 'admin'
+  ): Promise<boolean> => {
+    // Validação antes de tentar rejeitar
+    if (!canRejectProposal(proposedBy)) {
+      setError('Você só pode rejeitar propostas sugeridas pelo administrador');
+      return false;
+    }
+
     try {
       setRejecting(true);
       setError(null);
@@ -65,5 +95,7 @@ export const useIndividualApproval = (): UseIndividualApprovalReturn => {
     accepting,
     rejecting,
     error,
+    canAcceptProposal,
+    canRejectProposal,
   };
 };

@@ -2,24 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-
-export interface CollectionGroup {
-  addressId: string;
-  address: string;
-  vehicle_count: number;
-  collection_fee: number | null;
-  collection_date: string | null; // ISO
-  original_date: string | null; // ISO
-  proposed_by?: 'client' | 'admin'; // Quem propôs a data
-  requires_approval?: boolean; // Se precisa de aprovação individual
-}
-
-export interface CollectionSummaryData {
-  approvalTotal: number;
-  count: number;
-  groups: CollectionGroup[];
-  highlightDates: string[];
-}
+import type {
+  CollectionGroup,
+  CollectionSummaryData,
+} from '@/modules/client/components/collection/types';
 
 export interface UseCollectionSummaryReturn {
   data: CollectionSummaryData;

@@ -41,10 +41,13 @@
 ## 4. Segurança
 
 - [Auditoria de Autenticação](security/auditoria-autenticacao.md) - Auditoria do sistema de autenticação
-- [Auditoria de Módulos](security/auditoria-lib-modulos.md) - Auditoria de segurança nos módulos
+- [Auditoria de Módulos](security/auditoria-lib-modulos.md) - Auditoria de segurança em módulos
 - [Plano de Ação de Segurança de Rotas](security/plano-acao-seguranca-rotas.md) - Plano de ação para segurança de rotas
 - [Relatório de Rotas Completas](security/relatorio-rotas-completas.md) - Relatório completo de rotas do sistema
 
-## 5. Referências
+## 5. Bugs e Issues Conhecidos
 
-- [Plano de Refatoração Original](refact) - Plano inicial de refatoração
+- [Índice de Bugs](bugs/indice.md) - Índice completo dos bugs documentados
+- [Erro ao Aceitar Data Proposta pelo Cliente](bugs/admin_accept_proposed_date_bug.md) - Bug crítico na aceitação de datas propostas
+
+## 5. Referências

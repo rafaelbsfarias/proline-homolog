@@ -4,9 +4,19 @@ export interface CollectionGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null; // ISO
-  original_date: string | null; // ISO
+  original_date?: string | null;
   proposed_by?: 'client' | 'admin'; // Quem propôs a data
   requires_approval?: boolean; // Se precisa de aprovação individual
+}
+
+export interface PendingApprovalGroup {
+  addressId: string;
+  address: string;
+  vehicle_count: number;
+  collection_fee: number | null;
+  collection_date: string | null;
+  original_date?: string | null;
+  proposed_by?: 'client' | 'admin';
 }
 
 export interface CollectionSummaryData {

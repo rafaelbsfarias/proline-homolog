@@ -1,5 +1,5 @@
 import React from 'react';
-import { PendingApprovalGroup } from '@/modules/admin/hooks/useClientOverview';
+import { PendingApprovalGroup } from '@/modules/admin/services/client-collections/types';
 import AddressGroupsTableSection from './AddressGroupsTableSection';
 
 interface Props {

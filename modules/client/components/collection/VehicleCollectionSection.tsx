@@ -5,17 +5,9 @@ import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import { formatTotalCurrencyBR } from '@/modules/common/utils/format';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
+import { useIndividualApproval } from '@/modules/client/hooks/collection/useIndividualApproval';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
-import CalendarMonth from './CalendarMonth';
-
-type Group = {
-  addressId: string;
-  address: string;
-  vehicle_count: number;
-  collection_fee: number | null;
-  collection_date: string | null; // ISO
-  original_date?: string | null;
-};
+import CalendarMonth from './Calendar/CalendarMonth';
 
 interface VehicleCollectionSectionProps {
   onLoadingChange?: (loading: boolean) => void;
@@ -24,6 +16,17 @@ interface VehicleCollectionSectionProps {
 const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onLoadingChange }) => {
   const { groups, approvalTotal, count, highlightDates, loading, approveAll, reschedule, reload } =
     useClientCollectionSummary({ onLoadingChange });
+
+  // Hook para aprovação individual
+  const {
+    acceptProposal,
+    rejectProposal,
+    accepting,
+    rejecting,
+    error: approvalError,
+    canAcceptProposal,
+    canRejectProposal,
+  } = useIndividualApproval();
 
   // UI: reagendamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
@@ -62,6 +65,33 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       setFeedback({ type: 'error', msg: 'Não foi possível confirmar a coleta.' });
     }
     setBusyApprove(false);
+  };
+
+  // Handlers para aprovação individual
+  const handleAcceptProposal = async (addressId: string, proposedBy?: 'client' | 'admin') => {
+    const success = await acceptProposal(addressId, proposedBy);
+    if (success) {
+      setFeedback({ type: 'success', msg: 'Proposta aceita com sucesso.' });
+      await reload();
+    } else {
+      setFeedback({
+        type: 'error',
+        msg: approvalError || 'Erro ao aceitar proposta.',
+      });
+    }
+  };
+
+  const handleRejectProposal = async (addressId: string, proposedBy?: 'client' | 'admin') => {
+    const success = await rejectProposal(addressId, proposedBy);
+    if (success) {
+      setFeedback({ type: 'success', msg: 'Proposta rejeitada com sucesso.' });
+      await reload();
+    } else {
+      setFeedback({
+        type: 'error',
+        msg: approvalError || 'Erro ao rejeitar proposta.',
+      });
+    }
   };
 
   const minIso = makeLocalIsoDate();
@@ -151,6 +181,31 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
                       >
                         Sugerir outra data
                       </button>
+
+                      {/* Botões de aceitar/rejeitar apenas para propostas do admin */}
+                      {canAcceptProposal(g.proposed_by) && (
+                        <button
+                          className="refresh-button"
+                          style={{ backgroundColor: '#28a745', color: 'white' }}
+                          onClick={() => handleAcceptProposal(g.addressId, g.proposed_by)}
+                          disabled={accepting}
+                          title="Aceitar proposta de coleta"
+                        >
+                          {accepting ? 'Aceitando…' : 'Aceitar'}
+                        </button>
+                      )}
+
+                      {canRejectProposal(g.proposed_by) && (
+                        <button
+                          className="refresh-button"
+                          style={{ backgroundColor: '#dc3545', color: 'white' }}
+                          onClick={() => handleRejectProposal(g.addressId, g.proposed_by)}
+                          disabled={rejecting}
+                          title="Rejeitar proposta de coleta"
+                        >
+                          {rejecting ? 'Rejeitando…' : 'Rejeitar'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -168,8 +223,7 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
                   const g = groups.find(x => x.addressId === rescheduleOpenFor);
                   const arr: string[] = [];
                   if (g?.collection_date) arr.push(g.collection_date);
-                  // @ts-ignore original_date may be provided by API
-                  if ((g as any)?.original_date) arr.push((g as any).original_date as string);
+                  if (g?.original_date) arr.push(g.original_date);
                   return arr.filter(Boolean) as string[];
                 })()}
                 onChangeIso={setNewDateIso}
@@ -186,29 +240,53 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
             </div>
           )}
 
-          {/* Total consolidado */}
+          {/* Total consolidado - apenas itens aprováveis (propostas do admin) */}
           <div style={{ marginTop: 8, fontWeight: 600 }}>
             {loading
               ? 'Carregando valor...'
-              : `Total a pagar (${count} veículo(s)): ${approvalTotal.toLocaleString('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                })}`}
+              : (() => {
+                  const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
+                  const approvableTotal = approvableGroups.reduce((sum, g) => {
+                    if (typeof g.collection_fee === 'number') {
+                      return sum + g.collection_fee * g.vehicle_count;
+                    }
+                    return sum;
+                  }, 0);
+                  const approvableCount = approvableGroups.reduce(
+                    (sum, g) => sum + g.vehicle_count,
+                    0
+                  );
+
+                  return approvableGroups.length > 0
+                    ? `Total a pagar (${approvableCount} veículo(s)): ${approvableTotal.toLocaleString(
+                        'pt-BR',
+                        {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }
+                      )}`
+                    : 'Nenhum item pendente de aprovação';
+                })()}
           </div>
 
           {/* Confirmar coleta: aprova a coleta e atualiza status dos veículos */}
-          <div style={{ marginTop: 8 }}>
-            Para confirmar a coleta dos veículos clique
-            <button
-              className="refresh-button"
-              style={{ marginLeft: 8 }}
-              onClick={handleApproveAll}
-              aria-busy={busyApprove}
-              disabled={!groups.length || loading || busyApprove}
-            >
-              {busyApprove ? 'Confirmando…' : 'aqui'}
-            </button>
-          </div>
+          {(() => {
+            const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
+            return approvableGroups.length > 0 ? (
+              <div style={{ marginTop: 8 }}>
+                Para confirmar a coleta dos veículos clique
+                <button
+                  className="refresh-button"
+                  style={{ marginLeft: 8 }}
+                  onClick={handleApproveAll}
+                  aria-busy={busyApprove}
+                  disabled={!approvableGroups.length || loading || busyApprove}
+                >
+                  {busyApprove ? 'Confirmando…' : 'aqui'}
+                </button>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         <div className="counter-actions" />

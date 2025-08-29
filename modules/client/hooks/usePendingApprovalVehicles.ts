@@ -1,15 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-
-export interface PendingApprovalGroup {
-  addressId: string;
-  address: string;
-  vehicle_count: number;
-  collection_fee: number | null;
-  collection_date: string | null;
-  original_date?: string | null;
-  proposed_by?: 'client' | 'admin';
-}
+import { PendingApprovalGroup } from '@/modules/client/components/collection/types';
 
 export const usePendingApprovalVehicles = () => {
   const { get, post } = useAuthenticatedFetch();
@@ -29,8 +20,8 @@ export const usePendingApprovalVehicles = () => {
       } else {
         throw new Error(response.error || 'Falha ao buscar propostas de coleta.');
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }

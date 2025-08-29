@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RescheduleFlowProps } from '../types';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import RescheduleModal from './RescheduleModal';
+import RescheduleModal from '../RescheduleModal';
 
 const RescheduleFlow: React.FC<RescheduleFlowProps> = ({
   isOpen,
@@ -40,9 +40,9 @@ const RescheduleFlow: React.FC<RescheduleFlowProps> = ({
 
   return (
     <RescheduleModal
-      isOpen={isOpen}
+      open={isOpen}
       onClose={onClose}
-      onConfirm={handleReschedule}
+      onSubmit={handleReschedule}
       minIso={minIso}
       loading={loading}
     />

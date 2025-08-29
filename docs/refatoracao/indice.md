@@ -14,5 +14,5 @@
 - [Relação Fluxos x Componentes](fluxos_componentes.md) - Mapeamento entre fluxos de serviço e componentes implementados
 
 ## 5. Referências
-- [Plano de Refatoração Original](../refact) - Plano inicial de refatoração
+
 - [Fluxos de Serviço](../fluxos_de_servico/) - Documentação dos fluxos de negócio

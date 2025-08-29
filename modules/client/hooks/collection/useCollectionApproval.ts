@@ -2,14 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-
-export interface CollectionGroup {
-  addressId: string;
-  address: string;
-  vehicle_count: number;
-  collection_fee: number | null;
-  collection_date: string | null; // ISO
-}
+import { CollectionGroup } from '@/modules/client/components/collection/types';
 
 export interface UseCollectionApprovalReturn {
   approveAllCollections: (groups: CollectionGroup[]) => Promise<boolean>;
