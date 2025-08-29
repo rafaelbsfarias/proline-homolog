@@ -4,6 +4,9 @@ export interface CollectionGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null; // ISO
+  original_date: string | null; // ISO
+  proposed_by?: 'client' | 'admin'; // Quem propôs a data
+  requires_approval?: boolean; // Se precisa de aprovação individual
 }
 
 export interface CollectionSummaryData {
@@ -18,16 +21,22 @@ export interface CollectionSummaryProps {
   loading: boolean;
   onRescheduleClick: (addressId: string) => void;
   onApproveClick: () => void;
+  onAcceptProposal?: (addressId: string) => void;
+  onRejectProposal?: (addressId: string) => void;
 }
 
 export interface CollectionGroupsListProps {
   groups: CollectionGroup[];
   onRescheduleClick: (addressId: string) => void;
+  onAcceptProposal?: (addressId: string) => void;
+  onRejectProposal?: (addressId: string) => void;
 }
 
 export interface CollectionGroupItemProps {
   group: CollectionGroup;
   onRescheduleClick: (addressId: string) => void;
+  onAcceptProposal?: (addressId: string) => void;
+  onRejectProposal?: (addressId: string) => void;
 }
 
 export interface CollectionTotalProps {

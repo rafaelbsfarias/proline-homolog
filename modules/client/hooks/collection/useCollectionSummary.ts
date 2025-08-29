@@ -9,6 +9,9 @@ export interface CollectionGroup {
   vehicle_count: number;
   collection_fee: number | null;
   collection_date: string | null; // ISO
+  original_date: string | null; // ISO
+  proposed_by?: 'client' | 'admin'; // Quem propôs a data
+  requires_approval?: boolean; // Se precisa de aprovação individual
 }
 
 export interface CollectionSummaryData {

@@ -5,6 +5,8 @@ import CollectionGroupItem from './CollectionGroupItem';
 const CollectionGroupsList: React.FC<CollectionGroupsListProps> = ({
   groups,
   onRescheduleClick,
+  onAcceptProposal,
+  onRejectProposal,
 }) => {
   if (groups.length === 0) {
     return <> no momento não há sugestões pendentes.</>;
@@ -17,6 +19,8 @@ const CollectionGroupsList: React.FC<CollectionGroupsListProps> = ({
           key={group.addressId}
           group={group}
           onRescheduleClick={onRescheduleClick}
+          onAcceptProposal={onAcceptProposal}
+          onRejectProposal={onRejectProposal}
         />
       ))}
     </>

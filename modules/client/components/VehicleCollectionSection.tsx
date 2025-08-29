@@ -7,6 +7,7 @@ import {
   useCollectionSummary,
   useCollectionApproval,
   useRescheduleModal,
+  useIndividualApproval,
 } from '../hooks/collection';
 
 interface VehicleCollectionSectionProps {
@@ -17,11 +18,26 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
   const { data, loading, refetch } = useCollectionSummary(onLoadingChange);
   const { approveAllCollections } = useCollectionApproval();
   const { rescheduleOpenFor, toggleRescheduleModal, closeRescheduleModal } = useRescheduleModal();
+  const { acceptProposal, rejectProposal } = useIndividualApproval();
 
   const minIso = makeLocalIsoDate();
 
   const handleApproveClick = async () => {
     const success = await approveAllCollections(data.groups);
+    if (success) {
+      await refetch();
+    }
+  };
+
+  const handleAcceptProposal = async (addressId: string) => {
+    const success = await acceptProposal(addressId);
+    if (success) {
+      await refetch();
+    }
+  };
+
+  const handleRejectProposal = async (addressId: string) => {
+    const success = await rejectProposal(addressId);
     if (success) {
       await refetch();
     }
@@ -40,6 +56,8 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
             loading={loading}
             onRescheduleClick={toggleRescheduleModal}
             onApproveClick={handleApproveClick}
+            onAcceptProposal={handleAcceptProposal}
+            onRejectProposal={handleRejectProposal}
           />
 
           <RescheduleFlow

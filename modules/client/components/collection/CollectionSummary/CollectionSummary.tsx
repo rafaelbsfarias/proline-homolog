@@ -8,6 +8,8 @@ const CollectionSummary: React.FC<CollectionSummaryProps> = ({
   loading,
   onRescheduleClick,
   onApproveClick,
+  onAcceptProposal,
+  onRejectProposal,
 }) => {
   return (
     <div className="counter-content" style={{ width: '100%' }}>
@@ -16,7 +18,12 @@ const CollectionSummary: React.FC<CollectionSummaryProps> = ({
       {/* Mensagem guiada */}
       <div style={{ marginBottom: 8 }}>
         Prezado(a), sugerimos a coleta dos veículos
-        <CollectionGroupsList groups={data.groups} onRescheduleClick={onRescheduleClick} />
+        <CollectionGroupsList
+          groups={data.groups}
+          onRescheduleClick={onRescheduleClick}
+          onAcceptProposal={onAcceptProposal}
+          onRejectProposal={onRejectProposal}
+        />
       </div>
 
       {/* Total consolidado */}
