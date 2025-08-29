@@ -31,10 +31,8 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
   // marcar dias no calendário
   const [highlightDates, setHighlightDates] = useState<string[]>([]);
 
-  // UI: reagendamento e pagamento
+  // UI: reagendamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'boleto' | 'cartao' | 'qrcode'>('boleto');
 
   const minIso = makeLocalIsoDate();
 
@@ -84,7 +82,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
               for (const g of groups) {
                 await post('/api/client/collection-approve', { addressId: g.addressId });
               }
-              setShowPayment(true);
               await loadSummary();
             }}
           />
@@ -95,7 +92,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
             addressId={rescheduleOpenFor}
             onClose={() => setRescheduleOpenFor(null)}
             onRescheduleSuccess={async () => {
-              setShowPayment(false);
               await loadSummary();
             }}
             minIso={minIso}
@@ -104,49 +100,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
 
         <div className="counter-actions" />
       </div>
-
-      {/* Meios de pagamento (frontend) — exibidos somente após confirmar a coleta */}
-      {showPayment && (
-        <div className="collection-controls" style={{ marginTop: 12 }}>
-          <div className="row">
-            <label htmlFor="payment-method">Forma de pagamento:</label>
-            <select
-              id="payment-method"
-              value={paymentMethod}
-              onChange={e => setPaymentMethod(e.target.value as 'boleto' | 'cartao' | 'qrcode')}
-              aria-label="Selecionar forma de pagamento"
-            >
-              <option value="boleto">Boleto</option>
-              <option value="cartao">Cartão</option>
-              <option value="qrcode">QR Code</option>
-            </select>
-          </div>
-
-          {paymentMethod === 'boleto' && (
-            <div style={{ marginTop: 8, opacity: 0.9 }}>
-              O boleto será gerado após a aprovação. (mock)
-            </div>
-          )}
-
-          {paymentMethod === 'cartao' && (
-            <div style={{ marginTop: 8, opacity: 0.9 }}>
-              Pagamento com cartão (mock).
-              <br />
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <input placeholder="Número do cartão" />
-                <input placeholder="MM/AA" style={{ width: 90 }} />
-                <input placeholder="CVV" style={{ width: 80 }} />
-              </div>
-            </div>
-          )}
-
-          {paymentMethod === 'qrcode' && (
-            <div style={{ marginTop: 8, opacity: 0.9 }}>
-              Exibir QR Code (mock) para pagamento instantâneo.
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Calendário: marca todas as datas de coleta agendadas */}
       <div
