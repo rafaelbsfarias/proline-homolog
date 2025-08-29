@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { formatAddressLabel } from '@/modules/common/utils/address';
+import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:client:collection-summary');
 export const dynamic = 'force-dynamic';
@@ -13,15 +15,14 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const userId = req.user.id;
     const admin = SupabaseService.getInstance().getAdminClient();
 
-    // Buscar veículos com status pendente de aprovação pelo cliente
     const { data: vehicles, error: vehErr } = await admin
       .from('vehicles')
       .select('id, client_id, status, pickup_address_id, estimated_arrival_date')
       .eq('client_id', userId)
       .in('status', [
-        'AGUARDANDO APROVAÇÃO DA COLETA',
-        'SOLICITAÇÃO DE MUDANÇA DE DATA',
-        'APROVAÇÃO NOVA DATA',
+        STATUS.AGUARDANDO_APROVACAO,
+        STATUS.SOLICITACAO_MUDANCA_DATA,
+        STATUS.APROVACAO_NOVA_DATA,
       ])
       .not('pickup_address_id', 'is', null);
 
@@ -33,7 +34,6 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // Agrupar veículos por endereço de coleta
     const byAddress = new Map<string, { count: number; original_date: string | null }>();
     (vehicles || []).forEach((v: any) => {
       const aid = String(v.pickup_address_id);
@@ -52,7 +52,6 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       });
     }
 
-    // Carregar labels dos endereços
     const { data: addrs, error: addrErr } = await admin
       .from('addresses')
       .select('id, street, number, city')
@@ -66,16 +65,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const label = (a: any) =>
-      `${a?.street || ''}${a?.number ? ', ' + a.number : ''}${a?.city ? ' - ' + a.city : ''}`.trim();
-
     const addrLabelMap = new Map<string, string>();
     addressIds.forEach(aid => {
       const a = (addrs || []).find((x: any) => x.id === aid);
-      addrLabelMap.set(aid, label(a));
+      addrLabelMap.set(aid, formatAddressLabel(a));
     });
 
-    // Carregar taxas/datas propostas pelo admin (vehicle_collections) para esses endereços
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
     const feeByAddrDate = new Map<string, number>();
     const proposedDateByAddr = new Map<string, string | null>();
@@ -84,7 +79,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         .from('vehicle_collections')
         .select('collection_address, collection_fee_per_vehicle, collection_date')
         .eq('client_id', userId)
-        .eq('status', 'requested')
+        .eq('status', STATUS.REQUESTED)
         .in('collection_address', labels);
       if (feeErr) {
         logger.warn('fees-load-error', { error: feeErr.message });
@@ -99,12 +94,10 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       }
     }
 
-    // Criar grupos
     const groups = addressIds.map(aid => {
       const lbl = addrLabelMap.get(aid) || '';
       const info = byAddress.get(aid) || ({ count: 0, original_date: null } as any);
       const proposed = proposedDateByAddr.get(lbl) || null;
-      // buscar fee usando a data proposta; se não houver, cair para sem data
       const fee =
         feeByAddrDate.get(`${lbl}|${proposed || ''}`) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
       return {
@@ -112,16 +105,14 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         address: lbl,
         vehicle_count: info.count,
         collection_fee: fee,
-        collection_date: proposed, // data proposta pelo admin
-        original_date: info.original_date || null, // data inicial do cliente
+        collection_date: proposed,
+        original_date: info.original_date || null,
       };
     });
 
-    // Calcular total
     let approvalTotal = 0;
     let totalCount = 0;
     const dates: string[] = [];
-
     groups.forEach(g => {
       totalCount += g.vehicle_count;
       if (typeof g.collection_fee === 'number' && g.collection_date) {
@@ -157,23 +148,19 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const admin = SupabaseService.getInstance().getAdminClient();
 
-    // label do endereço
     const { data: addr } = await admin
       .from('addresses')
       .select('id, street, number, city')
       .eq('id', addressId)
       .maybeSingle();
-    const addressLabel = addr
-      ? `${addr.street || ''}${addr.number ? `, ${addr.number}` : ''}${addr.city ? ` - ${addr.city}` : ''}`.trim()
-      : '';
+    const addressLabel = formatAddressLabel(addr);
 
-    // atualizar veículos
     const { error: updVehErr } = await admin
       .from('vehicles')
-      .update({ estimated_arrival_date: new_date, status: 'APROVAÇÃO NOVA DATA' })
+      .update({ estimated_arrival_date: new_date, status: STATUS.APROVACAO_NOVA_DATA })
       .eq('client_id', userId)
       .eq('pickup_address_id', addressId)
-      .in('status', ['AGUARDANDO APROVAÇÃO DA COLETA', 'APROVAÇÃO NOVA DATA']);
+      .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.APROVACAO_NOVA_DATA]);
     if (updVehErr) {
       logger.error('vehicles-update-error', { error: updVehErr.message });
       return NextResponse.json(
@@ -182,14 +169,13 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // atualizar linha em vehicle_collections (se existir)
     if (addressLabel) {
       await admin
         .from('vehicle_collections')
-        .update({ collection_date: new_date }) // mantém 'requested'
+        .update({ collection_date: new_date })
         .eq('client_id', userId)
         .eq('collection_address', addressLabel)
-        .in('status', ['requested', 'approved']);
+        .in('status', [STATUS.REQUESTED, STATUS.APPROVED]);
     }
 
     return NextResponse.json({ success: true });
