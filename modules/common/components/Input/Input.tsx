@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { EyeIcon } from '../EyeIcon';
 import styles from './Input.module.css';
-import ErrorMessage from '../ErroMessage/ErrorMessage';
 
 interface InputProps {
   id: string;
   name: string;
   label: string;
-  type?: 'text' | 'password' | 'email'; // tipos suportados
+  type?: 'text' | 'password' | 'email';
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   placeholder?: string;
+  className?: string; // Add className prop
 }
 
 const Input: React.FC<InputProps> = ({
@@ -23,6 +23,7 @@ const Input: React.FC<InputProps> = ({
   onChange,
   disabled = false,
   placeholder,
+  className, // Destructure className
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,6 +42,7 @@ const Input: React.FC<InputProps> = ({
           onChange={onChange}
           disabled={disabled}
           placeholder={placeholder}
+          className={className} // Apply the className
         />
         {isPassword && (
           <button

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import styles from './ForceChangePasswordModal.module.css';
 import { useForceChangePassword } from '@/modules/common/hooks/ForceChangePassword/useForceChangePassword';
-import ErrorMessage from '../ErroMessage/ErrorMessage';
+import Input from '../Input/Input';
+import ErrorMessage from '../ErroMessage/ErrorMessage'; // Import ErrorMessage
 
 interface ForceChangePasswordModalProps {
   isOpen: boolean;
@@ -38,9 +39,10 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
           className={styles.form}
         >
           <div className={styles.formGroup}>
-            <label htmlFor="password">Nova senha</label>
-            <input
+            <Input
               id="password"
+              name="password"
+              label="Nova senha"
               type="password"
               value={password}
               onChange={e => {
@@ -50,14 +52,16 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
                   password: undefined,
                 }));
               }}
+              className={errors.password ? styles.error : ''}
             />
             <ErrorMessage message={errors.password} />
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="confirmPassword">Confirme a nova senha</label>
-            <input
+            <Input
               id="confirmPassword"
+              name="confirmPassword"
+              label="Confirme a nova senha"
               type="password"
               value={confirmPassword}
               onChange={e => {
@@ -67,6 +71,7 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
                   confirmPassword: undefined,
                 }));
               }}
+              className={errors.confirmPassword ? styles.error : ''}
             />
             <ErrorMessage message={errors.confirmPassword} />
           </div>
