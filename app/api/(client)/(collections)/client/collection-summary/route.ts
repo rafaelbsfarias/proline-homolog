@@ -82,6 +82,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
     const feeByAddrDate = new Map<string, number>();
+    const feeByAddr = new Map<string, number>();
     const proposedDateByAddr = new Map<string, string | null>();
     if (labels.length) {
       const { data: feeRows, error: feeErr } = await admin
@@ -98,7 +99,11 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
           const fee = r?.collection_fee_per_vehicle;
           const date = r?.collection_date ? String(r.collection_date) : '';
           if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
-          if (addr) proposedDateByAddr.set(addr, date || null);
+          if (addr) {
+            proposedDateByAddr.set(addr, date || null);
+            // fallback por endereço (independente de data)
+            if (typeof fee === 'number' && !feeByAddr.has(addr)) feeByAddr.set(addr, Number(fee));
+          }
         });
       }
     }
@@ -108,8 +113,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       const info =
         byAddress.get(aid) || ({ count: 0, original_date: null, clientProposed: false } as any);
       const proposed = proposedDateByAddr.get(lbl) || null;
+      // Prioriza: (endereço,data) -> (endereço,sem data) -> (qualquer fee do endereço)
       const fee =
-        feeByAddrDate.get(`${lbl}|${proposed || ''}`) ?? feeByAddrDate.get(`${lbl}|`) ?? null;
+        feeByAddrDate.get(`${lbl}|${proposed || ''}`) ??
+        feeByAddrDate.get(`${lbl}|`) ??
+        feeByAddr.get(lbl) ??
+        null;
       return {
         addressId: aid,
         address: lbl,

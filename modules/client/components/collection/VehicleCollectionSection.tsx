@@ -70,40 +70,71 @@ const VehicleCollectionSection: React.FC = () => {
         <div className="counter-content" style={{ width: '100%' }}>
           <h3>Coleta de Veículos</h3>
 
-          {/* Mensagem guiada */}
-          <div style={{ marginBottom: 8 }}>
-            Prezado(a), sugerimos a coleta dos veículos
-            {groups.length === 0 ? (
-              <> no momento não há sugestões pendentes.</>
+          {/* Dynamic card layout (meus veículos) para pendências por endereço+data */}
+          <div className="vehicles-details">
+            <h4>Pendências por endereço</h4>
+            {!groups.length ? (
+              <div className="vehicles-list">
+                <div className="vehicle-item">
+                  <div className="vehicle-info">
+                    <div className="vehicle-model">Nenhuma sugestão pendente.</div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <>
+              <div className="vehicles-list">
                 {groups.map(g => (
-                  <div
-                    key={g.addressId}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <span>
-                      - localizados no endereço {g.address || g.addressId} no dia{' '}
-                      {g.collection_date ? formatDateBR(g.collection_date) : 'a definir'}
-                      {g.original_date &&
-                        g.collection_date &&
-                        g.original_date !== g.collection_date && (
-                          <em style={{ color: '#a00', marginLeft: 6, fontStyle: 'italic' }}>
-                            {g.proposed_by === 'client'
-                              ? `Você propôs uma nova data; a data anterior era ${formatDateBR(g.original_date)}`
-                              : `Nova data proposta pelo administrador; sua escolha inicial foi ${formatDateBR(g.original_date)}`}
-                          </em>
+                  <div key={`${g.addressId}|${g.collection_date || ''}`} className="vehicle-item">
+                    <div className="vehicle-info">
+                      <div>
+                        <div className="vehicle-model">{g.address}</div>
+                        <div className="vehicle-meta">
+                          <span className="vehicle-date">
+                            Data:{' '}
+                            {g.collection_date ? formatDateBR(g.collection_date) : 'A definir'}
+                          </span>
+                          {typeof g.collection_fee === 'number' && (
+                            <span>
+                              Total: {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="vehicle-plate">{g.vehicle_count} veículo(s)</span>
+                      </div>
+                    </div>
+
+                    {/* Frase formal apenas quando a data foi proposta pelo administrador */}
+                    {g.proposed_by === 'admin' && (
+                      <div className="vehicle-extra-line">
+                        Prezado(a), sugerimos a coleta dos veículos localizados no endereço{' '}
+                        {g.address} no dia{' '}
+                        {g.collection_date ? formatDateBR(g.collection_date) : 'a definir'}
+                        {typeof g.collection_fee === 'number' && (
+                          <>
+                            {' '}
+                            no valor de {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count)}
+                          </>
                         )}
-                      {typeof g.collection_fee === 'number' && (
-                        <> no valor de {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count)}</>
+                        .
+                      </div>
+                    )}
+
+                    {/* Contexto de mudança vs original */}
+                    {g.original_date &&
+                      g.collection_date &&
+                      g.original_date !== g.collection_date && (
+                        <div className="vehicle-extra-line" style={{ color: '#cfe8ff' }}>
+                          {g.proposed_by === 'client'
+                            ? `Você propôs uma nova data; a data anterior era ${formatDateBR(g.original_date)}`
+                            : `Nova data proposta pelo administrador; sua escolha inicial foi ${formatDateBR(
+                                g.original_date
+                              )}`}
+                        </div>
                       )}
-                    </span>
-                    <span>
+
+                    <div className="vehicle-row-actions" style={{ display: 'flex', gap: 8 }}>
                       <button
                         className="refresh-button"
                         onClick={() =>
@@ -116,10 +147,10 @@ const VehicleCollectionSection: React.FC = () => {
                       >
                         Sugerir outra data
                       </button>
-                    </span>
+                    </div>
                   </div>
                 ))}
-              </>
+              </div>
             )}
           </div>
 

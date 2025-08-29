@@ -38,6 +38,7 @@ export async function buildRescheduleGroups(
 
   const labels = Array.from(addrLabelMap.values()).filter(Boolean);
   const feeByAddrDate = new Map<string, number>();
+  const feeByAddr = new Map<string, number>();
   if (labels.length) {
     const { data: feeRows } = await admin
       .from('vehicle_collections')
@@ -49,7 +50,10 @@ export async function buildRescheduleGroups(
       const addr = r?.collection_address;
       const fee = r?.collection_fee_per_vehicle;
       const date = r?.collection_date ? String(r.collection_date) : '';
-      if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
+      if (addr && typeof fee === 'number') {
+        feeByAddrDate.set(`${addr}|${date}`, Number(fee));
+        if (!feeByAddr.has(addr)) feeByAddr.set(addr, Number(fee));
+      }
     });
   }
 
@@ -57,7 +61,11 @@ export async function buildRescheduleGroups(
     ([key, count]) => {
       const [aid, d] = key.split('|');
       const lbl = addrLabelMap.get(aid) || '';
-      const fee = feeByAddrDate.get(`${lbl}|${d}`) ?? null;
+      const fee =
+        feeByAddrDate.get(`${lbl}|${d}`) ??
+        feeByAddrDate.get(`${lbl}|`) ??
+        feeByAddr.get(lbl) ??
+        null;
       const collection_date = d || null;
       return {
         addressId: aid,

@@ -47,6 +47,7 @@ export async function buildPendingApprovalGroups(
 
     const labels2 = Array.from(addrLabelMap2.values()).filter(Boolean);
     const feeByAddrDate2 = new Map<string, number>(seedFeeMap);
+    const feeByAddr2 = new Map<string, number>();
     if (labels2.length) {
       const { data: feeRows2 } = await admin
         .from('vehicle_collections')
@@ -58,14 +59,21 @@ export async function buildPendingApprovalGroups(
         const addr = r?.collection_address;
         const fee = r?.collection_fee_per_vehicle;
         const date = r?.collection_date ? String(r.collection_date) : '';
-        if (addr && typeof fee === 'number') feeByAddrDate2.set(`${addr}|${date}`, Number(fee));
+        if (addr && typeof fee === 'number') {
+          feeByAddrDate2.set(`${addr}|${date}`, Number(fee));
+          if (!feeByAddr2.has(addr)) feeByAddr2.set(addr, Number(fee));
+        }
       });
     }
 
     approvalGroups = Array.from(byAddressDate.entries()).map(([key, count]) => {
       const [aid, d] = key.split('|');
       const lbl = addrLabelMap2.get(aid) || '';
-      const fee = feeByAddrDate2.get(`${lbl}|${d}`) ?? null;
+      const fee =
+        feeByAddrDate2.get(`${lbl}|${d}`) ??
+        feeByAddrDate2.get(`${lbl}|`) ??
+        feeByAddr2.get(lbl) ??
+        null;
       const statuses = Object.entries(statusMap[key] || {}).map(([status, count]) => ({
         status,
         count,
