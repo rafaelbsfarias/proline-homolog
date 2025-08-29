@@ -26,6 +26,18 @@ const CollectionPricingSection: React.FC<Props> = ({
   const [fees, setFees] = useState<Record<string, number | undefined>>(() =>
     Object.fromEntries(requests.map(r => [r.addressId, r.collection_fee ?? undefined]))
   );
+  React.useEffect(() => {
+    setFees(prev => {
+      const next = { ...prev } as Record<string, number | undefined>;
+      for (const r of requests) {
+        const key = r.addressId;
+        if (next[key] === undefined && typeof r.collection_fee === 'number') {
+          next[key] = r.collection_fee;
+        }
+      }
+      return next;
+    });
+  }, [requests]);
   const [proposingFor, setProposingFor] = useState<{ addressId: string; address: string } | null>(
     null
   );
