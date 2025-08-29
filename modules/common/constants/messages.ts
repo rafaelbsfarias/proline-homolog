@@ -185,6 +185,7 @@ export const getErrorMessageFromRaw = (raw: unknown): string => {
   }
 
   // Supabase Auth
+  if (/Invalid login credentials/i.test(message)) return AUTH_MESSAGES.LOGIN_ERROR;
   if (/AuthApiError:\s*E-mail já registrado/i.test(message))
     return AUTH_MESSAGES.USER_ALREADY_EXISTS;
   if (/AuthApiError:\s*Credenciais inválidass/i.test(message)) return AUTH_MESSAGES.LOGIN_ERROR;

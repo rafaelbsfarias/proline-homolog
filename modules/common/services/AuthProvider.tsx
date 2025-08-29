@@ -14,6 +14,7 @@ import { SupabaseService } from './SupabaseService';
 import { authService } from './AuthService'; // Correct import
 import { useRouter, usePathname } from 'next/navigation';
 import { RouteProtector } from '../components/RouteProtector/ProtectedRoute';
+import { getErrorMessageFromRaw } from '@/modules/common/constants/messages';
 
 interface AuthContextType {
   user: User | null;
@@ -102,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       password,
     });
 
-    if (error) return { success: false, error: error.message };
+    if (error) return { success: false, error: getErrorMessageFromRaw(error.message) };
 
     setUser(data.user);
     return { success: true };
