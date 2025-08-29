@@ -28,7 +28,7 @@ const Page = () => {
     approvalTotal = 0,
     approvedTotal = 0,
     history = [],
-    loading: loadingData,
+    // loading: loadingData,
     error: loadError,
     refetchData,
   } = useClientOverview(clientId);
@@ -55,24 +55,7 @@ const Page = () => {
     [clientId, post, refetchData]
   );
 
-  const onMarkPaid = useCallback(
-    async (row: { clientId: string; address: string; date: string | null }) => {
-      try {
-        setLoading(true);
-        setMessage(null);
-        setError(null);
-        const resp = await post(`/api/admin/mark-collection-paid`, { ...row, paid: true });
-        if (!resp.ok) throw new Error(resp.error || 'Erro ao confirmar pagamento');
-        setMessage('Pagamento confirmado com sucesso!');
-        await refetchData();
-      } catch (e: any) {
-        setError(e.message || 'Erro ao confirmar pagamento');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [post, refetchData]
-  );
+  // Fluxo de pagamento removido conforme escopo atual
 
   const pageError = loadError || error;
 
@@ -97,14 +80,8 @@ const Page = () => {
         {/* 2) Aguardando aprovação do cliente */}
         <PendingApprovalSection groups={pendingApprovals} total={approvalTotal} />
 
-        {/* 3) Coletas aprovadas (aguardam confirmação de pagamento) */}
-        <ApprovedCollectionSection
-          clientId={clientId}
-          groups={approvedCollections}
-          total={approvedTotal}
-          onMarkPaid={onMarkPaid}
-          loading={loading}
-        />
+        {/* 3) Coletas aprovadas */}
+        <ApprovedCollectionSection groups={approvedCollections} total={approvedTotal} />
 
         {/* 4) Histórico */}
         <CollectionHistory history={history} />

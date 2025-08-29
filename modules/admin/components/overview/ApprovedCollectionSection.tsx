@@ -1,30 +1,20 @@
 import React from 'react';
 import { ApprovedCollectionGroup } from '@/modules/admin/hooks/useClientOverview';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
+import { isoToBr } from '@/modules/common/components/date-picker/utils';
+import { formatCurrencyBR, formatTotalCurrencyBR } from '@/modules/common/utils/format';
 
 interface Props {
-  clientId: string;
   groups: ApprovedCollectionGroup[];
-  onMarkPaid: (row: { clientId: string; address: string; date: string | null }) => Promise<void>;
   total?: number;
-  loading?: boolean;
 }
 
-const ApprovedCollectionSection: React.FC<Props> = ({
-  clientId,
-  groups,
-  onMarkPaid,
-  total = 0,
-  loading,
-}) => {
+const ApprovedCollectionSection: React.FC<Props> = ({ groups, total = 0 }) => {
   if (!groups.length) return null;
 
   return (
     <div className={styles.tableWrap}>
       <h3 className={styles.sectionTitle}>Coletas aprovadas</h3>
-      <p className={styles.muted}>
-        Coletas aprovadas pelo cliente que aguardam confirmação de pagamento.
-      </p>
       <table className={styles.subtable}>
         <thead>
           <tr>
@@ -33,7 +23,6 @@ const ApprovedCollectionSection: React.FC<Props> = ({
             <th>Data de coleta</th>
             <th>Valor por endereço (R$)</th>
             <th>Total por endereço (R$)</th>
-            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -41,21 +30,13 @@ const ApprovedCollectionSection: React.FC<Props> = ({
             <tr key={`${g.addressId}|${g.collection_date || ''}`}>
               <td>{g.address}</td>
               <td>{g.vehicle_count}</td>
-              <td className={styles.nowrap}>{g.collection_date || '-'}</td>
               <td className={styles.nowrap}>
-                {typeof g.collection_fee === 'number'
-                  ? g.collection_fee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                  : '-'}
+                {g.collection_date ? isoToBr(g.collection_date) : '-'}
               </td>
+              <td className={styles.nowrap}>{formatCurrencyBR(g.collection_fee)}</td>
               <td className={styles.nowrap}>
-                {typeof g.collection_fee === 'number'
-                  ? (g.collection_fee * (g.vehicle_count || 0)).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })
-                  : '-'}
+                {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count || 0)}
               </td>
-              <td>{/* Botão de confirmação de pagamento removido conforme solicitação */}</td>
             </tr>
           ))}
         </tbody>
@@ -64,10 +45,7 @@ const ApprovedCollectionSection: React.FC<Props> = ({
             <td colSpan={4} className={styles.totalsRow}>
               Total aprovado:
             </td>
-            <td className={styles.nowrap}>
-              {Number(total || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </td>
-            <td />
+            <td className={styles.nowrap}>{formatCurrencyBR(Number(total || 0))}</td>
           </tr>
         </tfoot>
       </table>

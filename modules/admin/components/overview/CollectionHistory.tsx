@@ -1,6 +1,8 @@
 import React from 'react';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
 import { HistoryRow } from '@/modules/admin/hooks/useClientOverview';
+import { isoToBr } from '@/modules/common/components/date-picker/utils';
+import { formatCurrencyBR } from '@/modules/common/utils/format';
 
 interface Props {
   history: HistoryRow[];
@@ -25,15 +27,10 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
           {history.map((r, i) => (
             <tr key={`${r.collection_address}|${r.collection_date || ''}|${i}`}>
               <td>{r.collection_address}</td>
-              <td className={styles.nowrap}>{r.collection_date || '-'}</td>
               <td className={styles.nowrap}>
-                {typeof r.collection_fee_per_vehicle === 'number'
-                  ? r.collection_fee_per_vehicle.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })
-                  : '-'}
+                {r.collection_date ? isoToBr(r.collection_date) : '-'}
               </td>
+              <td className={styles.nowrap}>{formatCurrencyBR(r.collection_fee_per_vehicle)}</td>
               <td>{r.status || '-'}</td>
             </tr>
           ))}

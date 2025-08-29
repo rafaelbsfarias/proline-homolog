@@ -17,10 +17,10 @@ const VehicleCollectionSection: React.FC = () => {
   const { groups, approvalTotal, count, highlightDates, loading, approveAll, reschedule, reload } =
     useClientCollectionSummary();
 
-  // UI: reagendamento e pagamento
+  // UI: reagendamento
   const [rescheduleOpenFor, setRescheduleOpenFor] = useState<string | null>(null);
   const [newDateIso, setNewDateIso] = useState<string>('');
-  // Pagamento mock removido conforme documentação; card mantém apenas aprovação e reagendamento
+  // Card mantém apenas aprovação e reagendamento
 
   const minIso = makeLocalIsoDate();
 
@@ -135,7 +135,7 @@ const VehicleCollectionSection: React.FC = () => {
                 })}`}
           </div>
 
-          {/* Confirmar coleta → exibe meios de pagamento; status dos veículos passa para "COLETA APROVADA" */}
+          {/* Confirmar coleta: aprova a coleta e atualiza status dos veículos */}
           <div style={{ marginTop: 8 }}>
             Para confirmar a coleta dos veículos clique
             <button

@@ -1,6 +1,8 @@
 import React from 'react';
 import { PendingApprovalGroup } from '@/modules/admin/hooks/useClientOverview';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
+import { isoToBr } from '@/modules/common/components/date-picker/utils';
+import { formatCurrencyBR, formatTotalCurrencyBR } from '@/modules/common/utils/format';
 
 interface Props {
   groups: PendingApprovalGroup[];
@@ -28,19 +30,12 @@ const PendingApprovalSection: React.FC<Props> = ({ groups, total = 0 }) => {
             <tr key={`${g.addressId}|${g.collection_date || ''}`}>
               <td>{g.address}</td>
               <td>{g.vehicle_count}</td>
-              <td className={styles.nowrap}>{g.collection_date || '-'}</td>
               <td className={styles.nowrap}>
-                {typeof g.collection_fee === 'number'
-                  ? g.collection_fee.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                  : '-'}
+                {g.collection_date ? isoToBr(g.collection_date) : '-'}
               </td>
+              <td className={styles.nowrap}>{formatCurrencyBR(g.collection_fee)}</td>
               <td className={styles.nowrap}>
-                {typeof g.collection_fee === 'number'
-                  ? (g.collection_fee * (g.vehicle_count || 0)).toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })
-                  : '-'}
+                {formatTotalCurrencyBR(g.collection_fee, g.vehicle_count || 0)}
               </td>
             </tr>
           ))}
