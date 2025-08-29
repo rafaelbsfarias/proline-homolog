@@ -28,7 +28,6 @@ const Page = () => {
     approvalTotal = 0,
     approvedTotal = 0,
     history = [],
-    // loading: loadingData,
     error: loadError,
     refetchData,
   } = useClientOverview(clientId);
@@ -54,8 +53,6 @@ const Page = () => {
     },
     [clientId, post, refetchData]
   );
-
-  // Fluxo de pagamento removido conforme escopo atual
 
   const pageError = loadError || error;
 

@@ -8,7 +8,7 @@ export async function buildApprovedGroups(
   approvedGroups: ApprovedCollectionGroup[];
   approvedTotal: number;
 }> {
-  const approvedStatusValues = ['COLETA APROVADA', 'approved', 'paid'];
+  const approvedStatusValues = ['COLETA APROVADA', 'approved'];
   const { data: vehiclesApproved } = await admin
     .from('vehicles')
     .select('id, client_id, status, pickup_address_id, estimated_arrival_date')
@@ -47,7 +47,7 @@ export async function buildApprovedGroups(
         .from('vehicle_collections')
         .select('collection_address, collection_fee_per_vehicle, collection_date')
         .eq('client_id', clientId)
-        .in('status', ['requested', 'approved', 'paid'])
+        .in('status', ['requested', 'approved'])
         .in('collection_address', labels);
       (feeRows3 || []).forEach((r: any) => {
         const addr = r?.collection_address;
