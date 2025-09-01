@@ -1,7 +1,7 @@
-"use client";
+'use client';
 import React from 'react';
 import styles from './ProfilePageBase.module.css';
-import ChangePasswordModal from '@/modules/common/components/ChangePasswordModal';
+import ChangePasswordModal from '@/modules/common/components/ChangePasswordModal/ChangePasswordModal';
 
 type Role = 'client' | 'partner' | 'specialist' | 'admin';
 
@@ -14,7 +14,14 @@ interface Props {
   addressesActionsNode?: React.ReactNode;
 }
 
-export default function ProfilePageBase({ fullName, email, role, showAddresses, addressesNode, addressesActionsNode }: Props) {
+export default function ProfilePageBase({
+  fullName,
+  email,
+  role,
+  showAddresses,
+  addressesNode,
+  addressesActionsNode,
+}: Props) {
   const [openChange, setOpenChange] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);

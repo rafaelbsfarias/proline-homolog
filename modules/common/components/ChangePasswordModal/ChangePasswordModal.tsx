@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import Modal from './Modal'; // Reutiliza o componente Modal existente
-import FormInput from './FormInput'; // Reutiliza o componente FormInput existente
+import Modal from '../Modal'; // Reutiliza o componente Modal existente
+import Input from '../Input/Input'; // Reutiliza o componente Input existente
 import { IoEyeOutline, IoEyeOffOutline } from 'react-icons/io5';
 import './ChangePasswordModal.css';
+import ErrorMessage from '../ErroMessage/ErrorMessage';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -54,45 +55,27 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Alterar Senha">
       <div className="change-password-modal-content">
-        <div className="input-group">
-          <FormInput
-            label="Nova Senha"
-            id="newPassword"
-            name="newPassword"
-            type={showPassword ? 'text' : 'password'}
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </div>
+        <Input
+          label="Nova Senha"
+          id="newPassword"
+          name="newPassword"
+          type={showPassword ? 'text' : 'password'}
+          value={newPassword}
+          onChange={e => setNewPassword(e.target.value)}
+          disabled={loading}
+        />
 
-        <div className="input-group">
-          <FormInput
-            label="Confirmar Nova Senha"
-            id="confirmNewPassword"
-            name="confirmNewPassword"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
-        </div>
+        <Input
+          label="Confirmar Nova Senha"
+          id="confirmNewPassword"
+          name="confirmNewPassword"
+          type={showPassword ? 'text' : 'password'}
+          value={confirmPassword}
+          onChange={e => setConfirmPassword(e.target.value)}
+          disabled={loading}
+        />
 
-        <div className="password-toggle-section">
-          <button
-            type="button"
-            className="toggle-password-visibility"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-          >
-            {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
-          </button>
-          <span>{showPassword ? 'Ocultar senhas' : 'Mostrar senhas'}</span>
-        </div>
-
-        {(localError || error) && <div className="error-message">{localError || error}</div>}
+        <ErrorMessage message={localError || error || undefined} />
 
         <div className="modal-actions">
           <button className="modal-button secondary" onClick={handleClose} disabled={loading}>
