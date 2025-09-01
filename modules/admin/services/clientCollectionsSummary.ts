@@ -1,4 +1,5 @@
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { CollectionHistoryService } from '@/modules/common/services/CollectionHistoryService';
 import { getLogger } from '@/modules/logger';
 import { labelOf } from './client-collections/helpers';
 import type {
@@ -13,7 +14,6 @@ import { buildApprovedGroups } from './client-collections/groups/approved';
 import { buildPricingRequests } from './client-collections/groups/pricing';
 import { buildPendingApprovalGroups } from './client-collections/groups/pendingApproval';
 import { getStatusTotals } from './client-collections/statusTotals';
-import { loadHistory } from './client-collections/history/load';
 import { enrichHistoryWithVehicleStatus } from './client-collections/history/enrich';
 import { buildRescheduleGroups } from './client-collections/groups/reschedule';
 
@@ -44,13 +44,26 @@ export async function getClientCollectionsSummary(
   // 3) Status totals
   const statusTotals = await getStatusTotals(admin, clientId);
 
-  // 4) History enriched with real vehicle status by address/date
+  // 4) History from immutable collection_history table
   let collectionHistory: HistoryRow[] = [];
   try {
-    collectionHistory = await loadHistory(admin, clientId);
+    const historyService = CollectionHistoryService.getInstance();
+    const immutableHistory = await historyService.getClientHistory(clientId);
+
+    // Convert to HistoryRow format for compatibility
+    collectionHistory = immutableHistory.map(record => ({
+      collection_address: record.collection_address,
+      collection_fee_per_vehicle: record.collection_fee_per_vehicle,
+      collection_date: record.collection_date,
+      status: record.finalized_at ? 'FINALIZADO' : undefined,
+      vehicles: [], // Will be populated by enrich function if needed
+    }));
+
+    // Enrich with current vehicle status for display purposes
     collectionHistory = await enrichHistoryWithVehicleStatus(admin, clientId, collectionHistory);
-  } catch (e: any) {
-    logger.warn('history_enrich_failed', { error: e?.message });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.warn('history_enrich_failed', { error: error?.message });
   }
 
   return {

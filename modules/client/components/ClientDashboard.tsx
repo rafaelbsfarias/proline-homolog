@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import { useVehicles } from '@/modules/client/hooks/useVehicles';
+import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { VehicleCounterHeader } from '@/modules/client/components/VehicleCounterHeader';
 import { VehicleCounterActions } from '@/modules/client/components/VehicleCounterActions';
@@ -32,7 +32,7 @@ const ClientDashboard = () => {
     loading: loadingVehicles,
     error: vehiclesError,
     refetch: refetchVehicles,
-  } = useVehicles();
+  } = useVehicleManager();
   const { showToast } = useToast();
 
   useEffect(() => {

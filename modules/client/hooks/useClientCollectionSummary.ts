@@ -1,15 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-
-export type CollectionGroup = {
-  addressId: string;
-  address: string;
-  vehicle_count: number;
-  collection_fee: number | null;
-  collection_date: string | null; // ISO
-  original_date?: string | null;
-  proposed_by?: 'client' | 'admin';
-};
+import { CollectionGroup } from '@/modules/client/components/collection/types';
 
 type UseClientCollectionSummaryOptions = {
   onLoadingChange?: (loading: boolean) => void;

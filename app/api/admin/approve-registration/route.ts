@@ -8,6 +8,7 @@ import {
 import { RegistrationApprovalService } from '@/modules/admin/services/RegistrationApprovalService'; // New import
 import { NotFoundError, DatabaseError, ValidationError, AppError } from '@/modules/common/errors'; // New imports
 import { getLogger, ILogger } from '@/modules/logger';
+import { respondWithError } from '@/modules/common/utils/apiErrorResponse';
 
 const logger: ILogger = getLogger('AdminApproveRegistrationAPI');
 
@@ -53,42 +54,7 @@ async function approveRegistrationHandler(req: AuthenticatedRequest) {
     });
   } catch (error: unknown) {
     logger.error('Error in approveRegistrationHandler', error);
-
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        { error: error.message, code: 'USER_NOT_FOUND' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message, code: 'INVALID_INPUT' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof DatabaseError) {
-      return NextResponse.json(
-        { error: error.message, code: 'DATABASE_ERROR' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof AppError) {
-      // Catch any other custom AppError
-      return NextResponse.json(
-        { error: error.message, code: 'APP_ERROR' },
-        { status: error.statusCode }
-      );
-    }
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      {
-        error: 'Erro interno do servidor.',
-        code: 'INTERNAL_ERROR',
-        details: errorMessage,
-      },
-      { status: 500 }
-    );
+    return respondWithError(error);
   }
 }
 

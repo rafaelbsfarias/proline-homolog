@@ -41,8 +41,24 @@ const DatePendingUnifiedSection: React.FC<Props> = ({ clientId, groups, total = 
       const resp = await post('/api/admin/accept-client-proposed-date', { clientId, addressId });
       if (!resp.ok) throw new Error(resp.error || 'Falha ao aceitar data');
       if (onRefresh) await onRefresh();
-    } catch (e: any) {
-      setError(e.message || 'Falha ao aceitar data');
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error.message || 'Falha ao aceitar data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectDate = async (addressId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const resp = await post('/api/admin/reject-client-proposed-date', { clientId, addressId });
+      if (!resp.ok) throw new Error(resp.error || 'Falha ao rejeitar proposta');
+      if (onRefresh) await onRefresh();
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error.message || 'Falha ao rejeitar proposta');
     } finally {
       setLoading(false);
     }
@@ -81,14 +97,38 @@ const DatePendingUnifiedSection: React.FC<Props> = ({ clientId, groups, total = 
               <td className={styles.thCenter}>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                   {g.proposed_by === 'client' && (
-                    <button
-                      type="button"
-                      disabled={loading}
-                      onClick={() => acceptDate(g.addressId)}
-                      title="Aceitar a data proposta pelo cliente"
-                    >
-                      Aceitar data
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => acceptDate(g.addressId)}
+                        title="Aceitar a data proposta pelo cliente"
+                        style={{
+                          backgroundColor: '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        ✓ Aceitar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => rejectDate(g.addressId)}
+                        title="Rejeitar a proposta do cliente"
+                        style={{
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        ✗ Rejeitar
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
@@ -100,8 +140,15 @@ const DatePendingUnifiedSection: React.FC<Props> = ({ clientId, groups, total = 
                       setMessage(null);
                     }}
                     title="Propor uma nova data"
+                    style={{
+                      backgroundColor: '#007bff',
+                      color: 'white',
+                      border: 'none',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                    }}
                   >
-                    {g.proposed_by === 'client' ? 'Propor nova data' : 'Editar proposta'}
+                    {g.proposed_by === 'client' ? '📅 Propor nova data' : '✏️ Editar proposta'}
                   </button>
                 </div>
               </td>
@@ -143,8 +190,9 @@ const DatePendingUnifiedSection: React.FC<Props> = ({ clientId, groups, total = 
               setMessage('Proposta enviada com sucesso.');
               if (onRefresh) await onRefresh();
               setTimeout(() => setProposingFor(null), 700);
-            } catch (e: any) {
-              setError(e.message || 'Falha ao propor data');
+            } catch (e: unknown) {
+              const error = e as Error;
+              setError(error.message || 'Falha ao propor data');
             } finally {
               setLoading(false);
             }

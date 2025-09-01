@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
-import { HistoryRow } from '@/modules/admin/hooks/useClientOverview';
+import { HistoryRow } from '@/modules/admin/services/client-collections/types';
 import { isoToBr } from '@/modules/common/components/date-picker/utils';
 import { formatCurrencyBR } from '@/modules/common/utils/format';
 

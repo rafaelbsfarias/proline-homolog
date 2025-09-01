@@ -3,6 +3,7 @@ import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { formatAddressLabel } from '@/modules/common/utils/address';
+import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:admin:set-address-collection-fees');
 
@@ -83,12 +84,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         const { error: updVehiclesErr } = await admin
           .from('vehicles')
           .update({
-            status: 'AGUARDANDO APROVAÇÃO DA COLETA',
+            status: STATUS.AGUARDANDO_APROVACAO, // ← Usar constante em vez de string literal
             ...(collId ? { collection_id: collId } : {}),
           })
           .eq('client_id', clientId)
           .eq('pickup_address_id', f.addressId)
-          .eq('status', 'PONTO DE COLETA SELECIONADO');
+          .eq('status', STATUS.PONTO_COLETA_SELECIONADO); // ← Usar constante
         if (updVehiclesErr) {
           logger.error('update-vehicles-status-error', {
             error: updVehiclesErr.message,

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CollectionPricingRequest } from '@/modules/admin/hooks/useClientOverview';
+import { CollectionPricingRequest } from '@/modules/admin/services/client-collections/types';
 import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import styles from '@/app/admin/clients/[id]/overview/page.module.css';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';

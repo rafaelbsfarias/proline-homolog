@@ -3,7 +3,7 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
-import { formatAddressLabel } from '@/modules/common/utils/address';
+import { formatAddressLabel, normalizeAddressLabel } from '@/modules/common/utils/address';
 
 const logger = getLogger('api:client:collection-approve');
 export const dynamic = 'force-dynamic';
@@ -45,14 +45,23 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // marcar collection como approved
+    // marcar collection como approved (match determinístico pelo label normalizado)
     if (addressLabel) {
-      await admin
+      const needle = normalizeAddressLabel(addressLabel);
+      const { data: allRows } = await admin
         .from('vehicle_collections')
-        .update({ status: STATUS.APPROVED })
+        .select('id, collection_address, status')
         .eq('client_id', userId)
-        .eq('collection_address', addressLabel)
-        .eq('status', STATUS.REQUESTED);
+        .in('status', [STATUS.REQUESTED, STATUS.APPROVED]);
+      const candidates = (allRows || []).filter(
+        (r: { collection_address?: string; status: string }) =>
+          normalizeAddressLabel(String(r.collection_address || '')) === needle &&
+          r.status === STATUS.REQUESTED
+      );
+      const ids = candidates.map((r: { id: string }) => r.id);
+      if (ids.length) {
+        await admin.from('vehicle_collections').update({ status: STATUS.APPROVED }).in('id', ids);
+      }
     }
 
     return NextResponse.json({ success: true });
