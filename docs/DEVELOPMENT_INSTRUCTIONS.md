@@ -15,17 +15,29 @@ escalabilidade do código:
   interfaces claras.
 - **Criação de Componentes:** Todos os componentes devem seguir o composition pattern. As páginas principais atuarão como "containers" que compõem múltiplos componentes filhos, cada um gerenciando uma parte específica do fluxo. Modais serão
 
+## Práticas de Desenvolvimento
 
+- Esse é um projeto **REACT/TS** e deve seguir as melhores práticas para um desenvolvimento seguro
+- Considerar sempre que o ambiente está em produção, debugs devem ser removidos logo após a resolução do problema
+- Manter o código limpo, após uma correção de código verifique duas vezes se não está deixando sujeira para trás
+- O deploy é feito na vercel
+- Toda **migration** deve ser **idempotente**
+- Toda migration deve ser criada com **supabase migration new**
 
-- Esse é um projeto **REACT/TS** e deve seguir as melhores praticas para um desenvolvimento seguro
+## Documentação de Bugs e Issues
 
-- Considerar sempre que o ambiente está em produção, debugs devem ser removidos logo após a resolução
-do problema
+Todos os bugs e issues conhecidos devem ser documentados seguindo o padrão estabelecido em:
 
-- Mantenha o código limpo, após uma correção de código verique duas vezes se não está deixando sujeira
-para trás
+- [Índice de Bugs](bugs/indice.md) - Documentação completa dos bugs identificados
 
-- o deploy e feito na vercel
+Antes de implementar qualquer correção, deve-se:
+1. Documentar o bug de forma clara e objetiva
+2. Diagnosticar a causa raiz do problema
+3. Propor uma solução técnica apropriada
+4. Atualizar a documentação após a resolução
 
-- toda **migration** deve ser **idempotente**
-- toda migration deve ser criada com **supabase migration new**
+Esta prática garante que:
+- Problemas conhecidos sejam facilmente identificáveis
+- A equipe tenha contexto suficiente para resolver issues
+- Histórico de problemas seja mantido para referência futura
+- Soluções implementadas sejam bem documentadas
