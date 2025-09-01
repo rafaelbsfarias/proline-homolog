@@ -35,7 +35,7 @@ export const useVehicleManager = (): UseVehicleManagerResult => {
 
       try {
         const response = await get<{ success: boolean; vehicles: VehicleData[]; error?: string }>(
-          '/api/client/vehicles'
+          '/api/client/vehicles-count'
         );
 
         if (response.ok && response.data?.success) {

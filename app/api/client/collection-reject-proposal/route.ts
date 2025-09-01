@@ -3,8 +3,10 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
+import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
 
 const logger = getLogger('api:client:collection-reject-proposal');
+const collectionService = CollectionProposalService.getInstance();
 
 // Endpoint POST - Rejeitar proposta de data para um endereço específico
 export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
@@ -21,69 +23,45 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const admin = SupabaseService.getInstance().getAdminClient();
 
-    // Buscar veículos do endereço que estão aguardando aprovação
-    const { data: vehicles, error: vehErr } = await admin
-      .from('vehicles')
-      .select('id, status, estimated_arrival_date')
-      .eq('client_id', userId)
-      .eq('pickup_address_id', addressId)
-      .eq('status', STATUS.AGUARDANDO_APROVACAO);
+    // Buscar veículos aguardando aprovação
+    const vehiclesResult = await collectionService.findVehiclesAwaitingApproval({
+      userId,
+      addressId,
+      adminClient: admin,
+    });
 
-    if (vehErr) {
-      logger.error('vehicles-error', { error: vehErr.message });
+    if (!vehiclesResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Erro ao buscar veículos' },
-        { status: 500 }
+        { success: false, error: vehiclesResult.error },
+        { status: vehiclesResult.error?.includes('Nenhum veículo') ? 404 : 500 }
       );
     }
 
-    if (!vehicles || vehicles.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Nenhum veículo encontrado para este endereço' },
-        { status: 404 }
-      );
+    // Rejeitar proposta - reverter status dos veículos
+    const rejectResult = await collectionService.rejectProposal({
+      userId,
+      addressId,
+      adminClient: admin,
+    });
+
+    if (!rejectResult.success) {
+      return NextResponse.json({ success: false, error: rejectResult.error }, { status: 500 });
     }
 
-    // Reverter para a data original e status de solicitação de mudança
-    const originalDate = vehicles[0]?.estimated_arrival_date;
-    const { error: updateErr } = await admin
-      .from('vehicles')
-      .update({
-        status: STATUS.SOLICITACAO_MUDANCA_DATA,
-        estimated_arrival_date: originalDate,
-      })
-      .eq('client_id', userId)
-      .eq('pickup_address_id', addressId)
-      .eq('status', STATUS.AGUARDANDO_APROVACAO);
+    // Buscar endereço e remover/atualizar a coleta
+    const addressResult = await collectionService.findAddress({
+      addressId,
+      adminClient: admin,
+    });
 
-    if (updateErr) {
-      logger.error('vehicles-update-error', { error: updateErr.message });
-      return NextResponse.json(
-        { success: false, error: 'Erro ao atualizar status dos veículos' },
-        { status: 500 }
-      );
-    }
-
-    // Buscar e remover/atualizar a coleta correspondente
-    const { data: address } = await admin
-      .from('addresses')
-      .select('street, number, city')
-      .eq('id', addressId)
-      .maybeSingle();
-
-    if (address) {
-      const addressLabel = `${address.street}, ${address.number} - ${address.city}`;
-
-      const { error: collectionErr } = await admin
-        .from('vehicle_collections')
-        .delete()
-        .eq('client_id', userId)
-        .eq('collection_address', addressLabel)
-        .eq('status', STATUS.REQUESTED);
-
-      if (collectionErr) {
-        logger.warn('collection-delete-error', { error: collectionErr.message });
-      }
+    if (addressResult.success && addressResult.address) {
+      await collectionService.updateCollectionStatus({
+        userId,
+        addressId,
+        adminClient: admin,
+        address: addressResult.address,
+        newStatus: 'delete', // Indica que deve deletar
+      });
     }
 
     return NextResponse.json({ success: true });

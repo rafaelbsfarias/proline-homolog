@@ -9,7 +9,7 @@ import BulkCollectionModal from './BulkCollectionModal';
 import StatusChips from './StatusChips';
 import VehicleFilters from './VehicleFilters';
 import BulkCollectionControls from './BulkCollectionControls';
-import { useVehicles } from '@/modules/client/hooks/useVehicles';
+import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
@@ -30,7 +30,8 @@ interface VehicleCounterProps {
 // Status helpers moved to utils
 
 export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
-  const { count, vehicles, loading, error, refetch } = useVehicles(onRefresh);
+  const { vehicles, loading, error, refetch } = useVehicleManager();
+  const count = vehicles.length;
 
   console.log('VehicleCounter render', { vehicles });
   const [showDetails, setShowDetails] = useState(false);

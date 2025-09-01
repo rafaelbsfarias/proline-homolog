@@ -1,7 +1,11 @@
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { DatabaseError, NotFoundError, ValidationError } from '@/modules/common/errors';
 import { sanitizeString } from '@/modules/common/utils/inputSanitization';
-import { validatePlate, preparePlateForStorage, PLATE_ERROR_MESSAGES } from '@/modules/common/utils/plateValidation';
+import {
+  validatePlate,
+  preparePlateForStorage,
+  PLATE_ERROR_MESSAGES,
+} from '@/modules/common/utils/plateValidation';
 
 export interface ClientVehicleData {
   plate: string;
@@ -37,8 +41,42 @@ export class ClientVehicleService {
     this.supabaseService = SupabaseService.getInstance();
   }
 
+  // Helper method to get vehicle selection fields
+  private getVehicleSelectionFields(): string {
+    return `
+      id,
+      plate,
+      brand,
+      model,
+      color,
+      year,
+      status,
+      created_at,
+      fipe_value,
+      current_odometer,
+      fuel_level,
+      estimated_arrival_date
+    `;
+  }
+
+  // Helper method to check if vehicle belongs to client
+  private async checkVehicleOwnership(vehicleId: string, clientId: string): Promise<void> {
+    const supabase = this.supabaseService.getAdminClient();
+    const { data: existingVehicle, error: checkError } = await supabase
+      .from('vehicles')
+      .select('id')
+      .eq('id', vehicleId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (checkError || !existingVehicle) {
+      throw new NotFoundError('Veículo não encontrado ou acesso negado.');
+    }
+  }
+
   async createVehicle(data: ClientVehicleData): Promise<VehicleInfo> {
-    const { plate, brand, model, color, year, initialKm, fipe_value, observations, clientId } = data;
+    const { plate, brand, model, color, year, initialKm, fipe_value, observations, clientId } =
+      data;
 
     // 1. Validate plate format
     if (!validatePlate(plate)) {
@@ -106,7 +144,9 @@ export class ClientVehicleService {
       .single();
 
     if (insertError) {
-      throw new DatabaseError(`Erro interno do servidor ao cadastrar veículo: ${insertError.message}`);
+      throw new DatabaseError(
+        `Erro interno do servidor ao cadastrar veículo: ${insertError.message}`
+      );
     }
 
     return vehicle as VehicleInfo;
@@ -118,20 +158,7 @@ export class ClientVehicleService {
 
       const { data: vehicles, error } = await supabase
         .from('vehicles')
-        .select(`
-          id,
-          plate,
-          brand,
-          model,
-          color,
-          year,
-          status,
-          created_at,
-          fipe_value,
-          current_odometer,
-          fuel_level,
-          estimated_arrival_date
-        `)
+        .select(this.getVehicleSelectionFields())
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
 
@@ -141,7 +168,9 @@ export class ClientVehicleService {
 
       return (vehicles || []) as VehicleInfo[];
     } catch (error) {
-      throw new DatabaseError(`Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new DatabaseError(
+        `Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
     }
   }
 
@@ -151,20 +180,7 @@ export class ClientVehicleService {
 
       const { data: vehicle, error } = await supabase
         .from('vehicles')
-        .select(`
-          id,
-          plate,
-          brand,
-          model,
-          color,
-          year,
-          status,
-          created_at,
-          fipe_value,
-          current_odometer,
-          fuel_level,
-          estimated_arrival_date
-        `)
+        .select(this.getVehicleSelectionFields())
         .eq('id', vehicleId)
         .eq('client_id', clientId)
         .maybeSingle();
@@ -175,7 +191,9 @@ export class ClientVehicleService {
 
       return vehicle as VehicleInfo | null;
     } catch (error) {
-      throw new DatabaseError(`Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new DatabaseError(
+        `Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
     }
   }
 
@@ -185,29 +203,21 @@ export class ClientVehicleService {
     data: Partial<ClientVehicleData>
   ): Promise<VehicleInfo> {
     try {
-      const supabase = this.supabaseService.getAdminClient();
-
       // Check if vehicle belongs to client
-      const { data: existingVehicle, error: checkError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('id', vehicleId)
-        .eq('client_id', clientId)
-        .maybeSingle();
-
-      if (checkError || !existingVehicle) {
-        throw new NotFoundError('Veículo não encontrado ou acesso negado.');
-      }
+      await this.checkVehicleOwnership(vehicleId, clientId);
 
       // Prepare update data
-      const updateData: Record<string, any> = {};
+      const updateData: Record<string, unknown> = {};
       if (data.brand !== undefined) updateData.brand = sanitizeString(data.brand);
       if (data.model !== undefined) updateData.model = sanitizeString(data.model);
       if (data.color !== undefined) updateData.color = sanitizeString(data.color);
       if (data.year !== undefined) updateData.year = data.year;
       if (data.initialKm !== undefined) updateData.initial_km = data.initialKm;
       if (data.fipe_value !== undefined) updateData.fipe_value = data.fipe_value;
-      if (data.observations !== undefined) updateData.observations = data.observations ? sanitizeString(data.observations) : null;
+      if (data.observations !== undefined)
+        updateData.observations = data.observations ? sanitizeString(data.observations) : null;
+
+      const supabase = this.supabaseService.getAdminClient();
 
       // Update the vehicle
       const { data: vehicle, error: updateError } = await supabase
@@ -227,31 +237,21 @@ export class ClientVehicleService {
       if (error instanceof DatabaseError || error instanceof NotFoundError) {
         throw error;
       }
-      throw new DatabaseError(`Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new DatabaseError(
+        `Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
     }
   }
 
   async deleteVehicle(vehicleId: string, clientId: string): Promise<void> {
     try {
+      // Check if vehicle belongs to client
+      await this.checkVehicleOwnership(vehicleId, clientId);
+
       const supabase = this.supabaseService.getAdminClient();
 
-      // Check if vehicle belongs to client
-      const { data: existingVehicle, error: checkError } = await supabase
-        .from('vehicles')
-        .select('id')
-        .eq('id', vehicleId)
-        .eq('client_id', clientId)
-        .maybeSingle();
-
-      if (checkError || !existingVehicle) {
-        throw new NotFoundError('Veículo não encontrado ou acesso negado.');
-      }
-
       // Delete the vehicle
-      const { error: deleteError } = await supabase
-        .from('vehicles')
-        .delete()
-        .eq('id', vehicleId);
+      const { error: deleteError } = await supabase.from('vehicles').delete().eq('id', vehicleId);
 
       if (deleteError) {
         throw new DatabaseError(`Erro ao deletar veículo: ${deleteError.message}`);
@@ -260,7 +260,9 @@ export class ClientVehicleService {
       if (error instanceof DatabaseError || error instanceof NotFoundError) {
         throw error;
       }
-      throw new DatabaseError(`Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new DatabaseError(
+        `Erro interno do servidor: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      );
     }
   }
 }

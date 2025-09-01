@@ -3,8 +3,10 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
+import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
 
 const logger = getLogger('api:client:collection-accept-proposal');
+const collectionService = CollectionProposalService.getInstance();
 
 // Endpoint POST - Aceitar proposta de data para um endereço específico
 export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
@@ -21,65 +23,45 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const admin = SupabaseService.getInstance().getAdminClient();
 
-    // Buscar veículos do endereço que estão aguardando aprovação
-    const { data: vehicles, error: vehErr } = await admin
-      .from('vehicles')
-      .select('id, status')
-      .eq('client_id', userId)
-      .eq('pickup_address_id', addressId)
-      .eq('status', STATUS.AGUARDANDO_APROVACAO);
+    // Buscar veículos aguardando aprovação
+    const vehiclesResult = await collectionService.findVehiclesAwaitingApproval({
+      userId,
+      addressId,
+      adminClient: admin,
+    });
 
-    if (vehErr) {
-      logger.error('vehicles-error', { error: vehErr.message });
+    if (!vehiclesResult.success) {
       return NextResponse.json(
-        { success: false, error: 'Erro ao buscar veículos' },
-        { status: 500 }
+        { success: false, error: vehiclesResult.error },
+        { status: vehiclesResult.error?.includes('Nenhum veículo') ? 404 : 500 }
       );
     }
 
-    if (!vehicles || vehicles.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Nenhum veículo encontrado para este endereço' },
-        { status: 404 }
-      );
+    // Aceitar proposta - atualizar status dos veículos
+    const acceptResult = await collectionService.acceptProposal({
+      userId,
+      addressId,
+      adminClient: admin,
+    });
+
+    if (!acceptResult.success) {
+      return NextResponse.json({ success: false, error: acceptResult.error }, { status: 500 });
     }
 
-    // Atualizar status dos veículos para "AGUARDANDO COLETA"
-    const { error: updateErr } = await admin
-      .from('vehicles')
-      .update({ status: STATUS.AGUARDANDO_COLETA })
-      .eq('client_id', userId)
-      .eq('pickup_address_id', addressId)
-      .eq('status', STATUS.AGUARDANDO_APROVACAO);
+    // Buscar endereço e atualizar status da coleta
+    const addressResult = await collectionService.findAddress({
+      addressId,
+      adminClient: admin,
+    });
 
-    if (updateErr) {
-      logger.error('vehicles-update-error', { error: updateErr.message });
-      return NextResponse.json(
-        { success: false, error: 'Erro ao atualizar status dos veículos' },
-        { status: 500 }
-      );
-    }
-
-    // Buscar e atualizar a coleta correspondente
-    const { data: address } = await admin
-      .from('addresses')
-      .select('street, number, city')
-      .eq('id', addressId)
-      .maybeSingle();
-
-    if (address) {
-      const addressLabel = `${address.street}, ${address.number} - ${address.city}`;
-
-      const { error: collectionErr } = await admin
-        .from('vehicle_collections')
-        .update({ status: STATUS.APPROVED })
-        .eq('client_id', userId)
-        .eq('collection_address', addressLabel)
-        .eq('status', STATUS.REQUESTED);
-
-      if (collectionErr) {
-        logger.warn('collection-update-error', { error: collectionErr.message });
-      }
+    if (addressResult.success && addressResult.address) {
+      await collectionService.updateCollectionStatus({
+        userId,
+        addressId,
+        adminClient: admin,
+        address: addressResult.address,
+        newStatus: STATUS.APPROVED,
+      });
     }
 
     return NextResponse.json({ success: true });
