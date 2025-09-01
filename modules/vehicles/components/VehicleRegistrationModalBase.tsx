@@ -34,6 +34,8 @@ type VehicleFormData = {
   fipe_value: string;
   observations: string;
   estimated_arrival_date: string;
+  preparacao: boolean;
+  comercializacao: boolean;
 };
 
 export interface VehicleRegistrationBaseProps {
@@ -63,6 +65,8 @@ function useVehicleRegistrationForm({
     fipe_value: '',
     observations: '',
     estimated_arrival_date: '',
+    preparacao: false,
+    comercializacao: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof VehicleFormData, string>>>({});
   const [loading, setLoading] = useState(false);
@@ -137,6 +141,8 @@ function useVehicleRegistrationForm({
           year: Number(formData.year),
           fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
           estimated_arrival_date: formData.estimated_arrival_date || undefined,
+          preparacao: formData.preparacao,
+          comercializacao: formData.comercializacao,
         };
         const resp = await post<{ success: boolean; message?: string; error?: string }>(
           '/api/admin/create-vehicle',
@@ -154,6 +160,8 @@ function useVehicleRegistrationForm({
           initialKm: formData.initialKm ? Number(formData.initialKm) : undefined,
           fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
           observations: formData.observations || undefined,
+          preparacao: formData.preparacao,
+          comercializacao: formData.comercializacao,
         };
         const resp = await post<{ success: boolean; message?: string; error?: string }>(
           '/api/client/create-vehicle',
@@ -235,6 +243,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
         fipe_value: '',
         observations: '',
         estimated_arrival_date: '',
+        preparacao: false,
+        comercializacao: false,
       });
       setError(null);
       setSuccess(false);
@@ -392,6 +402,40 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               )}
             </div>
           )}
+
+          <div className="form-row">
+            <div className="form-group full-width">
+              <label>Finalidade do Veículo</label>
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    id="preparacao"
+                    name="preparacao"
+                    checked={formData.preparacao}
+                    onChange={e => setFormData(prev => ({ ...prev, preparacao: e.target.checked }))}
+                    disabled={loading}
+                  />
+                  <span className="checkmark"></span>
+                  Preparação
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    id="comercializacao"
+                    name="comercializacao"
+                    checked={formData.comercializacao}
+                    onChange={e =>
+                      setFormData(prev => ({ ...prev, comercializacao: e.target.checked }))
+                    }
+                    disabled={loading}
+                  />
+                  <span className="checkmark"></span>
+                  Comercialização
+                </label>
+              </div>
+            </div>
+          </div>
 
           <div className="form-row">
             <div className="form-group full-width">

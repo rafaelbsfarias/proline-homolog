@@ -25,6 +25,8 @@ const vehicleSchema = z.object({
     .max(new Date().getFullYear() + 1, { message: 'Ano inválido' }),
   fipe_value: z.number().nonnegative().optional(),
   estimated_arrival_date: z.string().optional(),
+  preparacao: z.boolean().optional().default(false),
+  comercializacao: z.boolean().optional().default(false),
 });
 
 async function createVehicleHandler(req: AuthenticatedRequest) {
@@ -43,8 +45,18 @@ async function createVehicleHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ error: message, code: 'VALIDATION_ERROR' }, { status: 400 });
     }
 
-    const { clientId, plate, brand, model, color, year, fipe_value, estimated_arrival_date } =
-      parsed.data;
+    const {
+      clientId,
+      plate,
+      brand,
+      model,
+      color,
+      year,
+      fipe_value,
+      estimated_arrival_date,
+      preparacao,
+      comercializacao,
+    } = parsed.data;
 
     let createdBy: string | undefined = undefined;
     const authHeader = req.headers.get('authorization');
@@ -68,6 +80,8 @@ async function createVehicleHandler(req: AuthenticatedRequest) {
       fipe_value,
       estimated_arrival_date,
       createdBy,
+      preparacao,
+      comercializacao,
     });
 
     logger.info(`Vehicle ${vehicle.plate} created successfully for client ${clientId}.`);

@@ -16,4 +16,6 @@ export type FieldKey =
   | 'initialKm'
   | 'fipe_value'
   | 'observations'
-  | 'estimated_arrival_date';
+  | 'estimated_arrival_date'
+  | 'preparacao'
+  | 'comercializacao';

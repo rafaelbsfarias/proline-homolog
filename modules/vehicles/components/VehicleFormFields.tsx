@@ -20,6 +20,7 @@ interface VehicleFormFieldsProps {
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handlePlateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleClientSelect: (client: any | null) => void; // Replace with actual type if available
+  handleCheckboxChange: (name: string, checked: boolean) => void;
   handleSubmit: (e: React.FormEvent) => void;
 }
 
@@ -33,6 +34,7 @@ export const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
   handleInputChange,
   handlePlateChange,
   handleClientSelect,
+  handleCheckboxChange,
   handleSubmit,
 }) => {
   return (
@@ -214,17 +216,34 @@ export const VehicleFormFields: React.FC<VehicleFormFieldsProps> = ({
 
       <div className="form-row">
         {!isHidden('observations') && (
-          <div className="form-group full-width">
-            <label htmlFor="observations">Observações</label>
-            <textarea
-              id="observations"
-              name="observations"
-              value={formData.observations}
-              onChange={handleInputChange}
-              placeholder="Observações adicionais sobre o veículo..."
-              disabled={loading}
-              rows={3}
-            />
+          <div className="form-row">
+            <div className="form-group full-width">
+              <label>Finalidade do Veículo</label>
+              <div className="checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="preparacao"
+                    checked={formData.preparacao}
+                    onChange={e => handleCheckboxChange('preparacao', e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkmark"></span>
+                  Preparação
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="comercializacao"
+                    checked={formData.comercializacao}
+                    onChange={e => handleCheckboxChange('comercializacao', e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="checkmark"></span>
+                  Comercialização
+                </label>
+              </div>
+            </div>
           </div>
         )}
       </div>

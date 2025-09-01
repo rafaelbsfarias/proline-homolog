@@ -23,6 +23,8 @@ interface VehicleFormData {
   fipe_value: number | '';
   observations: string;
   estimated_arrival_date: string;
+  preparacao: boolean;
+  comercializacao: boolean;
 }
 
 interface FormErrors {
@@ -69,6 +71,8 @@ export function useVehicleRegistrationForm({
     fipe_value: '',
     observations: '',
     estimated_arrival_date: '',
+    preparacao: false,
+    comercializacao: false,
   });
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -95,6 +99,8 @@ export function useVehicleRegistrationForm({
         fipe_value: '',
         observations: '',
         estimated_arrival_date: '',
+        preparacao: false,
+        comercializacao: false,
       });
       setSelectedClient(null);
       setErrors({});
@@ -174,6 +180,8 @@ export function useVehicleRegistrationForm({
         ...(userRole === 'admin' && {
           estimated_arrival_date: formData.estimated_arrival_date || undefined,
         }),
+        preparacao: formData.preparacao,
+        comercializacao: formData.comercializacao,
       };
 
       try {
@@ -230,6 +238,10 @@ export function useVehicleRegistrationForm({
     [errors.plate]
   );
 
+  const handleCheckboxChange = useCallback((name: string, checked: boolean) => {
+    setFormData(prev => ({ ...prev, [name]: checked }));
+  }, []);
+
   return {
     formData,
     errors,
@@ -239,6 +251,7 @@ export function useVehicleRegistrationForm({
     handleInputChange,
     handlePlateChange,
     handleClientSelect,
+    handleCheckboxChange,
     handleSubmit,
     error,
     success,

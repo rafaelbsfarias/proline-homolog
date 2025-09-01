@@ -25,13 +25,19 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       initialKm,
       fipe_value,
       observations,
-    } = body ?? {};
-
-    // Validação de campos obrigatórios
+      preparacao,
+      comercializacao,
+    } = body ?? {}; // Validação de campos obrigatórios
     if (!plate || !brand || !model || !color || !year) {
       logger.warn('missing_required_fields', {
         userId: req.user?.id?.slice(0, 8),
-        missing: [!plate && 'plate', !brand && 'brand', !model && 'model', !color && 'color', !year && 'year']
+        missing: [
+          !plate && 'plate',
+          !brand && 'brand',
+          !model && 'model',
+          !color && 'color',
+          !year && 'year',
+        ]
           .filter(Boolean)
           .join(', '),
       });
@@ -59,8 +65,9 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       fipe_value: fipe_value ? Number(fipe_value) : undefined,
       observations: observations as string,
       clientId: clientId,
+      preparacao: preparacao as boolean,
+      comercializacao: comercializacao as boolean,
     });
-
     logger.info('success', {
       userId: clientId.slice(0, 8),
       vehicleId: vehicle.id.slice(0, 8),

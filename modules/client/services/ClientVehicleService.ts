@@ -17,6 +17,8 @@ export interface ClientVehicleData {
   fipe_value?: number;
   observations?: string;
   clientId: string;
+  preparacao?: boolean;
+  comercializacao?: boolean;
 }
 
 export interface VehicleInfo {
@@ -32,6 +34,8 @@ export interface VehicleInfo {
   current_odometer?: number;
   fuel_level?: string;
   estimated_arrival_date?: string | null;
+  preparacao?: boolean;
+  comercializacao?: boolean;
 }
 
 export class ClientVehicleService {
@@ -55,7 +59,9 @@ export class ClientVehicleService {
       fipe_value,
       current_odometer,
       fuel_level,
-      estimated_arrival_date
+      estimated_arrival_date,
+      preparacao,
+      comercializacao
     `;
   }
 
@@ -75,8 +81,19 @@ export class ClientVehicleService {
   }
 
   async createVehicle(data: ClientVehicleData): Promise<VehicleInfo> {
-    const { plate, brand, model, color, year, initialKm, fipe_value, observations, clientId } =
-      data;
+    const {
+      plate,
+      brand,
+      model,
+      color,
+      year,
+      initialKm,
+      fipe_value,
+      observations,
+      clientId,
+      preparacao,
+      comercializacao,
+    } = data;
 
     // 1. Validate plate format
     if (!validatePlate(plate)) {
@@ -138,6 +155,8 @@ export class ClientVehicleService {
         initial_km: initialKm,
         fipe_value: fipe_value,
         observations: observations ? sanitizeString(observations) : null,
+        preparacao: preparacao || false,
+        comercializacao: comercializacao || false,
         status: 'AGUARDANDO DEFINIÇÃO DE COLETA',
       })
       .select()
