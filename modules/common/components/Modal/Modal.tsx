@@ -38,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({
           <h2>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
           {showCloseButton && (
-            <button className="modal-close" onClick={onClose}>
+            <button className={styles.modalClose} onClick={onClose}>
               &times;
             </button>
           )}
