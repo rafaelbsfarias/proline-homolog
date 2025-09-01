@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger, ILogger } from '@/modules/logger';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
