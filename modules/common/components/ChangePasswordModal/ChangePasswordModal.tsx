@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Modal from '../Modal'; // Reutiliza o componente Modal existente
+import Modal from '../Modal/Modal'; // Reutiliza o componente Modal existente
 import Input from '../Input/Input'; // Reutiliza o componente Input existente
-import { IoEyeOutline, IoEyeOffOutline } from 'react-icons/io5';
-import './ChangePasswordModal.css';
 import ErrorMessage from '../ErroMessage/ErrorMessage';
-
+import styles from './ChangePasswordModal.module.css';
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,38 +52,53 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Alterar Senha">
-      <div className="change-password-modal-content">
-        <Input
-          label="Nova Senha"
-          id="newPassword"
-          name="newPassword"
-          type={showPassword ? 'text' : 'password'}
-          value={newPassword}
-          onChange={e => setNewPassword(e.target.value)}
-          disabled={loading}
-        />
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          handleConfirm();
+        }}
+        className={styles.form}
+      >
+        <div className={styles.formGroup}>
+          <Input
+            label="Nova Senha"
+            id="newPassword"
+            name="newPassword"
+            type={showPassword ? 'text' : 'password'}
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-        <Input
-          label="Confirmar Nova Senha"
-          id="confirmNewPassword"
-          name="confirmNewPassword"
-          type={showPassword ? 'text' : 'password'}
-          value={confirmPassword}
-          onChange={e => setConfirmPassword(e.target.value)}
-          disabled={loading}
-        />
+        <div className={styles.formGroup}>
+          <Input
+            label="Confirmar Nova Senha"
+            id="confirmNewPassword"
+            name="confirmNewPassword"
+            type={showPassword ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
         <ErrorMessage message={localError || error || undefined} />
 
-        <div className="modal-actions">
-          <button className="modal-button secondary" onClick={handleClose} disabled={loading}>
+        <div className={styles.buttonGroup}>
+          <button
+            type="button"
+            className={styles.secondary}
+            onClick={handleClose}
+            disabled={loading}
+          >
             Cancelar
           </button>
-          <button className="modal-button primary" onClick={handleConfirm} disabled={loading}>
+          <button type="submit" disabled={loading}>
             {loading ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 };

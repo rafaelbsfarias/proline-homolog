@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Modal from '@/modules/common/components/Modal';
+import Modal from '@/modules/common/components/Modal/Modal';
 import FormInput from '@/modules/common/components/FormInput';
 import { FaSave, FaTimes } from 'react-icons/fa';
 import { useToast } from '@/modules/common/components/ToastProvider';
