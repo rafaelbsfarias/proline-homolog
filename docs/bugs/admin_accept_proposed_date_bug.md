@@ -121,17 +121,57 @@ O problema provavelmente está na **diferença entre os labels de endereços** u
    - Consultar registros em `vehicle_collections` para o cliente/endereço
    - Confirmar status e valores definidos
 
-## Impacto
+## ✅ Status da Correção
 
-- Administradores não conseguem aceitar datas propostas por clientes
-- Fluxo de mudança de data fica incompleto
-- Clientes ficam impedidos de prosseguir com o processo de coleta
+**Data da correção**: 01/09/2025  
+**Status**: **CORRIGIDO**
+
+### 🔧 Correções Implementadas:
+
+1. **✅ API `accept-client-proposed-date`**:
+   - Busca aprimorada por precificação (sem dependência de data específica)
+   - Fallback robusto com `ILIKE` para variações de endereço
+   - Sincronização automática de datas quando necessário
+
+2. **✅ API `propose-collection-date`**:
+   - Sincronização bidirecional entre `vehicles` e `vehicle_collections`
+   - Logs detalhados para debugging
+
+3. **✅ API `collection-reschedule`** ⭐ **CORREÇÃO PRINCIPAL**:
+   - **PRIORIZAÇÃO de registros com `collection_fee_per_vehicle > 0`** na busca
+   - Busca por `updated_at` em vez de `created_at` para pegar registros mais recentes
+   - Fallback para registros sem fee quando necessário
+   - **Limpeza automática de registros duplicados sem fee**
+   - Preservação garantida do `collection_fee_per_vehicle` existente
+   - Logs detalhados para rastreamento
+
+### 🎯 Problema Raiz Identificado:
+- **Múltiplos registros de `vehicle_collections`** para o mesmo cliente/endereço
+- Registro mais recente tinha `collection_fee_per_vehicle: null`
+- Registro mais antigo tinha `collection_fee_per_vehicle: 8.99`
+- **Lógica antiga pegava o mais recente (null)** ❌
+- **Lógica nova prioriza o que tem fee válido** ✅
+
+### 📊 Teste de Validação:
+- Script `test-collection-logic.cjs` confirma que a correção funciona
+- Lógica antiga: retornaria `fee: null` ❌
+- Lógica nova: retorna `fee: 8.99` ✅
+
+### Resultado:
+🎯 **Admin consegue aceitar/rejeitar propostas de data sem erro "Precificação ausente"**
+🧹 **Sistema limpa automaticamente registros duplicados sem fee**
+📊 **Logs detalhados para monitoramento e debug**
+
+---
 
 ## Prioridade
 
-**Alta** - Bloqueia funcionalidade crítica do sistema
+**~~Alta~~ RESOLVIDO** - ~~Bloqueia funcionalidade crítica do sistema~~
 
 ## Referências
 
-- [Fluxo de Mudança de Data](../../fluxos_de_servico/fluxo_mudanca_data.md)
-- [Documentação de Componentes do Administrador](../refatoracao/componentes_admin.md)
+- [Fluxo de Múltiplas Mudanças de Data](../business-flows/fluxo_multiplas_mudancas_data.md) - **NOVO** - Análise completa do cenário problemático
+- [Diagramas Técnicos do Bug](../business-flows/diagramas_tecnicos_bug.md) - **NOVO** - Visualização técnica do problema  
+- [Solução Proposta](../business-flows/solucao_bug_multiplas_mudancas.md) - **NOVO** - Correção detalhada do bug
+- [Fluxo de Mudança de Data](../business-flows/fluxo_mudanca_data.md) - Fluxo original (parcial)
+- [Documentação de Componentes do Administrador](../development/componentes_cliente.md)

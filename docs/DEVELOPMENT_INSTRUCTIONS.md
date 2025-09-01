@@ -24,20 +24,42 @@ escalabilidade do código:
 - Toda **migration** deve ser **idempotente**
 - Toda migration deve ser criada com **supabase migration new**
 
-## Documentação de Bugs e Issues
+## Sistema de Histórico Imutável
 
-Todos os bugs e issues conhecidos devem ser documentados seguindo o padrão estabelecido em:
+### Visão Geral
+O sistema de histórico de coletas foi implementado com imutabilidade para garantir que registros históricos nunca sejam alterados, mesmo que os dados originais (preços, datas) sejam modificados posteriormente.
 
-- [Índice de Bugs](bugs/indice.md) - Documentação completa dos bugs identificados
+### Arquitetura
+- **Tabela `collection_history`**: Armazena registros imutáveis de coletas finalizadas
+- **Trigger automático**: Cria registros históricos quando coletas mudam para status 'approved'
+- **Service Layer**: `CollectionHistoryService` para acesso aos dados históricos
+- **View `collection_history_detailed`**: Fornece dados agregados com informações de cliente e veículos
 
-Antes de implementar qualquer correção, deve-se:
-1. Documentar o bug de forma clara e objetiva
-2. Diagnosticar a causa raiz do problema
-3. Propor uma solução técnica apropriada
-4. Atualizar a documentação após a resolução
+### Funcionalidades
+- ✅ Registros históricos nunca são modificados
+- ✅ Preços e datas são preservados no momento da finalização
+- ✅ Dados agregados incluem contagem de veículos e valores totais
+- ✅ RLS policies garantem acesso apropriado por cliente/admin
 
-Esta prática garante que:
-- Problemas conhecidos sejam facilmente identificáveis
-- A equipe tenha contexto suficiente para resolver issues
-- Histórico de problemas seja mantido para referência futura
-- Soluções implementadas sejam bem documentadas
+### Como Funciona
+1. Quando uma coleta é aprovada (status = 'approved'), um trigger cria automaticamente um registro na tabela `collection_history`
+2. O registro histórico contém uma cópia imutável de todos os dados relevantes
+3. Mudanças futuras nos dados originais não afetam o histórico
+4. O histórico é exibido na interface do admin com dados enriquecidos
+
+### Benefícios
+- **Integridade histórica**: Dados passados nunca são perdidos ou alterados
+- **Auditoria**: Rastreamento completo de todas as coletas finalizadas
+- **Conformidade**: Garante que relatórios históricos reflitam valores reais da época
+- **Performance**: Consultas otimizadas para dados históricos
+
+### API Endpoints
+- `GET /api/admin/collection-history/[clientId]`: Retorna histórico imutável do cliente
+- `POST /api/admin/collection-history/[clientId]/migrate`: Migração manual (desabilitada temporariamente)
+
+### Migration
+A migration `20250901183406_create_collection_history_table.sql` cria:
+- Tabela `collection_history` com constraints de imutabilidade
+- Trigger para criação automática de registros históricos
+- View para consultas otimizadas
+- Políticas RLS apropriadas
