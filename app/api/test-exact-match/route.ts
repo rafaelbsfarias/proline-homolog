@@ -60,7 +60,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       error: pricedErr?.message,
     });
 
-    // 3) Verificar TODOS os registros para comparar
+    // 3) Verificar todos os registros para comparar
     const { data: allCollections } = await admin
       .from('vehicle_collections')
       .select('id, collection_address, collection_fee_per_vehicle, status')
