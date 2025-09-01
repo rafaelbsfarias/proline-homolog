@@ -25,6 +25,7 @@
 
 ## 2. Documentação de Componentes
 - [Input](components/Input.md) - Documentação do componente de Input reutilizável.
+- [Modal](components/Modal.md) - Documentação do componente de Modal reutilizável.
 
 ## 3. Diretrizes do Projeto
 
