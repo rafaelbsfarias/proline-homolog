@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import styles from './Modal.module.css';
 
 interface ModalProps {
@@ -24,6 +24,15 @@ const Modal: React.FC<ModalProps> = ({
   height,
   showCloseButton = true,
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const contentStyle = {
@@ -48,7 +57,7 @@ const Modal: React.FC<ModalProps> = ({
             </button>
           )}
         </div>
-        <div className={styles.form}>{children}</div>
+        <div className={styles.modalBody}>{children}</div>
       </div>
     </div>
   );
