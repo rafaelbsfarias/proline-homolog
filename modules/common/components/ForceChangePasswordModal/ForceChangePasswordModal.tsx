@@ -4,6 +4,7 @@ import { useForceChangePassword } from '@/modules/common/hooks/ForceChangePasswo
 import Input from '../Input/Input';
 import ErrorMessage from '../ErroMessage/ErrorMessage';
 import Modal from '../Modal/Modal';
+import { SolidButton } from '../SolidButton/SolidButton';
 
 interface ForceChangePasswordModalProps {
   isOpen: boolean;
@@ -36,7 +37,6 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
           e.preventDefault();
           handleSubmit(password, confirmPassword);
         }}
-        className={styles.form}
       >
         <Input
           id="password"
@@ -73,9 +73,9 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
         <ErrorMessage message={errors.confirmPassword} />
 
         <div className={styles.buttonGroup}>
-          <button type="submit" disabled={loading}>
+          <SolidButton type="submit" disabled={loading}>
             {loading ? 'Salvando...' : 'Salvar'}
-          </button>
+          </SolidButton>
         </div>
       </form>
     </Modal>

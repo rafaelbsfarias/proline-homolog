@@ -5,6 +5,8 @@ import Modal from '../Modal/Modal'; // Reutiliza o componente Modal existente
 import Input from '../Input/Input'; // Reutiliza o componente Input existente
 import ErrorMessage from '../ErroMessage/ErrorMessage';
 import styles from './ChangePasswordModal.module.css';
+import { OutlineButton } from '../OutlineButton/OutlineButton';
+import { SolidButton } from '../SolidButton/SolidButton';
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -82,17 +84,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         <ErrorMessage message={localError || error || undefined} />
 
         <div className={styles.buttonGroup}>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={handleClose}
-            disabled={loading}
-          >
+          <OutlineButton onClick={onClose} disabled={loading}>
             Cancelar
-          </button>
-          <button type="submit" disabled={loading}>
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
             {loading ? 'Salvando...' : 'Salvar'}
-          </button>
+          </SolidButton>
         </div>
       </form>
     </Modal>
