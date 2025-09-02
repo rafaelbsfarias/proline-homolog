@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Modal from './Modal'; // Reutiliza o componente Modal existente
-import FormInput from './FormInput'; // Reutiliza o componente FormInput existente
-import { IoEyeOutline, IoEyeOffOutline } from 'react-icons/io5';
-import './ChangePasswordModal.css';
-
+import Modal from '../Modal/Modal'; // Reutiliza o componente Modal existente
+import Input from '../Input/Input'; // Reutiliza o componente Input existente
+import ErrorMessage from '../ErroMessage/ErrorMessage';
+import styles from './ChangePasswordModal.module.css';
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -53,56 +52,53 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Alterar Senha">
-      <div className="change-password-modal-content">
-        <div className="input-group">
-          <FormInput
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          handleConfirm();
+        }}
+        className={styles.form}
+      >
+        <div className={styles.formGroup}>
+          <Input
             label="Nova Senha"
             id="newPassword"
             name="newPassword"
             type={showPassword ? 'text' : 'password'}
             value={newPassword}
             onChange={e => setNewPassword(e.target.value)}
-            required
             disabled={loading}
           />
         </div>
 
-        <div className="input-group">
-          <FormInput
+        <div className={styles.formGroup}>
+          <Input
             label="Confirmar Nova Senha"
             id="confirmNewPassword"
             name="confirmNewPassword"
             type={showPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={e => setConfirmPassword(e.target.value)}
-            required
             disabled={loading}
           />
         </div>
 
-        <div className="password-toggle-section">
+        <ErrorMessage message={localError || error || undefined} />
+
+        <div className={styles.buttonGroup}>
           <button
             type="button"
-            className="toggle-password-visibility"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+            className={styles.secondary}
+            onClick={handleClose}
+            disabled={loading}
           >
-            {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
-          </button>
-          <span>{showPassword ? 'Ocultar senhas' : 'Mostrar senhas'}</span>
-        </div>
-
-        {(localError || error) && <div className="error-message">{localError || error}</div>}
-
-        <div className="modal-actions">
-          <button className="modal-button secondary" onClick={handleClose} disabled={loading}>
             Cancelar
           </button>
-          <button className="modal-button primary" onClick={handleConfirm} disabled={loading}>
+          <button type="submit" disabled={loading}>
             {loading ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 };

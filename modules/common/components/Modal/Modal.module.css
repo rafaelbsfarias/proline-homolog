@@ -1,0 +1,66 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modalContent {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.modalHeader {
+  background: #002e4c;
+  color: #ffffff;
+  text-align: center;
+  padding: 20px;
+}
+
+.modalClose {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.modalHeader p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+  color: #e8f1ff;
+}
+
+.form {
+  padding: 20px 30px 30px 30px;
+}

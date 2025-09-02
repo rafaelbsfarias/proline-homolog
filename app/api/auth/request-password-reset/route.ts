@@ -3,9 +3,42 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ResendEmailService } from '@/modules/common/services/ResendEmailService';
 import { getLogger, ILogger } from '@/modules/logger';
 import { generateTemporaryPassword } from '@/lib/security/passwordUtils';
-import { User } from '@supabase/supabase-js';
+import { User, SupabaseClient } from '@supabase/supabase-js';
 
 const logger: ILogger = getLogger('RequestPasswordResetAPI');
+
+/**
+ * Finds a user by email using an efficient RPC call to the custom `get_user_by_email` Supabase database function.
+ */
+async function findUserByEmail(supabaseAdmin: SupabaseClient, email: string): Promise<User | null> {
+  logger.info(`Searching for user with email via RPC: ${email}`);
+
+  const { data, error } = await supabaseAdmin.rpc('get_user_by_email', { p_email: email }).single();
+
+  if (error) {
+    logger.error(`Error calling get_user_by_email RPC for ${email}:`, error);
+    return null;
+  }
+
+  if (!data) {
+    logger.warn(`User with email ${email} not found via RPC.`);
+    return null;
+  }
+
+  // The RPC function returns a custom shape that includes id, email, and user_metadata.
+  // We cast it to a partial User type for use in the main logic.
+  const user = data as User;
+
+  logger.info(`User ${user.id} found for password reset.`);
+  return user;
+}
+
+function getSuccessResponse() {
+  return NextResponse.json({
+    success: true,
+    message: 'Se um usuário com este email existir, um email de redefinição de senha foi enviado.',
+  });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,55 +50,26 @@ export async function POST(req: NextRequest) {
     }
 
     const supabaseAdmin = SupabaseService.getInstance().getAdminClient();
-    const resendEmailService = new ResendEmailService();
+    const user = await findUserByEmail(supabaseAdmin, email);
 
-    // 1. Find the user by email
-    logger.info(`Password reset requested for email: ${email}`);
-    const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-
-    if (listError) {
-      logger.error(`Error listing users to find ${email}:`, listError);
-      // Still return a generic success message to the client
-      return NextResponse.json({
-        success: true,
-        message:
-          'Se um usuário com este email existir, um email de redefinição de senha foi enviado.',
-      });
-    }
-
-    const user = usersData.users.find((u: User) => u.email === email);
-
+    // To prevent user enumeration, always return a generic success message,
+    // regardless of whether the user was found or if an error occurred.
     if (!user) {
-      logger.warn(`User with email ${email} not found for password reset.`);
-      // To prevent user enumeration, we don't reveal that the user doesn't exist.
-      return NextResponse.json({
-        success: true,
-        message:
-          'Se um usuário com este email existir, um email de redefinição de senha foi enviado.',
-      });
+      return getSuccessResponse();
     }
 
-    logger.info(`User ${user.id} found for password reset.`);
-
-    // 2. Generate a new temporary password
     const temporaryPassword = generateTemporaryPassword();
     logger.info(`Generated temporary password for user ${user.id}.`);
 
-    // 3. Update the user's password in Supabase Auth
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
       password: temporaryPassword,
     });
 
     if (updateError) {
       logger.error(`Error updating password for user ${user.id}:`, updateError);
-      // Even if the update fails, we send a generic success message.
-      // This prevents leaking information about the system's state.
-      return NextResponse.json({
-        success: true,
-        message:
-          'Se um usuário com este email existir, um email de redefinição de senha foi enviado.',
-      });
+      return getSuccessResponse(); // Still return success to not leak info
     }
+
     logger.info(`Password updated successfully for user ${user.id}.`);
 
     const { error: profileError } = await supabaseAdmin
@@ -74,28 +78,23 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id);
 
     if (profileError) {
-      logger.error('Erro ao atualizar must_change_password:', profileError);
+      logger.error(`Error updating must_change_password for user ${user.id}:`, profileError);
+      // Non-critical error, proceed with sending email.
     } else {
-      logger.debug('must_change_password atualizado com sucesso para o usuário ' + user.id);
+      logger.debug(`must_change_password updated successfully for user ${user.id}`);
     }
 
-    // 4. Send the new password to the user's email
+    const resendEmailService = new ResendEmailService();
     const userName = user.user_metadata?.full_name || 'Usuário';
-    const userRole = user.user_metadata?.role || 'Usuário';
 
     await resendEmailService.sendTemporaryPasswordForReset(email, userName, temporaryPassword);
-
     logger.info(`New temporary password sent to ${email}.`);
 
-    return NextResponse.json({
-      success: true,
-      message:
-        'Se um usuário com este email existir, um email de redefinição de senha foi enviado.',
-    });
+    return getSuccessResponse();
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error('Internal server error in request-password-reset API:', errorMessage, error);
-    // Generic success message on internal errors as well.
+    // On internal errors, also return a generic success message.
     return NextResponse.json(
       {
         success: true,

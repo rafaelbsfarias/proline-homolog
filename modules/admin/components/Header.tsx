@@ -5,7 +5,7 @@ import styles from './Header.module.css';
 import { useAuthService } from '../../common/services/AuthService';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import SettingsButton from '@/modules/common/components/SettingsButton';
-import ChangePasswordModal from '@/modules/common/components/ChangePasswordModal';
+import ChangePasswordModal from '@/modules/common/components/ChangePasswordModal/ChangePasswordModal';
 
 const Header: React.FC = () => {
   const router = useRouter();

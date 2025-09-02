@@ -25,6 +25,10 @@
 - [Diagramas de Sequência](business-flows/diagramas_sequencia.md) - Diagramas dos fluxos de status
 - [Resumo dos Fluxos](business-flows/resumo_fluxos_status.md) - Resumo dos fluxos de status
 
+## 2.3 Documentação de Componentes
+- [Input](components/Input.md) - Documentação do componente de Input reutilizável.
+- [Modal](components/Modal.md) - Documentação do componente de Modal reutilizável.
+
 ## 3. Diretrizes do Projeto
 
 - [Instruções de Desenvolvimento](DEVELOPMENT_INSTRUCTIONS.md) - Princípios e diretrizes do projeto

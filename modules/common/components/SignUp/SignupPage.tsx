@@ -2,10 +2,11 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useSignupForm } from '../../hooks/Signup/useSignupForm';
-import Modal from '../Modal';
+
 import styles from './SignupPage.module.css';
 import ErrorMessage from '../ErroMessage/ErrorMessage';
 import Input from '../Input/Input';
+import Modal from '../Modal/Modal';
 
 const SignupPage: React.FC = () => {
   const router = useRouter();

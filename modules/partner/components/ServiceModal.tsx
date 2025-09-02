@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Modal from '@/modules/common/components/Modal';
+import Modal from '@/modules/common/components/Modal/Modal';
 import ServiceForm from './ServiceForm';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import {

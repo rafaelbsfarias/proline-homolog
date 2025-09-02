@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import Modal from '@/modules/common/components/Modal';
+import Modal from '@/modules/common/components/Modal/Modal';
 import styles from './VehicleChecklistModal.module.css';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { sanitizeString } from '@/modules/common/utils/inputSanitization';
