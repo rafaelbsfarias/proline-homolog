@@ -1,69 +1,55 @@
 'use client';
 
 import React from 'react';
-import Header from '@/modules/admin/components/Header';
-import DataTable from '@/modules/partner/components/DataTable';
+import ServicesLayout from '@/modules/partner/components/ServicesLayout';
+import ServicesContent from '@/modules/partner/components/ServicesContent';
+import EditServiceModal from '@/modules/partner/components/EditServiceModal';
 import {
   usePartnerServices,
   type PartnerService,
+  type UpdateServiceData,
 } from '@/modules/partner/hooks/usePartnerServices';
+import { useEditServiceModal } from '@/modules/partner/hooks/useEditServiceModal';
 
 const ServicesPage = () => {
-  const { services, loading, error } = usePartnerServices();
+  const { services, loading, error, updateService, deleteService } = usePartnerServices();
+  const { editingService, isModalOpen, updateLoading, openModal, closeModal, handleSave } =
+    useEditServiceModal();
 
-  const columns: { key: keyof PartnerService | 'formatted_price'; header: string }[] = [
-    { key: 'name', header: 'Nome' },
-    { key: 'description', header: 'Descrição' },
-    { key: 'formatted_price', header: 'Preço (R$)' },
-    { key: 'category', header: 'Categoria' },
-  ];
+  const handleEdit = (service: PartnerService) => {
+    openModal(service);
+  };
 
-  // Formata os dados antes de passá-los para a tabela
-  const formattedServices = services.map(service => ({
-    ...service,
-    formatted_price: new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(service.price),
-  }));
+  const handleDelete = async (service: PartnerService) => {
+    try {
+      await deleteService(service.id);
+    } catch {
+      // Erro já tratado no hook
+    }
+  };
+
+  const onSave = async (serviceId: string, data: UpdateServiceData) => {
+    await handleSave(serviceId, data, updateService);
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header />
-      <div style={{ display: 'flex' }}>
-        {/* Placeholder para o Menu Lateral */}
-        <aside
-          style={{
-            width: '240px',
-            background: '#fff',
-            borderRight: '1px solid #e0e0e0',
-            padding: '24px',
-          }}
-        >
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#333' }}>Menu</h2>
-          {/* Links do menu virão aqui */}
-        </aside>
+    <ServicesLayout>
+      <ServicesContent
+        services={services}
+        loading={loading}
+        error={error}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
 
-        {/* Conteúdo Principal */}
-        <main style={{ flex: 1, padding: '48px' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 24, color: '#333' }}>
-            Meus Serviços Cadastrados
-          </h1>
-
-          {loading && <p>Carregando serviços...</p>}
-          {error && <p style={{ color: 'red' }}>Erro ao carregar serviços: {error}</p>}
-
-          {!loading && !error && (
-            <DataTable
-              title="Serviços"
-              data={formattedServices} // Usa os dados formatados
-              columns={columns}
-              emptyMessage="Nenhum serviço cadastrado."
-            />
-          )}
-        </main>
-      </div>
-    </div>
+      <EditServiceModal
+        service={editingService}
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSave={onSave}
+        loading={updateLoading}
+      />
+    </ServicesLayout>
   );
 };
 

@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { FaEdit } from 'react-icons/fa';
+import { TbTrashXFilled } from 'react-icons/tb';
+import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 
 interface DataTableProps<T> {
   title: string;
   data: T[];
   columns: { key: keyof T; header: string }[];
   emptyMessage: string;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void;
+  showActions?: boolean;
 }
 
 const DataTable = <T extends { id: React.Key }>({
@@ -12,7 +18,30 @@ const DataTable = <T extends { id: React.Key }>({
   data,
   columns,
   emptyMessage,
+  onEdit,
+  onDelete,
+  showActions = false,
 }: DataTableProps<T>) => {
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<T | null>(null);
+
+  const handleDeleteClick = (item: T) => {
+    setItemToDelete(item);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete && onDelete) {
+      onDelete(itemToDelete);
+    }
+    setConfirmDialogOpen(false);
+    setItemToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDialogOpen(false);
+    setItemToDelete(null);
+  };
   return (
     <div
       style={{
@@ -38,6 +67,18 @@ const DataTable = <T extends { id: React.Key }>({
                   {column.header}
                 </th>
               ))}
+              {showActions && (
+                <th
+                  style={{
+                    padding: '10px',
+                    borderBottom: '1px solid #ddd',
+                    textAlign: 'center',
+                    width: '120px',
+                  }}
+                >
+                  Ações
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -51,6 +92,54 @@ const DataTable = <T extends { id: React.Key }>({
                     {String(row[column.key])}
                   </td>
                 ))}
+                {showActions && (
+                  <td
+                    style={{ padding: '10px', borderBottom: '1px solid #eee', textAlign: 'center' }}
+                  >
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#002e4c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Editar"
+                        >
+                          <FaEdit size={14} />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => handleDeleteClick(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Excluir"
+                        >
+                          <TbTrashXFilled size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -58,6 +147,15 @@ const DataTable = <T extends { id: React.Key }>({
       ) : (
         <p style={{ color: '#666' }}>{emptyMessage}</p>
       )}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        title="Excluir Serviço"
+        description="Tem certeza que deseja excluir este serviço? Esta ação não pode ser desfeita."
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 };
