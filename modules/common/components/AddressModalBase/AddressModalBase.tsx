@@ -4,8 +4,9 @@ import MessageModal from '@/modules/common/components/MessageModal/MessageModal'
 import { validateCEP, sanitizeString } from '@/modules/common/utils/inputSanitization';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
-import { OutlineButton } from './OutlineButton/OutlineButton';
-import { SolidButton } from './SolidButton/SolidButton';
+import { OutlineButton } from '../OutlineButton/OutlineButton';
+import { SolidButton } from '../SolidButton/SolidButton';
+import styles from './AddressModalBase.module.css';
 
 export interface AddressFormValues {
   street: string;
@@ -121,8 +122,8 @@ export default function AddressModalBase({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
-      <form onSubmit={handleSubmit} className="vehicle-form">
-        <div className="form-row">
+      <form onSubmit={handleSubmit} className={styles.addressModalForm}>
+        <div className={styles.formRow}>
           <div>
             <Input
               id="zip_code"
@@ -148,7 +149,7 @@ export default function AddressModalBase({
           </div>
         </div>
 
-        <div className="form-row">
+        <div className={styles.formRow}>
           <div>
             <Input
               id="number"
@@ -173,7 +174,7 @@ export default function AddressModalBase({
           </div>
         </div>
 
-        <div className="form-row">
+        <div className={styles.formRow}>
           <div>
             <Input
               id="city"
@@ -198,7 +199,7 @@ export default function AddressModalBase({
           </div>
         </div>
 
-        <div className="form-row">
+        <div className={styles.formRow}>
           <div className="full-width">
             <Input
               id="complement"
@@ -212,7 +213,7 @@ export default function AddressModalBase({
 
         {renderExtraFields?.({ loading })}
 
-        <div className="form-actions">
+        <div className={styles.formActions}>
           <OutlineButton onClick={onClose} disabled={loading}>
             Cancelar
           </OutlineButton>

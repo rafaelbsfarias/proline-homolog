@@ -1,7 +1,9 @@
-"use client";
+'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import AddressModalBase, { AddressFormValues } from '@/modules/common/components/AddressModalBase';
+import AddressModalBase, {
+  AddressFormValues,
+} from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { IoPencilOutline } from 'react-icons/io5';
 import { SYSTEM_MESSAGES } from '@/modules/common/constants/messages';
@@ -105,15 +107,13 @@ export default function AddressesList() {
             <div className={styles.addressSubtitle}>
               {addr.neighborhood} • {addr.city} - {addr.state} • CEP {addr.zip_code}
             </div>
-            {addr.complement && <div className={styles.addressComplement}>Compl.: {addr.complement}</div>}
+            {addr.complement && (
+              <div className={styles.addressComplement}>Compl.: {addr.complement}</div>
+            )}
           </div>
           <div className={styles.rightActions}>
-            {addr.is_main_address && (
-              <span className={styles.badgeMain}>Principal</span>
-            )}
-            {addr.is_collect_point && (
-              <span className={styles.badgeCollect}>Ponto de coleta</span>
-            )}
+            {addr.is_main_address && <span className={styles.badgeMain}>Principal</span>}
+            {addr.is_collect_point && <span className={styles.badgeCollect}>Ponto de coleta</span>}
             <button
               aria-label="Editar endereço"
               title="Editar endereço"

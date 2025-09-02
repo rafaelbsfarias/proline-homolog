@@ -4,7 +4,9 @@ import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import ProfilePageBase from '@/modules/common/components/ProfilePageBase';
 import AddressesList from '@/modules/common/components/AddressesList';
-import AddressModalBase, { AddressFormValues } from '@/modules/common/components/AddressModalBase';
+import AddressModalBase, {
+  AddressFormValues,
+} from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
