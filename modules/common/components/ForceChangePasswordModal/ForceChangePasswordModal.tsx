@@ -29,7 +29,6 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
       onClose={onClose}
       title="Redefinição de Senha"
       subtitle="Você precisa alterar sua senha antes de continuar"
-      width="450px"
       showCloseButton={false}
     >
       <form
@@ -39,43 +38,39 @@ const ForceChangePasswordModal: React.FC<ForceChangePasswordModalProps> = ({
         }}
         className={styles.form}
       >
-        <div className={styles.formGroup}>
-          <Input
-            id="password"
-            name="password"
-            label="Nova senha"
-            type="password"
-            value={password}
-            onChange={e => {
-              setPassword(e.target.value);
-              setErrors((prev: { password?: string; confirmPassword?: string } | undefined) => ({
-                ...prev,
-                password: undefined,
-              }));
-            }}
-            className={errors.password ? styles.error : ''}
-          />
-          <ErrorMessage message={errors.password} />
-        </div>
+        <Input
+          id="password"
+          name="password"
+          label="Nova senha"
+          type="password"
+          value={password}
+          onChange={e => {
+            setPassword(e.target.value);
+            setErrors((prev: { password?: string; confirmPassword?: string } | undefined) => ({
+              ...prev,
+              password: undefined,
+            }));
+          }}
+          className={errors.password ? styles.error : ''}
+        />
+        <ErrorMessage message={errors.password} />
 
-        <div className={styles.formGroup}>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            label="Confirme a nova senha"
-            type="password"
-            value={confirmPassword}
-            onChange={e => {
-              setConfirmPassword(e.target.value);
-              setErrors((prev: { password?: string; confirmPassword?: string } | undefined) => ({
-                ...prev,
-                confirmPassword: undefined,
-              }));
-            }}
-            className={errors.confirmPassword ? styles.error : ''}
-          />
-          <ErrorMessage message={errors.confirmPassword} />
-        </div>
+        <Input
+          id="confirmPassword"
+          name="confirmPassword"
+          label="Confirme a nova senha"
+          type="password"
+          value={confirmPassword}
+          onChange={e => {
+            setConfirmPassword(e.target.value);
+            setErrors((prev: { password?: string; confirmPassword?: string } | undefined) => ({
+              ...prev,
+              confirmPassword: undefined,
+            }));
+          }}
+          className={errors.confirmPassword ? styles.error : ''}
+        />
+        <ErrorMessage message={errors.confirmPassword} />
 
         <div className={styles.buttonGroup}>
           <button type="submit" disabled={loading}>

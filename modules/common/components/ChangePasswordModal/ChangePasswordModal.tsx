@@ -59,29 +59,25 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         }}
         className={styles.form}
       >
-        <div className={styles.formGroup}>
-          <Input
-            label="Nova Senha"
-            id="newPassword"
-            name="newPassword"
-            type={showPassword ? 'text' : 'password'}
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+        <Input
+          label="Nova Senha"
+          id="newPassword"
+          name="newPassword"
+          type={showPassword ? 'text' : 'password'}
+          value={newPassword}
+          onChange={e => setNewPassword(e.target.value)}
+          disabled={loading}
+        />
 
-        <div className={styles.formGroup}>
-          <Input
-            label="Confirmar Nova Senha"
-            id="confirmNewPassword"
-            name="confirmNewPassword"
-            type={showPassword ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            disabled={loading}
-          />
-        </div>
+        <Input
+          label="Confirmar Nova Senha"
+          id="confirmNewPassword"
+          name="confirmNewPassword"
+          type={showPassword ? 'text' : 'password'}
+          value={confirmPassword}
+          onChange={e => setConfirmPassword(e.target.value)}
+          disabled={loading}
+        />
 
         <ErrorMessage message={localError || error || undefined} />
 
