@@ -23,6 +23,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Tamanhos base com max-height */
@@ -80,6 +81,7 @@
   padding: clamp(15px, 3vw, 30px);
   overflow-y: auto;
   flex-grow: 1; /* Faz o corpo crescer e ocupar o espaço */
+  overflow-y: auto;
 }
 
 .formRow {
@@ -107,27 +109,6 @@
 
   .formRow > * {
     flex: 1 1 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .modalOverlay {
-    padding: 0;
-  }
-
-  .modalContent {
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-  }
-
-  .modalBody {
-    height: calc(100vh - 60px);
-    overflow-y: auto;
-  }
-
-  .detailsGrid {
-    grid-template-columns: 1fr;
   }
 }
 
