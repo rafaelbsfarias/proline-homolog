@@ -4,6 +4,8 @@ import MessageModal from '@/modules/common/components/MessageModal/MessageModal'
 import { validateCEP, sanitizeString } from '@/modules/common/utils/inputSanitization';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
+import { OutlineButton } from './OutlineButton/OutlineButton';
+import { SolidButton } from './SolidButton/SolidButton';
 
 export interface AddressFormValues {
   street: string;
@@ -211,12 +213,12 @@ export default function AddressModalBase({
         {renderExtraFields?.({ loading })}
 
         <div className="form-actions">
-          <button type="button" onClick={onClose} disabled={loading} className="cancel-button">
+          <OutlineButton onClick={onClose} disabled={loading}>
             Cancelar
-          </button>
-          <button type="submit" disabled={loading} className="submit-button">
-            {loading ? 'Salvando...' : 'Salvar Endereço'}
-          </button>
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
+            {loading ? 'Salvando...' : 'Cadastrar Endereço'}
+          </SolidButton>
         </div>
       </form>
 
