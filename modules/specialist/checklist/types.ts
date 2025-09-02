@@ -14,6 +14,8 @@ export interface ServicesFlags {
   bodyPaint: { required: boolean; notes: string };
   washing: { required: boolean; notes: string };
   tires: { required: boolean; notes: string };
+  loja: { required: boolean; notes: string };
+  patioAtacado: { required: boolean; notes: string };
 }
 
 export interface ChecklistForm {
@@ -59,5 +61,7 @@ export const buildDefaultForm = (today: string): ChecklistForm => ({
     bodyPaint: { required: false, notes: '' },
     washing: { required: false, notes: '' },
     tires: { required: false, notes: '' },
+    loja: { required: false, notes: '' },
+    patioAtacado: { required: false, notes: '' },
   },
 });

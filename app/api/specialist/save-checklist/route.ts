@@ -20,6 +20,8 @@ interface ChecklistPayload {
     bodyPaint?: { required?: boolean; notes?: string };
     washing?: { required?: boolean; notes?: string };
     tires?: { required?: boolean; notes?: string };
+    loja?: { required?: boolean; notes?: string };
+    patioAtacado?: { required?: boolean; notes?: string };
   };
   mediaPaths?: string[]; // Supabase Storage paths already uploaded from client
 }
@@ -161,6 +163,8 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     pushService('bodyPaint', 'bodyPaint');
     pushService('washing', 'washing');
     pushService('tires', 'tires');
+    pushService('loja', 'loja');
+    pushService('patioAtacado', 'patio_atacado');
 
     if (toInsert.length) {
       const { error: svcErr } = await supabase
@@ -214,6 +218,11 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
           },
           washing: { required: !!services.washing?.required, notes: services.washing?.notes || '' },
           tires: { required: !!services.tires?.required, notes: services.tires?.notes || '' },
+          loja: { required: !!services.loja?.required, notes: services.loja?.notes || '' },
+          patioAtacado: {
+            required: !!services.patioAtacado?.required,
+            notes: services.patioAtacado?.notes || '',
+          },
         },
         mediaPaths: body.mediaPaths || [],
       };

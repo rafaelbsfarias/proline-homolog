@@ -95,6 +95,8 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               bodyPaint: 'bodyPaint',
               washing: 'washing',
               tires: 'tires',
+              loja: 'loja',
+              patio_atacado: 'patioAtacado',
             };
             const key = map[s.category];
             if (key) {
@@ -196,6 +198,14 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           tires: {
             required: form.services.tires.required,
             notes: sanitizeString(form.services.tires.notes),
+          },
+          loja: {
+            required: form.services.loja.required,
+            notes: sanitizeString(form.services.loja.notes),
+          },
+          patioAtacado: {
+            required: form.services.patioAtacado.required,
+            notes: sanitizeString(form.services.patioAtacado.notes),
           },
         },
         mediaPaths: uploadedPaths,
@@ -324,6 +334,22 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                 notes={form.services.tires.notes}
                 onToggle={v => setServiceFlag('tires', v)}
                 onNotesChange={v => setServiceNotes('tires', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Loja"
+                checked={form.services.loja.required}
+                notes={form.services.loja.notes}
+                onToggle={v => setServiceFlag('loja', v)}
+                onNotesChange={v => setServiceNotes('loja', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Pátio Atacado"
+                checked={form.services.patioAtacado.required}
+                notes={form.services.patioAtacado.notes}
+                onToggle={v => setServiceFlag('patioAtacado', v)}
+                onNotesChange={v => setServiceNotes('patioAtacado', v)}
                 disabled={isFinalized}
               />
             </div>
