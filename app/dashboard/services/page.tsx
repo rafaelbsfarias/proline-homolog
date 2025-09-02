@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import ServicesLayout from '@/modules/partner/components/ServicesLayout';
 import ServicesContent from '@/modules/partner/components/ServicesContent';
 import EditServiceModal from '@/modules/partner/components/EditServiceModal';
@@ -15,6 +15,8 @@ const ServicesPage = () => {
   const { services, loading, error, updateService, deleteService } = usePartnerServices();
   const { editingService, isModalOpen, updateLoading, openModal, closeModal, handleSave } =
     useEditServiceModal();
+
+  const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
 
   const handleEdit = (service: PartnerService) => {
     openModal(service);
@@ -32,8 +34,17 @@ const ServicesPage = () => {
     await handleSave(serviceId, data, updateService);
   };
 
+  const handleServiceSelect = (service: PartnerService) => {
+    setSelectedServiceId(service.id);
+    // Aqui você pode adicionar lógica adicional, como rolar para o serviço na tabela
+  };
+
   return (
-    <ServicesLayout>
+    <ServicesLayout
+      services={services}
+      onServiceSelect={handleServiceSelect}
+      selectedServiceId={selectedServiceId}
+    >
       <ServicesContent
         services={services}
         loading={loading}
