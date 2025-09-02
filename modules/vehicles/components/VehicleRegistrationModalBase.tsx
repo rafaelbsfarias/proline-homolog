@@ -8,6 +8,8 @@ import ClientSearch from '@/modules/common/components/ClientSearch';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 export type Vehicle = {
   id: string;
@@ -434,12 +436,12 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
         </div>
 
         <div className="form-actions">
-          <button type="button" className="cancel-button" onClick={onClose} disabled={loading}>
+          <OutlineButton onClick={onClose} disabled={loading}>
             Cancelar
-          </button>
-          <button type="submit" className="submit-button" disabled={loading}>
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
             {loading ? 'Salvando...' : 'Cadastrar Veículo'}
-          </button>
+          </SolidButton>
         </div>
       </form>
 
