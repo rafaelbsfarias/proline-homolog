@@ -4,18 +4,18 @@ import { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
-import RowCollectionModal from './RowCollectionModal';
-import BulkCollectionModal from './BulkCollectionModal';
-import StatusChips from './StatusChips';
-import VehicleFilters from './VehicleFilters';
-import BulkCollectionControls from './BulkCollectionControls';
+import RowCollectionModal from '../RowCollectionModal';
+import BulkCollectionModal from '../BulkCollectionModal';
+import StatusChips from '../StatusChips';
+import VehicleFilters from '../VehicleFilters';
+import BulkCollectionControls from '../BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
-import VehicleItemRow from './VehicleItemRow';
+import VehicleItemRow from '../VehicleItemRow';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 // Types moved to modules/client/types.ts

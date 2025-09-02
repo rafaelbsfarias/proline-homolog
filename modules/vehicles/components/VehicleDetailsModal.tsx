@@ -1,12 +1,14 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import './VehicleDetailsModal.css';
 import { getLogger } from '@/modules/logger';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 export type VehicleDetails = {
+  id: string;
   plate: string;
   brand: string;
   model: string;
@@ -58,13 +60,16 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
   const [loadingSpecialist, setLoadingSpecialist] = useState<boolean>(false);
   const logger = getLogger('vehicles:VehicleDetailsModal');
   const { get } = useAuthenticatedFetch();
+  const router = useRouter();
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!mounted) return;
     if (isOpen) {
       const prev = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = prev; };
+      return () => {
+        document.body.style.overflow = prev;
+      };
     }
   }, [isOpen, mounted]);
 
@@ -74,9 +79,12 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
     async function fetchSpecialistsForClient() {
       try {
         setLoadingSpecialist(true);
-        const resp = await get<{ success: boolean; names?: string; specialists?: any[]; error?: string }>(
-          '/api/client/my-specialists'
-        );
+        const resp = await get<{
+          success: boolean;
+          names?: string;
+          specialists?: any[];
+          error?: string;
+        }>('/api/client/my-specialists');
         if (!resp.ok || !resp.data?.success) {
           if (active) setSpecialistNames('');
           return;
@@ -90,39 +98,94 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
       }
     }
     if (isOpen) fetchSpecialistsForClient();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [isOpen, get]);
 
   if (!mounted || !isOpen || !vehicle) return null;
 
   const vAny = vehicle as any;
   const statusClass = sanitizeStatus(vAny.status);
-  const km = (vAny.current_km ?? vAny.current_odometer) ?? undefined;
-  const arrival = (vAny.arrival_forecast ?? vAny.estimated_arrival_date) ?? null;
+  const km = vAny.current_km ?? vAny.current_odometer ?? undefined;
+  const arrival = vAny.arrival_forecast ?? vAny.estimated_arrival_date ?? null;
+
+  const handleNavigateToDetails = () => {
+    if (vehicle && vehicle.id) {
+      router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+    }
+  };
 
   const content = (
-    <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="vehicle-modal-title">
+    <div
+      className="modal-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="vehicle-modal-title"
+    >
       <div className="modal-content" role="document">
-        <button className="modal-close" onClick={onClose} aria-label="Fechar">×</button>
+        <button className="modal-close" onClick={onClose} aria-label="Fechar">
+          ×
+        </button>
 
         <h2 id="vehicle-modal-title" className="modal-title">
           Detalhes do Veículo: <span className="mono">{vehicle.plate}</span>
         </h2>
-        <p className="modal-subtitle">
-          {vehicle.brand} {vehicle.model} ({vehicle.year})
-        </p>
-
         <div className="details-grid">
-          <div className="detail"><span className="label">Placa</span><span className="value mono">{vehicle.plate}</span></div>
-          <div className="detail"><span className="label">Marca</span><span className="value">{vehicle.brand}</span></div>
-          <div className="detail"><span className="label">Modelo</span><span className="value">{vehicle.model} ({vehicle.year})</span></div>
-          <div className="detail"><span className="label">Cor</span><span className="value">{vehicle.color || 'N/A'}</span></div>
-          <div className="detail"><span className="label">KM Atual</span><span className="value">{km ?? 'N/A'}</span></div>
-          <div className="detail"><span className="label">Valor FIPE</span><span className="value">{fmtBRL(vehicle.fipe_value)}</span></div>
-          <div className="detail"><span className="label">Status</span><span className={`vehicle-status-badge ${statusClass}`}>{statusLabels[sanitizeStatus(vAny.status)] || vAny.status}</span></div>
-          <div className="detail"><span className="label">Previsão de Chegada</span><span className="value">{fmtDate(arrival)}</span></div>
-          <div className="detail"><span className="label">Especialista Responsável</span><span className="value">{specialistNames || (vAny.analyst) || 'N/A'}</span></div>
-          <div className="detail"><span className="label">Cadastrado em</span><span className="value">{fmtDate(vehicle.created_at)}</span></div>
+          <div className="detail">
+            <span className="label">Placa</span>
+            <span className="value mono">{vehicle.plate}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Marca</span>
+            <span className="value">{vehicle.brand}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Modelo</span>
+            <span className="value">
+              {vehicle.model} ({vehicle.year})
+            </span>
+          </div>
+          <div className="detail">
+            <span className="label">Cor</span>
+            <span className="value">{vehicle.color || 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">KM Atual</span>
+            <span className="value">{km ?? 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Valor FIPE</span>
+            <span className="value">{fmtBRL(vehicle.fipe_value)}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Status</span>
+            <span className={`vehicle-status-badge ${statusClass}`}>
+              {statusLabels[sanitizeStatus(vAny.status)] || vAny.status}
+            </span>
+          </div>
+          <div className="detail">
+            <span className="label">Previsão de Chegada</span>
+            <span className="value">{fmtDate(arrival)}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Especialista Responsável</span>
+            <span className="value">{specialistNames || vAny.analyst || 'N/A'}</span>
+          </div>
+          <div className="detail">
+            <span className="label">Cadastrado em</span>
+            <span className="value">{fmtDate(vehicle.created_at)}</span>
+          </div>
+        </div>
+
+        <div className="modal-actions">
+          <button
+            className="view-full-details-button"
+            onClick={handleNavigateToDetails}
+            aria-label="Ver detalhes completos do veículo"
+          >
+            Ver Detalhes Completos
+          </button>
         </div>
       </div>
     </div>
@@ -132,4 +195,3 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
 };
 
 export default VehicleDetailsModal;
-
