@@ -9,7 +9,7 @@ interface ModalProps {
   title?: string;
   subtitle?: string;
   children: React.ReactNode;
-  width?: string;
+  size?: 'sm' | 'md' | 'lg';
   height?: string;
   showCloseButton?: boolean;
 }
@@ -20,20 +20,25 @@ const Modal: React.FC<ModalProps> = ({
   title,
   subtitle,
   children,
-  width,
+  size = 'sm',
   height,
   showCloseButton = true,
 }) => {
   if (!isOpen) return null;
 
   const contentStyle = {
-    width: width || '400px',
     height: height || 'auto',
   };
 
+  const sizeClass = styles[size] || styles.sm;
+
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} style={contentStyle} onClick={e => e.stopPropagation()}>
+      <div
+        className={`${styles.modalContent} ${sizeClass}`}
+        style={contentStyle}
+        onClick={e => e.stopPropagation()}
+      >
         <div className={styles.modalHeader}>
           <h2>{title}</h2>
           {subtitle && <p>{subtitle}</p>}
@@ -43,9 +48,7 @@ const Modal: React.FC<ModalProps> = ({
             </button>
           )}
         </div>
-        <div className="modal-body">
-          <div className={styles.form}>{children}</div>
-        </div>
+        <div className={styles.form}>{children}</div>
       </div>
     </div>
   );

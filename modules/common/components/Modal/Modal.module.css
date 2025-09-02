@@ -25,7 +25,6 @@
 .modalContent {
   background: #ffffff;
   border-radius: 12px;
-  width: 400px;
   max-width: 90%;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   position: relative;
@@ -63,4 +62,85 @@
 
 .form {
   padding: 20px 30px 30px 30px;
+}
+
+/* Tamanhos padrão */
+.sm {
+  width: 400px;
+  max-width: 90%;
+}
+
+.md {
+  width: 600px;
+  max-width: 95%;
+}
+
+.lg {
+  width: 800px;
+  max-width: 100%;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .sm,
+  .md,
+  .lg {
+    width: 90% !important; /* quase tela cheia */
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 480px) {
+  .sm,
+  .md,
+  .lg {
+    width: 100% !important; /* ocupa a tela inteira no celular */
+    max-width: 100%;
+    height: 100%; /* vira "fullscreen" */
+    border-radius: 0;
+  }
+}
+
+/* NEW STYLES FOR MODAL CONTENT */
+
+.modalBody {
+  padding: 20px 30px 30px 30px;
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.formRow > * {
+  flex: 1 1 0;
+  min-width: 250px; /* Prevents fields from getting too squished */
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px 30px;
+}
+
+.detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 16px;
+}
+
+.mono {
+  font-family: 'Courier New', Courier, monospace;
 }

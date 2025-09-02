@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { validateCEP, sanitizeString } from '@/modules/common/utils/inputSanitization';
-import '@/modules/vehicles/components/VehicleRegistrationModal.css';
 import Input from '@/modules/common/components/Input/Input';
+import Modal from '@/modules/common/components/Modal/Modal';
 
 export interface AddressFormValues {
   street: string;
@@ -118,129 +118,120 @@ export default function AddressModalBase({
   if (!isOpen) return null;
 
   return (
-    <div className={`modal-overlay ${isOpen ? 'open' : ''}`} onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{title}</h2>
-          <button className="close-button" onClick={onClose} disabled={loading}>
-            ✕
-          </button>
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="lg">
+      <form onSubmit={handleSubmit} className="vehicle-form">
+        <div className="form-row">
+          <div>
+            <Input
+              id="zip_code"
+              name="zip_code"
+              label="CEP"
+              value={form.zip_code}
+              onChange={handleChange}
+              placeholder="00000-000"
+              required
+            />
+            {errors.zip_code && <span className="error-message">{errors.zip_code}</span>}
+          </div>
+          <div>
+            <Input
+              id="street"
+              name="street"
+              label="Rua"
+              value={form.street}
+              onChange={handleChange}
+              required
+            />
+            {errors.street && <span className="error-message">{errors.street}</span>}
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="vehicle-form">
-          <div className="form-row">
-            <div>
-              <Input
-                id="zip_code"
-                name="zip_code"
-                label="CEP"
-                value={form.zip_code}
-                onChange={handleChange}
-                placeholder="00000-000"
-                required
-              />
-              {errors.zip_code && <span className="error-message">{errors.zip_code}</span>}
-            </div>
-            <div>
-              <Input
-                id="street"
-                name="street"
-                label="Rua"
-                value={form.street}
-                onChange={handleChange}
-                required
-              />
-              {errors.street && <span className="error-message">{errors.street}</span>}
-            </div>
+        <div className="form-row">
+          <div>
+            <Input
+              id="number"
+              name="number"
+              label="Número"
+              value={form.number}
+              onChange={handleChange}
+              required
+            />
+            {errors.number && <span className="error-message">{errors.number}</span>}
           </div>
-
-          <div className="form-row">
-            <div>
-              <Input
-                id="number"
-                name="number"
-                label="Número"
-                value={form.number}
-                onChange={handleChange}
-                required
-              />
-              {errors.number && <span className="error-message">{errors.number}</span>}
-            </div>
-            <div>
-              <Input
-                id="neighborhood"
-                name="neighborhood"
-                label="Bairro"
-                value={form.neighborhood}
-                onChange={handleChange}
-                required
-              />
-              {errors.neighborhood && <span className="error-message">{errors.neighborhood}</span>}
-            </div>
+          <div>
+            <Input
+              id="neighborhood"
+              name="neighborhood"
+              label="Bairro"
+              value={form.neighborhood}
+              onChange={handleChange}
+              required
+            />
+            {errors.neighborhood && <span className="error-message">{errors.neighborhood}</span>}
           </div>
+        </div>
 
-          <div className="form-row">
-            <div>
-              <Input
-                id="city"
-                name="city"
-                label="Cidade"
-                value={form.city}
-                onChange={handleChange}
-                required
-              />
-              {errors.city && <span className="error-message">{errors.city}</span>}
-            </div>
-            <div>
-              <Input
-                id="state"
-                name="state"
-                label="Estado"
-                value={form.state}
-                onChange={handleChange}
-                required
-              />
-              {errors.state && <span className="error-message">{errors.state}</span>}
-            </div>
+        <div className="form-row">
+          <div>
+            <Input
+              id="city"
+              name="city"
+              label="Cidade"
+              value={form.city}
+              onChange={handleChange}
+              required
+            />
+            {errors.city && <span className="error-message">{errors.city}</span>}
           </div>
-
-          <div className="form-row">
-            <div className="full-width">
-              <Input
-                id="complement"
-                name="complement"
-                label="Complemento (opcional)"
-                value={form.complement || ''}
-                onChange={handleChange}
-              />
-            </div>
+          <div>
+            <Input
+              id="state"
+              name="state"
+              label="Estado"
+              value={form.state}
+              onChange={handleChange}
+              required
+            />
+            {errors.state && <span className="error-message">{errors.state}</span>}
           </div>
+        </div>
 
-          {renderExtraFields?.({ loading })}
-
-          <div className="form-actions">
-            <button type="button" onClick={onClose} disabled={loading} className="cancel-button">
-              Cancelar
-            </button>
-            <button type="submit" disabled={loading} className="submit-button">
-              {loading ? 'Salvando...' : 'Salvar Endereço'}
-            </button>
+        <div className="form-row">
+          <div className="full-width">
+            <Input
+              id="complement"
+              name="complement"
+              label="Complemento (opcional)"
+              value={form.complement || ''}
+              onChange={handleChange}
+            />
           </div>
-        </form>
+        </div>
 
-        {error && <MessageModal message={error} variant="error" onClose={() => setError(null)} />}
-        {success && (
-          <MessageModal
-            title="Sucesso"
-            message={success}
-            variant="success"
-            onClose={() => {
-              setSuccess(null);
-              onClose();
-            }}
-          />
-        )}
-      </div>
-    </div>
+        {renderExtraFields?.({ loading })}
+
+        <div className="form-actions">
+          <button type="button" onClick={onClose} disabled={loading} className="cancel-button">
+            Cancelar
+          </button>
+          <button type="submit" disabled={loading} className="submit-button">
+            {loading ? 'Salvando...' : 'Salvar Endereço'}
+          </button>
+        </div>
+      </form>
+
+      {error && <MessageModal message={error} variant="error" onClose={() => setError(null)} />}
+      {success && (
+        <MessageModal
+          title="Sucesso"
+          message={success}
+          variant="success"
+          onClose={() => {
+            setSuccess(null);
+            onClose();
+          }}
+        />
+      )}
+    </Modal>
   );
 }
