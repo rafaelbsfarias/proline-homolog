@@ -1,157 +1,175 @@
-# Scripts de Teste Seguros - Proline Homolog
+# Scripts de Desenvolvimento - Proline Homolog
 
 ## 📋 Visão Geral
 
-Este diretório contém scripts de teste **seguros** que não modificam o banco de dados. Eles foram
-criados após a remoção dos scripts anteriores que causavam problemas na aplicação.
+Este diretório contém scripts organizados para desenvolvimento, teste e manutenção do sistema
+Proline. Os scripts estão organizados em pastas temáticas para facilitar a navegação e manutenção.
 
-## 🔒 Scripts Disponíveis
+## 📁 Estrutura de Organização
 
-### 1. `test-guide.sh`
-
-**Propósito:** Guia completo para testes manuais do fluxo de análise/orçamento
-
-**O que faz:**
-
-- Explica o fluxo completo de teste
-- Lista pré-requisitos
-- Fornece passos detalhados para validação manual
-- Mostra critérios de sucesso
-- Inclui dicas de debugging
-
-**Como usar:**
-
-```bash
-./test-guide.sh
+```
+scripts/
+├── tests/           # Scripts de teste e validação
+├── data/            # Scripts de população e geração de dados
+├── maintenance/     # Scripts de diagnóstico e manutenção
+├── migrations/      # Scripts de migração de banco
+├── utils/           # Scripts utilitários diversos
+├── api_tests/       # Testes específicos de API
+└── db_scripts/      # Scripts de banco de dados
 ```
 
-**Características:**
+## 🔒 Scripts Seguros (Não Modificam Dados)
 
-- ✅ Não modifica dados
-- ✅ Apenas informativo
-- ✅ Pode ser executado sem servidor rodando
+### Pasta `tests/`
 
-### 2. `test-endpoints.sh`
+Scripts de teste que **não modificam** o banco de dados:
 
-**Propósito:** Testa conectividade dos endpoints (apenas GET)
+- `test-guide.sh` - Guia completo para testes manuais
+- `test-endpoints.sh` - Testa conectividade dos endpoints (GET only)
+- `test-budget-flow.sh` - Valida fluxo de criação automática de orçamentos
+- `test-collection-flow.*` - Testa fluxo de coletas
+- `test-complete-flow.cjs` - Testa fluxo completo
+- `test-confirm-email.sh` - Testa confirmação de email
+- `test-create-admin.js` - Testa criação de admin
+- `test-finalize-api.js` - Testa API de finalização
+- `test-finalized-inspections.sh` - Testa inspeções finalizadas
+- `test-flow-validation.sh` - Valida fluxo de orçamentos
+- `test-magic-link.js` - Testa magic links
+- `test-partner-categories.sh` - Testa categorias de parceiros
+- `test-reset-password.sh` - Testa reset de senha
+- `test-signup.sh` - Testa cadastro de usuários
+- `test-status-fix.cjs` - Corrige status de inspeções
+- `test-all.sh` - Executa todos os testes
 
-**O que faz:**
+### Pasta `maintenance/`
 
-- Verifica se o servidor está rodando
-- Testa endpoints GET públicos
-- Testa endpoints protegidos (mostra necessidade de autenticação)
-- Valida conectividade do sistema
+Scripts de diagnóstico e manutenção:
 
-**Como usar:**
+- `check-system-status.sh` - Verifica status do sistema
+- `diagnose-budget-counter.sh` - Diagnóstica contador de orçamentos
+- `explore-services.js` - Explora serviços disponíveis
+- `find-empty-files.js` - Encontra arquivos vazios
+- `fix-routes-manifest.js` - Corrige manifest de rotas
+- `repair.sh` - Scripts de reparo geral
+- `switch-env.sh` - Alterna entre ambientes
 
-```bash
-./test-endpoints.sh
-```
+## ⚠️ Scripts que Modificam Dados
 
-**Características:**
+### Pasta `data/`
 
-- ✅ Apenas métodos GET (seguros)
-- ✅ Não modifica dados
-- ✅ Requer servidor rodando
+Scripts de população e geração de dados de teste:
 
-### 3. `test-budget-flow.sh` ⭐ **NOVO**
+- `populate-partner-services.js` - Popula serviços dos parceiros
+- `populate-partner-categories.js` - Popula categorias dos parceiros
+- `create-test-data.sh` - Cria dados de teste
+- `create-test-inspection.js` - Cria inspeções de teste
+- `generate-report.sh` - Gera relatórios
+- `verify-partner-services.js` - Verifica serviços criados
+- `add-missing-categories.js` - Adiciona categorias faltantes
 
-**Propósito:** Testa se o fluxo de criação automática de orçamentos está funcionando
+### Pasta `migrations/`
 
-**O que faz:**
+Scripts de migração de banco de dados:
 
-- Verifica inspeções finalizadas
-- Conta service orders criadas automaticamente
-- Conta quotes geradas para parceiros
-- Valida se o contador de solicitações deve aparecer
+- `migrate-collection-history.ts` - Migra histórico de coletas
+- `add_new_checklist_categories.sql` - Adiciona categorias de checklist
 
-**Como usar:**
+### Pasta `utils/`
 
-```bash
-./test-budget-flow.sh
-```
+Scripts utilitários diversos:
 
-**Características:**
+- `simulate-finalize.js` - Simula finalização de inspeções
+- `validate-flow.sh` - Valida fluxo manualmente
+- `rewire-imports.ts` - Reorganiza imports
 
-- ✅ Testa a funcionalidade implementada
-- ✅ Mostra status atual do fluxo
-- ✅ Requer servidor rodando
-- ✅ Ajuda a debugar problemas
+### Pasta `api_tests/`
 
-### 4. `validate-flow.sh` (anterior)
+Testes específicos de API (já organizados):
 
-**Propósito:** Instruções manuais para validar o fluxo de orçamentos
+- `test_pending_collections_api.js`
+- `test_set_address_collection_fees.js`
+- `test_vehicles_count_api.js`
 
-### 5. `check-system-status.sh` (anterior)
+### Pasta `db_scripts/`
 
-**Propósito:** Verifica status do sistema e conectividade
+Scripts de banco de dados (já organizados):
+
+- `create_admin_users.js`
+- `create_all_users.js`
+- `create_client_user.js`
+- `create_partner_user.js`
+- `create_specialist_user.js`
+- `generate_multiple_users.js`
+- `generate_vehicles.js`
 
 ## 🚀 Como Usar
 
-### Fluxo Recomendado de Teste:
+### Fluxo Recomendado de Desenvolvimento:
 
-1. **Leia o guia completo:**
-
-   ```bash
-   ./test-guide.sh
-   ```
-
-2. **Inicie o servidor:**
+1. **Configuração Inicial:**
 
    ```bash
-   npm run dev
+   # Criar dados de teste
+   ./data/create-test-data.sh
+
+   # Popular parceiros e serviços
+   ./data/populate-partner-categories.js
+   ./data/populate-partner-services.js
    ```
 
-3. **Teste conectividade:**
+2. **Testes de Validação:**
 
    ```bash
-   ./test-endpoints.sh
+   # Verificar conectividade
+   ./tests/test-endpoints.sh
+
+   # Testar fluxo completo
+   ./tests/test-budget-flow.sh
    ```
 
-4. **Teste o fluxo de orçamentos:**
+3. **Manutenção:**
 
    ```bash
-   ./test-budget-flow.sh
+   # Verificar status do sistema
+   ./maintenance/check-system-status.sh
+
+   # Diagnosticar problemas
+   ./maintenance/diagnose-budget-counter.sh
    ```
 
-5. **Siga as instruções manuais** do `test-guide.sh` para validação completa
+## 🎯 Objetivos dos Scripts
 
-## 🎯 Objetivo dos Testes
-
-Validar que quando uma análise de veículo é finalizada:
-
-- ✅ Uma Service Order é criada automaticamente
-- ✅ Um orçamento é gerado para o parceiro de mecânica
-- ✅ O parceiro vê o orçamento no dashboard
-- ✅ Os contadores são atualizados corretamente
+- **Tests:** Validar funcionalidades sem modificar dados
+- **Data:** Criar ambiente de teste consistente
+- **Maintenance:** Diagnosticar e corrigir problemas
+- **Migrations:** Atualizar estrutura do banco
+- **Utils:** Automatizar tarefas repetitivas
 
 ## 🔍 Debugging
 
-Se os testes falharem:
+Para problemas específicos:
 
-- Verifique logs do servidor Next.js
-- Confirme se o Supabase está ativo
-- Valide se existem usuários de teste criados
-- Verifique as tabelas: `inspections`, `inspection_services`, `service_orders`, `quotes`
+- **Fluxo de orçamentos:** `./tests/test-budget-flow.sh`
+- **Status do sistema:** `./maintenance/check-system-status.sh`
+- **Dados de teste:** `./data/verify-partner-services.js`
+- **API endpoints:** `./tests/test-endpoints.sh`
 
-## ⚠️ Importante
+## ⚠️ Avisos Importantes
 
-- **Estes scripts NÃO modificam o banco de dados**
-- **São seguros para executar em produção**
-- **Focam em validação, não em criação de dados**
-- **Requerem usuários de teste já existentes**
+- Scripts na pasta `data/` **modificam o banco de dados**
+- Scripts na pasta `tests/` são **seguros** (apenas leitura)
+- Sempre faça backup antes de executar scripts de migração
+- Scripts de manutenção podem afetar o estado do sistema
 
-## 📝 Registro de Testes
+## 📝 Convenções
 
-Para documentar testes realizados:
-
-- Data/Hora do teste
-- Usuário/Perfil utilizado
-- Endpoint testado
-- Resultado esperado vs obtido
-- Logs de erro (se houver)
+- Scripts `.sh` são shell scripts (Bash)
+- Scripts `.js` são Node.js
+- Scripts `.ts` são TypeScript
+- Scripts `.cjs` são CommonJS
+- Scripts `.mjs` são ES Modules
+- Scripts `.sql` são SQL puro
 
 ---
 
-**Criado após remoção dos scripts problemáticos que modificavam o banco de dados** **Atualizado com
-nova funcionalidade de criação automática de orçamentos**
+**Organização implementada para melhorar manutenibilidade e navegação**
