@@ -6,6 +6,8 @@ import Header from '@/modules/admin/components/Header';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import { translateFuelLevel, VEHICLE_CONSTANTS } from '@/app/constants/messages';
+import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 
 interface VehicleDetails {
   id: string;
@@ -46,11 +48,6 @@ interface InspectionData {
 interface InspectionResponse {
   success: boolean;
   inspection?: InspectionData;
-  services?: Array<{
-    category: string;
-    required: boolean;
-    notes: string;
-  }>;
   error?: string;
 }
 
@@ -63,8 +60,41 @@ const VehicleDetailsPage = () => {
 
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
   const [inspection, setInspection] = useState<InspectionData | null>(null);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const fetchMediaUrls = async (
+    media: Array<{ storage_path: string; uploaded_by: string; created_at: string }>
+  ) => {
+    const urls: Record<string, string> = {};
+
+    for (const mediaItem of media) {
+      try {
+        // Determinar qual endpoint usar baseado no role do usuário
+        // Como estamos na página do cliente, usamos o endpoint do cliente
+        const urlResp = await get<{ success: boolean; signedUrl?: string; error?: string }>(
+          `/api/client/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
+        );
+
+        if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
+          urls[mediaItem.storage_path] = urlResp.data.signedUrl;
+        } else {
+          logger.warn('Failed to get signed URL for media:', {
+            storagePath: mediaItem.storage_path.slice(0, 20),
+            error: urlResp.data?.error,
+          });
+        }
+      } catch (err) {
+        logger.error('Error fetching signed URL:', {
+          storagePath: mediaItem.storage_path.slice(0, 20),
+          error: err,
+        });
+      }
+    }
+
+    setMediaUrls(urls);
+  };
 
   useEffect(() => {
     const fetchVehicleDetails = async () => {
@@ -86,11 +116,17 @@ const VehicleDetailsPage = () => {
 
         // Buscar dados da inspeção/checklist mais recente
         const inspectionResp = await get<InspectionResponse>(
-          `/api/specialist/get-checklist?vehicleId=${vehicleId}`
+          `/api/client/vehicle-inspection?vehicleId=${vehicleId}`
         );
 
         if (inspectionResp.ok && inspectionResp.data?.success) {
-          setInspection(inspectionResp.data.inspection || null);
+          const inspectionData = inspectionResp.data.inspection || null;
+          setInspection(inspectionData);
+
+          // Buscar URLs assinadas das imagens se houver mídia
+          if (inspectionData?.media && inspectionData.media.length > 0) {
+            fetchMediaUrls(inspectionData.media);
+          }
         }
       } catch (err) {
         logger.error('Error fetching vehicle details:', err);
@@ -116,17 +152,10 @@ const VehicleDetailsPage = () => {
   };
 
   const getStatusLabel = (status: string) => {
-    const statusMap: Record<string, string> = {
-      aguardando_chegada: 'Aguardando Chegada',
-      chegada_confirmada: 'Chegada Confirmada',
-      em_analise: 'Em Análise',
-      analise_finalizada: 'Análise Finalizada',
-      definir_opcao_de_coleta: 'Definir Opção de Coleta',
-      active: 'Ativo',
-      ativo: 'Ativo',
-      inativo: 'Inativo',
-    };
-    return statusMap[status] || status;
+    return (
+      VEHICLE_CONSTANTS.VEHICLE_STATUS[status as keyof typeof VEHICLE_CONSTANTS.VEHICLE_STATUS] ||
+      status
+    );
   };
 
   if (loading) {
@@ -212,9 +241,55 @@ const VehicleDetailsPage = () => {
               padding: '24px',
             }}
           >
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-              Informações Básicas
-            </h2>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0, color: '#333' }}>
+                Informações Básicas
+              </h2>
+              {/* Debug: sempre mostrar estado das imagens */}
+              {inspection && (
+                <div style={{ fontSize: '12px', color: '#666', marginRight: '8px' }}>
+                  Inspeção: {inspection ? 'Sim' : 'Não'} | Mídia:{' '}
+                  {inspection?.media ? `${inspection.media.length} fotos` : 'Sem mídia'}
+                </div>
+              )}
+
+              {/* temporary test button removed */}
+
+              {inspection?.media && inspection.media.length > 0 && (
+                <button
+                  onClick={() => setIsImageViewerOpen(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#002E4C',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'background-color 0.2s ease',
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.backgroundColor = '#001F36';
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.backgroundColor = '#002E4C';
+                  }}
+                >
+                  Ver Fotos ({inspection.media.length})
+                </button>
+              )}
+            </div>
             <div style={{ display: 'grid', gap: '16px' }}>
               <div
                 style={{
@@ -314,7 +389,7 @@ const VehicleDetailsPage = () => {
                 }}
               >
                 <span style={{ fontWeight: 500 }}>Nível de Combustível:</span>
-                <span>{vehicle.fuel_level || 'N/A'}</span>
+                <span>{translateFuelLevel(vehicle.fuel_level)}</span>
               </div>
               <div
                 style={{
@@ -519,7 +594,10 @@ const VehicleDetailsPage = () => {
                 {inspection.media.map((media, index) => (
                   <div key={index} style={{ textAlign: 'center' }}>
                     <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`}
+                      src={
+                        mediaUrls[media.storage_path] ||
+                        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`
+                      }
                       alt={`Foto ${index + 1}`}
                       style={{
                         width: '100%',
@@ -527,6 +605,13 @@ const VehicleDetailsPage = () => {
                         objectFit: 'cover',
                         borderRadius: '8px',
                         border: '1px solid #ddd',
+                      }}
+                      onError={e => {
+                        // Fallback para URL pública se a assinada falhar
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('public')) {
+                          target.src = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`;
+                        }
                       }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
@@ -566,6 +651,62 @@ const VehicleDetailsPage = () => {
           )}
         </div>
       </main>
+
+      {/* Modal de Visualização de Imagens */}
+      {inspection?.media && inspection.media.length > 0 ? (
+        <ImageViewerModal
+          isOpen={isImageViewerOpen}
+          onClose={() => setIsImageViewerOpen(false)}
+          images={inspection.media}
+          mediaUrls={mediaUrls}
+          vehiclePlate={vehicle?.plate || ''}
+        />
+      ) : (
+        isImageViewerOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: 'white',
+                padding: '32px',
+                borderRadius: '12px',
+                textAlign: 'center',
+                maxWidth: '400px',
+              }}
+            >
+              <h3 style={{ marginBottom: '16px', color: '#333' }}>Nenhuma Imagem Disponível</h3>
+              <p style={{ color: '#666', marginBottom: '24px' }}>
+                Este veículo ainda não possui imagens de inspeção cadastradas.
+              </p>
+              <button
+                onClick={() => setIsImageViewerOpen(false)}
+                style={{
+                  padding: '8px 24px',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )
+      )}
     </div>
   );
 };

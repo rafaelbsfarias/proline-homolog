@@ -9,7 +9,7 @@ const vehicleService = new ClientVehicleService();
 
 export const GET = withClientAuth(async (req: AuthenticatedRequest, { params }) => {
   try {
-    const { vehicleId } = params;
+    const { vehicleId } = await params;
 
     logger.info('request_received', {
       userId: req.user?.id?.slice(0, 8),
