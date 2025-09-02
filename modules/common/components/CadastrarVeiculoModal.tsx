@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Modal from '@/modules/common/components/Modal/Modal';
-import FormInput from '@/modules/common/components/FormInput';
+import Input from '@/modules/common/components/Input/Input';
 import { FaSave, FaTimes } from 'react-icons/fa';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import styles from './CadastrarVeiculoModal.module.css';
@@ -172,7 +172,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               </div>
             )}
 
-            <FormInput
+            <Input
               label="Placa"
               id="plate"
               name="plate"
@@ -181,7 +181,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               required
               disabled={loading}
             />
-            <FormInput
+            <Input
               label="Modelo"
               id="model"
               name="model"
@@ -190,7 +190,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               required
               disabled={loading}
             />
-            <FormInput
+            <Input
               label="Cor"
               id="color"
               name="color"
@@ -199,7 +199,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               required
               disabled={loading}
             />
-            <FormInput
+            <Input
               label="Ano"
               id="year"
               name="year"
@@ -209,7 +209,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               required
               disabled={loading}
             />
-            <FormInput
+            <Input
               label="KM Inicial"
               id="initialKm"
               name="initialKm"
@@ -219,7 +219,7 @@ const CadastrarVeiculoModal: React.FC<CadastrarVeiculoModalProps> = ({ isOpen, o
               required
               disabled={loading}
             />
-            <FormInput
+            <Input
               label="Valor FIPE"
               id="fipe_value"
               name="fipe_value"

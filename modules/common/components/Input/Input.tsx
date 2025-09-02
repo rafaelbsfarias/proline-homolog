@@ -7,7 +7,7 @@ interface InputProps {
   id: string;
   name: string;
   label: string;
-  type?: 'text' | 'password' | 'email' | 'tel';
+  type?: 'text' | 'password' | 'email' | 'tel' | 'number';
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAccept?: (value: any, maskRef: any) => void;
@@ -15,6 +15,7 @@ interface InputProps {
   placeholder?: string;
   className?: string;
   mask?: any;
+  required?: boolean;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -31,6 +32,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       placeholder,
       className,
       mask,
+      required,
     },
     ref
   ) => {
@@ -48,6 +50,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       disabled,
       placeholder,
       className,
+      required,
     };
 
     return (

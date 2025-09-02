@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { validateCEP, sanitizeString } from '@/modules/common/utils/inputSanitization';
 import '@/modules/vehicles/components/VehicleRegistrationModal.css';
+import Input from '@/modules/common/components/Input/Input';
 
 export interface AddressFormValues {
   street: string;
@@ -128,13 +129,11 @@ export default function AddressModalBase({
 
         <form onSubmit={handleSubmit} className="vehicle-form">
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="zip_code" className="required">
-                CEP
-              </label>
-              <input
+            <div>
+              <Input
                 id="zip_code"
                 name="zip_code"
+                label="CEP"
                 value={form.zip_code}
                 onChange={handleChange}
                 placeholder="00000-000"
@@ -142,13 +141,11 @@ export default function AddressModalBase({
               />
               {errors.zip_code && <span className="error-message">{errors.zip_code}</span>}
             </div>
-            <div className="form-group">
-              <label htmlFor="street" className="required">
-                Rua
-              </label>
-              <input
+            <div>
+              <Input
                 id="street"
                 name="street"
+                label="Rua"
                 value={form.street}
                 onChange={handleChange}
                 required
@@ -158,26 +155,22 @@ export default function AddressModalBase({
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="number" className="required">
-                Número
-              </label>
-              <input
+            <div>
+              <Input
                 id="number"
                 name="number"
+                label="Número"
                 value={form.number}
                 onChange={handleChange}
                 required
               />
               {errors.number && <span className="error-message">{errors.number}</span>}
             </div>
-            <div className="form-group">
-              <label htmlFor="neighborhood" className="required">
-                Bairro
-              </label>
-              <input
+            <div>
+              <Input
                 id="neighborhood"
                 name="neighborhood"
+                label="Bairro"
                 value={form.neighborhood}
                 onChange={handleChange}
                 required
@@ -187,28 +180,36 @@ export default function AddressModalBase({
           </div>
 
           <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="city" className="required">
-                Cidade
-              </label>
-              <input id="city" name="city" value={form.city} onChange={handleChange} required />
+            <div>
+              <Input
+                id="city"
+                name="city"
+                label="Cidade"
+                value={form.city}
+                onChange={handleChange}
+                required
+              />
               {errors.city && <span className="error-message">{errors.city}</span>}
             </div>
-            <div className="form-group">
-              <label htmlFor="state" className="required">
-                Estado
-              </label>
-              <input id="state" name="state" value={form.state} onChange={handleChange} required />
+            <div>
+              <Input
+                id="state"
+                name="state"
+                label="Estado"
+                value={form.state}
+                onChange={handleChange}
+                required
+              />
               {errors.state && <span className="error-message">{errors.state}</span>}
             </div>
           </div>
 
           <div className="form-row">
-            <div className="form-group full-width">
-              <label htmlFor="complement">Complemento (opcional)</label>
-              <input
+            <div className="full-width">
+              <Input
                 id="complement"
                 name="complement"
+                label="Complemento (opcional)"
                 value={form.complement || ''}
                 onChange={handleChange}
               />
