@@ -29,6 +29,7 @@ const PartnerDashboard = () => {
     contractSignedAt,
     pendingQuotesCount,
     inProgressServicesCount,
+    budgetCounters,
     pendingQuotes,
     inProgressServices,
     reloadData,
@@ -58,10 +59,27 @@ const PartnerDashboard = () => {
     setIsAcceptingContract(false);
   }
 
+  const formatQuoteStatus = (status: string) => {
+    const statusMap = {
+      pending_admin_approval: 'Aguardando Admin',
+      pending_client_approval: 'Aguardando Cliente',
+      approved: 'Aprovado',
+      rejected: 'Rejeitado',
+    };
+    return statusMap[status as keyof typeof statusMap] || status;
+  };
+
+  const formatCurrency = (value?: number) => {
+    if (!value) return 'N/A';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
     { key: 'client_name', header: 'Cliente' },
     { key: 'service_description', header: 'Serviço' },
+    { key: 'status', header: 'Status' },
+    { key: 'total_value', header: 'Valor' },
     { key: 'date', header: 'Data' },
   ];
 
@@ -115,9 +133,76 @@ const PartnerDashboard = () => {
             <CounterCard title="Serviços em Andamento" count={inProgressServicesCount} />
           </div>
 
+          {/* Contadores de Orçamentos */}
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, color: '#333' }}>
+              Orçamentos
+            </h2>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#f39c12', marginBottom: 4 }}
+                >
+                  {budgetCounters.pending}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Pendentes</div>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#27ae60', marginBottom: 4 }}
+                >
+                  {budgetCounters.approved}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Aprovados</div>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#e74c3c', marginBottom: 4 }}
+                >
+                  {budgetCounters.rejected}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Rejeitados</div>
+              </div>
+            </div>
+          </div>
+
           <DataTable
             title="Solicitações de Orçamentos Pendentes"
-            data={pendingQuotes}
+            data={pendingQuotes.map(quote => ({
+              ...quote,
+              status: formatQuoteStatus(quote.status),
+              total_value: formatCurrency(quote.total_value),
+            }))}
             columns={pendingQuotesColumns}
             emptyMessage="Nenhuma solicitação de orçamento pendente."
           />

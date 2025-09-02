@@ -8,6 +8,8 @@ Este diretório contém a documentação dos principais fluxos de negócio do si
 - [**diagramas_sequencia.md**](./diagramas_sequencia.md) - Diagramas de sequência dos fluxos de status dos veículos
 - [**fluxo_aprovacao.md**](./fluxo_aprovacao.md) - Fluxo de aprovação de coleta (caminho feliz)
 - [**fluxo_mudanca_data.md**](./fluxo_mudanca_data.md) - Fluxo de mudança de data da coleta
+- [**fluxo_orcamentario.md**](./fluxo_orcamentario.md) - **NOVO** - Fluxo completo de orçamento e execução de serviços
+- [**diagramas_tecnicos_orcamentario.md**](./diagramas_tecnicos_orcamentario.md) - **NOVO** - Diagramas técnicos detalhados do fluxo orçamentário
 - [**fluxo_rejeicao.md**](./fluxo_rejeicao.md) - Fluxo de rejeição de coleta
 - [**fluxo_status_veiculos.md**](./fluxo_status_veiculos.md) - Documentação completa dos estados e transições
 - [**resumo_fluxos_status.md**](./resumo_fluxos_status.md) - Resumo consolidado dos fluxos de status

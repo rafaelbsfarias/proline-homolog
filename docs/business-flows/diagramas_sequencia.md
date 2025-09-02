@@ -59,7 +59,7 @@ sequenceDiagram
     Note right of Sistema: Status: EM ANÁLISE
     
     Especialista->>Sistema: Finaliza análise
-    Note right of Sistema: Status: ANÁLISE FINALIZADA
+    Note right of Sistema: Status: Análise Finalizada
 ```
 
 ## 3. Fluxo de Mudança de Data
@@ -153,5 +153,5 @@ sequenceDiagram
     Note right of Sistema: Status: EM ANÁLISE
     
     Especialista->>Sistema: Finaliza análise
-    Note right of Sistema: Status: ANÁLISE FINALIZADA
+    Note right of Sistema: Status: Análise Finalizada
 ```

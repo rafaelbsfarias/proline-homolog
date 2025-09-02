@@ -20,7 +20,7 @@ Este documento descreve os fluxos de status dos veículos no sistema ProLine Hub
 6. **AGUARDANDO ENTREGA DO VEÍCULO** - Cliente confirmou que está a caminho
 7. **ENTREGA CONFIRMADA** - Especialista confirmou entrega do veículo
 8. **EM ANÁLISE** - Veículo em processo de análise
-9. **ANÁLISE FINALIZADA** - Análise concluída
+9. **Análise Finalizada** - Análise concluída
 
 ## 4. Fluxo Principal de Status
 
@@ -77,7 +77,7 @@ Quando o veículo está no status **COLETA APROVADA**:
 ## 5. Processo de "Análise"
 
 1. Veículo entra em análise quando o especialista inicia o checklist (status **EM ANÁLISE**)
-2. Análise é finalizada (status **ANÁLISE FINALIZADA**)
+2. Análise é finalizada (status **Análise Finalizada**)
 
 ## 6. Fluxos Alternativos
 

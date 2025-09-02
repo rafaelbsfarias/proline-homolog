@@ -266,7 +266,7 @@ Os veículos podem estar nos seguintes estados durante o fluxo de coleta:
 - AGUARDANDO CHEGADA DO VEÍCULO
 - CHEGADA CONFIRMADA
 - EM ANÁLISE
-- ANÁLISE FINALIZADA
+- Análise Finalizada
 
 ## Considerações de UX/UI
 
