@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import Modal from '@/modules/common/components/Modal';
 import styles from './VehicleChecklistModal.module.css';
 import { useToast } from '@/modules/common/components/ToastProvider';
@@ -193,46 +193,45 @@ const PartnerVehicleChecklistModal: React.FC<PartnerVehicleChecklistModalProps> 
     }
   };
 
-  const renderChecklistSection = (
-    title: string,
-    items: Record<string, boolean>,
-    category: string
-  ) => (
-    <div key={`section-${category}`} className={styles.group}>
-      <h4 className={styles.groupTitle}>{title}</h4>
-      <div className={styles.grid}>
-        {Object.entries(items).map(([key, checked]) => (
-          <div key={`${category}-${key}`} className={styles.field}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                name={`${category}-${key}`}
-                checked={checked}
-                onChange={e => handleChecklistChange(category, key, e.target.checked)}
-                disabled={saving}
-              />
-              {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-            </label>
-          </div>
-        ))}
+  const renderChecklistSection = useCallback(
+    (title: string, items: Record<string, boolean>, category: string) => (
+      <div key={`section-${category}`} className={styles.group}>
+        <h4 className={styles.groupTitle}>{title}</h4>
+        <div className={styles.grid}>
+          {Object.entries(items).map(([key, checked]) => (
+            <div key={`${category}-${key}`} className={styles.field}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  name={`${category}-${key}`}
+                  checked={checked}
+                  onChange={e => handleChecklistChange(category, key, e.target.checked)}
+                  disabled={saving}
+                />
+                {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </label>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    ),
+    [saving]
   );
 
-  const renderChecklistContent = () => {
+  const renderChecklistContent = useMemo(() => {
     // Para mecânicos, mostra o checklist completo
     if (partnerCategory === 'mecânica') {
       return (
         <div key="mechanics-content" className={styles.content}>
           <div className={styles.vehicleHeader}>
             {vehicle && (
-              <>
+              <React.Fragment key="vehicle-info">
                 <div>
                   Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
                 </div>
                 <div>Placa: {vehicle.plate}</div>
                 {vehicle.color && <div>Cor: {vehicle.color}</div>}
-              </>
+              </React.Fragment>
             )}
           </div>
 
@@ -304,6 +303,7 @@ const PartnerVehicleChecklistModal: React.FC<PartnerVehicleChecklistModalProps> 
     return (
       <div key="placeholder-content" className={styles.content}>
         <div
+          key="placeholder-message"
           style={{
             textAlign: 'center',
             padding: '40px 20px',
@@ -311,17 +311,19 @@ const PartnerVehicleChecklistModal: React.FC<PartnerVehicleChecklistModalProps> 
             fontSize: '16px',
           }}
         >
-          <h3 style={{ marginBottom: '20px', color: '#333' }}>
+          <h3 key="placeholder-title" style={{ marginBottom: '20px', color: '#333' }}>
             Checklist - {partnerCategory.charAt(0).toUpperCase() + partnerCategory.slice(1)}
           </h3>
-          <p style={{ marginBottom: '20px', fontSize: '18px' }}>🔧 O checklist será exibido aqui</p>
-          <p style={{ fontSize: '14px', color: '#888' }}>
+          <p key="placeholder-text" style={{ marginBottom: '20px', fontSize: '18px' }}>
+            🔧 O checklist será exibido aqui
+          </p>
+          <p key="placeholder-subtitle" style={{ fontSize: '14px', color: '#888' }}>
             Em desenvolvimento - Checklist específico para categoria "{partnerCategory}"
           </p>
         </div>
       </div>
     );
-  };
+  }, [partnerCategory, vehicle, checklistItems, error, success, saving]);
 
   if (!isOpen || !vehicle) return null;
 
@@ -331,7 +333,7 @@ const PartnerVehicleChecklistModal: React.FC<PartnerVehicleChecklistModalProps> 
         className={styles.container}
         onSubmit={partnerCategory === 'mecânica' ? handleSubmit : e => e.preventDefault()}
       >
-        {renderChecklistContent()}
+        {renderChecklistContent}
 
         <div key="actions-footer" className={`${styles.actions} ${styles.actionsFooter}`}>
           <button

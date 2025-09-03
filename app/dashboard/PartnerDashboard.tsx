@@ -16,6 +16,15 @@ import {
 } from '@/modules/partner/hooks/usePartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
+type TablePendingQuote = {
+  id: string;
+  client_name: string;
+  service_description: string;
+  status: string;
+  total_value: string;
+  date: string;
+};
+
 const PartnerDashboard = () => {
   const router = useRouter();
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
@@ -171,9 +180,9 @@ const PartnerDashboard = () => {
   };
 
   const pendingQuotesColumns: {
-    key: keyof PendingQuote;
+    key: keyof TablePendingQuote;
     header: string;
-    render?: (item: PendingQuote) => React.ReactNode;
+    render?: (item: TablePendingQuote) => React.ReactNode;
   }[] = [
     { key: 'id', header: 'ID' },
     { key: 'service_description', header: 'Serviço' },
@@ -181,11 +190,11 @@ const PartnerDashboard = () => {
     { key: 'total_value', header: 'Valor' },
     { key: 'date', header: 'Data' },
     {
-      key: 'id' as keyof PendingQuote,
+      key: 'id',
       header: 'Checklist',
-      render: (item: PendingQuote) => (
+      render: (item: TablePendingQuote) => (
         <button
-          onClick={() => handleOpenChecklist(item)}
+          onClick={() => handleOpenChecklist(item as unknown as PendingQuote)}
           style={{
             padding: '8px 16px',
             backgroundColor: '#007bff',
@@ -316,12 +325,16 @@ const PartnerDashboard = () => {
 
           <DataTable
             title="Solicitações de Orçamentos Pendentes"
-            data={pendingQuotes.map(quote => ({
-              ...quote,
-              status: formatQuoteStatus(quote.status),
-              total_value: formatCurrency(quote.total_value),
-              date: formatDate(quote.date),
-            }))}
+            data={pendingQuotes.map(
+              (quote): TablePendingQuote => ({
+                id: quote.id,
+                client_name: quote.client_name,
+                service_description: quote.service_description,
+                status: formatQuoteStatus(quote.status),
+                total_value: formatCurrency(quote.total_value),
+                date: formatDate(quote.date),
+              })
+            )}
             columns={pendingQuotesColumns}
             emptyMessage="Nenhuma solicitação de orçamento pendente."
           />

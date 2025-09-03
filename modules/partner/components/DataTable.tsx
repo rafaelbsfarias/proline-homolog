@@ -6,7 +6,11 @@ import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 interface DataTableProps<T> {
   title: string;
   data: T[];
-  columns: { key: keyof T; header: string }[];
+  columns: {
+    key: keyof T | string;
+    header: string;
+    render?: (item: T) => React.ReactNode;
+  }[];
   emptyMessage: string;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
@@ -84,14 +88,20 @@ const DataTable = <T extends { id: React.Key }>({
           <tbody>
             {data.map(row => (
               <tr key={row.id}>
-                {columns.map(column => (
-                  <td
-                    key={column.key as string}
-                    style={{ padding: '10px', borderBottom: '1px solid #eee' }}
-                  >
-                    {String(row[column.key])}
-                  </td>
-                ))}
+                {columns.map(column => {
+                  const value =
+                    column.key in row
+                      ? (row as Record<string, unknown>)[column.key as string]
+                      : undefined;
+                  return (
+                    <td
+                      key={column.key as string}
+                      style={{ padding: '10px', borderBottom: '1px solid #eee' }}
+                    >
+                      {column.render ? column.render(row) : String(value)}
+                    </td>
+                  );
+                })}
                 {showActions && (
                   <td
                     style={{ padding: '10px', borderBottom: '1px solid #eee', textAlign: 'center' }}
