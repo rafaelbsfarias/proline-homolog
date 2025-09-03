@@ -1,4 +1,5 @@
 import React from 'react';
+import styles from './Checkbox.module.css';
 
 interface CheckboxProps {
   id: string;
@@ -18,7 +19,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
   disabled = false,
 }) => {
   return (
-    <label className="checkbox-label">
+    <label className={styles.checkboxLabel}>
       <input
         type="checkbox"
         id={id}
@@ -27,7 +28,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
         onChange={e => onChange(e.target.checked)}
         disabled={disabled}
       />
-      <span className="checkmark"></span>
+      <span className={styles.checkmark}></span>
       {label}
     </label>
   );

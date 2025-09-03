@@ -1,9 +1,8 @@
 'use client';
 import React from 'react';
-import AddressModalBase, {
-  AddressFormValues,
-} from '@/modules/common/components/AddressModalBase/AddressModalBase';
+import AddressModalBase from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { AddressFormValues } from '@/modules/common/hooks/Address/useAddressForm';
 
 interface Props {
   isOpen: boolean;

@@ -1,13 +1,13 @@
 'use client';
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import AddressModalBase, {
-  AddressFormValues,
-} from '@/modules/common/components/AddressModalBase/AddressModalBase';
+import AddressModalBase from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { IoPencilOutline } from 'react-icons/io5';
 import { SYSTEM_MESSAGES } from '@/modules/common/constants/messages';
 import styles from './AddressesList.module.css';
+import Checkbox from '../Checkbox/Checkbox';
+import { AddressFormValues } from '../../hooks/Address/useAddressForm';
 
 type Address = {
   id: string;
@@ -172,25 +172,23 @@ export default function AddressesList() {
         }}
         renderExtraFields={({ loading }) =>
           role === 'client' ? (
-            <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={isMainAddress}
-                  onChange={e => setIsMainAddress(e.target.checked)}
-                  disabled={loading}
-                />
-                Definir como endereço principal
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={isCollectPoint}
-                  onChange={e => setIsCollectPoint(e.target.checked)}
-                  disabled={loading}
-                />
-                É ponto de coleta
-              </label>
+            <div className={styles.checkboxGroup}>
+              <Checkbox
+                id="isMainAddress"
+                name="isMainAddress"
+                label="Definir como endereço principal"
+                checked={isMainAddress}
+                onChange={checked => setIsMainAddress(checked)}
+                disabled={loading}
+              />
+              <Checkbox
+                id="isCollectPoint"
+                name="isCollectPoint"
+                label="É ponto de coleta"
+                checked={isCollectPoint}
+                onChange={checked => setIsCollectPoint(checked)}
+                disabled={loading}
+              />
             </div>
           ) : undefined
         }

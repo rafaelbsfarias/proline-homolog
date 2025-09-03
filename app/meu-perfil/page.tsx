@@ -3,12 +3,12 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import ProfilePageBase from '@/modules/common/components/ProfilePageBase';
-import AddressesList from '@/modules/common/components/AddressesList';
-import AddressModalBase, {
-  AddressFormValues,
-} from '@/modules/common/components/AddressModalBase/AddressModalBase';
+import AddressesList from '@/modules/common/components/AddressesList/AddressesList';
+import AddressModalBase from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import { AddressFormValues } from '@/modules/common/hooks/Address/useAddressForm';
+import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 
 type Role = 'client' | 'partner' | 'specialist' | 'admin';
 
@@ -110,24 +110,22 @@ export default function MeuPerfilPage() {
         renderExtraFields={({ loading }) =>
           role === 'client' ? (
             <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={isMainAddress}
-                  onChange={e => setIsMainAddress(e.target.checked)}
-                  disabled={loading}
-                />
-                Definir como endereço principal
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={isCollectPoint}
-                  onChange={e => setIsCollectPoint(e.target.checked)}
-                  disabled={loading}
-                />
-                É ponto de coleta
-              </label>
+              <Checkbox
+                id="isMainAddress"
+                name="isMainAddress"
+                label="Definir como endereço principal"
+                checked={isMainAddress}
+                onChange={checked => setIsMainAddress(checked)}
+                disabled={loading}
+              />
+              <Checkbox
+                id="isCollectPoint"
+                name="isCollectPoint"
+                label="É ponto de coleta"
+                checked={isCollectPoint}
+                onChange={checked => setIsCollectPoint(checked)}
+                disabled={loading}
+              />
             </div>
           ) : undefined
         }
