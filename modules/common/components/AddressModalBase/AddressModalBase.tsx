@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
@@ -37,6 +37,12 @@ export default function AddressModalBase({
     setError,
     setSuccess,
   } = useAddressForm(isOpen, initialValues, onSubmit);
+
+  const isEditMode = useMemo(() => {
+    return !!(initialValues && Object.values(initialValues).some(v => v));
+  }, [initialValues]);
+
+  const submitButtonText = isEditMode ? 'Salvar Alterações' : 'Cadastrar Endereço';
 
   if (!isOpen) return null;
 
@@ -127,7 +133,7 @@ export default function AddressModalBase({
             Cancelar
           </OutlineButton>
           <SolidButton type="submit" disabled={loading}>
-            {loading ? 'Salvando...' : 'Cadastrar Endereço'}
+            {loading ? 'Salvando...' : submitButtonText}
           </SolidButton>
         </div>
       </form>
