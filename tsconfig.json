@@ -15,6 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "types": ["cypress", "node", "mocha"],
     "plugins": [
       {
         "name": "next"
@@ -39,7 +40,9 @@
     "lib/**/*.ts",
     "modules/**/*.ts",
     "modules/**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "cypress/**/*.ts",
+    "cypress/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }
