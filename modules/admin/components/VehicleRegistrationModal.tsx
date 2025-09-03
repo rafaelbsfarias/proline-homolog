@@ -4,7 +4,7 @@ import React from 'react';
 import VehicleRegistrationModalBase, {
   Vehicle,
   VehicleRegistrationBaseProps,
-} from '@/modules/vehicles/components/VehicleRegistrationModalBase';
+} from '@/modules/vehicles/components/VehicleRegistrationModalBase/VehicleRegistrationModalBase';
 
 type Props = Omit<VehicleRegistrationBaseProps, 'userRole'>;
 

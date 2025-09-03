@@ -9,7 +9,11 @@ import Modal from '@/modules/common/components/Modal/Modal';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import ErrorMessage from '@/modules/common/components/ErroMessage/ErrorMessage';
-import { useVehicleRegistrationForm, VehicleFormData } from '../hooks/useVehicleRegistrationForm';
+import {
+  useVehicleRegistrationForm,
+  VehicleFormData,
+} from '../../hooks/useVehicleRegistrationForm';
+import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 
 export type Vehicle = {
   id: string;
@@ -217,32 +221,22 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
           <div className="form-group full-width">
             <label>Finalidade do Veículo</label>
             <div className="checkbox-group">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  id="preparacao"
-                  name="preparacao"
-                  checked={formData.preparacao}
-                  onChange={e => setFormData(prev => ({ ...prev, preparacao: e.target.checked }))}
-                  disabled={loading}
-                />
-                <span className="checkmark"></span>
-                Preparação
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  id="comercializacao"
-                  name="comercializacao"
-                  checked={formData.comercializacao}
-                  onChange={e =>
-                    setFormData(prev => ({ ...prev, comercializacao: e.target.checked }))
-                  }
-                  disabled={loading}
-                />
-                <span className="checkmark"></span>
-                Comercialização
-              </label>
+              <Checkbox
+                id="preparacao"
+                name="preparacao"
+                label="Preparação"
+                checked={formData.preparacao}
+                onChange={e => setFormData(prev => ({ ...prev, preparacao: e }))}
+                disabled={loading}
+              />
+              <Checkbox
+                id="comercializacao"
+                name="comercializacao"
+                label="Comercialização"
+                checked={formData.comercializacao}
+                onChange={e => setFormData(prev => ({ ...prev, comercializacao: e }))}
+                disabled={loading}
+              />
             </div>
           </div>
         </div>
