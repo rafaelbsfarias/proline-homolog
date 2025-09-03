@@ -1,55 +1,47 @@
-// modules/vehicles/hooks/useVehicleRegistrationForm.ts
-'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import {
-  validatePlate,
-  formatPlateInput,
-  PLATE_ERROR_MESSAGES,
-} from '@/modules/common/utils/plateValidation';
-import type { FieldKey } from '../components/types';
-import type { Vehicle } from '../components/VehicleRegistrationModalBase';
-import type { UserRole } from '../../client/types/index';
+import { registerVehicle } from '../services/vehicleRegistrationService';
 
-interface VehicleFormData {
+// Shared types
+type UserRole = 'admin' | 'client';
+type Client = { id: string; full_name: string; email: string };
+export type VehicleFormData = {
   clientId: string;
   plate: string;
   brand: string;
   model: string;
   color: string;
-  year: number | '';
-  initialKm: number | '';
-  fipe_value: number | '';
+  year: string;
+  initialKm: string;
+  fipe_value: string;
   observations: string;
   estimated_arrival_date: string;
   preparacao: boolean;
   comercializacao: boolean;
-}
+};
 
-interface FormErrors {
-  clientId?: string;
-  plate?: string;
-  brand?: string;
-  model?: string;
-  color?: string;
-  year?: string;
-  initialKm?: string;
-  fipe_value?: string;
-  estimated_arrival_date?: string;
-}
-
-interface Client {
-  id: string;
-  full_name: string;
-  email: string;
-}
+// Zod schema
+const vehicleSchema = z.object({
+  plate: z.string().trim().min(1, { message: 'Placa é obrigatória' }),
+  brand: z.string().trim().min(1, { message: 'Marca é obrigatória' }),
+  model: z.string().trim().min(1, { message: 'Modelo é obrigatório' }),
+  color: z.string().trim().min(1, { message: 'Cor é obrigatória' }),
+  year: z.string().regex(/^\d{4}$/, { message: 'Ano inválido' }),
+  clientId: z.string(),
+  fipe_value: z.string().optional(),
+  initialKm: z.string().optional(),
+  observations: z.string().optional(),
+  estimated_arrival_date: z.string().optional(),
+  preparacao: z.boolean(),
+  comercializacao: z.boolean(),
+});
 
 interface UseVehicleRegistrationFormProps {
   isOpen: boolean;
   userRole: UserRole;
-  hiddenFields?: FieldKey[];
-  onSuccess?: (vehicle?: Vehicle) => void;
+  hiddenFields?: (keyof VehicleFormData)[];
+  onSuccess?: () => void;
 }
 
 export function useVehicleRegistrationForm({
@@ -74,176 +66,95 @@ export function useVehicleRegistrationForm({
     preparacao: false,
     comercializacao: false,
   });
-
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<keyof VehicleFormData, string>>>({});
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const isHidden = useCallback(
-    (key: FieldKey) => (hiddenFields ?? []).includes(key),
-    [hiddenFields]
-  );
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setFormData({
-        clientId: '',
-        plate: '',
-        brand: '',
-        model: '',
-        color: '',
-        year: '',
-        initialKm: '',
-        fipe_value: '',
-        observations: '',
-        estimated_arrival_date: '',
-        preparacao: false,
-        comercializacao: false,
-      });
-      setSelectedClient(null);
       setErrors({});
       setError(null);
       setSuccess(false);
-    }
-  }, [isOpen]);
-
-  const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (userRole === 'admin' && !selectedClient) {
-      newErrors.clientId = 'Cliente é obrigatório';
-    }
-
-    if (!formData.plate.trim()) {
-      newErrors.plate = PLATE_ERROR_MESSAGES.REQUIRED;
-    } else if (!validatePlate(formData.plate)) {
-      newErrors.plate = PLATE_ERROR_MESSAGES.INVALID_FORMAT;
-    }
-
-    if (!formData.brand.trim()) newErrors.brand = 'Marca é obrigatória';
-    if (!formData.model.trim()) newErrors.model = 'Modelo é obrigatório';
-    if (!formData.color.trim()) newErrors.color = 'Cor é obrigatória';
-
-    if (!formData.year) {
-      newErrors.year = 'Ano é obrigatório';
-    } else {
-      const currentYear = new Date().getFullYear();
-      const y = Number(formData.year);
-      if (y < 1900 || y > currentYear + 1) {
-        newErrors.year = `Ano deve estar entre 1900 e ${currentYear + 1}`;
+      if (userRole !== 'admin') {
+        setSelectedClient(null);
       }
     }
+  }, [isOpen, userRole]);
 
-    if (!isHidden('initialKm') && formData.initialKm !== '' && Number(formData.initialKm) < 0) {
-      newErrors.initialKm = 'Quilometragem deve ser positiva';
-    }
-    if (!isHidden('fipe_value') && formData.fipe_value !== '' && Number(formData.fipe_value) < 0) {
-      newErrors.fipe_value = 'Valor FIPE deve ser positivo';
+  const isHidden = (k: keyof VehicleFormData) => !!hiddenFields?.includes(k);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target as { name: keyof VehicleFormData; value: string };
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
+  };
+
+  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value || '';
+    const next = raw.toUpperCase().replace(/\s+/g, '').slice(0, 8);
+    setFormData(prev => ({ ...prev, plate: next }));
+    if (errors.plate) setErrors(prev => ({ ...prev, plate: undefined }));
+  };
+
+  const handleClientSelect = (client: Client | null) => {
+    setSelectedClient(client);
+    setFormData(prev => ({ ...prev, clientId: client?.id || '' }));
+    if (errors.clientId) setErrors(prev => ({ ...prev, clientId: undefined }));
+  };
+
+  const validate = () => {
+    const finalSchema = vehicleSchema.superRefine((data, ctx) => {
+      if (userRole === 'admin' && !data.clientId.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Cliente é obrigatório',
+          path: ['clientId'],
+        });
+      }
+    });
+
+    const result = finalSchema.safeParse(formData);
+    if (result.success) {
+      setErrors({});
+      return true;
     }
 
-    if (userRole === 'admin' && formData.estimated_arrival_date) {
-      const d = new Date(formData.estimated_arrival_date);
-      if (isNaN(d.getTime())) newErrors.estimated_arrival_date = 'Data inválida';
-    }
-
+    const newErrors: Partial<Record<keyof VehicleFormData, string>> = {};
+    result.error.errors.forEach(err => {
+      const field = err.path[0] as keyof VehicleFormData;
+      if (!isHidden(field)) {
+        newErrors[field] = err.message;
+      }
+    });
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, selectedClient, userRole, isHidden]);
+  };
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!validateForm()) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-      setLoading(true);
-      setError(null);
-      setSuccess(false);
-
-      const endpoint =
-        userRole === 'admin' ? '/api/admin/create-vehicle' : '/api/client/create-vehicle';
-      const payload = {
-        ...(userRole === 'admin' && { clientId: selectedClient!.id }),
-        plate: formData.plate.trim().toUpperCase(),
-        brand: formData.brand.trim(),
-        model: formData.model.trim(),
-        color: formData.color.trim(),
-        year: Number(formData.year),
-        ...(isHidden('initialKm')
-          ? {}
-          : { initialKm: formData.initialKm ? Number(formData.initialKm) : undefined }),
-        ...(isHidden('fipe_value')
-          ? {}
-          : { fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined }),
-        observations: formData.observations.trim() || undefined,
-        ...(userRole === 'admin' && {
-          estimated_arrival_date: formData.estimated_arrival_date || undefined,
-        }),
-        preparacao: formData.preparacao,
-        comercializacao: formData.comercializacao,
-      };
-
-      try {
-        const response = await post<{
-          success: boolean;
-          message: string;
-          vehicle?: Vehicle;
-          error?: string;
-        }>(endpoint, payload);
-
-        if (response.ok && response.data?.success) {
-          setSuccess(true);
-          onSuccess?.(response.data.vehicle);
-        } else {
-          throw new Error(response.data?.error || response.error || 'Erro ao cadastrar veículo');
-        }
-      } catch (err: any) {
-        setError(err instanceof Error ? err.message : 'Erro ao cadastrar veículo');
-      } finally {
-        setLoading(false);
-      }
-    },
-    [formData, selectedClient, userRole, isHidden, post, validateForm, onSuccess]
-  );
-
-  const handleClientSelect = useCallback(
-    (client: Client | null) => {
-      setSelectedClient(client);
-      setFormData(prev => ({ ...prev, clientId: client?.id || '' }));
-      if (client && errors.clientId) {
-        setErrors(prev => ({ ...prev, clientId: undefined }));
-      }
-    },
-    [errors.clientId]
-  );
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const { name, value } = e.target;
-      setFormData(prev => ({ ...prev, [name]: value }));
-      if (errors[name as keyof FormErrors]) {
-        setErrors(prev => ({ ...prev, [name]: undefined }));
-      }
-    },
-    [errors, formData]
-  );
-
-  const handlePlateChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const formatted = formatPlateInput(e.target.value);
-      setFormData(prev => ({ ...prev, plate: formatted }));
-      if (errors.plate) setErrors(prev => ({ ...prev, plate: undefined }));
-    },
-    [errors.plate]
-  );
-
-  const handleCheckboxChange = useCallback((name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
-  }, []);
+    setLoading(true);
+    setError(null);
+    try {
+      await registerVehicle(post, userRole, formData);
+      setSuccess(true);
+      onSuccess?.();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg || 'Erro ao cadastrar veículo.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     formData,
+    setFormData,
     errors,
     loading,
     selectedClient,
@@ -251,11 +162,10 @@ export function useVehicleRegistrationForm({
     handleInputChange,
     handlePlateChange,
     handleClientSelect,
-    handleCheckboxChange,
     handleSubmit,
     error,
     success,
     setError,
     setSuccess,
-  };
+  } as const;
 }

@@ -1,15 +1,15 @@
-// modules/vehicles/components/VehicleRegistrationModalBase.tsx
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect } from 'react';
 import './VehicleRegistrationModal.css';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import ClientSearch from '@/modules/common/components/ClientSearch';
-import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import ErrorMessage from '@/modules/common/components/ErroMessage/ErrorMessage';
+import { useVehicleRegistrationForm, VehicleFormData } from '../hooks/useVehicleRegistrationForm';
 
 export type Vehicle = {
   id: string;
@@ -25,181 +25,12 @@ export type Vehicle = {
 
 type UserRole = 'admin' | 'client';
 
-type Client = { id: string; full_name: string; email: string };
-
-type VehicleFormData = {
-  clientId: string;
-  plate: string;
-  brand: string;
-  model: string;
-  color: string;
-  year: string;
-  initialKm: string;
-  fipe_value: string;
-  observations: string;
-  estimated_arrival_date: string;
-  preparacao: boolean;
-  comercializacao: boolean;
-};
-
 export interface VehicleRegistrationBaseProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   userRole: UserRole;
   hiddenFields?: (keyof VehicleFormData)[];
-}
-
-function useVehicleRegistrationForm({
-  isOpen,
-  userRole,
-  hiddenFields,
-  onSuccess,
-}: Pick<VehicleRegistrationBaseProps, 'isOpen' | 'userRole' | 'hiddenFields' | 'onSuccess'>) {
-  const { post } = useAuthenticatedFetch();
-
-  const [formData, setFormData] = useState<VehicleFormData>({
-    clientId: '',
-    plate: '',
-    brand: '',
-    model: '',
-    color: '',
-    year: '',
-    initialKm: '',
-    fipe_value: '',
-    observations: '',
-    estimated_arrival_date: '',
-    preparacao: false,
-    comercializacao: false,
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof VehicleFormData, string>>>({});
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setErrors({});
-      setError(null);
-      setSuccess(false);
-      if (userRole !== 'admin') {
-        setSelectedClient(null);
-      }
-    }
-  }, [isOpen, userRole]);
-
-  const isHidden = (k: keyof VehicleFormData) => !!hiddenFields?.includes(k);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target as { name: keyof VehicleFormData; value: string };
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
-  };
-
-  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value || '';
-    const next = raw.toUpperCase().replace(/\s+/g, '').slice(0, 8);
-    setFormData(prev => ({ ...prev, plate: next }));
-    if (errors.plate) setErrors(prev => ({ ...prev, plate: undefined }));
-  };
-
-  const handleClientSelect = (client: Client | null) => {
-    setSelectedClient(client);
-    setFormData(prev => ({ ...prev, clientId: client?.id || '' }));
-    if (errors.clientId) setErrors(prev => ({ ...prev, clientId: undefined }));
-  };
-
-  const validate = () => {
-    const nextErrors: Partial<Record<keyof VehicleFormData, string>> = {};
-    const required: (keyof VehicleFormData)[] = ['plate', 'brand', 'model', 'color', 'year'];
-    if (userRole === 'admin') required.push('clientId');
-    for (const k of required) {
-      if (!isHidden(k) && !String(formData[k] || '').trim()) {
-        nextErrors[k] = 'Campo obrigatório';
-      }
-    }
-    if (formData.year && !/^\d{4}$/.test(formData.year)) {
-      nextErrors.year = 'Ano inválido';
-    }
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      if (userRole === 'admin') {
-        const payload = {
-          clientId: formData.clientId,
-          plate: formData.plate,
-          brand: formData.brand,
-          model: formData.model,
-          color: formData.color,
-          year: Number(formData.year),
-          fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
-          estimated_arrival_date: formData.estimated_arrival_date || undefined,
-          preparacao: formData.preparacao,
-          comercializacao: formData.comercializacao,
-        };
-        const resp = await post<{ success: boolean; message?: string; error?: string }>(
-          '/api/admin/create-vehicle',
-          payload
-        );
-        if (!resp.ok || !resp.data?.success)
-          throw new Error(resp.data?.error || 'Erro ao cadastrar.');
-      } else {
-        const payload = {
-          plate: formData.plate,
-          brand: formData.brand,
-          model: formData.model,
-          color: formData.color,
-          year: Number(formData.year),
-          initialKm: formData.initialKm ? Number(formData.initialKm) : undefined,
-          fipe_value: formData.fipe_value ? Number(formData.fipe_value) : undefined,
-          observations: formData.observations || undefined,
-          preparacao: formData.preparacao,
-          comercializacao: formData.comercializacao,
-        };
-        const resp = await post<{ success: boolean; message?: string; error?: string }>(
-          '/api/client/create-vehicle',
-          payload
-        );
-        if (!resp.ok || !resp.data?.success)
-          throw new Error(resp.data?.error || 'Erro ao cadastrar.');
-      }
-      setSuccess(true);
-      onSuccess?.();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(msg || 'Erro ao cadastrar veículo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return {
-    formData,
-    setFormData,
-    errors,
-    loading,
-    selectedClient,
-    isHidden,
-    handleInputChange,
-    handlePlateChange,
-    handleClientSelect,
-    handleSubmit,
-    error,
-    success,
-    setError,
-    setSuccess,
-  } as const;
 }
 
 function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
@@ -267,7 +98,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
                 disabled={loading}
                 error={errors.clientId}
               />
-              {errors.clientId && <div className="error-message">{errors.clientId}</div>}
+              <ErrorMessage message={errors.clientId} />
             </div>
           </div>
         )}
@@ -282,9 +113,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               onChange={handlePlateChange}
               placeholder="AAA1B23"
               disabled={loading}
-              required
             />
-            {errors.plate && <div className="error-message">{errors.plate}</div>}
+            <ErrorMessage message={errors.plate} />
           </div>
           <div className="form-group">
             <Input
@@ -294,9 +124,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               value={formData.brand}
               onChange={handleInputChange}
               disabled={loading}
-              required
             />
-            {errors.brand && <div className="error-message">{errors.brand}</div>}
+            <ErrorMessage message={errors.brand} />
           </div>
         </div>
 
@@ -309,9 +138,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               value={formData.model}
               onChange={handleInputChange}
               disabled={loading}
-              required
             />
-            {errors.model && <div className="error-message">{errors.model}</div>}
+            <ErrorMessage message={errors.model} />
           </div>
           <div className="form-group">
             <Input
@@ -321,9 +149,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               value={formData.color}
               onChange={handleInputChange}
               disabled={loading}
-              required
             />
-            {errors.color && <div className="error-message">{errors.color}</div>}
+            <ErrorMessage message={errors.color} />
           </div>
         </div>
 
@@ -337,9 +164,8 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               value={formData.year}
               onChange={handleInputChange}
               disabled={loading}
-              required
             />
-            {errors.year && <div className="error-message">{errors.year}</div>}
+            <ErrorMessage message={errors.year} />
           </div>
           {!isHidden('fipe_value') && (
             <div className="form-group">
@@ -352,7 +178,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
                 onChange={handleInputChange}
                 disabled={loading}
               />
-              {errors.fipe_value && <div className="error-message">{errors.fipe_value}</div>}
+              <ErrorMessage message={errors.fipe_value} />
             </div>
           )}
         </div>
@@ -369,7 +195,7 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
                 onChange={handleInputChange}
                 disabled={loading}
               />
-              {errors.initialKm && <div className="error-message">{errors.initialKm}</div>}
+              <ErrorMessage message={errors.initialKm} />
             </div>
             {userRole === 'admin' && (
               <div className="form-group">
