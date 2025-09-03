@@ -15,6 +15,7 @@ import {
   type InProgressService,
 } from '@/modules/partner/hooks/usePartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import { useToast } from '@/modules/common/components/ToastProvider';
 
 type TablePendingQuote = {
   id: string;
@@ -27,6 +28,7 @@ type TablePendingQuote = {
 
 const PartnerDashboard = () => {
   const router = useRouter();
+  const { showToast } = useToast();
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
@@ -57,7 +59,7 @@ const PartnerDashboard = () => {
           .eq('partner_id', user.id);
 
         if (error) {
-          // TODO: Implementar feedback ao usuário
+          showToast('error', 'Erro ao carregar categoria do parceiro. Tente novamente.');
           return;
         }
 
@@ -65,7 +67,7 @@ const PartnerDashboard = () => {
         const category = partnerCategories?.[0]?.service_categories?.name?.toLowerCase() || '';
         setPartnerCategory(category);
       } catch {
-        // TODO: Implementar feedback ao usuário
+        showToast('error', 'Erro ao carregar categoria do parceiro. Tente novamente.');
       }
     };
 
@@ -157,7 +159,7 @@ const PartnerDashboard = () => {
         .single();
 
       if (error) {
-        // TODO: Implementar feedback ao usuário
+        showToast('error', 'Erro ao buscar informações do veículo. Tente novamente.');
         return;
       }
 
@@ -175,7 +177,7 @@ const PartnerDashboard = () => {
       setSelectedQuote(quote);
       setChecklistModalOpen(true);
     } catch {
-      // TODO: Implementar feedback ao usuário
+      showToast('error', 'Erro ao abrir checklist. Tente novamente.');
     }
   };
 
