@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { FaEdit } from 'react-icons/fa';
 import { TbTrashXFilled } from 'react-icons/tb';
+import { FaClipboardList } from 'react-icons/fa';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 
 interface DataTableProps<T> {
   title: string;
   data: T[];
-  columns: {
-    key: keyof T | string;
-    header: string;
-    render?: (item: T) => React.ReactNode;
-  }[];
+  columns: { key: keyof T; header: string }[];
   emptyMessage: string;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
+  onChecklist?: (item: T) => void;
   showActions?: boolean;
 }
 
@@ -24,6 +22,7 @@ const DataTable = <T extends { id: React.Key }>({
   emptyMessage,
   onEdit,
   onDelete,
+  onChecklist,
   showActions = false,
 }: DataTableProps<T>) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -88,25 +87,39 @@ const DataTable = <T extends { id: React.Key }>({
           <tbody>
             {data.map(row => (
               <tr key={row.id}>
-                {columns.map(column => {
-                  const value =
-                    column.key in row
-                      ? (row as Record<string, unknown>)[column.key as string]
-                      : undefined;
-                  return (
-                    <td
-                      key={column.key as string}
-                      style={{ padding: '10px', borderBottom: '1px solid #eee' }}
-                    >
-                      {column.render ? column.render(row) : String(value)}
-                    </td>
-                  );
-                })}
+                {columns.map(column => (
+                  <td
+                    key={column.key as string}
+                    style={{ padding: '10px', borderBottom: '1px solid #eee' }}
+                  >
+                    {String(row[column.key])}
+                  </td>
+                ))}
                 {showActions && (
                   <td
                     style={{ padding: '10px', borderBottom: '1px solid #eee', textAlign: 'center' }}
                   >
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      {onChecklist && (
+                        <button
+                          onClick={() => onChecklist(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Checklist"
+                        >
+                          <FaClipboardList size={14} />
+                        </button>
+                      )}
                       {onEdit && (
                         <button
                           onClick={() => onEdit(row)}
