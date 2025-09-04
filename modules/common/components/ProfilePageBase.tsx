@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './ProfilePageBase.module.css';
 import ChangePasswordModal from '@/modules/common/components/ChangePasswordModal/ChangePasswordModal';
 
@@ -22,22 +22,14 @@ export default function ProfilePageBase({
   addressesNode,
   addressesActionsNode,
 }: Props) {
-  const [openChange, setOpenChange] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [openChangePassword, setOpenChangePassword] = useState(false);
 
   const handleConfirmPassword = async (newPassword: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      const { supabase } = await import('@/modules/common/services/supabaseClient');
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      setOpenChange(false);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao alterar senha');
-    } finally {
-      setLoading(false);
+    // The onConfirm prop in ChangePasswordModal is expected to throw on error
+    const { supabase } = await import('@/modules/common/services/supabaseClient');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      throw new Error(error.message || 'Erro ao alterar senha');
     }
   };
 
@@ -46,7 +38,7 @@ export default function ProfilePageBase({
       <div className={styles.card}>
         <div className={styles.header}>
           <h1 className={styles.title}>Meu Perfil</h1>
-          <button onClick={() => setOpenChange(true)} className={styles.changeBtn}>
+          <button onClick={() => setOpenChangePassword(true)} className={styles.changeBtn}>
             Alterar Senha
           </button>
         </div>
@@ -74,11 +66,9 @@ export default function ProfilePageBase({
       )}
 
       <ChangePasswordModal
-        isOpen={openChange}
-        onClose={() => setOpenChange(false)}
+        isOpen={openChangePassword}
+        onClose={() => setOpenChangePassword(false)}
         onConfirm={handleConfirmPassword}
-        loading={loading}
-        error={error}
       />
     </main>
   );

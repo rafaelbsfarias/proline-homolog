@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { IoSettingsOutline } from 'react-icons/io5';
 import './SettingsButton.css';
+import { FiSettings } from 'react-icons/fi';
 
 interface SettingsButtonProps {
   onOpenChangePasswordModal: () => void;
@@ -53,7 +53,7 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({ onOpenChangePasswordMod
         onClick={handleToggleDropdown}
         aria-label="Configurações"
       >
-        <IoSettingsOutline className="settings-icon" />
+        <FiSettings className="settings-icon" />
       </button>
 
       {showDropdown && (
