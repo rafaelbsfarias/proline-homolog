@@ -16,6 +16,7 @@ export interface AddressModalBaseProps {
   initialValues?: Partial<AddressFormValues>;
   onSubmit: (values: AddressFormValues) => Promise<{ success: boolean; message?: string } | void>;
   renderExtraFields?: (ctx: { loading: boolean }) => React.ReactNode;
+  onSuccess?: () => void;
 }
 
 export default function AddressModalBase({
@@ -25,6 +26,7 @@ export default function AddressModalBase({
   initialValues,
   onSubmit,
   renderExtraFields,
+  onSuccess,
 }: AddressModalBaseProps) {
   const {
     form,
@@ -146,6 +148,7 @@ export default function AddressModalBase({
           variant="success"
           onClose={() => {
             setSuccess(null);
+            onSuccess?.();
             onClose();
           }}
         />

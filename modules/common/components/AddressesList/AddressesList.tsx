@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import AddressModalBase from '@/modules/common/components/AddressModalBase/AddressModalBase';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { IoPencilOutline } from 'react-icons/io5';
+import { FiEdit } from 'react-icons/fi';
 import { SYSTEM_MESSAGES } from '@/modules/common/constants/messages';
 import styles from './AddressesList.module.css';
 import Checkbox from '../Checkbox/Checkbox';
@@ -125,7 +125,7 @@ export default function AddressesList() {
               }}
               className={styles.editButton}
             >
-              <IoPencilOutline />
+              <FiEdit />
             </button>
           </div>
         </div>

@@ -24,7 +24,6 @@ export default function ClientCollectPointModal({ isOpen, onClose, onSuccess }: 
     );
 
     if (response.ok && response.data?.success) {
-      onSuccess?.();
       return { success: true, message: response.data.message };
     }
 
@@ -37,6 +36,7 @@ export default function ClientCollectPointModal({ isOpen, onClose, onSuccess }: 
       onClose={onClose}
       title="Adicionar Ponto de Coleta"
       onSubmit={handleSubmit}
+      onSuccess={onSuccess}
     />
   );
 }
