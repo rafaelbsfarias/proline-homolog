@@ -1,6 +1,7 @@
 import React, { useState, forwardRef } from 'react';
 import { IMaskInput } from 'react-imask';
-import { EyeIcon } from '../EyeIcon';
+import { LuEye } from 'react-icons/lu';
+import { LuEyeOff } from 'react-icons/lu';
 import styles from './Input.module.css';
 
 interface InputProps {
@@ -75,7 +76,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               onClick={() => setShowPassword(v => !v)}
               className={styles.eyeButton}
             >
-              <EyeIcon open={showPassword} />
+              {/* <EyeIcon open={showPassword} /> */}
+              {showPassword ? (
+                <LuEye className={styles.icon} />
+              ) : (
+                <LuEyeOff className={styles.icon} />
+              )}
             </button>
           )}
         </div>

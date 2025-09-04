@@ -42,3 +42,8 @@
   cursor: pointer;
   padding: 0;
 }
+
+.icon {
+  color: #ccc;
+  font-size: 1.3rem;
+}

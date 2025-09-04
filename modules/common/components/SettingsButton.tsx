@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import './SettingsButton.css';
-import { FiSettings } from 'react-icons/fi';
+import { LuSettings } from 'react-icons/lu';
 
 interface SettingsButtonProps {
   onOpenChangePasswordModal: () => void;
@@ -53,7 +53,7 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({ onOpenChangePasswordMod
         onClick={handleToggleDropdown}
         aria-label="Configurações"
       >
-        <FiSettings className="settings-icon" />
+        <LuSettings className="settings-icon" />
       </button>
 
       {showDropdown && (

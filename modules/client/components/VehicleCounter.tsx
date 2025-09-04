@@ -17,6 +17,10 @@ import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
+import { LuRefreshCw } from 'react-icons/lu';
+import { LuMinus } from 'react-icons/lu';
+import { LuPlus } from 'react-icons/lu';
+import { LuTriangleAlert } from 'react-icons/lu';
 
 // Types moved to modules/client/types.ts
 
@@ -94,7 +98,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
     return (
       <div className="vehicle-counter error">
         <div className="counter-icon" aria-hidden>
-          ⚠️
+          <LuTriangleAlert />
         </div>
         <div className="counter-content">
           <h3>Erro</h3>
@@ -132,7 +136,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             title="Atualizar contagem"
             aria-label="Atualizar contagem de veículos"
           >
-            🔄
+            <LuRefreshCw />
           </button>
           {count > 0 && (
             <button
@@ -142,7 +146,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
               aria-expanded={showDetails}
               aria-controls="vehicles-details"
             >
-              {showDetails ? '🔼' : '🔽'}
+              {showDetails ? <LuMinus /> : <LuPlus />}
             </button>
           )}
         </div>
