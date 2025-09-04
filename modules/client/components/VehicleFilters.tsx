@@ -1,3 +1,5 @@
+import Input from '@/modules/common/components/Input/Input';
+import Select from '@/modules/common/components/Select/Select';
 import React from 'react';
 
 interface Props {
@@ -8,10 +10,19 @@ interface Props {
   statusOptions: string[];
 }
 
-export default function VehicleFilters({ filterPlate, setFilterPlate, filterStatus, setFilterStatus, statusOptions }: Props) {
+export default function VehicleFilters({
+  filterPlate,
+  setFilterPlate,
+  filterStatus,
+  setFilterStatus,
+  statusOptions,
+}: Props) {
   return (
     <div className="counter-filters" role="group" aria-label="Filtros de veículo">
-      <input
+      <Input
+        id="placa"
+        name="placa"
+        label="Placa"
         type="text"
         placeholder="Buscar por placa"
         value={filterPlate}
@@ -25,10 +36,20 @@ export default function VehicleFilters({ filterPlate, setFilterPlate, filterStat
       >
         <option value="">Todos os status</option>
         {statusOptions.map(s => (
-          <option key={s} value={s}>{s}</option>
+          <option key={s} value={s}>
+            {s}
+          </option>
         ))}
       </select>
+      {/*  <Select
+        id="status"
+        name="status"
+        label="Status"
+        value={filterStatus}
+        onChange={e => setFilterStatus(e.target.value)}
+        placeholder="Todos os status"
+        options={statusOptions.map(s => ({ value: s, label: s }))}
+      /> */}
     </div>
   );
 }
-

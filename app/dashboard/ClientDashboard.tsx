@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/modules/admin/components/Header';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
-import VehicleCounter from '@/modules/client/components/VehicleCounter';
+import VehicleCounter from '@/modules/client/components/VehicleCounter/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import '@/modules/client/components/ClientDashboard.css';
