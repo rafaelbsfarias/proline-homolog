@@ -7,11 +7,11 @@ const passwordSchema = z
     password: z
       .string()
       .nonempty('Senha é obrigatória')
-      .min(6, 'A senha deve ter no mínimo 6 caracteres'),
+      .min(8, 'A senha deve ter no mínimo 8 caracteres'),
     confirmPassword: z
       .string()
       .nonempty('Confirmação é obrigatória')
-      .min(6, 'A confirmação deve ter no mínimo 6 caracteres'),
+      .min(8, 'A confirmação deve ter no mínimo 8 caracteres'),
   })
   .refine(data => data.password === data.confirmPassword, {
     message: 'As senhas não coincidem',

@@ -61,10 +61,10 @@ const signupSchema = z
         message: 'A senha é obrigatória',
         path: ['password'],
       });
-    } else if (data.password.length < 6) {
+    } else if (data.password.length < 8) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'A senha deve ter no mínimo 6 caracteres',
+        message: 'A senha deve ter no mínimo 8 caracteres',
         path: ['password'],
       });
     }
