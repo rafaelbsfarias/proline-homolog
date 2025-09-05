@@ -20,8 +20,11 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  color: #002e4c;
+  color: #757575;
   cursor: pointer;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .inputWrapper .icon {
@@ -30,12 +33,12 @@
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: #999;
+  color: #757575;
   font-size: 1.2rem;
 }
 
 .inputWrapper select option[value=''] {
-  color: #999;
+  color: #757575;
 }
 
 .inputWrapper select:focus {
