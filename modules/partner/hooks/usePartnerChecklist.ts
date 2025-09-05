@@ -46,6 +46,25 @@ export interface PartnerChecklistForm {
   airConditioningCleaningNotes: string;
   electricalActuation: 'ok' | 'attention' | 'critical'; // Acionamento Elétrico - Verificar funcionamento
   electricalActuationNotes: string;
+  // Itens individuais do Acionamento Elétrico
+  electricalActuationGlass: 'ok' | 'attention' | 'critical'; // VIDRO
+  electricalActuationGlassNotes: string;
+  electricalActuationMirror: 'ok' | 'attention' | 'critical'; // RETROVISOR
+  electricalActuationMirrorNotes: string;
+  electricalActuationSocket: 'ok' | 'attention' | 'critical'; // TOMADA 12V
+  electricalActuationSocketNotes: string;
+  electricalActuationLock: 'ok' | 'attention' | 'critical'; // TRAVA
+  electricalActuationLockNotes: string;
+  electricalActuationTrunk: 'ok' | 'attention' | 'critical'; // PORTA MALA
+  electricalActuationTrunkNotes: string;
+  electricalActuationWiper: 'ok' | 'attention' | 'critical'; // LIMPADOR
+  electricalActuationWiperNotes: string;
+  electricalActuationKey: 'ok' | 'attention' | 'critical'; // CHAVE
+  electricalActuationKeyNotes: string;
+  electricalActuationAlarm: 'ok' | 'attention' | 'critical'; // ALARME
+  electricalActuationAlarmNotes: string;
+  electricalActuationInteriorLight: 'ok' | 'attention' | 'critical'; // LUZ INTERNA
+  electricalActuationInteriorLightNotes: string;
   dashboardPanel: 'ok' | 'attention' | 'critical'; // Painel de Instrumentos - Checar luzes do painel
   dashboardPanelNotes: string;
   lights: 'ok' | 'attention' | 'critical'; // Lâmpadas - Checar funcionamento
@@ -107,6 +126,25 @@ const initialForm: PartnerChecklistForm = {
   airConditioningCleaningNotes: '',
   electricalActuation: 'ok',
   electricalActuationNotes: '',
+  // Itens individuais do Acionamento Elétrico
+  electricalActuationGlass: 'ok',
+  electricalActuationGlassNotes: '',
+  electricalActuationMirror: 'ok',
+  electricalActuationMirrorNotes: '',
+  electricalActuationSocket: 'ok',
+  electricalActuationSocketNotes: '',
+  electricalActuationLock: 'ok',
+  electricalActuationLockNotes: '',
+  electricalActuationTrunk: 'ok',
+  electricalActuationTrunkNotes: '',
+  electricalActuationWiper: 'ok',
+  electricalActuationWiperNotes: '',
+  electricalActuationKey: 'ok',
+  electricalActuationKeyNotes: '',
+  electricalActuationAlarm: 'ok',
+  electricalActuationAlarmNotes: '',
+  electricalActuationInteriorLight: 'ok',
+  electricalActuationInteriorLightNotes: '',
   dashboardPanel: 'ok',
   dashboardPanelNotes: '',
   lights: 'ok',

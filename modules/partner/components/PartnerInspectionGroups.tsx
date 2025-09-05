@@ -25,6 +25,15 @@ interface InspectionItem {
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
     | 'electricalActuation'
+    | 'electricalActuationGlass'
+    | 'electricalActuationMirror'
+    | 'electricalActuationSocket'
+    | 'electricalActuationLock'
+    | 'electricalActuationTrunk'
+    | 'electricalActuationWiper'
+    | 'electricalActuationKey'
+    | 'electricalActuationAlarm'
+    | 'electricalActuationInteriorLight'
     | 'dashboardPanel'
     | 'lights'
     | 'battery'
@@ -50,6 +59,15 @@ interface InspectionItem {
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
     | 'electricalActuationNotes'
+    | 'electricalActuationGlassNotes'
+    | 'electricalActuationMirrorNotes'
+    | 'electricalActuationSocketNotes'
+    | 'electricalActuationLockNotes'
+    | 'electricalActuationTrunkNotes'
+    | 'electricalActuationWiperNotes'
+    | 'electricalActuationKeyNotes'
+    | 'electricalActuationAlarmNotes'
+    | 'electricalActuationInteriorLightNotes'
     | 'dashboardPanelNotes'
     | 'lightsNotes'
     | 'batteryNotes'
@@ -81,6 +99,15 @@ interface Props {
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
     | 'electricalActuation'
+    | 'electricalActuationGlass'
+    | 'electricalActuationMirror'
+    | 'electricalActuationSocket'
+    | 'electricalActuationLock'
+    | 'electricalActuationTrunk'
+    | 'electricalActuationWiper'
+    | 'electricalActuationKey'
+    | 'electricalActuationAlarm'
+    | 'electricalActuationInteriorLight'
     | 'dashboardPanel'
     | 'lights'
     | 'battery'
@@ -103,6 +130,15 @@ interface Props {
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
     | 'electricalActuationNotes'
+    | 'electricalActuationGlassNotes'
+    | 'electricalActuationMirrorNotes'
+    | 'electricalActuationSocketNotes'
+    | 'electricalActuationLockNotes'
+    | 'electricalActuationTrunkNotes'
+    | 'electricalActuationWiperNotes'
+    | 'electricalActuationKeyNotes'
+    | 'electricalActuationAlarmNotes'
+    | 'electricalActuationInteriorLightNotes'
     | 'dashboardPanelNotes'
     | 'lightsNotes'
     | 'batteryNotes'
@@ -129,6 +165,15 @@ interface Props {
       | 'airConditioningCompressor'
       | 'airConditioningCleaning'
       | 'electricalActuation'
+      | 'electricalActuationGlass'
+      | 'electricalActuationMirror'
+      | 'electricalActuationSocket'
+      | 'electricalActuationLock'
+      | 'electricalActuationTrunk'
+      | 'electricalActuationWiper'
+      | 'electricalActuationKey'
+      | 'electricalActuationAlarm'
+      | 'electricalActuationInteriorLight'
       | 'dashboardPanel'
       | 'lights'
       | 'battery'
@@ -151,6 +196,15 @@ interface Props {
       | 'airConditioningCompressorNotes'
       | 'airConditioningCleaningNotes'
       | 'electricalActuationNotes'
+      | 'electricalActuationGlassNotes'
+      | 'electricalActuationMirrorNotes'
+      | 'electricalActuationSocketNotes'
+      | 'electricalActuationLockNotes'
+      | 'electricalActuationTrunkNotes'
+      | 'electricalActuationWiperNotes'
+      | 'electricalActuationKeyNotes'
+      | 'electricalActuationAlarmNotes'
+      | 'electricalActuationInteriorLightNotes'
       | 'dashboardPanelNotes'
       | 'lightsNotes'
       | 'batteryNotes'
@@ -304,6 +358,69 @@ const inspectionItems: InspectionItem[] = [
     category: 'ELÉTRICA',
     description:
       'Verificar o funcionamento de: VIDRO, RETROVISOR, TOMADA 12V, TRAVA, PORTA MALA, LIMPADOR, CHAVE, ALARME, LUZ INTERNA',
+  },
+  {
+    key: 'electricalActuationGlass',
+    notesKey: 'electricalActuationGlassNotes',
+    label: 'VIDRO',
+    category: 'ELÉTRICA',
+    description: 'Acionamento elétrico dos vidros',
+  },
+  {
+    key: 'electricalActuationMirror',
+    notesKey: 'electricalActuationMirrorNotes',
+    label: 'RETROVISOR',
+    category: 'ELÉTRICA',
+    description: 'Acionamento elétrico dos retrovisores',
+  },
+  {
+    key: 'electricalActuationSocket',
+    notesKey: 'electricalActuationSocketNotes',
+    label: 'TOMADA 12V',
+    category: 'ELÉTRICA',
+    description: 'Funcionamento da tomada 12V',
+  },
+  {
+    key: 'electricalActuationLock',
+    notesKey: 'electricalActuationLockNotes',
+    label: 'TRAVA',
+    category: 'ELÉTRICA',
+    description: 'Sistema de travamento elétrico',
+  },
+  {
+    key: 'electricalActuationTrunk',
+    notesKey: 'electricalActuationTrunkNotes',
+    label: 'PORTA MALA',
+    category: 'ELÉTRICA',
+    description: 'Acionamento elétrico do porta malas',
+  },
+  {
+    key: 'electricalActuationWiper',
+    notesKey: 'electricalActuationWiperNotes',
+    label: 'LIMPADOR',
+    category: 'ELÉTRICA',
+    description: 'Sistema de limpadores de para-brisa',
+  },
+  {
+    key: 'electricalActuationKey',
+    notesKey: 'electricalActuationKeyNotes',
+    label: 'CHAVE',
+    category: 'ELÉTRICA',
+    description: 'Funcionamento da chave/canivete',
+  },
+  {
+    key: 'electricalActuationAlarm',
+    notesKey: 'electricalActuationAlarmNotes',
+    label: 'ALARME',
+    category: 'ELÉTRICA',
+    description: 'Sistema de alarme',
+  },
+  {
+    key: 'electricalActuationInteriorLight',
+    notesKey: 'electricalActuationInteriorLightNotes',
+    label: 'LUZ INTERNA',
+    category: 'ELÉTRICA',
+    description: 'Iluminação interna do veículo',
   },
   {
     key: 'dashboardPanel',
