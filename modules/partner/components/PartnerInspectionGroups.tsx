@@ -25,6 +25,8 @@ interface InspectionItem {
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
     | 'electrical'
+    | 'dashboardPanel'
+    | 'lights'
     | 'battery'
   >;
   notesKey: keyof Pick<
@@ -48,6 +50,8 @@ interface InspectionItem {
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
     | 'electricalNotes'
+    | 'dashboardPanelNotes'
+    | 'lightsNotes'
     | 'batteryNotes'
   >;
   label: string;
@@ -77,6 +81,8 @@ interface Props {
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
     | 'electrical'
+    | 'dashboardPanel'
+    | 'lights'
     | 'battery'
     | 'clutchNotes'
     | 'sparkPlugsNotes'
@@ -97,6 +103,8 @@ interface Props {
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
     | 'electricalNotes'
+    | 'dashboardPanelNotes'
+    | 'lightsNotes'
     | 'batteryNotes'
   >;
   onChange: (
@@ -121,6 +129,8 @@ interface Props {
       | 'airConditioningCompressor'
       | 'airConditioningCleaning'
       | 'electrical'
+      | 'dashboardPanel'
+      | 'lights'
       | 'battery'
       | 'clutchNotes'
       | 'sparkPlugsNotes'
@@ -141,6 +151,8 @@ interface Props {
       | 'airConditioningCompressorNotes'
       | 'airConditioningCleaningNotes'
       | 'electricalNotes'
+      | 'dashboardPanelNotes'
+      | 'lightsNotes'
       | 'batteryNotes'
     >,
     value: string | InspectionStatus
@@ -284,13 +296,27 @@ const inspectionItems: InspectionItem[] = [
     description: 'Checar fluxo de ar (filtro de cabine)',
   },
 
-  // ELÉTRICO
+  // ELÉTRICA
   {
     key: 'electrical',
     notesKey: 'electricalNotes',
     label: 'Sistema Elétrico',
-    category: 'ELÉTRICO',
+    category: 'ELÉTRICA',
     description: 'Verificar funcionamento',
+  },
+  {
+    key: 'dashboardPanel',
+    notesKey: 'dashboardPanelNotes',
+    label: 'Painel de Instrumentos',
+    category: 'ELÉTRICA',
+    description: 'Checar luzes do painel',
+  },
+  {
+    key: 'lights',
+    notesKey: 'lightsNotes',
+    label: 'Lâmpadas',
+    category: 'ELÉTRICA',
+    description: 'Checar funcionamento',
   },
 
   // BATERIA

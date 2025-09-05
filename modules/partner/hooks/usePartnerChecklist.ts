@@ -46,6 +46,10 @@ export interface PartnerChecklistForm {
   airConditioningCleaningNotes: string;
   electrical: 'ok' | 'attention' | 'critical'; // Sistema Elétrico
   electricalNotes: string;
+  dashboardPanel: 'ok' | 'attention' | 'critical'; // Painel de Instrumentos - Checar luzes do painel
+  dashboardPanelNotes: string;
+  lights: 'ok' | 'attention' | 'critical'; // Lâmpadas - Checar funcionamento
+  lightsNotes: string;
   battery: 'ok' | 'attention' | 'critical'; // Bateria
   batteryNotes: string;
   observations: string;
@@ -103,6 +107,10 @@ const initialForm: PartnerChecklistForm = {
   airConditioningCleaningNotes: '',
   electrical: 'ok',
   electricalNotes: '',
+  dashboardPanel: 'ok',
+  dashboardPanelNotes: '',
+  lights: 'ok',
+  lightsNotes: '',
   battery: 'ok',
   batteryNotes: '',
   observations: '',

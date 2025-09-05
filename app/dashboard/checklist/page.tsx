@@ -347,6 +347,8 @@ const ChecklistPage = () => {
                 airConditioningCompressor: form.airConditioningCompressor,
                 airConditioningCleaning: form.airConditioningCleaning,
                 electrical: form.electrical,
+                dashboardPanel: form.dashboardPanel,
+                lights: form.lights,
                 battery: form.battery,
                 clutchNotes: form.clutchNotes,
                 sparkPlugsNotes: form.sparkPlugsNotes,
@@ -367,6 +369,8 @@ const ChecklistPage = () => {
                 airConditioningCompressorNotes: form.airConditioningCompressorNotes,
                 airConditioningCleaningNotes: form.airConditioningCleaningNotes,
                 electricalNotes: form.electricalNotes,
+                dashboardPanelNotes: form.dashboardPanelNotes,
+                lightsNotes: form.lightsNotes,
                 batteryNotes: form.batteryNotes,
               }}
               onChange={(name, value) => setField(name, value)}
