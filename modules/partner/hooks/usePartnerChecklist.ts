@@ -44,8 +44,8 @@ export interface PartnerChecklistForm {
   airConditioningCompressorNotes: string;
   airConditioningCleaning: 'ok' | 'attention' | 'critical'; // Limpeza Ar Condicionado - Checar fluxo de ar (filtro de cabine)
   airConditioningCleaningNotes: string;
-  electrical: 'ok' | 'attention' | 'critical'; // Sistema Elétrico
-  electricalNotes: string;
+  electricalActuation: 'ok' | 'attention' | 'critical'; // Acionamento Elétrico - Verificar funcionamento
+  electricalActuationNotes: string;
   dashboardPanel: 'ok' | 'attention' | 'critical'; // Painel de Instrumentos - Checar luzes do painel
   dashboardPanelNotes: string;
   lights: 'ok' | 'attention' | 'critical'; // Lâmpadas - Checar funcionamento
@@ -105,8 +105,8 @@ const initialForm: PartnerChecklistForm = {
   airConditioningCompressorNotes: '',
   airConditioningCleaning: 'ok',
   airConditioningCleaningNotes: '',
-  electrical: 'ok',
-  electricalNotes: '',
+  electricalActuation: 'ok',
+  electricalActuationNotes: '',
   dashboardPanel: 'ok',
   dashboardPanelNotes: '',
   lights: 'ok',

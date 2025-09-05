@@ -24,7 +24,7 @@ interface InspectionItem {
     | 'airConditioning'
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
-    | 'electrical'
+    | 'electricalActuation'
     | 'dashboardPanel'
     | 'lights'
     | 'battery'
@@ -49,7 +49,7 @@ interface InspectionItem {
     | 'airConditioningNotes'
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
-    | 'electricalNotes'
+    | 'electricalActuationNotes'
     | 'dashboardPanelNotes'
     | 'lightsNotes'
     | 'batteryNotes'
@@ -80,7 +80,7 @@ interface Props {
     | 'airConditioning'
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
-    | 'electrical'
+    | 'electricalActuation'
     | 'dashboardPanel'
     | 'lights'
     | 'battery'
@@ -102,7 +102,7 @@ interface Props {
     | 'airConditioningNotes'
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
-    | 'electricalNotes'
+    | 'electricalActuationNotes'
     | 'dashboardPanelNotes'
     | 'lightsNotes'
     | 'batteryNotes'
@@ -128,7 +128,7 @@ interface Props {
       | 'airConditioning'
       | 'airConditioningCompressor'
       | 'airConditioningCleaning'
-      | 'electrical'
+      | 'electricalActuation'
       | 'dashboardPanel'
       | 'lights'
       | 'battery'
@@ -150,7 +150,7 @@ interface Props {
       | 'airConditioningNotes'
       | 'airConditioningCompressorNotes'
       | 'airConditioningCleaningNotes'
-      | 'electricalNotes'
+      | 'electricalActuationNotes'
       | 'dashboardPanelNotes'
       | 'lightsNotes'
       | 'batteryNotes'
@@ -298,11 +298,12 @@ const inspectionItems: InspectionItem[] = [
 
   // ELÉTRICA
   {
-    key: 'electrical',
-    notesKey: 'electricalNotes',
-    label: 'Sistema Elétrico',
+    key: 'electricalActuation',
+    notesKey: 'electricalActuationNotes',
+    label: 'Acionamento Elétrico',
     category: 'ELÉTRICA',
-    description: 'Verificar funcionamento',
+    description:
+      'Verificar o funcionamento de: VIDRO, RETROVISOR, TOMADA 12V, TRAVA, PORTA MALA, LIMPADOR, CHAVE, ALARME, LUZ INTERNA',
   },
   {
     key: 'dashboardPanel',
