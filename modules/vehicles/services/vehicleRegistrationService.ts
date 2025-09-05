@@ -60,7 +60,9 @@ export const registerVehicle = async (
   );
 
   if (!resp.ok || !resp.data?.success) {
-    throw new Error(resp.data?.error || 'Erro ao cadastrar o veículo.');
+    const errorMessage =
+      resp.error || resp.data?.message || resp.data?.error || 'Erro ao cadastrar o veículo.';
+    throw new Error(errorMessage);
   }
 
   return resp.data;

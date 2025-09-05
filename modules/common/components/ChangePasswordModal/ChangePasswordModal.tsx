@@ -120,7 +120,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <ErrorMessage message={error || undefined} />
 
             <div className={styles.buttonGroup}>
-              <OutlineButton onClick={handleClose} disabled={loading}>
+              <OutlineButton type="button" onClick={handleClose} disabled={loading}>
                 Cancelar
               </OutlineButton>
               <SolidButton type="submit" disabled={loading}>

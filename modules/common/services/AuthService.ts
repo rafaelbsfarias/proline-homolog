@@ -228,6 +228,8 @@ export class AuthService implements AuthServiceInterface {
 
   private mapAuthError(errorMessage: string): string {
     const errorMap: Record<string, string> = {
+      'New password should be different from the old password.':
+        'A nova senha deve ser diferente da senha anterior.',
       'Credenciais de login inválidas': AUTH_MESSAGES.LOGIN_ERROR,
       'Usuário ja registrado': AUTH_MESSAGES.USER_ALREADY_EXISTS,
       'A senha deve ter mais de 6 carcteres': AUTH_MESSAGES.WEAK_PASSWORD,
