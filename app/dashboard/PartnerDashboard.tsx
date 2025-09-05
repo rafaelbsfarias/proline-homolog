@@ -101,7 +101,7 @@ const PartnerDashboard = () => {
 
   const handleChecklist = (quote: PendingQuoteDisplay) => {
     // Navegar para a página de checklist do veículo
-    router.push(`/dashboard/checklist?quoteId=${quote.id}`);
+    router.push(`/dashboard/partner/checklist?quoteId=${quote.id}`);
   };
 
   const handleEditService = () => {
@@ -157,7 +157,7 @@ const PartnerDashboard = () => {
           >
             <p style={{ color: '#666', fontSize: '1.15rem' }}>Bem-vindo, {userName}!</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <ActionButton onClick={() => router.push('/dashboard/services')}>
+              <ActionButton onClick={() => router.push('/dashboard/partner/services')}>
                 Serviços Cadastrados
               </ActionButton>
               <ActionButton onClick={() => setShowAddServiceModal(true)}>
