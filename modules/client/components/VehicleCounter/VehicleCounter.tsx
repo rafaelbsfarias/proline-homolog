@@ -119,36 +119,38 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           <div className="counter-number" aria-live="polite">
             {count}
           </div>
-          <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
+          <p>{count === 1 ? 'Veículo cadastrado' : 'Veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
-        <VehicleFilters
-          filterPlate={filterPlate}
-          setFilterPlate={setFilterPlate}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          statusOptions={statusOptions}
-        />
-        <div className="counter-actions">
-          <button
-            onClick={refetch}
-            className="refresh-button"
-            title="Atualizar contagem"
-            aria-label="Atualizar contagem de veículos"
-          >
-            <LuRefreshCw />
-          </button>
-          {count > 0 && (
+        <div className="counter-actions-wrapper">
+          <VehicleFilters
+            filterPlate={filterPlate}
+            setFilterPlate={setFilterPlate}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            statusOptions={statusOptions}
+          />
+          <div className="counter-actions">
             <button
-              onClick={() => setShowDetails(v => !v)}
-              className="details-button"
-              title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-              aria-expanded={showDetails}
-              aria-controls="vehicles-details"
+              onClick={refetch}
+              className="refresh-button"
+              title="Atualizar contagem"
+              aria-label="Atualizar contagem de veículos"
             >
-              {showDetails ? <LuMinus /> : <LuPlus />}
+              <LuRefreshCw />
             </button>
-          )}
+            {count > 0 && (
+              <button
+                onClick={() => setShowDetails(v => !v)}
+                className="details-button"
+                title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                aria-expanded={showDetails}
+                aria-controls="vehicles-details"
+              >
+                {showDetails ? <LuMinus /> : <LuPlus />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

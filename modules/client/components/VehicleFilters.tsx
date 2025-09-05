@@ -22,14 +22,13 @@ export default function VehicleFilters({
       <Input
         id="placa"
         name="placa"
-        label="Placa"
         type="text"
         placeholder="Buscar por placa"
         value={filterPlate}
         onChange={e => setFilterPlate(e.target.value)}
         aria-label="Buscar por placa"
       />
-      <select
+      {/*  <select
         value={filterStatus}
         onChange={e => setFilterStatus(e.target.value)}
         aria-label="Filtrar por status"
@@ -40,16 +39,17 @@ export default function VehicleFilters({
             {s}
           </option>
         ))}
-      </select>
-      {/*  <Select
+      </select> */}
+      <Select
         id="status"
         name="status"
-        label="Status"
         value={filterStatus}
         onChange={e => setFilterStatus(e.target.value)}
-        placeholder="Todos os status"
-        options={statusOptions.map(s => ({ value: s, label: s }))}
-      /> */}
+        options={[
+          { value: '', label: 'Todos os status' }, // opção padrão
+          ...statusOptions.map(s => ({ value: s, label: s })),
+        ]}
+      />
     </div>
   );
 }
