@@ -342,6 +342,12 @@ const ChecklistPage = () => {
                 steeringBox: form.steeringBox,
                 electricSteeringBox: form.electricSteeringBox,
                 exhaust: form.exhaust,
+                fluids: form.fluids,
+                airConditioning: form.airConditioning,
+                airConditioningCompressor: form.airConditioningCompressor,
+                airConditioningCleaning: form.airConditioningCleaning,
+                electrical: form.electrical,
+                battery: form.battery,
                 clutchNotes: form.clutchNotes,
                 sparkPlugsNotes: form.sparkPlugsNotes,
                 beltsNotes: form.beltsNotes,
@@ -356,6 +362,12 @@ const ChecklistPage = () => {
                 steeringBoxNotes: form.steeringBoxNotes,
                 electricSteeringBoxNotes: form.electricSteeringBoxNotes,
                 exhaustNotes: form.exhaustNotes,
+                fluidsNotes: form.fluidsNotes,
+                airConditioningNotes: form.airConditioningNotes,
+                airConditioningCompressorNotes: form.airConditioningCompressorNotes,
+                airConditioningCleaningNotes: form.airConditioningCleaningNotes,
+                electricalNotes: form.electricalNotes,
+                batteryNotes: form.batteryNotes,
               }}
               onChange={(name, value) => setField(name, value)}
             />

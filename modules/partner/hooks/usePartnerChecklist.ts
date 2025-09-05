@@ -36,6 +36,18 @@ export interface PartnerChecklistForm {
   electricSteeringBoxNotes: string;
   exhaust: 'ok' | 'attention' | 'critical'; // Sistema de Escape - Checar vazamento/sinistros/alinhamento
   exhaustNotes: string;
+  fluids: 'ok' | 'attention' | 'critical'; // Fluidos - Checar níveis
+  fluidsNotes: string;
+  airConditioning: 'ok' | 'attention' | 'critical'; // Ar Condicionado - Checar se está congelando
+  airConditioningNotes: string;
+  airConditioningCompressor: 'ok' | 'attention' | 'critical'; // Compressor Ar Condicionado - Checar se está atracando
+  airConditioningCompressorNotes: string;
+  airConditioningCleaning: 'ok' | 'attention' | 'critical'; // Limpeza Ar Condicionado - Checar fluxo de ar (filtro de cabine)
+  airConditioningCleaningNotes: string;
+  electrical: 'ok' | 'attention' | 'critical'; // Sistema Elétrico
+  electricalNotes: string;
+  battery: 'ok' | 'attention' | 'critical'; // Bateria
+  batteryNotes: string;
   observations: string;
 }
 
@@ -81,6 +93,18 @@ const initialForm: PartnerChecklistForm = {
   electricSteeringBoxNotes: '',
   exhaust: 'ok',
   exhaustNotes: '',
+  fluids: 'ok',
+  fluidsNotes: '',
+  airConditioning: 'ok',
+  airConditioningNotes: '',
+  airConditioningCompressor: 'ok',
+  airConditioningCompressorNotes: '',
+  airConditioningCleaning: 'ok',
+  airConditioningCleaningNotes: '',
+  electrical: 'ok',
+  electricalNotes: '',
+  battery: 'ok',
+  batteryNotes: '',
   observations: '',
 };
 

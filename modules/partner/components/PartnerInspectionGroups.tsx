@@ -20,6 +20,12 @@ interface InspectionItem {
     | 'steeringBox'
     | 'electricSteeringBox'
     | 'exhaust'
+    | 'fluids'
+    | 'airConditioning'
+    | 'airConditioningCompressor'
+    | 'airConditioningCleaning'
+    | 'electrical'
+    | 'battery'
   >;
   notesKey: keyof Pick<
     PartnerChecklistForm,
@@ -37,6 +43,12 @@ interface InspectionItem {
     | 'steeringBoxNotes'
     | 'electricSteeringBoxNotes'
     | 'exhaustNotes'
+    | 'fluidsNotes'
+    | 'airConditioningNotes'
+    | 'airConditioningCompressorNotes'
+    | 'airConditioningCleaningNotes'
+    | 'electricalNotes'
+    | 'batteryNotes'
   >;
   label: string;
   category: string;
@@ -60,6 +72,12 @@ interface Props {
     | 'steeringBox'
     | 'electricSteeringBox'
     | 'exhaust'
+    | 'fluids'
+    | 'airConditioning'
+    | 'airConditioningCompressor'
+    | 'airConditioningCleaning'
+    | 'electrical'
+    | 'battery'
     | 'clutchNotes'
     | 'sparkPlugsNotes'
     | 'beltsNotes'
@@ -74,6 +92,12 @@ interface Props {
     | 'steeringBoxNotes'
     | 'electricSteeringBoxNotes'
     | 'exhaustNotes'
+    | 'fluidsNotes'
+    | 'airConditioningNotes'
+    | 'airConditioningCompressorNotes'
+    | 'airConditioningCleaningNotes'
+    | 'electricalNotes'
+    | 'batteryNotes'
   >;
   onChange: (
     name: keyof Pick<
@@ -92,6 +116,12 @@ interface Props {
       | 'steeringBox'
       | 'electricSteeringBox'
       | 'exhaust'
+      | 'fluids'
+      | 'airConditioning'
+      | 'airConditioningCompressor'
+      | 'airConditioningCleaning'
+      | 'electrical'
+      | 'battery'
       | 'clutchNotes'
       | 'sparkPlugsNotes'
       | 'beltsNotes'
@@ -106,6 +136,12 @@ interface Props {
       | 'steeringBoxNotes'
       | 'electricSteeringBoxNotes'
       | 'exhaustNotes'
+      | 'fluidsNotes'
+      | 'airConditioningNotes'
+      | 'airConditioningCompressorNotes'
+      | 'airConditioningCleaningNotes'
+      | 'electricalNotes'
+      | 'batteryNotes'
     >,
     value: string | InspectionStatus
   ) => void;
@@ -154,6 +190,15 @@ const inspectionItems: InspectionItem[] = [
     label: 'Suspensão',
     category: 'MECÂNICA',
     description: 'Checar terminal/articulação/bucha/rolamento',
+  },
+
+  // FLUIDOS
+  {
+    key: 'fluids',
+    notesKey: 'fluidsNotes',
+    label: 'Fluidos',
+    category: 'FLUIDOS',
+    description: 'Verificar níveis',
   },
 
   // PNEU/FREIOS
@@ -214,6 +259,47 @@ const inspectionItems: InspectionItem[] = [
     label: 'Sistema de Escape',
     category: 'MOTOR',
     description: 'Checar vazamento/sinistros/alinhamento',
+  },
+
+  // AR CONDICIONADO
+  {
+    key: 'airConditioning',
+    notesKey: 'airConditioningNotes',
+    label: 'Ar Condicionado',
+    category: 'AR CONDICIONADO',
+    description: 'Checar se está congelando',
+  },
+  {
+    key: 'airConditioningCompressor',
+    notesKey: 'airConditioningCompressorNotes',
+    label: 'Compressor Ar Condicionado',
+    category: 'AR CONDICIONADO',
+    description: 'Checar se está atracando',
+  },
+  {
+    key: 'airConditioningCleaning',
+    notesKey: 'airConditioningCleaningNotes',
+    label: 'Limpeza Ar Condicionado',
+    category: 'AR CONDICIONADO',
+    description: 'Checar fluxo de ar (filtro de cabine)',
+  },
+
+  // ELÉTRICO
+  {
+    key: 'electrical',
+    notesKey: 'electricalNotes',
+    label: 'Sistema Elétrico',
+    category: 'ELÉTRICO',
+    description: 'Verificar funcionamento',
+  },
+
+  // BATERIA
+  {
+    key: 'battery',
+    notesKey: 'batteryNotes',
+    label: 'Bateria',
+    category: 'BATERIA',
+    description: 'Verificar carga e estado',
   },
 ];
 
