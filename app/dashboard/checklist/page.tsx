@@ -3,23 +3,13 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
-import PartnerServiceCategoryField from '@/modules/partner/components/PartnerServiceCategoryField';
+import PartnerInspectionGroups from '@/modules/partner/components/PartnerInspectionGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const {
-    form,
-    vehicle,
-    loading,
-    saving,
-    error,
-    success,
-    setField,
-    setServiceFlag,
-    setServiceNotes,
-    saveChecklist,
-  } = usePartnerChecklist();
+  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
+    usePartnerChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -316,8 +306,6 @@ const ChecklistPage = () => {
               />
             </div>
           </div>
-
-          {/* Services Section */}
           <div
             style={{
               background: '#ffffff',
@@ -335,64 +323,42 @@ const ChecklistPage = () => {
                 marginBottom: '20px',
               }}
             >
-              Serviços Necessários
+              Grupos de Inspeção
             </h2>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                gap: '20px',
+            <PartnerInspectionGroups
+              values={{
+                clutch: form.clutch,
+                sparkPlugs: form.sparkPlugs,
+                belts: form.belts,
+                radiator: form.radiator,
+                frontShocks: form.frontShocks,
+                rearShocks: form.rearShocks,
+                suspension: form.suspension,
+                tires: form.tires,
+                brakePads: form.brakePads,
+                brakeDiscs: form.brakeDiscs,
+                engine: form.engine,
+                steeringBox: form.steeringBox,
+                electricSteeringBox: form.electricSteeringBox,
+                exhaust: form.exhaust,
+                clutchNotes: form.clutchNotes,
+                sparkPlugsNotes: form.sparkPlugsNotes,
+                beltsNotes: form.beltsNotes,
+                radiatorNotes: form.radiatorNotes,
+                frontShocksNotes: form.frontShocksNotes,
+                rearShocksNotes: form.rearShocksNotes,
+                suspensionNotes: form.suspensionNotes,
+                tiresNotes: form.tiresNotes,
+                brakePadsNotes: form.brakePadsNotes,
+                brakeDiscsNotes: form.brakeDiscsNotes,
+                engineNotes: form.engineNotes,
+                steeringBoxNotes: form.steeringBoxNotes,
+                electricSteeringBoxNotes: form.electricSteeringBoxNotes,
+                exhaustNotes: form.exhaustNotes,
               }}
-            >
-              <PartnerServiceCategoryField
-                label="Mecânica"
-                checked={form.services.mechanics.required}
-                notes={form.services.mechanics.notes}
-                onToggle={checked => setServiceFlag('mechanics', checked)}
-                onNotesChange={notes => setServiceNotes('mechanics', notes)}
-              />
-
-              <PartnerServiceCategoryField
-                label="Funilaria/Pintura"
-                checked={form.services.bodyPaint.required}
-                notes={form.services.bodyPaint.notes}
-                onToggle={checked => setServiceFlag('bodyPaint', checked)}
-                onNotesChange={notes => setServiceNotes('bodyPaint', notes)}
-              />
-
-              <PartnerServiceCategoryField
-                label="Lavagem"
-                checked={form.services.washing.required}
-                notes={form.services.washing.notes}
-                onToggle={checked => setServiceFlag('washing', checked)}
-                onNotesChange={notes => setServiceNotes('washing', notes)}
-              />
-
-              <PartnerServiceCategoryField
-                label="Pneus"
-                checked={form.services.tires.required}
-                notes={form.services.tires.notes}
-                onToggle={checked => setServiceFlag('tires', checked)}
-                onNotesChange={notes => setServiceNotes('tires', notes)}
-              />
-
-              <PartnerServiceCategoryField
-                label="Loja"
-                checked={form.services.loja.required}
-                notes={form.services.loja.notes}
-                onToggle={checked => setServiceFlag('loja', checked)}
-                onNotesChange={notes => setServiceNotes('loja', notes)}
-              />
-
-              <PartnerServiceCategoryField
-                label="Pátio Atacado"
-                checked={form.services.patioAtacado.required}
-                notes={form.services.patioAtacado.notes}
-                onToggle={checked => setServiceFlag('patioAtacado', checked)}
-                onNotesChange={notes => setServiceNotes('patioAtacado', notes)}
-              />
-            </div>
+              onChange={(name, value) => setField(name, value)}
+            />
           </div>
 
           {/* Messages */}

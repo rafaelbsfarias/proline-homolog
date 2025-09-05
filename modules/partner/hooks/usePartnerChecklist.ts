@@ -7,15 +7,36 @@ export interface PartnerChecklistForm {
   date: string;
   odometer: string;
   fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
+  // Grupos de Inspeção baseados no CHECK LIST.xlsx
+  clutch: 'ok' | 'attention' | 'critical'; // Embreagem - Conjunto
+  clutchNotes: string;
+  sparkPlugs: 'ok' | 'attention' | 'critical'; // Vela de Ignição
+  sparkPlugsNotes: string;
+  belts: 'ok' | 'attention' | 'critical'; // Correia Dentada/Auxiliar
+  beltsNotes: string;
+  radiator: 'ok' | 'attention' | 'critical'; // Radiador (Arrefecimento) - Verificar vazamentos inferiores
+  radiatorNotes: string;
+  frontShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Dianteiro
+  frontShocksNotes: string;
+  rearShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Traseiro
+  rearShocksNotes: string;
+  suspension: 'ok' | 'attention' | 'critical'; // Suspensão
+  suspensionNotes: string;
+  tires: 'ok' | 'attention' | 'critical'; // Pneus
+  tiresNotes: string;
+  brakePads: 'ok' | 'attention' | 'critical'; // Pastilha de Freio
+  brakePadsNotes: string;
+  brakeDiscs: 'ok' | 'attention' | 'critical'; // Disco de Freio
+  brakeDiscsNotes: string;
+  engine: 'ok' | 'attention' | 'critical'; // Motor
+  engineNotes: string;
+  steeringBox: 'ok' | 'attention' | 'critical'; // Caixa de Direção
+  steeringBoxNotes: string;
+  electricSteeringBox: 'ok' | 'attention' | 'critical'; // Caixa Direção Elétrica - Verificar folga
+  electricSteeringBoxNotes: string;
+  exhaust: 'ok' | 'attention' | 'critical'; // Sistema de Escape - Checar vazamento/sinistros/alinhamento
+  exhaustNotes: string;
   observations: string;
-  services: {
-    mechanics: { required: boolean; notes: string };
-    bodyPaint: { required: boolean; notes: string };
-    washing: { required: boolean; notes: string };
-    tires: { required: boolean; notes: string };
-    loja: { required: boolean; notes: string };
-    patioAtacado: { required: boolean; notes: string };
-  };
 }
 
 export interface VehicleInfo {
@@ -31,15 +52,36 @@ const initialForm: PartnerChecklistForm = {
   date: new Date().toISOString().split('T')[0],
   odometer: '',
   fuelLevel: 'half',
+  // Grupos de Inspeção baseados no CHECK LIST.xlsx
+  clutch: 'ok',
+  clutchNotes: '',
+  sparkPlugs: 'ok',
+  sparkPlugsNotes: '',
+  belts: 'ok',
+  beltsNotes: '',
+  radiator: 'ok',
+  radiatorNotes: '',
+  frontShocks: 'ok',
+  frontShocksNotes: '',
+  rearShocks: 'ok',
+  rearShocksNotes: '',
+  suspension: 'ok',
+  suspensionNotes: '',
+  tires: 'ok',
+  tiresNotes: '',
+  brakePads: 'ok',
+  brakePadsNotes: '',
+  brakeDiscs: 'ok',
+  brakeDiscsNotes: '',
+  engine: 'ok',
+  engineNotes: '',
+  steeringBox: 'ok',
+  steeringBoxNotes: '',
+  electricSteeringBox: 'ok',
+  electricSteeringBoxNotes: '',
+  exhaust: 'ok',
+  exhaustNotes: '',
   observations: '',
-  services: {
-    mechanics: { required: false, notes: '' },
-    bodyPaint: { required: false, notes: '' },
-    washing: { required: false, notes: '' },
-    tires: { required: false, notes: '' },
-    loja: { required: false, notes: '' },
-    patioAtacado: { required: false, notes: '' },
-  },
 };
 
 export function usePartnerChecklist() {
@@ -76,35 +118,9 @@ export function usePartnerChecklist() {
 
   const setField = (
     field: keyof PartnerChecklistForm,
-    value: string | PartnerChecklistForm['services']
+    value: string | 'ok' | 'attention' | 'critical'
   ) => {
     setForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const setServiceFlag = (service: keyof PartnerChecklistForm['services'], required: boolean) => {
-    setForm(prev => ({
-      ...prev,
-      services: {
-        ...prev.services,
-        [service]: {
-          ...prev.services[service],
-          required,
-        },
-      },
-    }));
-  };
-
-  const setServiceNotes = (service: keyof PartnerChecklistForm['services'], notes: string) => {
-    setForm(prev => ({
-      ...prev,
-      services: {
-        ...prev.services,
-        [service]: {
-          ...prev.services[service],
-          notes,
-        },
-      },
-    }));
   };
 
   const saveChecklist = async () => {
@@ -155,8 +171,6 @@ export function usePartnerChecklist() {
     error,
     success,
     setField,
-    setServiceFlag,
-    setServiceNotes,
     saveChecklist,
     resetForm,
   };
