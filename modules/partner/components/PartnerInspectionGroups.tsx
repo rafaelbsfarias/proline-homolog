@@ -24,7 +24,6 @@ interface InspectionItem {
     | 'airConditioning'
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
-    | 'electricalActuation'
     | 'electricalActuationGlass'
     | 'electricalActuationMirror'
     | 'electricalActuationSocket'
@@ -58,7 +57,6 @@ interface InspectionItem {
     | 'airConditioningNotes'
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
-    | 'electricalActuationNotes'
     | 'electricalActuationGlassNotes'
     | 'electricalActuationMirrorNotes'
     | 'electricalActuationSocketNotes'
@@ -98,7 +96,6 @@ interface Props {
     | 'airConditioning'
     | 'airConditioningCompressor'
     | 'airConditioningCleaning'
-    | 'electricalActuation'
     | 'electricalActuationGlass'
     | 'electricalActuationMirror'
     | 'electricalActuationSocket'
@@ -129,7 +126,6 @@ interface Props {
     | 'airConditioningNotes'
     | 'airConditioningCompressorNotes'
     | 'airConditioningCleaningNotes'
-    | 'electricalActuationNotes'
     | 'electricalActuationGlassNotes'
     | 'electricalActuationMirrorNotes'
     | 'electricalActuationSocketNotes'
@@ -164,7 +160,6 @@ interface Props {
       | 'airConditioning'
       | 'airConditioningCompressor'
       | 'airConditioningCleaning'
-      | 'electricalActuation'
       | 'electricalActuationGlass'
       | 'electricalActuationMirror'
       | 'electricalActuationSocket'
@@ -195,7 +190,6 @@ interface Props {
       | 'airConditioningNotes'
       | 'airConditioningCompressorNotes'
       | 'airConditioningCleaningNotes'
-      | 'electricalActuationNotes'
       | 'electricalActuationGlassNotes'
       | 'electricalActuationMirrorNotes'
       | 'electricalActuationSocketNotes'
@@ -351,14 +345,6 @@ const inspectionItems: InspectionItem[] = [
   },
 
   // ELÉTRICA
-  {
-    key: 'electricalActuation',
-    notesKey: 'electricalActuationNotes',
-    label: 'Acionamento Elétrico',
-    category: 'ELÉTRICA',
-    description:
-      'Verificar o funcionamento de: VIDRO, RETROVISOR, TOMADA 12V, TRAVA, PORTA MALA, LIMPADOR, CHAVE, ALARME, LUZ INTERNA',
-  },
   {
     key: 'electricalActuationGlass',
     notesKey: 'electricalActuationGlassNotes',

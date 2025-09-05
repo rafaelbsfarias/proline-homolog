@@ -346,8 +346,6 @@ const ChecklistPage = () => {
                 airConditioning: form.airConditioning,
                 airConditioningCompressor: form.airConditioningCompressor,
                 airConditioningCleaning: form.airConditioningCleaning,
-                electricalActuation: form.electricalActuation,
-                electricalActuationNotes: form.electricalActuationNotes,
                 electricalActuationGlass: form.electricalActuationGlass,
                 electricalActuationGlassNotes: form.electricalActuationGlassNotes,
                 electricalActuationMirror: form.electricalActuationMirror,
