@@ -122,35 +122,33 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           <p>{count === 1 ? 'Veículo cadastrado' : 'Veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
-        <div className="counter-actions-wrapper">
-          <VehicleFilters
-            filterPlate={filterPlate}
-            setFilterPlate={setFilterPlate}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-            statusOptions={statusOptions}
-          />
-          <div className="counter-actions">
+        <VehicleFilters
+          filterPlate={filterPlate}
+          setFilterPlate={setFilterPlate}
+          filterStatus={filterStatus}
+          setFilterStatus={setFilterStatus}
+          statusOptions={statusOptions}
+        />
+        <div className="counter-actions">
+          <button
+            onClick={refetch}
+            className="refresh-button"
+            title="Atualizar contagem"
+            aria-label="Atualizar contagem de veículos"
+          >
+            <LuRefreshCw />
+          </button>
+          {count > 0 && (
             <button
-              onClick={refetch}
-              className="refresh-button"
-              title="Atualizar contagem"
-              aria-label="Atualizar contagem de veículos"
+              onClick={() => setShowDetails(v => !v)}
+              className="details-button"
+              title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+              aria-expanded={showDetails}
+              aria-controls="vehicles-details"
             >
-              <LuRefreshCw />
+              {showDetails ? <LuMinus /> : <LuPlus />}
             </button>
-            {count > 0 && (
-              <button
-                onClick={() => setShowDetails(v => !v)}
-                className="details-button"
-                title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-                aria-expanded={showDetails}
-                aria-controls="vehicles-details"
-              >
-                {showDetails ? <LuMinus /> : <LuPlus />}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
