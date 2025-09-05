@@ -1,5 +1,5 @@
 import React from 'react';
-import type { PartnerChecklistForm } from '../hooks/usePartnerChecklist';
+import type { PartnerChecklistForm } from '../../hooks/usePartnerChecklist';
 
 type InspectionStatus = 'ok' | 'attention' | 'critical';
 

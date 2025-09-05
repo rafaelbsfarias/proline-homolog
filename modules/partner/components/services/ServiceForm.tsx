@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ServiceData } from '../services/partnerClientService';
+import type { ServiceData } from '../../services/partnerClientService';
 import styles from './ServiceForm.module.css';
 
 interface ServiceFormProps {

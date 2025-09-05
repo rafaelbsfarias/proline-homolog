@@ -6,7 +6,7 @@ import {
   addService,
   importServicesFromCsv,
   type ServiceData,
-} from '../services/partnerClientService';
+} from '../../services/partnerClientService';
 import styles from './ServiceModal.module.css';
 
 interface ServiceModalProps {

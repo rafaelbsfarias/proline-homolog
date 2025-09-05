@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { PartnerService } from '@/modules/partner/hooks/usePartnerServices';
-import SearchInput from './SearchInput';
-import CategoryTree from './CategoryTree';
+import SearchInput from '../shared/SearchInput';
+import CategoryTree from '../categories/CategoryTree';
 
 interface ServicesSidebarProps {
   services: PartnerService[];

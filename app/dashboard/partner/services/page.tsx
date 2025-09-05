@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import ServicesLayout from '@/modules/partner/components/ServicesLayout';
-import ServicesContent from '@/modules/partner/components/ServicesContent';
-import EditServiceModal from '@/modules/partner/components/EditServiceModal';
+import ServicesLayout from '@/modules/partner/components/services/ServicesLayout';
+import ServicesContent from '@/modules/partner/components/services/ServicesContent';
+import EditServiceModal from '@/modules/partner/components/services/EditServiceModal';
 import { type PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 import { useEditServiceModal } from '@/modules/partner/hooks/useEditServiceModal';
 

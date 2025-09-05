@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import CounterCard from '@/modules/partner/components/CounterCard';
-import DataTable from '@/modules/partner/components/DataTable';
-import ActionButton from '@/modules/partner/components/ActionButton';
+import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
+import DataTable from '@/modules/partner/components/dashboard/DataTable';
+import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
-import ServiceModal from '@/modules/partner/components/ServiceModal';
-import ContractAcceptanceView from '@/modules/partner/components/ContractAcceptanceView';
+import ServiceModal from '@/modules/partner/components/services/ServiceModal';
+import ContractAcceptanceView from '@/modules/partner/components/contract/ContractAcceptanceView';
 import {
   usePartnerDashboard,
   type PendingQuote,

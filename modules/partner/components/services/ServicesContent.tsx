@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import DataTable from '@/modules/partner/components/DataTable';
+import DataTable from '@/modules/partner/components/dashboard/DataTable';
 import { PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 
 interface ServicesContentProps {

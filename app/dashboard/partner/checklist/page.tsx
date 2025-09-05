@@ -3,7 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
-import PartnerInspectionGroups from '@/modules/partner/components/PartnerInspectionGroups';
+import PartnerInspectionGroups from '@/modules/partner/components/checklist/PartnerInspectionGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const ChecklistPage = () => {
