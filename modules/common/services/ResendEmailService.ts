@@ -458,9 +458,10 @@ export class ResendEmailService implements EmailServiceInterface {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     if (!this.isEmailConfigured()) {
-      logger.error('RESEND_API_KEY não está configurada. O e-mail não será enviado.');
-      // Em um cenário de produção, você poderia lançar um erro ou logar em um serviço de monitoramento.
-      return;
+      const errorMessage = 'RESEND_API_KEY não está configurada. O e-mail não pode ser enviado.';
+      logger.error(errorMessage);
+      // Lança um erro para notificar o chamador sobre a falha.
+      throw new Error(errorMessage);
     }
 
     try {
