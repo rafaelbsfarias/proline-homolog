@@ -15,6 +15,18 @@
   width: 100%;
 }
 
+/* .inputWrapper select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #757575;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+} */
+
 .inputWrapper select {
   width: 100%;
   appearance: none;
@@ -25,6 +37,8 @@
   background: transparent;
   border: 1px solid #ccc;
   border-radius: 8px;
+
+  padding: 8px 36px 8px 12px;
 }
 
 .inputWrapper .icon {
