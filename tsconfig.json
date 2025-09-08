@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "types": ["cypress", "node", "mocha"],
+    "types": ["cypress", "node"],
     "plugins": [
       {
         "name": "next"
