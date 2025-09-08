@@ -71,11 +71,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     });
 
     // 2) Verificar existência de precificação (fee) antes de permitir propor data
-    // CORREÇÃO SIMPLIFICADA: Buscar qualquer registro válido para o cliente e endereço
+    // CORREÇÃO: restringir a busca ao endereço correto, evitando pegar coleção de outro endereço
     const { data: collections, error: collectionsErr } = await admin
       .from('vehicle_collections')
       .select('id, collection_fee_per_vehicle, status, collection_address')
       .eq('client_id', clientId)
+      .eq('collection_address', addressLabel)
       .in('status', ['requested', 'approved']);
 
     if (collectionsErr) {

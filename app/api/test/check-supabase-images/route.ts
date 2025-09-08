@@ -44,7 +44,6 @@ export const GET = async () => {
         fileCount: files?.length || 0,
         recentFiles:
           files?.slice(0, 5).map((f: any) => ({
-            // eslint-disable-line @typescript-eslint/no-explicit-any
             name: f.name,
             size: f.metadata?.size || 'unknown',
             created_at: f.created_at,
@@ -55,7 +54,6 @@ export const GET = async () => {
         recordCount: mediaRecords?.length || 0,
         recentRecords:
           mediaRecords?.slice(0, 5).map((r: any) => ({
-            // eslint-disable-line @typescript-eslint/no-explicit-any
             id: r.id,
             storage_path: r.storage_path,
             inspection_id: r.inspection_id,

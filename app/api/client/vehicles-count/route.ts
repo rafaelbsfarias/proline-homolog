@@ -8,8 +8,8 @@ import { ClientVehicleService } from '@/modules/client/services/ClientVehicleSer
 const logger: ILogger = getLogger('api:client:vehicles-count');
 const vehicleService = new ClientVehicleService();
 
-export const revalidate = 0;             // sem cache
-export const dynamic = 'force-dynamic';  // sempre dinâmico
+export const revalidate = 0; // sem cache
+export const dynamic = 'force-dynamic'; // sempre dinâmico
 
 export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
   const startedAt = Date.now();
@@ -17,9 +17,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
   // helper p/ incluir requestId em todos os logs
   const log = {
-    info: (msg: string, meta?: Record<string, unknown>) => logger.info(msg, { requestId, ...(meta || {}) }),
-    warn: (msg: string, meta?: Record<string, unknown>) => logger.warn(msg, { requestId, ...(meta || {}) }),
-    error: (msg: string, meta?: Record<string, unknown>) => logger.error(msg, { requestId, ...(meta || {}) }),
+    info: (msg: string, meta?: Record<string, unknown>) =>
+      logger.info(msg, { requestId, ...(meta || {}) }),
+    warn: (msg: string, meta?: Record<string, unknown>) =>
+      logger.warn(msg, { requestId, ...(meta || {}) }),
+    error: (msg: string, meta?: Record<string, unknown>) =>
+      logger.error(msg, { requestId, ...(meta || {}) }),
   };
 
   try {
@@ -68,7 +71,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     // 2) vehicles do cliente (FK: vehicles.client_id -> clients.profile_id)
     const { data: vehicles, error: vehErr } = await supabase
       .from('vehicles')
-      .select(`
+      .select(
+        `
         id,
         plate,
         brand,
@@ -81,8 +85,15 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         pickup_address_id,
         estimated_arrival_date,
         current_odometer,
-        fuel_level
-      `)
+        fuel_level,
+        addresses (
+          id,
+          street,
+          number,
+          city
+        )
+      `
+      )
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
 
@@ -99,7 +110,69 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const count = vehicles?.length ?? 0;
+    // 3) Buscar dados de precificação para veículos aguardando aprovação
+    const vehiclesWithFees = await Promise.all(
+      (vehicles || []).map(async (vehicle: any) => {
+        let collectionFee = null;
+
+        // Só buscar fee se o veículo estiver aguardando aprovação E tiver endereço
+        if (
+          vehicle.status === 'AGUARDANDO APROVAÇÃO DA COLETA' &&
+          vehicle.addresses &&
+          vehicle.pickup_address_id
+        ) {
+          try {
+            const addressLabel = `${vehicle.addresses.street}, ${vehicle.addresses.number} - ${vehicle.addresses.city}`;
+
+            log.info('vehicles-count:fetching-fee', {
+              vehicleId: vehicle.id,
+              status: vehicle.status,
+              addressLabel,
+              hasAddress: !!vehicle.addresses,
+              hasPickupAddressId: !!vehicle.pickup_address_id,
+            });
+
+            const { data: collectionData, error: collectionErr } = await supabase
+              .from('vehicle_collections')
+              .select('collection_fee_per_vehicle')
+              .eq('client_id', clientId)
+              .eq('collection_address', addressLabel)
+              .eq('status', 'requested')
+              .gt('collection_fee_per_vehicle', 0)
+              .order('updated_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (!collectionErr && collectionData) {
+              collectionFee = collectionData.collection_fee_per_vehicle;
+              log.info('vehicles-count:fee-found', {
+                vehicleId: vehicle.id,
+                fee: collectionFee,
+              });
+            } else {
+              log.warn('vehicles-count:fee-not-found', {
+                vehicleId: vehicle.id,
+                error: collectionErr?.message,
+                hasData: !!collectionData,
+              });
+            }
+          } catch (feeErr) {
+            log.warn('vehicles-count:fee-lookup-error', {
+              vehicleId: vehicle.id,
+              error: (feeErr as Error).message,
+            });
+          }
+        }
+
+        return {
+          ...vehicle,
+          collection_fee: collectionFee,
+          addresses: undefined, // Remove o objeto aninhado para manter compatibilidade
+        };
+      })
+    );
+
+    const count = vehiclesWithFees?.length ?? 0;
     const durationMs = Date.now() - startedAt;
 
     log.info('vehicles-count:success', {
@@ -110,7 +183,13 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     });
 
     return new Response(
-      JSON.stringify({ success: true, count, vehicles: vehicles ?? [], message: 'ok', requestId }),
+      JSON.stringify({
+        success: true,
+        count,
+        vehicles: vehiclesWithFees ?? [],
+        message: 'ok',
+        requestId,
+      }),
       {
         status: 200,
         headers: {

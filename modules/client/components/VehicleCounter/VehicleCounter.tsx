@@ -180,6 +180,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
                 key={vehicle.id}
                 vehicle={vehicle}
                 addresses={addresses as any}
+                collectionFee={vehicle.collection_fee ?? undefined}
                 onOpenDetails={v => {
                   setSelectedVehicle(v);
                   setShowModal(true);
