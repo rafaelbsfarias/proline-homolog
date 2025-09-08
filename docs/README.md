@@ -7,13 +7,31 @@ docs/
 ├── architecture/          # Documentação de arquitetura técnica
 ├── bugs/                 # Tracking de bugs e issues conhecidos
 ├── business-flows/       # Fluxos de negócio e processos
+├── components/           # Documentação de componentes React
+├── cypress/              # 🧪 Documentação completa do Cypress E2E
 ├── development/         # Documentação de desenvolvimento e refatoração
 ├── security/             # Documentação de segurança e auditorias
+├── CYPRESS.md            # 🧪 Atalho para documentação Cypress
 ├── DEVELOPMENT_INSTRUCTIONS.md  # Diretrizes de desenvolvimento
 └── indice_geral.md       # Índice completo da documentação
 ```
 
 ## Visão Geral por Categoria
+
+### 🧪 Cypress E2E Testing (`cypress/`)
+Documentação completa para configuração, uso e desenvolvimento de testes end-to-end com Cypress.
+
+**📚 Conteúdo:**
+- Guia de configuração completa
+- Exemplos práticos de testes
+- Templates para novos testes
+- Checklist de verificação
+- Troubleshooting e debugging
+
+**🚀 Acesso Rápido:**
+- [Página Inicial Cypress](./cypress/README.md)
+- [Guia Rápido (5 min)](./cypress/quick-start.md)
+- [Configuração Completa](./cypress/configuration-guide.md)
 
 ### 🏗️ Arquitetura (`architecture/`)
 Documentação técnica da arquitetura do sistema, componentes e decisões de design.
