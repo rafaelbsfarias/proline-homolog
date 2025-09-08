@@ -7,6 +7,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import { getLogger } from '@/modules/logger';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { translateFuelLevel, VEHICLE_CONSTANTS } from '@/app/constants/messages';
+import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 
 interface VehicleDetails {
@@ -400,7 +401,7 @@ const VehicleDetailsPage = () => {
                 }}
               >
                 <span style={{ fontWeight: 500 }}>Cadastrado em:</span>
-                <span>{formatDate(vehicle.created_at)}</span>
+                <span>{formatDateBR(vehicle.created_at)}</span>
               </div>
               <div
                 style={{
@@ -411,7 +412,7 @@ const VehicleDetailsPage = () => {
                 }}
               >
                 <span style={{ fontWeight: 500 }}>Previsão de Chegada:</span>
-                <span>{formatDate(vehicle.estimated_arrival_date)}</span>
+                <span>{formatDateBR(vehicle.estimated_arrival_date)}</span>
               </div>
             </div>
           </div>
@@ -441,7 +442,7 @@ const VehicleDetailsPage = () => {
                 <div>
                   <div style={{ fontWeight: 500 }}>Veículo Cadastrado</div>
                   <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(vehicle.created_at)}
+                    {formatDateBR(vehicle.created_at)}
                   </div>
                 </div>
               </div>
@@ -615,7 +616,7 @@ const VehicleDetailsPage = () => {
                       }}
                     />
                     <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
-                      {formatDate(media.created_at)}
+                      {formatDateBR(media.created_at)}
                     </div>
                   </div>
                 ))}

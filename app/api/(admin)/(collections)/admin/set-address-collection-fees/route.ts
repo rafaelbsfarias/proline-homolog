@@ -32,6 +32,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .from('addresses')
       .select('id, street, number, city')
       .in('id', addrIds);
+
     if (addrErr) {
       logger.error('addr-error', { error: addrErr.message });
       return NextResponse.json(
@@ -40,23 +41,40 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
+    type AddressRow = {
+      id: string;
+      street: string;
+      number: string;
+      city: string;
+    };
+
+    const addressMap = new Map<string, AddressRow>();
+    (addrs || []).forEach((addr: AddressRow) => {
+      addressMap.set(addr.id, addr);
+    });
+
     // 2) Montar upsert (client_id + collection_address) com fee + date
     const upsertPayload = fees.map(item => {
-      const a = (addrs || []).find((x: any) => x.id === item.addressId);
-      const addrLabel = formatAddressLabel(a);
+      const a = addressMap.get(item.addressId);
+      const addrLabel = a ? formatAddressLabel(a) : '';
       return {
         client_id: clientId,
         collection_address: addrLabel,
         collection_fee_per_vehicle: item.fee,
         collection_date: item.date ?? null,
-        status: 'requested', // permanece solicitado até o cliente aprovar
+        status: STATUS.REQUESTED, // permanece solicitado até o cliente aprovar
+        // Ensure we don't overwrite existing approved collections
+        ...(item.date ? {} : { collection_date: null }),
       };
     });
 
     const { data: rows, error: upErr } = await admin
       .from('vehicle_collections')
-      .upsert(upsertPayload, { onConflict: 'client_id,collection_address,collection_date' })
-      .select('id, collection_address');
+      .upsert(upsertPayload, {
+        onConflict: 'client_id,collection_address,collection_date',
+        ignoreDuplicates: false,
+      })
+      .select('id, collection_address, status');
 
     if (upErr) {
       logger.error('upsert-error', { error: upErr.message });
@@ -68,7 +86,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     // Mapa label -> collection_id retornado pelo upsert
     const labelToCollectionId = new Map<string, string>();
-    (rows || []).forEach((r: any) => labelToCollectionId.set(String(r.collection_address), r.id));
+    (rows || []).forEach((r: { id: string; collection_address: string; status: string }) =>
+      labelToCollectionId.set(String(r.collection_address), r.id)
+    );
 
     // 3) Atualizar veículos após precificação
     //    -> PREÇOS: setar 'AGUARDANDO APROVAÇÃO DA COLETA' para quem está em 'PONTO DE COLETA SELECIONADO'
@@ -76,7 +96,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     const eligible = (fees || []).filter(f => typeof f.fee === 'number');
     for (const f of eligible) {
       try {
-        const addr = (addrs || []).find((x: any) => x.id === f.addressId);
+        const addr = addressMap.get(f.addressId);
         if (!addr) continue;
         const addrLabel = formatAddressLabel(addr);
         const collId = labelToCollectionId.get(addrLabel) || null;
@@ -97,9 +117,10 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
             addressId: f.addressId,
           });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
+        const error = e as Error;
         logger.error('update-vehicles-status-exception', {
-          error: e?.message,
+          error: error?.message,
           clientId,
           addressId: f.addressId,
         });
@@ -107,8 +128,9 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     return NextResponse.json({ success: true, updated: upsertPayload.length });
-  } catch (e: any) {
-    logger.error('unhandled', { error: e?.message });
+  } catch (e: unknown) {
+    const error = e as Error;
+    logger.error('unhandled', { error: error?.message });
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

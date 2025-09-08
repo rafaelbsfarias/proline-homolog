@@ -39,6 +39,6 @@ yarn-error.log*
 .vscode/
 .idea/
 .vercel
-cypress/
+
 
 reports/

@@ -4,6 +4,7 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
 import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
+import { formatAddressLabel } from '@/modules/common/utils/address';
 
 const logger = getLogger('api:client:collection-accept-proposal');
 const collectionService = CollectionProposalService.getInstance();
@@ -55,13 +56,24 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     });
 
     if (addressResult.success && addressResult.address) {
-      await collectionService.updateCollectionStatus({
-        userId,
-        addressId,
-        adminClient: admin,
-        address: addressResult.address,
-        newStatus: STATUS.APPROVED,
-      });
+      // Only update collection status if it exists and is not already approved
+      const { error: findCollectionErr } = await admin
+        .from('vehicle_collections')
+        .select('id, status')
+        .eq('client_id', userId)
+        .eq('collection_address', formatAddressLabel(addressResult.address))
+        .eq('status', STATUS.REQUESTED)
+        .maybeSingle();
+
+      if (!findCollectionErr) {
+        await collectionService.updateCollectionStatus({
+          userId,
+          addressId,
+          adminClient: admin,
+          address: addressResult.address,
+          newStatus: STATUS.APPROVED,
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

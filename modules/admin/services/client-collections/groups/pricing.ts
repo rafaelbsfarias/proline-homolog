@@ -140,7 +140,9 @@ export async function buildPricingRequests(
       vehicle_count: byAddress.get(aid) || 0,
       collection_fee: fee,
       collection_date: clientDate || null,
-      proposed_date: proposedByAddr.get(lbl) || null,
+      // Se já existe data escolhida pelo cliente para o pedido atual,
+      // não expomos uma proposed_date antiga para não mascarar a informação.
+      proposed_date: clientDate ? null : proposedByAddr.get(lbl) || null,
     };
     try {
       logger.debug('pricing_row', {
