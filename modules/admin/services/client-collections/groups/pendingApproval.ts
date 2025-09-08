@@ -51,9 +51,9 @@ export async function buildPendingApprovalGroups(
     if (labels2.length) {
       const { data: feeRows2 } = await admin
         .from('vehicle_collections')
-        .select('collection_address, collection_fee_per_vehicle, collection_date')
+        .select('collection_address, collection_fee_per_vehicle, collection_date, status')
         .eq('client_id', clientId)
-        .eq('status', 'requested')
+        .in('status', ['requested', 'approved'])
         .in('collection_address', labels2);
       (feeRows2 || []).forEach((r: any) => {
         const addr = r?.collection_address;
