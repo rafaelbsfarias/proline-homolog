@@ -89,7 +89,7 @@ const ClientDashboard: React.FC = () => {
           />
         ) : (
           <main className="dashboard-main">
-            <h1 className="dashboard-title">Painel do Cliente</h1>
+            {/*   <h1 className="dashboard-title">Painel do Cliente</h1> */}
             <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
             <div className="dashboard-actions">

@@ -3,6 +3,7 @@ import type { Vehicle, AddressItem } from '@/modules/client/types';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR } from '@/modules/client/utils/date';
 import { formatAddressLabel } from '@/modules/common/utils/address';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 interface Props {
   vehicle: Vehicle;
@@ -68,7 +69,7 @@ export default function VehicleItemRow({
 
   return (
     <div
-      className="vehicle-item vehicle-item--clickable"
+      className="vehicle-item"
       onClick={() => onOpenDetails(vehicle)}
       role="button"
       tabIndex={0}
@@ -126,7 +127,7 @@ export default function VehicleItemRow({
                 </button>
               </>
             )}
-          <button
+          {/*  <button
             className="save-button"
             onClick={() => onOpenRowModal(vehicle)}
             disabled={!canClientModify(vehicle.status)}
@@ -137,7 +138,19 @@ export default function VehicleItemRow({
             }
           >
             Editar ponto de coleta
-          </button>
+          </button> */}
+          <SolidButton
+            className="buttonVehicleCustom"
+            onClick={() => onOpenRowModal(vehicle)}
+            disabled={!canClientModify(vehicle.status)}
+            title={
+              !canClientModify(vehicle.status)
+                ? 'Não editável neste status'
+                : 'Editar ponto de coleta'
+            }
+          >
+            Editar ponto de coleta
+          </SolidButton>
         </div>
       </div>
     </div>

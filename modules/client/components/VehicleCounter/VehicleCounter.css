@@ -100,6 +100,8 @@
 .refresh-button:hover,
 .details-button:hover {
   background: #bdc6d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .vehicles-details {
@@ -146,9 +148,6 @@
   margin-top: 8px;
 }
 
-.vehicle-item--clickable {
-  cursor: pointer;
-}
 .vehicle-extra-line {
   grid-column: 1 / -1;
   font-size: 0.85rem;
@@ -157,15 +156,6 @@
 .vehicle-row-actions {
   grid-column: 1 / -1;
 }
-
-/* .save-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: white;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-} */
 
 .vehicles-details h4 {
   margin: 0 0 15px 0;
@@ -179,11 +169,27 @@
   gap: 12px;
 }
 
+.header {
+  color: #333;
+  font-weight: 700;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
 .vehicle-item {
-  background: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.vehicle-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: #002e4c;
 }
 
 .vehicle-info {
@@ -294,4 +300,20 @@
 
 .reject-button:hover {
   background-color: #da190b;
+}
+
+.buttonVehicleCustom {
+  background: #d9e0e7;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buttonVehicleCustom:hover:not(:disabled) {
+  background-color: #bdc6d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }

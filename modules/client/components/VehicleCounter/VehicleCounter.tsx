@@ -79,17 +79,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
 
-  // if (loading) {
-  //   return (
-  //     <div className="vehicle-counter loading" role="status" aria-live="polite">
-  //       <div className="counter-content">
-  //         <h3>Carregando...</h3>
-  //         <p>Contando seus veículos</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   useEffect(() => {
     onLoadingChange?.(loading);
   }, [loading, onLoadingChange]);
@@ -166,7 +155,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             />
           )}
 
-          <h4>Detalhes dos Veículos:</h4>
+          <h4 className="header">Detalhes dos Veículos:</h4>
 
           {count > 0 && vehicles.length === 0 && (
             <p className="vehicles-hint">
