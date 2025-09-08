@@ -127,18 +127,6 @@ export default function VehicleItemRow({
                 </button>
               </>
             )}
-          {/*  <button
-            className="save-button"
-            onClick={() => onOpenRowModal(vehicle)}
-            disabled={!canClientModify(vehicle.status)}
-            title={
-              !canClientModify(vehicle.status)
-                ? 'Não editável neste status'
-                : 'Editar ponto de coleta'
-            }
-          >
-            Editar ponto de coleta
-          </button> */}
           <SolidButton
             className="buttonVehicleCustom"
             onClick={() => onOpenRowModal(vehicle)}
