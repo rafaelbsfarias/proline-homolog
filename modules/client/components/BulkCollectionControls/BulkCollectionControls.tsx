@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Method, AddressItem } from '@/modules/client/types';
+import style from './BulkCollectionControls.module.css';
 import Radio from '@/modules/common/components/Radio/Radio';
-import styles from './BulkCollectionControls.module.css';
 
 interface Props {
   method: Method;
@@ -23,8 +23,8 @@ export default function BulkCollectionControls({
   addresses,
 }: Props) {
   return (
-    <div className={styles.container} aria-label="Opções de coleta em lote">
-      <h4 className={styles.header}>Opções de coleta em lote</h4>
+    <div className="collection-controls" aria-label="Opções de coleta em lote">
+      <h4 className={style.header}>Opções de coleta em lote</h4>
       <div className="row">
         <Radio
           name="bulkMethod"

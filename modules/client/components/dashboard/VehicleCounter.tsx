@@ -8,7 +8,7 @@ import RowCollectionModal from '../RowCollectionModal';
 import BulkCollectionModal from '../BulkCollectionModal';
 import StatusChips from '../StatusChips';
 import VehicleFilters from '../VehicleFilters';
-import BulkCollectionControls from '../BulkCollectionControls';
+import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
