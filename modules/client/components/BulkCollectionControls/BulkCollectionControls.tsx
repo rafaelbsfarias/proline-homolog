@@ -1,7 +1,8 @@
 import React from 'react';
 import type { Method, AddressItem } from '@/modules/client/types';
-import style from './BulkCollectionControls.module.css';
+import styles from './BulkCollectionControls.module.css';
 import Radio from '@/modules/common/components/Radio/Radio';
+import Select from '@/modules/common/components/Select/Select';
 
 interface Props {
   method: Method;
@@ -22,9 +23,24 @@ export default function BulkCollectionControls({
   onOpenModal,
   addresses,
 }: Props) {
+  const addressOptions = (addresses || [])
+    .filter(a => a.is_collect_point)
+    .map(a => ({
+      value: a.id,
+      label: `${a.street}${a.number ? `, ${a.number}` : ''}${a.city ? ` - ${a.city}` : ''}`,
+    }));
+
+  // Se não houver opções, exibe um placeholder
+  if (addressOptions.length === 0) {
+    addressOptions.push({
+      value: '',
+      label: 'Nenhum ponto de coleta disponível',
+    });
+  }
+
   return (
     <div className="collection-controls" aria-label="Opções de coleta em lote">
-      <h4 className={style.header}>Opções de coleta em lote</h4>
+      <h4 className={styles.header}>Opções de coleta em lote</h4>
       <div className="row">
         <Radio
           name="bulkMethod"
@@ -42,17 +58,15 @@ export default function BulkCollectionControls({
         />
       </div>
       {method === 'collect_point' ? (
-        <div className="row">
-          <select value={addressId} onChange={e => setAddressId(e.target.value)}>
-            <option value="">Selecione um ponto de coleta</option>
-            {(addresses || [])
-              .filter(a => a.is_collect_point)
-              .map(a => (
-                <option key={a.id} value={a.id}>
-                  {a.street} {a.number ? `, ${a.number}` : ''} {a.city ? `- ${a.city}` : ''}
-                </option>
-              ))}
-          </select>
+        <div className={styles.row}>
+          <Select
+            id="collect-point-address"
+            name="collect-point-address"
+            placeholder="Selecione um ponto de coleta"
+            value={addressId}
+            onChange={e => setAddressId(e.target.value)}
+            options={addressOptions}
+          />
           <button
             className="save-button"
             disabled={!addressId || saving}
@@ -62,7 +76,7 @@ export default function BulkCollectionControls({
           </button>
         </div>
       ) : (
-        <div className="row">
+        <div className={styles.row}>
           <button
             className="save-button"
             disabled={saving}
