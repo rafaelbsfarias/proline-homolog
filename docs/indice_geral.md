@@ -19,6 +19,7 @@
 - [Fluxo de Aprovação](business-flows/fluxo_aprovacao.md) - Fluxo de aprovação de coleta
 - [Fluxo de Mudança de Data](business-flows/fluxo_mudanca_data.md) - Fluxo de mudança de data
 - [Fluxo de Rejeição](business-flows/fluxo_rejeicao.md) - Fluxo de rejeição de coleta
+- [Fluxo Orçamentário e Execução](business-flows/fluxo_orcamentario.md) - Fluxo completo de orçamento e execução de serviços
 
 ### 2.2 Fluxos de Status
 - [Fluxo de Status dos Veículos](business-flows/fluxo_status_veiculos.md) - Fluxos de status dos veículos

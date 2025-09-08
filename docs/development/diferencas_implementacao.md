@@ -25,7 +25,7 @@ Este documento identifica as diferenças entre o que está documentado e o que f
 6. **AGUARDANDO CHEGADA DO VEÍCULO**
 7. **CHEGADA CONFIRMADA**
 8. **EM ANÁLISE**
-9. **ANÁLISE FINALIZADA**
+9. **Análise Finalizada**
 
 ## 3. Componentes do Cliente
 

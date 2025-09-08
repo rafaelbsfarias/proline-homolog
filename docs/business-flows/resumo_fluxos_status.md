@@ -22,7 +22,7 @@ Os veículos transitam por 9 estados principais:
 6. **AGUARDANDO ENTREGA DO VEÍCULO**
 7. **ENTREGA CONFIRMADA**
 8. **EM ANÁLISE**
-9. **ANÁLISE FINALIZADA**
+9. **Análise Finalizada**
 
 ## 4. Fluxos Principais
 
@@ -50,7 +50,7 @@ O cliente pode optar por:
 1. Cliente confirma ida ao pátio → Status: **AGUARDANDO CHEGADA DO VEÍCULO**
 2. Especialista confirma chegada → Status: **CHEGADA CONFIRMADA**
 3. Veículo entra em análise → Status: **EM ANÁLISE**
-4. Análise finalizada → Status: **ANÁLISE FINALIZADA**
+4. Análise finalizada → Status: **Análise Finalizada**
 
 ## 5. Fluxos Alternativos
 

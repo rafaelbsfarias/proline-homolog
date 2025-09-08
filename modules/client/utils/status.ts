@@ -14,12 +14,14 @@ export function statusLabel(status?: string): string {
   if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 'Aguardando chegada do veículo';
   if (s === 'CHEGADA CONFIRMADA') return 'Chegada confirmada';
   if (s === 'EM ANÁLISE') return 'Em análise';
-  if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 'Análise finalizada';
+  if (s === 'ANÁLISE FINALIZADA') return 'Análise finalizada';
   return raw;
 }
 
 export function statusOrder(statusRaw: string): number {
-  const s = String(statusRaw || '').toUpperCase().trim();
+  const s = String(statusRaw || '')
+    .toUpperCase()
+    .trim();
   if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') return 1;
   if (s === 'AGUARDANDO CHEGADA DO CLIENTE') return 2;
   if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 2;
@@ -28,7 +30,7 @@ export function statusOrder(statusRaw: string): number {
   if (s === 'AGUARDANDO COLETA') return 2;
   if (s === 'CHEGADA CONFIRMADA') return 3;
   if (s === 'EM ANÁLISE') return 4;
-  if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 5;
+  if (s === 'ANÁLISE FINALIZADA') return 5;
   return 99;
 }
 

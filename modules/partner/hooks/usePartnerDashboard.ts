@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { getLogger } from '@/modules/logger';
 
 // --- Tipos de Dados ---
 export interface PendingQuote {
@@ -9,6 +10,15 @@ export interface PendingQuote {
   client_name: string;
   service_description: string;
   date: string;
+  status: 'pending_admin_approval' | 'pending_client_approval' | 'approved' | 'rejected';
+  total_value?: number;
+}
+
+export interface BudgetCounters {
+  total: number;
+  pending: number; // pending_admin + pending_client
+  approved: number;
+  rejected: number;
 }
 
 export interface InProgressService {
@@ -26,6 +36,7 @@ export interface PartnerDashboardData {
   contractSignedAt: string | null;
   pendingQuotesCount: number;
   inProgressServicesCount: number;
+  budgetCounters: BudgetCounters;
   pendingQuotes: PendingQuote[];
   inProgressServices: InProgressService[];
 }
@@ -40,11 +51,18 @@ export function usePartnerDashboard() {
     contractSignedAt: null,
     pendingQuotesCount: 0,
     inProgressServicesCount: 0,
+    budgetCounters: {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+    },
     pendingQuotes: [],
     inProgressServices: [],
   });
 
   const { authenticatedFetch } = useAuthenticatedFetch();
+  const logger = getLogger('partner:usePartnerDashboard');
 
   const fetchDashboardData = useCallback(async () => {
     setDashboardData(prev => ({ ...prev, loading: true }));
@@ -79,7 +97,11 @@ export function usePartnerDashboard() {
 
       const { data: profile } = profileResult;
       const { data: acceptance } = acceptanceResult;
-      const apiData = dashboardResult.data as any; // Cast temporário
+      const apiData = dashboardResult.data as {
+        pending_quotes?: { count: number; items: PendingQuote[] };
+        in_progress_services?: { count: number; items: InProgressService[] };
+        budget_counters?: BudgetCounters;
+      };
 
       setDashboardData({
         loading: false,
@@ -91,9 +113,15 @@ export function usePartnerDashboard() {
         pendingQuotes: apiData?.pending_quotes?.items || [],
         inProgressServicesCount: apiData?.in_progress_services?.count || 0,
         inProgressServices: apiData?.in_progress_services?.items || [],
+        budgetCounters: apiData?.budget_counters || {
+          total: 0,
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+        },
       });
     } catch (error) {
-      console.error('Falha ao buscar dados do dashboard:', error);
+      logger.error('Falha ao buscar dados do dashboard:', error);
       setDashboardData(prev => ({ ...prev, loading: false })); // Garante que o loading termine em caso de erro
     }
   }, [authenticatedFetch]);

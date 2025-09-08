@@ -2,18 +2,25 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import CounterCard from '@/modules/partner/components/CounterCard';
-import DataTable from '@/modules/partner/components/DataTable';
-import ActionButton from '@/modules/partner/components/ActionButton';
+import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
+import DataTable from '@/modules/partner/components/dashboard/DataTable';
+import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
-import ServiceModal from '@/modules/partner/components/ServiceModal';
-import ContractAcceptanceView from '@/modules/partner/components/ContractAcceptanceView';
+import ServiceModal from '@/modules/partner/components/services/ServiceModal';
+import ContractAcceptanceView from '@/modules/partner/components/contract/ContractAcceptanceView';
 import {
   usePartnerDashboard,
   type PendingQuote,
   type InProgressService,
 } from '@/modules/partner/hooks/usePartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+
+// Tipo derivado para exibição na tabela
+type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'> & {
+  status: string;
+  total_value: string;
+  date: string;
+};
 
 const PartnerDashboard = () => {
   const router = useRouter();
@@ -29,6 +36,7 @@ const PartnerDashboard = () => {
     contractSignedAt,
     pendingQuotesCount,
     inProgressServicesCount,
+    budgetCounters,
     pendingQuotes,
     inProgressServices,
     reloadData,
@@ -58,10 +66,58 @@ const PartnerDashboard = () => {
     setIsAcceptingContract(false);
   }
 
+  const formatQuoteStatus = (status: string) => {
+    const statusMap = {
+      pending_admin_approval: 'Aguardando Admin',
+      pending_client_approval: 'Aguardando Cliente',
+      approved: 'Aprovado',
+      rejected: 'Rejeitado',
+    };
+    return statusMap[status as keyof typeof statusMap] || status;
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR');
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  const formatCurrency = (value?: number) => {
+    if (!value) return 'N/A';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  const handleEditQuote = () => {
+    // Implementar lógica para editar orçamento
+  };
+
+  const handleDeleteQuote = () => {
+    // Implementar lógica para excluir orçamento
+  };
+
+  const handleChecklist = (quote: PendingQuoteDisplay) => {
+    // Navegar para a página de checklist do veículo
+    router.push(`/dashboard/partner/checklist?quoteId=${quote.id}`);
+  };
+
+  const handleEditService = () => {
+    // Implementar lógica para editar serviço
+  };
+
+  const handleDeleteService = () => {
+    // Implementar lógica para excluir serviço
+  };
+
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
     { key: 'client_name', header: 'Cliente' },
     { key: 'service_description', header: 'Serviço' },
+    { key: 'status', header: 'Status' },
+    { key: 'total_value', header: 'Valor' },
     { key: 'date', header: 'Data' },
   ];
 
@@ -101,7 +157,7 @@ const PartnerDashboard = () => {
           >
             <p style={{ color: '#666', fontSize: '1.15rem' }}>Bem-vindo, {userName}!</p>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <ActionButton onClick={() => router.push('/dashboard/services')}>
+              <ActionButton onClick={() => router.push('/dashboard/partner/services')}>
                 Serviços Cadastrados
               </ActionButton>
               <ActionButton onClick={() => setShowAddServiceModal(true)}>
@@ -115,11 +171,83 @@ const PartnerDashboard = () => {
             <CounterCard title="Serviços em Andamento" count={inProgressServicesCount} />
           </div>
 
-          <DataTable
+          {/* Contadores de Orçamentos */}
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, color: '#333' }}>
+              Orçamentos
+            </h2>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#f39c12', marginBottom: 4 }}
+                >
+                  {budgetCounters.pending}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Pendentes</div>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#27ae60', marginBottom: 4 }}
+                >
+                  {budgetCounters.approved}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Aprovados</div>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#e74c3c', marginBottom: 4 }}
+                >
+                  {budgetCounters.rejected}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Rejeitados</div>
+              </div>
+            </div>
+          </div>
+
+          <DataTable<PendingQuoteDisplay>
             title="Solicitações de Orçamentos Pendentes"
-            data={pendingQuotes}
+            data={pendingQuotes.map(quote => ({
+              ...quote,
+              status: formatQuoteStatus(quote.status),
+              total_value: formatCurrency(quote.total_value),
+              date: formatDate(quote.date),
+            }))}
             columns={pendingQuotesColumns}
             emptyMessage="Nenhuma solicitação de orçamento pendente."
+            showActions={true}
+            onEdit={handleEditQuote}
+            onDelete={handleDeleteQuote}
+            onChecklist={handleChecklist}
           />
 
           <DataTable
@@ -127,6 +255,9 @@ const PartnerDashboard = () => {
             data={inProgressServices}
             columns={inProgressServicesColumns}
             emptyMessage="Nenhum serviço em andamento."
+            showActions={true}
+            onEdit={handleEditService}
+            onDelete={handleDeleteService}
           />
           <ServiceModal
             isOpen={showAddServiceModal}

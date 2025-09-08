@@ -27,7 +27,7 @@
     "qa:fix": "npm run lint && npm run format && npm run test:coverage",
     "qa:full": "npm run qa && npm run jscpd && npm run test:e2e",
     "validate": "npm run build && npm run qa:full",
-    "postbuild": "node scripts/fix-routes-manifest.js"
+    "postbuild": "node scripts/maintenance/fix-routes-manifest.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

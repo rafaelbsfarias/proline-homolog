@@ -160,7 +160,7 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
         toInsert.push({ inspection_id: inspectionId, category, required, notes: notes || null });
     };
     pushService('mechanics', 'mechanics');
-    pushService('bodyPaint', 'bodyPaint');
+    pushService('bodyPaint', 'body_paint');
     pushService('washing', 'washing');
     pushService('tires', 'tires');
     pushService('loja', 'loja');
