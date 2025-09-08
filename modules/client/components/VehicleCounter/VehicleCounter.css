@@ -126,7 +126,7 @@
 .collection-controls label {
   opacity: 0.9;
 }
-.collection-controls select,
+/* .collection-controls select,
 .collection-controls input[type='date'],
 .collection-controls button {
   background: rgba(33, 51, 63, 0.58);
@@ -135,7 +135,7 @@
   border-radius: 6px;
   padding: 6px 10px;
 }
-
+ */
 /* Campo de data com dd/mm/aaaa e ícone no modo em lote */
 /* removidos estilos de campo custom de data em lote para voltar ao input nativo */
 
@@ -158,14 +158,14 @@
   grid-column: 1 / -1;
 }
 
-.save-button {
+/* .save-button {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.25);
   color: white;
   border-radius: 6px;
   padding: 6px 10px;
   cursor: pointer;
-}
+} */
 
 .vehicles-details h4 {
   margin: 0 0 15px 0;

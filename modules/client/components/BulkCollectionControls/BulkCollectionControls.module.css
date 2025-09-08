@@ -7,7 +7,7 @@
 } */
 
 .header {
-  color: #002e4c;
+  color: #333;
   font-weight: 700;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
@@ -19,4 +19,38 @@
   display: flex;
   gap: 1rem;
   align-items: center;
+}
+
+.row select,
+.row .select-wrapper {
+  /* ou a classe interna do seu Select */
+  height: 40px; /* mesmo tamanho do botão */
+  display: flex;
+  align-items: center;
+}
+
+.solidButtonCustom {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: #002e4c;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.solidButtonCustom:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.solidButtonCustom:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }

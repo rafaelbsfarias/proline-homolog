@@ -3,6 +3,7 @@ import type { Method, AddressItem } from '@/modules/client/types';
 import styles from './BulkCollectionControls.module.css';
 import Radio from '@/modules/common/components/Radio/Radio';
 import Select from '@/modules/common/components/Select/Select';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 interface Props {
   method: Method;
@@ -67,23 +68,23 @@ export default function BulkCollectionControls({
             onChange={e => setAddressId(e.target.value)}
             options={addressOptions}
           />
-          <button
-            className="save-button"
+          <SolidButton
+            className={styles.solidButtonCustom}
             disabled={!addressId || saving}
             onClick={() => onOpenModal('collect_point')}
           >
             Definir ponto de coleta em lote
-          </button>
+          </SolidButton>
         </div>
       ) : (
         <div className={styles.row}>
-          <button
-            className="save-button"
+          <SolidButton
+            className={styles.solidButtonCustom}
             disabled={saving}
             onClick={() => onOpenModal('bring_to_yard')}
           >
             Levar ao pátio em lote
-          </button>
+          </SolidButton>
         </div>
       )}
     </div>
