@@ -13,14 +13,34 @@ interface Props {
   onOpenRowModal: (vehicle: Vehicle) => void;
 }
 
-export default function VehicleItemRow({
-  vehicle,
-  addresses,
-  collectionFee,
-  onOpenDetails,
-  onOpenRowModal,
-}: Props) {
+function getDateStatusClass(status: string, dateStr?: string) {
+  if (!dateStr) return '';
+
+  const today = new Date();
+  const targetDate = new Date(dateStr);
+  const diffDays = Math.floor((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (status === 'AGUARDANDO CHEGADA DO VEÍCULO' || status === 'AGUARDANDO COLETA') {
+    if (diffDays < 0) return 'status-expired'; // ultrapassou data
+    if (diffDays <= 5) return 'status-near-expiry'; // até 5 dias antes
+    return '';
+  }
+  return '';
+}
+
+export default function VehicleItemRow(props: Props) {
+  const { vehicle, addresses, collectionFee, onOpenDetails, onOpenRowModal } = props;
+
   const sClass = sanitizeStatus(vehicle.status);
+  const statusUpper = (vehicle.status || '').toUpperCase();
+
+  // Obter a classe para cor e borda baseada na data e status
+  const dateStatusClass =
+    statusUpper === 'AGUARDANDO CHEGADA DO VEÍCULO'
+      ? getDateStatusClass(statusUpper, vehicle.estimated_arrival_date ?? undefined)
+      : statusUpper === 'AGUARDANDO COLETA'
+        ? getDateStatusClass(statusUpper, vehicle.estimated_arrival_date ?? undefined)
+        : '';
 
   const extraLine = (() => {
     const s = String(vehicle.status || '').toUpperCase();
@@ -37,7 +57,7 @@ export default function VehicleItemRow({
     if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') {
       const label = formatDateBR(vehicle.estimated_arrival_date || '');
       return (
-        <span>
+        <span className={`date-label ${dateStatusClass}`}>
           Previsão de chegada: <b>{label}</b>
         </span>
       );
@@ -45,10 +65,12 @@ export default function VehicleItemRow({
     const selId = vehicle.pickup_address_id || '';
     const addr = addresses.find(a => a.id === selId);
     const label = addr ? formatAddressLabel(addr) : '';
+    const labelDate = formatDateBR(vehicle.estimated_arrival_date || '');
     if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') {
       return (
         <span>
-          Ponto de coleta selecionado: <b>{label || 'Nenhum ponto selecionado'}</b>
+          Ponto de coleta selecionado: <b>{label || 'Nenhum ponto selecionado'}</b> -{' '}
+          <b className={`date-label ${dateStatusClass}`}>{labelDate}</b>
         </span>
       );
     }
@@ -69,7 +91,7 @@ export default function VehicleItemRow({
 
   return (
     <div
-      className="vehicle-item"
+      className={`vehicle-item ${dateStatusClass}`}
       onClick={() => onOpenDetails(vehicle)}
       role="button"
       tabIndex={0}

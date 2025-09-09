@@ -69,6 +69,12 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
     }
   }, [filterPlate, filterStatus]);
 
+  useEffect(() => {
+    if (onLoadingChange) {
+      onLoadingChange(loading);
+    }
+  }, [loading, onLoadingChange]);
+
   if (error) {
     return (
       <div className="vehicle-counter error">
@@ -183,7 +189,28 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             setSelectedVehicle(null);
           }}
           vehicle={
-            selectedVehicle ? { ...selectedVehicle, status: selectedVehicle.status ?? '' } : null
+            selectedVehicle
+              ? {
+                  id: selectedVehicle.id,
+                  plate: selectedVehicle.plate,
+                  brand: selectedVehicle.brand,
+                  model: selectedVehicle.model,
+                  year: selectedVehicle.year,
+                  color: selectedVehicle.color,
+                  status: selectedVehicle.status ?? '',
+                  created_at: selectedVehicle.created_at,
+                  fipe_value: selectedVehicle.fipe_value,
+                  client_name: undefined,
+                  analyst: undefined,
+                  arrival_forecast: undefined,
+                  current_km: undefined,
+                  params: undefined,
+                  notes: undefined,
+                  estimated_arrival_date: selectedVehicle.estimated_arrival_date,
+                  current_odometer: selectedVehicle.current_odometer,
+                  fuel_level: selectedVehicle.fuel_level,
+                }
+              : null
           }
         />
       )}

@@ -186,6 +186,24 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.vehicle-item.status-near-expiry {
+  border-color: #ff9800;
+}
+
+.vehicle-item.status-expired {
+  border-color: #f44336;
+}
+
+.date-label.status-expired {
+  color: #f44336;
+  font-weight: bold;
+}
+
+.date-label.status-near-expiry {
+  color: #ff9800;
+  font-weight: bold;
+}
+
 .vehicle-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
