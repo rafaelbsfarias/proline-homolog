@@ -15,7 +15,8 @@
 }
 
 .solidButton:disabled {
-  background: #ccc;
+  background: #d3d3d3;
+  color: #f5f3f4;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;

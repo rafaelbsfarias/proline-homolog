@@ -15,12 +15,13 @@ import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
-import VehicleItemRow from '../VehicleItemRow';
+import VehicleItemRow from './VehicleItemRow';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import { LuRefreshCw } from 'react-icons/lu';
 import { LuMinus } from 'react-icons/lu';
 import { LuPlus } from 'react-icons/lu';
 import { LuTriangleAlert } from 'react-icons/lu';
+import Pagination from '@/modules/common/components/Pagination';
 
 // Types moved to modules/client/types.ts
 
@@ -41,6 +42,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // PAGINATION: Current page state
   // only need post for actions
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -77,11 +79,24 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
     return plateOk && statusOk;
   });
 
+  // PAGINATION LOGIC
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(filteredVehicles.length / ITEMS_PER_PAGE);
+  const paginatedVehicles = filteredVehicles.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
   const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
 
   useEffect(() => {
     onLoadingChange?.(loading);
   }, [loading, onLoadingChange]);
+
+  // PAGINATION: Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterPlate, filterStatus]);
 
   if (error) {
     return (
@@ -164,7 +179,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           )}
 
           <div className="vehicles-list">
-            {filteredVehicles.map(vehicle => (
+            {paginatedVehicles.map(vehicle => (
               <VehicleItemRow
                 key={vehicle.id}
                 vehicle={vehicle}
@@ -178,6 +193,15 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
               />
             ))}
           </div>
+
+          {/* PAGINATION CONTROLS */}
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
       )}
 

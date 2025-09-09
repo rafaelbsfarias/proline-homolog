@@ -2,4 +2,4 @@
 export { default as BulkCollectionControls } from '../BulkCollectionControls/BulkCollectionControls';
 export { VehicleCard } from '../VehicleCard';
 export { default as VehicleFilters } from '../VehicleFilters';
-export { default as VehicleItemRow } from '../VehicleItemRow';
+export { default as VehicleItemRow } from '../VehicleCounter/VehicleItemRow';

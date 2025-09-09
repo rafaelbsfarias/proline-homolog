@@ -15,7 +15,7 @@ import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
 import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
-import VehicleItemRow from '../VehicleItemRow';
+import VehicleItemRow from '../VehicleCounter/VehicleItemRow';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import { LuRefreshCw } from 'react-icons/lu';
 import { LuMinus } from 'react-icons/lu';
