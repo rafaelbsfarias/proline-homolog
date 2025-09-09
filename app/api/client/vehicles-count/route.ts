@@ -68,11 +68,13 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const clientId: string = clientRow.profile_id; // == userId
 
-    // 2) vehicles do cliente (FK: vehicles.client_id -> clients.profile_id)
-    const { data: vehicles, error: vehErr } = await supabase
-      .from('vehicles')
-      .select(
-        `
+    // --- Start of Pagination Logic ---
+    const { searchParams } = new URL(req.url, `http://${req.headers.get('host')}`);
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+
+    let query = supabase.from('vehicles').select(
+      `
         id,
         plate,
         brand,
@@ -92,10 +94,26 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
           number,
           city
         )
-      `
-      )
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false });
+      `,
+      // Only request total count if pagination is active
+      pageParam ? { count: 'exact' } : undefined
+    );
+
+    query = query.eq('client_id', clientId).order('created_at', { ascending: false });
+
+    // Apply pagination only if params are provided and valid
+    if (pageParam && limitParam) {
+      const page = parseInt(pageParam, 10);
+      const limit = parseInt(limitParam, 10);
+      if (!isNaN(page) && !isNaN(limit) && page > 0 && limit > 0) {
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit - 1;
+        query = query.range(startIndex, endIndex);
+      }
+    }
+
+    const { data: vehicles, error: vehErr, count: totalCount } = await query;
+    // --- End of Pagination Logic ---
 
     if (vehErr) {
       log.error('vehicles-count:list-error', {
@@ -172,20 +190,21 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       })
     );
 
-    const count = vehiclesWithFees?.length ?? 0;
     const durationMs = Date.now() - startedAt;
 
     log.info('vehicles-count:success', {
       userId: String(userId).slice(0, 8),
       clientId: String(clientId).slice(0, 8),
-      count,
+      count: vehiclesWithFees?.length ?? 0,
+      totalCount,
       durationMs,
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        count,
+        count: vehiclesWithFees?.length ?? 0, // backward compatibility
+        totalCount: totalCount, // for paginated clients
         vehicles: vehiclesWithFees ?? [],
         message: 'ok',
         requestId,
