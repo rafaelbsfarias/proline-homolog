@@ -42,7 +42,8 @@
     "modules/**/*.tsx",
     ".next/types/**/*.ts",
     "cypress/**/*.ts",
-    "cypress/**/*.tsx"
+    "cypress/**/*.tsx",
+    "modules/client/components/dashboard/VehicleCounter.tsx"
   ],
   "exclude": ["node_modules"]
 }

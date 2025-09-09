@@ -40,10 +40,3 @@
   justify-content: center;
   transition: all 0.2s ease;
 }
-
-.solidButtonCustom:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
