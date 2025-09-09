@@ -70,18 +70,18 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       addressData: addr,
     });
 
-    // 2) Verificar existência de precificação (fee) antes de permitir propor data
-    // CORREÇÃO: restringir a busca ao endereço correto, evitando pegar coleção de outro endereço
-    const { data: collections, error: collectionsErr } = await admin
+    // 2) Selecionar fee correto: priorizar último aprovado (>0); fallback: último (>0)
+    const { data: feeRows, error: feeErr } = await admin
       .from('vehicle_collections')
-      .select('id, collection_fee_per_vehicle, status, collection_address')
+      .select('id, collection_fee_per_vehicle, status, collection_address, updated_at, created_at')
       .eq('client_id', clientId)
       .eq('collection_address', addressLabel)
-      .in('status', ['requested', 'approved']);
+      .in('status', ['requested', 'approved'])
+      .order('updated_at', { ascending: false });
 
-    if (collectionsErr) {
+    if (feeErr) {
       logger.error('load_collections_failed', {
-        error: collectionsErr.message,
+        error: feeErr.message,
         clientId,
         addressLabel,
       });
@@ -91,97 +91,82 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // Filtrar apenas registros com fee válido (> 0)
-    const validCollections =
-      collections?.filter(
-        (c: { collection_fee_per_vehicle: number }) =>
-          typeof c.collection_fee_per_vehicle === 'number' && c.collection_fee_per_vehicle > 0
-      ) || [];
+    const latestApproved = (feeRows || []).find(
+      (r: any) =>
+        String(r?.status) === 'approved' &&
+        typeof r?.collection_fee_per_vehicle === 'number' &&
+        Number(r.collection_fee_per_vehicle) > 0
+    );
+    const latestNonZero = (feeRows || []).find(
+      (r: any) =>
+        typeof r?.collection_fee_per_vehicle === 'number' &&
+        Number(r.collection_fee_per_vehicle) > 0
+    );
 
-    logger.info('price_verification_simplified', {
+    const selected = latestApproved || latestNonZero || null;
+    const selectedFee = selected ? Number(selected.collection_fee_per_vehicle) : null;
+    const selectedStrategy = latestApproved ? 'approved' : latestNonZero ? 'non_zero' : 'none';
+
+    logger.info('propose_date_fee_selection', {
       clientId,
       addressLabel,
-      totalCollections: collections?.length || 0,
-      validCollections: validCollections.length,
-      validCollectionsDetails: validCollections.map(
-        (c: {
-          id: string;
-          collection_fee_per_vehicle: number;
-          status: string;
-          collection_address: string;
-        }) => ({
-          id: c.id,
-          fee: c.collection_fee_per_vehicle,
-          status: c.status,
-          address: c.collection_address,
-        })
-      ),
+      selectedStrategy,
+      selectedFee,
+      selectedCollectionId: selected?.id,
+      totalCandidates: feeRows?.length || 0,
     });
 
-    if (validCollections.length === 0) {
-      logger.warn('no_valid_collections_found', {
-        clientId,
-        addressLabel,
-        totalCollections: collections?.length || 0,
-      });
-
+    if (!selectedFee) {
       return NextResponse.json(
         { success: false, error: 'Precifique o endereço antes de propor uma data de coleta.' },
         { status: 400 }
       );
     }
 
-    // Usar a primeira coleção válida encontrada
-    const vcRow = validCollections[0];
+    // 3) Upsert por (client_id, collection_address, collection_date) com fee selecionado
+    const upsertPayload = {
+      client_id: clientId,
+      collection_address: addressLabel,
+      collection_date: new_date,
+      collection_fee_per_vehicle: selectedFee,
+      status: STATUS.REQUESTED,
+    } as const;
 
-    logger.info('using_valid_collection', {
-      collectionId: vcRow.id,
-      collectionFee: vcRow.collection_fee_per_vehicle,
-      collectionStatus: vcRow.status,
-      collectionAddress: vcRow.collection_address,
-    });
+    const { data: upserted, error: upsertErr } = await admin
+      .from('vehicle_collections')
+      .upsert(upsertPayload, {
+        onConflict: 'client_id,collection_address,collection_date',
+        ignoreDuplicates: false,
+      })
+      .select('id, collection_address, collection_date, collection_fee_per_vehicle, status')
+      .limit(1);
 
-    // 3) Atualizar proposta de data na vehicle_collections existente
-    if (vcRow?.id) {
-      const { error } = await admin
-        .from('vehicle_collections')
-        .update({ collection_date: new_date })
-        .eq('id', vcRow.id);
-      if (error) {
-        logger.error('update_collection_failed', { error: error.message, clientId, addressLabel });
-        return NextResponse.json(
-          { success: false, error: 'Falha ao atualizar proposta' },
-          { status: 500 }
-        );
-      }
+    if (upsertErr) {
+      logger.error('propose_date_upsert_failed', { error: upsertErr.message, upsertPayload });
+      return NextResponse.json(
+        { success: false, error: 'Falha ao salvar proposta' },
+        { status: 500 }
+      );
+    }
 
-      // 🔧 CORREÇÃO: Sincronizar data nos veículos também
-      logger.info('synchronizing_vehicle_dates', {
+    logger.info('propose_date_upsert_success', { upserted });
+
+    // 4) Sincronizar data nos veículos também (não crítico)
+    logger.info('synchronizing_vehicle_dates', { clientId, addressId, newDate: new_date });
+    const { error: vehicleSyncError } = await admin
+      .from('vehicles')
+      .update({ estimated_arrival_date: new_date })
+      .eq('client_id', clientId)
+      .eq('pickup_address_id', addressId);
+
+    if (vehicleSyncError) {
+      logger.warn('vehicle_date_sync_failed', {
+        error: vehicleSyncError.message,
         clientId,
         addressId,
-        newDate: new_date,
       });
-
-      const { error: vehicleSyncError } = await admin
-        .from('vehicles')
-        .update({ estimated_arrival_date: new_date })
-        .eq('client_id', clientId)
-        .eq('pickup_address_id', addressId);
-
-      if (vehicleSyncError) {
-        logger.warn('vehicle_date_sync_failed', {
-          error: vehicleSyncError.message,
-          clientId,
-          addressId,
-        });
-        // Não é erro crítico, continua
-      } else {
-        logger.info('vehicle_date_sync_success', {
-          clientId,
-          addressId,
-          synchronizedDate: new_date,
-        });
-      }
+    } else {
+      logger.info('vehicle_date_sync_success', { clientId, addressId, synchronizedDate: new_date });
     }
 
     // 4) Atualizar veículos do cliente nesse endereço para indicar que há solicitação de mudança

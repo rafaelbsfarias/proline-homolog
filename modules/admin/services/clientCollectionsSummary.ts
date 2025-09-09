@@ -55,8 +55,9 @@ export async function getClientCollectionsSummary(
       collection_address: record.collection_address,
       collection_fee_per_vehicle: record.collection_fee_per_vehicle,
       collection_date: record.collection_date,
-      status: record.finalized_at ? 'FINALIZADO' : undefined,
-      vehicles: [], // Will be populated by enrich function if needed
+      // Nesta etapa não exibimos estados de pagamento; padronizamos como 'COLETA APROVADA'.
+      status: 'COLETA APROVADA',
+      vehicles: [],
     }));
 
     // Enrich with current vehicle status for display purposes

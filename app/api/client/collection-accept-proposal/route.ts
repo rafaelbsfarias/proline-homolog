@@ -38,6 +38,12 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
+    // Determinar contexto: proposta do admin (SOLICITACAO_MUDANCA_DATA) vs aprovação final (AGUARDANDO_APROVACAO)
+    const rawVehicles = vehiclesResult.vehicles || [];
+    const statuses = new Set((rawVehicles as any[]).map(v => String(v.status)));
+    const hasSolicitacaoMudanca = statuses.has(STATUS.SOLICITACAO_MUDANCA_DATA);
+    const hasAguardandoAprovacao = statuses.has(STATUS.AGUARDANDO_APROVACAO);
+
     // Aceitar proposta - atualizar status dos veículos
     const acceptResult = await collectionService.acceptProposal({
       userId,
@@ -56,23 +62,25 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     });
 
     if (addressResult.success && addressResult.address) {
-      // Only update collection status if it exists and is not already approved
-      const { error: findCollectionErr } = await admin
-        .from('vehicle_collections')
-        .select('id, status')
-        .eq('client_id', userId)
-        .eq('collection_address', formatAddressLabel(addressResult.address))
-        .eq('status', STATUS.REQUESTED)
-        .maybeSingle();
+      // Aprovação da coleta (final) só quando os veículos estavam em AGUARDANDO_APROVACAO
+      if (hasAguardandoAprovacao) {
+        const { error: findCollectionErr } = await admin
+          .from('vehicle_collections')
+          .select('id, status')
+          .eq('client_id', userId)
+          .eq('collection_address', formatAddressLabel(addressResult.address))
+          .eq('status', STATUS.REQUESTED)
+          .maybeSingle();
 
-      if (!findCollectionErr) {
-        await collectionService.updateCollectionStatus({
-          userId,
-          addressId,
-          adminClient: admin,
-          address: addressResult.address,
-          newStatus: STATUS.APPROVED,
-        });
+        if (!findCollectionErr) {
+          await collectionService.updateCollectionStatus({
+            userId,
+            addressId,
+            adminClient: admin,
+            address: addressResult.address,
+            newStatus: STATUS.APPROVED,
+          });
+        }
       }
     }
 

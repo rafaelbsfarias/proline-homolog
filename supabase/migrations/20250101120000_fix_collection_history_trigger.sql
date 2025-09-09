@@ -49,7 +49,7 @@ BEGIN
                 NEW.payment_received_at,
                 vehicle_count_val
             );
-        END IF;
+        END;
     END IF;
 
     RETURN NEW;

@@ -49,6 +49,10 @@ export async function enrichHistoryWithVehicleStatus(
     const vehicles = (vehiclesByKey.get(key) || [])
       .slice()
       .sort((a, b) => a.plate.localeCompare(b.plate));
+    // Se a linha de histórico já possui status (ex.: 'FINALIZADO'), preservá-lo
+    if (row.status && String(row.status).trim() !== '') {
+      return { ...row, vehicles } as HistoryRow;
+    }
     if (!bucket || !Object.keys(bucket).length)
       return { ...row, status: '-', vehicles } as HistoryRow;
     let chosen = '';

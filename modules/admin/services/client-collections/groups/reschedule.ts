@@ -38,21 +38,33 @@ export async function buildRescheduleGroups(
 
   const labels = Array.from(addrLabelMap.values()).filter(Boolean);
   const feeByAddrDate = new Map<string, number>();
-  const feeByAddr = new Map<string, number>();
+  // Priorizar último fee aprovado por endereço
+  const approvedFeeByAddr = new Map<string, number>();
+  // Fallback: último fee (>0) por endereço
+  const latestNonZeroFeeByAddr = new Map<string, number>();
   if (labels.length) {
     const { data: feeRows } = await admin
       .from('vehicle_collections')
-      .select('collection_address, collection_fee_per_vehicle, collection_date')
+      .select(
+        'collection_address, collection_fee_per_vehicle, collection_date, status, updated_at, created_at'
+      )
       .eq('client_id', clientId)
       .in('status', ['requested', 'approved'])
-      .in('collection_address', labels);
+      .in('collection_address', labels)
+      .order('updated_at', { ascending: false });
     (feeRows || []).forEach((r: any) => {
       const addr = r?.collection_address;
       const fee = r?.collection_fee_per_vehicle;
       const date = r?.collection_date ? String(r.collection_date) : '';
       if (addr && typeof fee === 'number') {
-        feeByAddrDate.set(`${addr}|${date}`, Number(fee));
-        if (!feeByAddr.has(addr)) feeByAddr.set(addr, Number(fee));
+        const nfee = Number(fee);
+        feeByAddrDate.set(`${addr}|${date}`, nfee);
+        if (!approvedFeeByAddr.has(addr) && String(r?.status) === 'approved' && nfee > 0) {
+          approvedFeeByAddr.set(addr, nfee);
+        }
+        if (!latestNonZeroFeeByAddr.has(addr) && nfee > 0) {
+          latestNonZeroFeeByAddr.set(addr, nfee);
+        }
       }
     });
   }
@@ -62,9 +74,10 @@ export async function buildRescheduleGroups(
       const [aid, d] = key.split('|');
       const lbl = addrLabelMap.get(aid) || '';
       const fee =
+        approvedFeeByAddr.get(lbl) ??
         feeByAddrDate.get(`${lbl}|${d}`) ??
+        latestNonZeroFeeByAddr.get(lbl) ??
         feeByAddrDate.get(`${lbl}|`) ??
-        feeByAddr.get(lbl) ??
         null;
       const collection_date = d || null;
       return {

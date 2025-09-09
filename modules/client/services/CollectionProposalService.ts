@@ -54,7 +54,7 @@ export class CollectionProposalService {
         .select('id, status, estimated_arrival_date')
         .eq('client_id', userId)
         .eq('pickup_address_id', addressId)
-        .eq('status', STATUS.AGUARDANDO_APROVACAO);
+        .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.SOLICITACAO_MUDANCA_DATA]);
 
       if (vehErr) {
         logger.error('find-vehicles-error', { error: vehErr.message });
@@ -105,16 +105,33 @@ export class CollectionProposalService {
     adminClient,
   }: CollectionProposalParams): Promise<CollectionProposalResult> {
     try {
-      const { error: updateErr } = await adminClient
+      // 1) Se foi uma proposta do ADMIN (veículos em SOLICITACAO_MUDANCA_DATA),
+      // a aceitação do cliente move para AGUARDANDO_APROVACAO (fluxo de aprovação geral).
+      const { error: updAdminProposalErr } = await adminClient
+        .from('vehicles')
+        .update({ status: STATUS.AGUARDANDO_APROVACAO })
+        .eq('client_id', userId)
+        .eq('pickup_address_id', addressId)
+        .eq('status', STATUS.SOLICITACAO_MUDANCA_DATA);
+      if (updAdminProposalErr) {
+        logger.error('accept-from-admin-proposal-update-error', {
+          error: updAdminProposalErr.message,
+        });
+        return { success: false, error: 'Erro ao atualizar status (proposta do admin)' };
+      }
+
+      // 2) Se já estávamos em AGUARDANDO_APROVACAO (fluxo final), avançar para AGUARDANDO_COLETA
+      const { error: updFinalApprovalErr } = await adminClient
         .from('vehicles')
         .update({ status: STATUS.AGUARDANDO_COLETA })
         .eq('client_id', userId)
         .eq('pickup_address_id', addressId)
         .eq('status', STATUS.AGUARDANDO_APROVACAO);
-
-      if (updateErr) {
-        logger.error('accept-vehicles-update-error', { error: updateErr.message });
-        return { success: false, error: 'Erro ao atualizar status dos veículos' };
+      if (updFinalApprovalErr) {
+        logger.error('accept-final-approval-update-error', {
+          error: updFinalApprovalErr.message,
+        });
+        return { success: false, error: 'Erro ao atualizar status (aprovação final)' };
       }
 
       return { success: true };
