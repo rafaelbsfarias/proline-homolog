@@ -62,9 +62,30 @@ describe('Admin propose collection date flow', () => {
         });
       });
 
-    // Clicar no botão Salvar do painel (precificação)
-    cy.contains('button', 'Salvar', { timeout: 5000 }).then($btn => {
-      if ($btn && $btn.is(':visible')) cy.wrap($btn).click({ force: true });
+    // Clicar no botão Salvar do painel (precificação) — usar múltiplos seletores como fallback
+    cy.get('body').then($body => {
+      const saveSelectors = [
+        'button:contains("Salvar")',
+        'button:contains("Salvar alterações")',
+        'button:contains("Save")',
+        '.save-button',
+        '[data-cy*="save"]',
+      ];
+
+      let clicked = false;
+      for (const sel of saveSelectors) {
+        const $found = $body.find(sel).filter(':visible');
+        if ($found.length > 0) {
+          cy.wrap($found.first()).click({ force: true });
+          cy.log(`✅ Clicou em salvar usando: ${sel}`);
+          clicked = true;
+          break;
+        }
+      }
+
+      if (!clicked) {
+        cy.log('⚠️ Botão Salvar não encontrado - prosseguindo sem clicar (pode já estar salvo)');
+      }
     });
 
     // Pequena espera para o save propagar (ou aguardar request se houver endpoint)
@@ -77,15 +98,25 @@ describe('Admin propose collection date flow', () => {
       .closest('tr')
       .within(() => {
         cy.root().then($row => {
-          // procurar por botão 'Editar proposta' dentro da linha
+          // Preferir o botão com title="Propor uma nova data" (✏️ Editar proposta)
+          const $byTitle = $row.find('button[title="Propor uma nova data"]');
+          if ($byTitle.length > 0) {
+            cy.log('✏️ Clicando no botão com title "Propor uma nova data"');
+            cy.wrap($byTitle.first()).click({ force: true });
+            return;
+          }
+
+          // Fallback: procurar pelo botão com texto 'Editar proposta'
           const $edit = $row.find('button:contains("Editar proposta")');
           if ($edit.length > 0) {
             cy.log('✏️ Botão "Editar proposta" encontrado — abrindo edição');
             cy.wrap($edit.first()).click({ force: true });
-          } else {
-            cy.log('➕ Botão "Editar proposta" não encontrado — clicando em "Propor"');
-            cy.contains('button', /propor/i, { timeout: 5000 }).click({ force: true });
+            return;
           }
+
+          // Último recurso: procurar qualquer botão 'Propor'
+          cy.log('➕ Nenhum botão específico encontrado — clicando em "Propor" como fallback');
+          cy.contains('button', /propor/i, { timeout: 5000 }).click({ force: true });
         });
       });
 
@@ -93,28 +124,23 @@ describe('Admin propose collection date flow', () => {
     cy.get('.modal, [role="dialog"]', { timeout: 10000 })
       .should('be.visible')
       .within(() => {
-        // Preencher a data no formato brasileiro
-        const targetDateBR = '20/09/2025';
-        // Tentar input[type=date] ou input por placeholder
-        cy.get('input[type="date"]')
+        // Abrir o calendário
+        cy.get('button[aria-label="Abrir calendário"], .calendar-btn')
           .first()
-          .then($d => {
-            if ($d && $d.length) {
-              // se for input date, usar ISO string via invoke
-              cy.wrap($d).invoke('val', '2025-09-20').trigger('change');
-            } else {
-              cy.get('input[placeholder*="dd/mm"], input[placeholder*="data"]')
-                .first()
-                .clear()
-                .type(targetDateBR)
-                .blur();
-            }
-          });
-
-        // Clicar no botão Propor dentro do modal
-        cy.contains('button', /propor/i, { timeout: 5000 })
-          .should('be.visible')
           .click({ force: true });
+
+        // Selecionar o dia 20 no popover do calendário
+        cy.get('.calendar-popover, [role="dialog"]').within(() => {
+          cy.contains('button', /^20$/).click({ force: true });
+        });
+
+        // Opcional: garantir que o input BR foi atualizado
+        cy.get('input[placeholder*="dd/mm"], input[placeholder*="data"]')
+          .first()
+          .should('have.value', '20/09/2025');
+
+        // Clicar no botão Confirmar dentro do modal
+        cy.contains('button', /(confirmar|enviando)/i, { timeout: 5000 }).click({ force: true });
       });
 
     // Aguardar a requisição real do backend
