@@ -2,25 +2,21 @@
   "body": {
     "clientId": "01decc12-2e77-470d-8c50-486f918173cc",
     "addressId": "885e38e7-08cd-4fa3-a409-13f4c7ff3c28",
-    "new_date": "2025-09-15"
+    "new_date": "2025-09-20"
   },
   "headers": {
     "host": "localhost:3000",
-    "proxy-connection": "keep-alive",
-    "content-length": "126",
-    "sec-ch-ua-platform": "\"Linux\"",
-    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiI2ZmU3ZTVmNS0zOWVlLTQ1YzEtYjQ2Ni02NWMyNjBmM2M4NzUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3NTE1MDgyLCJpYXQiOjE3NTc1MTE0ODIsImVtYWlsIjoiYWRtaW5AcHJvbGluZWF1dG8uY29tLmJyIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQWRtaW5pc3RyYWRvciBQcmluY2lwYWwiLCJwcm9maWxlX2lkIjoiNmZlN2U1ZjUtMzllZS00NWMxLWI0NjYtNjVjMjYwZjNjODc1Iiwicm9sZSI6ImFkbWluIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTc1MTE0ODJ9XSwic2Vzc2lvbl9pZCI6ImQ3MTNhYWMwLTllYzItNDk0Mi04NzU2LTkyY2Y4MjNjMWEzMSIsImlzX2Fub255bW91cyI6ZmFsc2V9.9dL5s7KEVB0SYUTaAGPhVGkPu-q2O4-4CwzdfocVlgM",
-    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Cypress/14.5.4 Chrome/130.0.6723.137 Electron/33.2.1 Safari/537.36",
-    "sec-ch-ua": "\"Not?A_Brand\";v=\"99\", \"Chromium\";v=\"130\"",
-    "content-type": "application/json",
-    "sec-ch-ua-mobile": "?0",
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0",
     "accept": "*/*",
-    "sec-fetch-site": "same-origin",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-dest": "empty",
+    "accept-language": "en-US,en;q=0.5",
+    "accept-encoding": "gzip, deflate",
     "referer": "http://localhost:3000/admin/clients/01decc12-2e77-470d-8c50-486f918173cc/overview",
-    "accept-encoding": "gzip, deflate, br, zstd",
-    "accept-language": "en-US"
+    "content-type": "application/json",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiI2ZmU3ZTVmNS0zOWVlLTQ1YzEtYjQ2Ni02NWMyNjBmM2M4NzUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3NTE1OTM4LCJpYXQiOjE3NTc1MTIzMzgsImVtYWlsIjoiYWRtaW5AcHJvbGluZWF1dG8uY29tLmJyIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZnVsbF9uYW1lIjoiQWRtaW5pc3RyYWRvciBQcmluY2lwYWwiLCJwcm9maWxlX2lkIjoiNmZlN2U1ZjUtMzllZS00NWMxLWI0NjYtNjVjMjYwZjNjODc1Iiwicm9sZSI6ImFkbWluIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTc1MTIzMzh9XSwic2Vzc2lvbl9pZCI6IjQ5YjMyOGJmLTNkODktNGYxMS1iYzk0LTczOGEwYTAwODg0NCIsImlzX2Fub255bW91cyI6ZmFsc2V9.PVxIqbO9Y0azcBi3mJ7xWyqSygHHKgWmMFriMtuk_OA",
+    "content-length": "126",
+    "origin": "http://localhost:3000",
+    "connection": "keep-alive",
+    "priority": "u=4"
   },
   "status": 200,
   "responseBody": {

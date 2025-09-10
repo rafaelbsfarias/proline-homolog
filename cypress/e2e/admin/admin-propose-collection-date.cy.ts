@@ -121,27 +121,38 @@ describe('Admin propose collection date flow', () => {
       });
 
     // Agora o modal de proposta deve aparecer
-    cy.get('.modal, [role="dialog"]', { timeout: 10000 })
-      .should('be.visible')
-      .within(() => {
-        // Abrir o calendário
-        cy.get('button[aria-label="Abrir calendário"], .calendar-btn')
-          .first()
-          .click({ force: true });
+    cy.get('.modal, [role="dialog"]', { timeout: 10000 }).should('be.visible');
 
-        // Selecionar o dia 20 no popover do calendário
-        cy.get('.calendar-popover, [role="dialog"]').within(() => {
-          cy.contains('button', /^20$/).click({ force: true });
-        });
+    // Abrir o calendário (fora do within do modal)
+    cy.get('button[aria-label="Abrir calendário"], .calendar-btn').first().click({ force: true });
+    cy.wait(1000);
 
-        // Opcional: garantir que o input BR foi atualizado
-        cy.get('input[placeholder*="dd/mm"], input[placeholder*="data"]')
-          .first()
-          .should('have.value', '20/09/2025');
+    // Procurar globalmente por button com texto "20"
+    cy.get('button').then($btns => {
+      const btn20 = [...$btns].find(
+        btn => btn.innerText.trim() === '20' && btn.offsetParent !== null
+      );
+      if (btn20) {
+        cy.wrap(btn20).click({ force: true });
+      } else {
+        // Logar todos os botões visíveis para debug
+        const visibleBtns = [...$btns]
+          .filter(btn => btn.offsetParent !== null)
+          .map(btn => btn.innerText.trim());
+        cy.log('Botões visíveis:', JSON.stringify(visibleBtns));
+        throw new Error('Não encontrou botão "20" visível no calendário!');
+      }
+    });
 
-        // Clicar no botão Confirmar dentro do modal
-        cy.contains('button', /(confirmar|enviando)/i, { timeout: 5000 }).click({ force: true });
-      });
+    // Garantir que o input BR foi atualizado
+    cy.get('input[placeholder*="dd/mm"], input[placeholder*="data"]')
+      .first()
+      .should('have.value', '20/09/2025');
+
+    // Clicar no botão Confirmar dentro do modal
+    cy.get('.modal, [role="dialog"]').within(() => {
+      cy.contains('button', /(confirmar|enviando)/i, { timeout: 5000 }).click({ force: true });
+    });
 
     // Aguardar a requisição real do backend
     cy.wait('@proposeDate', { timeout: 10000 }).then(interception => {
