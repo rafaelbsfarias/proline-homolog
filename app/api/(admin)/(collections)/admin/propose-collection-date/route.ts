@@ -197,6 +197,61 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       });
     } else {
       logger.info('vehicle_date_sync_success', { clientId, addressId, synchronizedDate: new_date });
+      // 5.1) Após sincronizar datas, vincular veículos à nova collection REQUESTED
+      const newCollectionId = upserted?.[0]?.id as string | undefined;
+      if (newCollectionId) {
+        const { error: linkErr2 } = await admin
+          .from('vehicles')
+          .update({ collection_id: newCollectionId })
+          .eq('client_id', clientId)
+          .eq('pickup_address_id', addressId)
+          .eq('estimated_arrival_date', new_date)
+          .in('status', [
+            STATUS.PONTO_COLETA_SELECIONADO,
+            STATUS.SOLICITACAO_MUDANCA_DATA,
+            STATUS.AGUARDANDO_APROVACAO,
+            STATUS.APROVACAO_NOVA_DATA,
+          ]);
+        if (linkErr2) {
+          logger.warn('link_vehicles_after_sync_failed', { error: linkErr2.message, newCollectionId });
+        } else {
+          logger.info('link_vehicles_after_sync_success', { collection_id: newCollectionId });
+        }
+      }
+
+      // 5.2) Limpeza: remover collections REQUESTED sem veículos (órfãs) deste endereço (datas antigas)
+      try {
+        const { data: requestedCols } = await admin
+          .from('vehicle_collections')
+          .select('id, collection_date')
+          .eq('client_id', clientId)
+          .eq('collection_address', addressLabel)
+          .eq('status', STATUS.REQUESTED)
+          .neq('collection_date', new_date);
+        for (const c of requestedCols || []) {
+          const cid = c?.id as string;
+          if (!cid) continue;
+          const { data: anyVehicle } = await admin
+            .from('vehicles')
+            .select('id')
+            .eq('collection_id', cid)
+            .limit(1);
+          if (!anyVehicle || anyVehicle.length === 0) {
+            const { error: delErr } = await admin
+              .from('vehicle_collections')
+              .delete()
+              .eq('id', cid)
+              .eq('status', STATUS.REQUESTED);
+            if (delErr) {
+              logger.warn('orphan_collection_cleanup_failed', { cid, error: delErr.message });
+            } else {
+              logger.info('orphan_collection_removed', { cid, addressLabel });
+            }
+          }
+        }
+      } catch (e: unknown) {
+        logger.warn('orphan_cleanup_error', { error: (e as Error)?.message });
+      }
     }
 
     // 4) Atualizar veículos do cliente nesse endereço para indicar que há solicitação de mudança
