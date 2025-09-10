@@ -28,6 +28,7 @@ interface VehicleCounterProps {
 export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const {
     vehicles, // This is now the paginated and filtered list from the server
@@ -69,11 +70,20 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
     }
   }, [filterPlate, filterStatus]);
 
+  // Effect to inform parent about loading state, but only for the initial load.
   useEffect(() => {
     if (onLoadingChange) {
-      onLoadingChange(loading);
+      // Only propagate loading state to parent during initial load
+      if (isInitialLoading) {
+        onLoadingChange(loading);
+      }
     }
-  }, [loading, onLoadingChange]);
+
+    // Once initial load is finished, set isInitialLoading to false
+    if (isInitialLoading && !loading) {
+      setIsInitialLoading(false);
+    }
+  }, [loading, onLoadingChange, isInitialLoading]);
 
   if (error) {
     return (
