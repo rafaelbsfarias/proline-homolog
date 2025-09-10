@@ -123,7 +123,31 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // 3) Upsert por (client_id, collection_address, collection_date) com fee selecionado
+    // 3) Impedir alteração de coletas já aprovadas para a mesma (address,date)
+    try {
+      const { data: approvedExisting } = await admin
+        .from('vehicle_collections')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('collection_address', addressLabel)
+        .eq('collection_date', new_date)
+        .eq('status', STATUS.APPROVED)
+        .maybeSingle();
+      if (approvedExisting?.id) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Já existe uma coleta aprovada para este endereço e data. Escolha outra data para a proposta.',
+          },
+          { status: 400 }
+        );
+      }
+    } catch (e: unknown) {
+      logger.warn('approved_check_failed', { error: (e as Error)?.message });
+    }
+
+    // 4) Upsert por (client_id, collection_address, collection_date) com fee selecionado
     const upsertPayload = {
       client_id: clientId,
       collection_address: addressLabel,
@@ -151,13 +175,19 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     logger.info('propose_date_upsert_success', { upserted });
 
-    // 4) Sincronizar data nos veículos também (não crítico)
+    // 5) Sincronizar data apenas para veículos não-finalizados (evitar tocar histórico)
     logger.info('synchronizing_vehicle_dates', { clientId, addressId, newDate: new_date });
     const { error: vehicleSyncError } = await admin
       .from('vehicles')
       .update({ estimated_arrival_date: new_date })
       .eq('client_id', clientId)
-      .eq('pickup_address_id', addressId);
+      .eq('pickup_address_id', addressId)
+      .in('status', [
+        STATUS.PONTO_COLETA_SELECIONADO,
+        STATUS.SOLICITACAO_MUDANCA_DATA,
+        STATUS.AGUARDANDO_APROVACAO,
+        STATUS.APROVACAO_NOVA_DATA,
+      ]);
 
     if (vehicleSyncError) {
       logger.warn('vehicle_date_sync_failed', {

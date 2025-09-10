@@ -108,8 +108,13 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       }
     }
 
-    // 🔧 CORREÇÃO: Sincronizar data na collection se necessário
-    if (finalRow && proposedDate && finalRow.collection_date !== proposedDate) {
+    // Não sincronizar data se a collection já estiver aprovada; preservar histórico
+    if (
+      finalRow &&
+      proposedDate &&
+      finalRow.collection_date !== proposedDate &&
+      finalRow.status === STATUS.REQUESTED
+    ) {
       logger.info('synchronizing_collection_date', {
         collectionId: finalRow.id,
         oldDate: finalRow.collection_date,
