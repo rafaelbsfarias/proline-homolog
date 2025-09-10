@@ -14,27 +14,22 @@ DECLARE
 BEGIN
     v_offset := (p_page_num - 1) * p_page_size;
 
-    -- Get the total count of vehicles for the client, applying search and status filters
+    -- Total global de veículos do cliente (sem filtros)
     SELECT count(*) INTO v_total_count
     FROM public.vehicles
-    WHERE
-        client_id = p_client_id
-        AND (p_plate_filter IS NULL OR p_plate_filter = '' OR plate ILIKE (p_plate_filter || '%'))
-        AND (p_status_filter IS NULL OR p_status_filter = '' OR status = p_status_filter);
+    WHERE client_id = p_client_id;
 
-    -- Get the counts for each status, applying only the search filter
+    -- Contagem por todos os status disponíveis do cliente, sem filtros
     SELECT COALESCE(json_object_agg(status, count), '{}'::json)
     INTO v_status_counts
     FROM (
-        SELECT status, count(*) as count
+        SELECT status, count(*) AS count
         FROM public.vehicles
-        WHERE
-            client_id = p_client_id
-            AND (p_plate_filter IS NULL OR p_plate_filter = '' OR plate ILIKE (p_plate_filter || '%'))
+        WHERE client_id = p_client_id
         GROUP BY status
     ) AS status_counts;
 
-    -- Get the paginated vehicle data, applying all filters
+    -- Lista paginada de veículos com filtros aplicados
     SELECT COALESCE(json_agg(v.*), '[]'::json) INTO v_vehicles
     FROM (
         SELECT
@@ -65,12 +60,11 @@ BEGIN
             v_offset
     ) v;
 
-    -- Combine results into a single JSON object
+    -- Retorna JSON consolidado com veículos, contagem total e status
     RETURN json_build_object(
         'vehicles', v_vehicles,
         'total_count', v_total_count,
         'status_counts', v_status_counts
     );
-
 END;
 $$ LANGUAGE plpgsql;

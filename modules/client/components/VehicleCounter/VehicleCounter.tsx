@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
@@ -11,8 +11,6 @@ import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
-import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
-import { canClientModify } from '@/modules/client/utils/status';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
@@ -28,58 +26,66 @@ interface VehicleCounterProps {
 export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
+  const [bulkAddressId, setBulkAddressId] = useState('');
+  const [bulkEta, setBulkEta] = useState('');
+  const [savingAll, setSavingAll] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
+  const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  const { addresses } = useAddresses();
+  const { post } = useAuthenticatedFetch();
+
+  const pageSize = 10;
+
   const {
-    vehicles, // This is now the paginated and filtered list from the server
+    vehicles,
     loading,
     error,
     refetch,
-    totalCount,
+    totalCount, // total do backend, já filtrado
     currentPage,
-    totalPages,
     onPageChange,
+    statusCounts,
   } = useVehicleManager({
     paginated: true,
     filterPlate,
     filterStatus,
   });
 
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-  const [showModal, setShowModal] = useState(false);
-
-  const { addresses } = useAddresses();
-  const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
-  const [bulkAddressId, setBulkAddressId] = useState('');
-  const [bulkEta, setBulkEta] = useState('');
-  const [savingAll, setSavingAll] = useState(false);
-  const { post } = useAuthenticatedFetch();
-  const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
-  const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
+  const sorter = (a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]);
+  const statusOptions = Object.keys(statusCounts);
 
   const minDateIsoLocal = makeLocalIsoDate();
 
-  // This hook now receives all vehicles, so it can calculate all possible statuses for the filter dropdown
-  const { statusOptions, statusCounts, sorter } = useStatusCounters(vehicles);
+  // Total de páginas recalculado com base em totalCount filtrado
+  const totalPagesAdjusted = useMemo(() => {
+    return Math.ceil(totalCount / pageSize);
+  }, [totalCount]);
 
-  // Effect to reset to page 1 when filters change
+  // Resetar página ao mudar filtros
   useEffect(() => {
     if (currentPage !== 1) {
       onPageChange(1);
     }
   }, [filterPlate, filterStatus]);
 
-  // Effect to inform parent about loading state, but only for the initial load.
+  // Evita que currentPage fique maior que totalPagesAdjusted
   useEffect(() => {
-    if (onLoadingChange) {
-      // Only propagate loading state to parent during initial load
-      if (isInitialLoading) {
-        onLoadingChange(loading);
-      }
+    if (currentPage > totalPagesAdjusted && totalPagesAdjusted > 0) {
+      onPageChange(1);
     }
+  }, [totalPagesAdjusted]);
 
-    // Once initial load is finished, set isInitialLoading to false
+  // Loading inicial
+  useEffect(() => {
+    if (onLoadingChange && isInitialLoading) {
+      onLoadingChange(loading);
+    }
     if (isInitialLoading && !loading) {
       setIsInitialLoading(false);
     }
@@ -181,16 +187,18 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             )}
           </div>
 
-          {totalPages > 1 && (
+          {/* Paginação só aparece se tiver mais de uma página */}
+          {totalPagesAdjusted > 1 && (
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
+              totalPages={totalPagesAdjusted}
               onPageChange={onPageChange}
             />
           )}
         </div>
       )}
 
+      {/* Modais */}
       {showModal && (
         <VehicleDetailsModal
           isOpen={showModal}
