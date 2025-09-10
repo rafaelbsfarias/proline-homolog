@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.013740508">
-    <testsuite name="app/hooks/useAuthenticatedFetch.test.ts" timestamp="2025-08-03T08:17:19.753Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.013740508">
-        <testcase classname="app/hooks/useAuthenticatedFetch.test.ts" name="useAuthenticatedFetch &gt; deve fazer GET básico" time="0.011859961">
+<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="0.003997284">
+    <testsuite name="tests/common/services/collection-orchestrator.test.ts" timestamp="2025-09-10T22:54:21.402Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.003997284">
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; upserts a requested collection and prevents overwriting approved" time="0.002024814">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; syncs vehicle dates only for allowed statuses" time="0.000406799">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; links vehicles to a collection by address/date and allowed statuses" time="0.000311085">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; approves a requested collection" time="0.000227626">
         </testcase>
     </testsuite>
 </testsuites>
