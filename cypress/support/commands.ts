@@ -11,3 +11,12 @@ Cypress.Commands.add('login', (email, password) => {
 Cypress.Commands.add('logout', () => {
   cy.get('button, a').contains(/sair/i).click({ force: true });
 });
+
+Cypress.Commands.add('apiLogin', (email, password) => {
+  return cy.request({
+    method: 'POST',
+    url: `${Cypress.env('apiUrl')}/login`,
+    body: { email, password },
+    failOnStatusCode: false,
+  });
+});

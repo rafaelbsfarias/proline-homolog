@@ -10,6 +10,13 @@ export interface PartnerService {
   category: string | null; // Categoria é opcional e pode ser nula
 }
 
+export interface UpdateServiceData {
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+}
+
 // --- Hook ---
 export function usePartnerServices() {
   const [services, setServices] = useState<PartnerService[]>([]);

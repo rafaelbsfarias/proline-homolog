@@ -13,5 +13,12 @@ declare namespace Cypress {
      * Logout personalizado
      */
     logout(): Chainable<void>;
+
+    /**
+     * Login via API
+     * @param email - Email do usuário
+     * @param password - Senha do usuário
+     */
+    apiLogin(email: string, password: string): Chainable<any>;
   }
 }
