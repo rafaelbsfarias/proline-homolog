@@ -1,6 +1,6 @@
 describe('Client Collection Flow - Date Change Test', () => {
   // Data alvo no formato brasileiro (DD/MM/YYYY)
-  const targetDateBR = '15/09/2025';
+  const targetDateBR = '18/09/2025';
 
   beforeEach(() => {
     // Intercepta a chamada da API para alterar coleta de veículos
@@ -442,10 +442,10 @@ describe('Client Collection Flow - Date Change Test', () => {
         // Data: type + blur para acionar validações controladas
         const dateInput = $ctxJq.find('input[placeholder*="dd/mm"], input[type="date"]').first();
         if (dateInput.length) {
-          cy.wrap(dateInput).clear().type('15/09/2025').blur();
-          cy.log('✅ Data preenchida: 15/09/2025');
+          cy.wrap(dateInput).clear().type('18/09/2025').blur();
+          cy.log('✅ Data preenchida: 18/09/2025');
         } else {
-          cy.get('input[type="date"]').first().clear().type('15/09/2025').blur();
+          cy.get('input[type="date"]').first().clear().type('18/09/2025').blur();
           cy.log('⚠️ Campo de data não localizado pelo contexto; fallback aplicado');
         }
 

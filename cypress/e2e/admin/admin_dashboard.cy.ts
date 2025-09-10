@@ -16,26 +16,21 @@ describe('Admin Dashboard Tests', () => {
     cy.contains('Bem-vindo, Administrador').should('be.visible'); // Assuming this text appears for admin
     // Further checks for admin dashboard elements can be added here
 
-    // Após login, clicar em 'Empresa Cliente 1528'
-    cy.log('🔎 Clicando em "Empresa Cliente 1528"');
-    cy.contains('Empresa Cliente 1528', { timeout: 10000 })
-      .should('be.visible')
-      .click({ force: true });
+    // Após login, clicar na primeira empresa/cliente da lista
+    cy.log('🔎 Clicando na primeira empresa da lista');
+    cy.get('table').find('tbody tr').first().find('a').first().click({ force: true });
     // Verificar redirecionamento para a área de cliente no admin (rota aproximada)
     cy.url({ timeout: 10000 }).should('include', '/admin/clients');
 
     // Aguardar o painel de pontos de coleta para precificação aparecer
     cy.contains('Pontos de coleta para precificação', { timeout: 10000 }).should('be.visible');
 
-    // Localizar a linha do ponto de coleta esperado e preencher 'Valor da coleta (R$)' com 10,00
-    const pontoTexto = 'qualquer, 123 - salvador';
-    cy.contains(pontoTexto, { timeout: 10000 })
+    // Buscar a linha do ponto de coleta 'general labatut, 123 - salvador' e preencher o valor
+    cy.contains('general labatut, 123 - salvador', { timeout: 10000 })
       .should('be.visible')
       .closest('tr')
       .within(() => {
-        // Encontrar o input correspondente ao valor da coleta e digitar 10,00
         cy.get('input').filter(':visible').first().clear().type('10,00');
-        // Verificar que o valor foi preenchido
         cy.get('input').filter(':visible').first().should('have.value', '10,00');
       });
 
