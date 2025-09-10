@@ -27,6 +27,7 @@ interface UseClientVehiclesResult {
   setCurrentPage: (page: number) => void;
   totalPages: number;
   totalCount: number;
+  /* statusCounts: Record<string, number>; */
 }
 
 export const useClientVehicles = (
@@ -36,6 +37,7 @@ export const useClientVehicles = (
   const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  /* const [statusCounts, setStatusCounts] = useState<Record<string, number>>({}); */
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +97,7 @@ export const useClientVehicles = (
       if (!clientId) {
         setVehicles([]);
         setTotalCount(0);
+        /* setStatusCounts({}); */
         return;
       }
       setLoading(true);
@@ -114,13 +117,15 @@ export const useClientVehicles = (
         const response = await get<{
           success: boolean;
           vehicles: VehicleData[];
-          total_count: number;
+          totalCount: number;
+          /*  statusCounts: Record<string, number>; */
           error?: string;
         }>(`/api/specialist/client-vehicles?${queryParams.toString()}`);
 
         if (response.ok && response.data?.success) {
           setVehicles(response.data.vehicles || []);
-          setTotalCount(response.data.total_count || 0);
+          setTotalCount(response.data.totalCount || 0);
+          /* setStatusCounts(response.data.statusCounts || {}); */
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
@@ -147,5 +152,6 @@ export const useClientVehicles = (
     setCurrentPage,
     totalPages,
     totalCount,
+    /*  statusCounts, */
   };
 };

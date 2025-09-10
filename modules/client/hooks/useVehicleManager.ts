@@ -9,6 +9,7 @@ interface UseVehicleManagerResult {
   loading: boolean;
   error: string | null;
   totalCount: number;
+  statusCounts: Record<string, number>;
   refetch: () => void;
   createVehicle: (
     vehicleData: Omit<VehicleData, 'id' | 'created_at'>
@@ -38,6 +39,7 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const refetch = useCallback(() => {
@@ -51,10 +53,10 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
 
       try {
         const params = new URLSearchParams();
-        if (options?.paginated) {
-          params.append('page', currentPage.toString());
-          params.append('limit', ITEMS_PER_PAGE.toString());
-        }
+        // Use page from state for pagination
+        params.append('page', currentPage.toString());
+        params.append('limit', ITEMS_PER_PAGE.toString());
+
         if (options?.filterPlate) {
           params.append('plate', options.filterPlate);
         }
@@ -68,16 +70,14 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
           success: boolean;
           vehicles: VehicleData[];
           totalCount?: number;
+          statusCounts?: Record<string, number>;
           error?: string;
         }>(url);
 
         if (response.ok && response.data?.success) {
           setVehicles(response.data.vehicles || []);
-          if (options?.paginated && typeof response.data.totalCount === 'number') {
-            setTotalCount(response.data.totalCount);
-          } else {
-            setTotalCount(response.data.vehicles?.length || 0);
-          }
+          setTotalCount(response.data.totalCount || 0);
+          setStatusCounts(response.data.statusCounts || {});
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos');
         }
@@ -89,14 +89,7 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
     };
 
     fetchVehicles();
-  }, [
-    get,
-    triggerRefetch,
-    currentPage,
-    options?.paginated,
-    options?.filterPlate,
-    options?.filterStatus,
-  ]);
+  }, [get, triggerRefetch, currentPage, options?.filterPlate, options?.filterStatus]);
 
   const createVehicle = async (vehicleData: Omit<VehicleData, 'id' | 'created_at'>) => {
     try {
@@ -174,6 +167,7 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
     loading,
     error,
     totalCount,
+    statusCounts,
     refetch,
     createVehicle,
     updateVehicle,

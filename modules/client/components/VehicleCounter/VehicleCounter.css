@@ -182,25 +182,37 @@
   padding: 12px;
   cursor: pointer;
   background-color: #fff;
-  border: 1px solid #e0e0e0;
+  border: 2px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .vehicle-item.status-near-expiry {
-  border-color: #ff9800;
+  border: 2px solid #ff5e00;
+}
+
+.vehicle-item.status-near-expiry:hover {
+  border: 2px solid #ff5e00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .vehicle-item.status-expired {
-  border-color: #f44336;
+  border: 2px solid #d40000;
+}
+
+.vehicle-item.status-expired:hover {
+  border: 2px solid #d40000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .date-label.status-expired {
-  color: #f44336;
+  color: #d40000;
   font-weight: bold;
 }
 
 .date-label.status-near-expiry {
-  color: #ff9800;
+  color: #ff5e00;
   font-weight: bold;
 }
 

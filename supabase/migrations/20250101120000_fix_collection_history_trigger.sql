@@ -3,6 +3,8 @@
 
 CREATE OR REPLACE FUNCTION create_collection_history_record()
 RETURNS TRIGGER AS $$
+DECLARE
+    vehicle_count_val INTEGER;
 BEGIN
     -- Only create history record when status changes to 'approved'
     IF NEW.status = 'approved' AND (OLD.status IS NULL OR OLD.status != 'approved') THEN
@@ -11,18 +13,14 @@ BEGIN
             SELECT 1 FROM public.collection_history
             WHERE collection_id = NEW.id AND collection_date = NEW.collection_date
         ) THEN
-            -- Log that we're skipping duplicate creation
             RAISE NOTICE 'History record already exists for collection % on date %, skipping creation', NEW.id, NEW.collection_date;
             RETURN NEW;
         END IF;
 
         -- Count vehicles for this collection
-        DECLARE
-            vehicle_count_val INTEGER;
-        BEGIN
-            SELECT COUNT(*) INTO vehicle_count_val
-            FROM public.vehicles
-            WHERE collection_id = NEW.id;
+        SELECT COUNT(*) INTO vehicle_count_val
+        FROM public.vehicles
+        WHERE collection_id = NEW.id;
 
             -- Ensure we have at least 1 vehicle
             IF vehicle_count_val < 1 THEN
