@@ -118,18 +118,29 @@ export async function POST(req: NextRequest) {
       payload.pickup_address_id = null;
     }
 
-    const { error: updErr } = await admin
+    // Execute update and return the actual number of updated rows
+    const { data: updatedRows, error: updErr } = await admin
       .from('vehicles')
       .update(payload)
       .in('id', ids)
-      .eq('client_id', userId);
+      .eq('client_id', userId)
+      .select('id', { count: 'exact' });
 
     if (updErr) {
       logger.error('update-vehicles-error', { error: updErr.message });
       return NextResponse.json({ error: 'Erro ao atualizar veículos' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, updated: ids.length });
+    const updatedCount = Array.isArray(updatedRows) ? updatedRows.length : 0;
+    if (updatedCount === 0) {
+      logger.warn('no-vehicles-updated', { ids, userId });
+      return NextResponse.json(
+        { error: 'Nenhuma alteração foi aplicada aos veículos (verifique vehicleIds e client_id)' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true, updated: updatedCount });
   } catch (e: any) {
     logger.error('unhandled', { error: e?.message });
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
