@@ -60,8 +60,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
   const sorter = (a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]);
   const statusOptions = Object.keys(statusCounts);
 
-  console.log('statusCounts', statusCounts);
-
   const minDateIsoLocal = makeLocalIsoDate();
 
   // Total de páginas recalculado com base em totalCount filtrado

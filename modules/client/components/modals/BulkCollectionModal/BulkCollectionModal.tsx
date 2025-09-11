@@ -66,7 +66,6 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   const hiddenDateRef = useRef<HTMLInputElement | null>(null);
   const [selectMudancaData, setSelectMudancaData] = useState(true);
   const [selectAprovacao, setSelectAprovacao] = useState(true);
-  const [selectedVehicleIds, setSelectedVehicleIds] = useState<Set<string>>(new Set());
 
   const counts = useMemo(() => {
     if (!statusCounts) return { definicao: 0, chegada: 0, aprovacao: 0, mudancaData: 0 };
@@ -77,7 +76,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         (statusCounts['AGUARDANDO CHEGADA DO CLIENTE'] || 0) +
         (statusCounts['AGUARDANDO CHEGADA DO VEÍCULO'] || 0),
       aprovacao: statusCounts['AGUARDANDO APROVAÇÃO DA COLETA'] || 0,
-      mudancaData: statusCounts['SOLICITAÇÃO DE MUDANÇA DE DATA'] || 0, // novo
+      mudancaData: statusCounts['SOLICITAÇÃO DE MUDANÇA DE DATA'] || 0,
     };
   }, [statusCounts]);
 
@@ -94,6 +93,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
       else if (selectAprovacao && s === 'AGUARDANDO APROVAÇÃO DA COLETA') selected.push(v.id);
       else if (selectMudancaData && s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') selected.push(v.id);
     });
+    console.log('Veículos selecionados:', selected);
     return selected;
   }, [vehicles, selectDefinicao, selectChegada, selectAprovacao, selectMudancaData]);
 
@@ -102,29 +102,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
     if (method === 'collect_point') return !!addressId && !!eta;
     if (method === 'bring_to_yard') return !!eta;
     return false;
-  }, [
-    selectedIds.length,
-    method,
-    addressId,
-    eta,
-    selectDefinicao,
-    selectChegada,
-    selectAprovacao,
-    selectMudancaData,
-  ]);
-
-  const handleToggleStatus = (status: string, checked: boolean) => {
-    setSelectedVehicleIds(prev => {
-      const next = new Set(prev);
-      vehicles.forEach(v => {
-        if (normalize(v.status) === status) {
-          if (checked) next.add(v.id);
-          else next.delete(v.id);
-        }
-      });
-      return next;
-    });
-  };
+  }, [selectedIds.length, method, addressId, eta]);
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -207,10 +185,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
             <input
               type="checkbox"
               checked={selectDefinicao}
-              onChange={e => {
-                setSelectDefinicao(e.target.checked);
-                handleToggleStatus('AGUARDANDO DEFINIÇÃO DE COLETA', e.target.checked);
-              }}
+              onChange={e => setSelectDefinicao(e.target.checked)}
               disabled={counts.definicao === 0}
             />
             <span>Aguardando definição de coleta</span>
@@ -221,11 +196,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
             <input
               type="checkbox"
               checked={selectChegada}
-              onChange={e => {
-                setSelectChegada(e.target.checked);
-                handleToggleStatus('AGUARDANDO CHEGADA DO CLIENTE', e.target.checked);
-                handleToggleStatus('AGUARDANDO CHEGADA DO VEÍCULO', e.target.checked);
-              }}
+              onChange={e => setSelectChegada(e.target.checked)}
               disabled={counts.chegada === 0}
             />
             <span>Aguardando chegada do veículo</span>
@@ -236,10 +207,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
             <input
               type="checkbox"
               checked={selectAprovacao}
-              onChange={e => {
-                setSelectAprovacao(e.target.checked);
-                handleToggleStatus('AGUARDANDO APROVAÇÃO DA COLETA', e.target.checked);
-              }}
+              onChange={e => setSelectAprovacao(e.target.checked)}
               disabled={counts.aprovacao === 0}
             />
             <span>Aguardando aprovação da coleta</span>
@@ -250,10 +218,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
             <input
               type="checkbox"
               checked={selectMudancaData}
-              onChange={e => {
-                setSelectMudancaData(e.target.checked);
-                handleToggleStatus('SOLICITAÇÃO DE MUDANÇA DE DATA', e.target.checked);
-              }}
+              onChange={e => setSelectMudancaData(e.target.checked)}
               disabled={counts.mudancaData === 0}
             />
             <span>Solicitação de mudança de data</span>
@@ -262,7 +227,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         </div>
 
         <div className="bcm-affected">
-          Veículos afetados: <b>{selectedVehicleIds.size}</b>
+          Veículos afetados: <b>{selectedIds.length}</b>
         </div>
 
         {error && <div className="bcm-error">{error}</div>}
