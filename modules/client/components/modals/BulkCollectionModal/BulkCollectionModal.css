@@ -25,7 +25,9 @@
   height: 28px;
   color: #555;
 }
-.bcm-calendar-btn:hover { color: #111; }
+.bcm-calendar-btn:hover {
+  color: #111;
+}
 
 .bcm-hidden-date {
   position: absolute;
@@ -75,22 +77,61 @@
   line-height: 1;
 }
 
-.bcm-form-group { margin-bottom: 12px; }
-.bcm-label { display: block; margin-bottom: 6px; }
-.bcm-select { width: 100%; padding: 8px 10px; }
+.bcm-form-group {
+  margin-bottom: 12px;
+}
+.bcm-label {
+  display: block;
+  margin-bottom: 6px;
+}
+.bcm-select {
+  width: 100%;
+  padding: 8px 10px;
+}
 
 .bcm-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
 }
-.bcm-checkbox-row { display: flex; align-items: center; gap: 8px; }
-.bcm-count { margin-left: auto; opacity: 0.7; }
+.bcm-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bcm-count {
+  margin-left: auto;
+  opacity: 0.7;
+}
 
-.bcm-affected { margin-top: 12px; font-size: 14px; color: #444; }
-.bcm-error { color: #c62828; margin-top: 8px; }
+.bcm-affected {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #444;
+}
+.bcm-error {
+  color: #c62828;
+  margin-top: 8px;
+}
 
-.bcm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
-.bcm-btn { padding: 8px 12px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; }
-.bcm-btn-secondary { border-color: #ccc; background: #fafafa; }
-.bcm-btn-primary { border-color: #1b5e20; background: #2e7d32; color: #fff; }
+.bcm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.bcm-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.bcm-btn-secondary {
+  border-color: #ccc;
+  background: #fafafa;
+}
+.bcm-btn-primary {
+  border-color: #1b5e20;
+  background: #2e7d32;
+  color: #fff;
+}

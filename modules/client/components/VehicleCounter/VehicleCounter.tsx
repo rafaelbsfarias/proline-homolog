@@ -5,7 +5,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
 import RowCollectionModal from '../RowCollectionModal';
-import BulkCollectionModal from '../BulkCollectionModal';
+import BulkCollectionModal from '../modals/BulkCollectionModal/BulkCollectionModal';
 import StatusChips from '../StatusChips';
 import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
@@ -59,6 +59,8 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
   const sorter = (a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]);
   const statusOptions = Object.keys(statusCounts);
+
+  console.log('statusCounts', statusCounts);
 
   const minDateIsoLocal = makeLocalIsoDate();
 
@@ -242,6 +244,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           minDate={minDateIsoLocal}
           initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}
           initialEtaIso={bulkMethod === 'bring_to_yard' ? bulkEta : undefined}
+          statusCounts={statusCounts}
           onApply={async payload => {
             const resp = await post('/api/client/set-vehicles-collection', payload);
             if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');

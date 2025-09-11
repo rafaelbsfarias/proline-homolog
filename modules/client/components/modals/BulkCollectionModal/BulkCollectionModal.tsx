@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './BulkCollectionModal.css';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
-import CollectPointSelect from '../collection/CollectPointSelect';
+import CollectPointSelect from '../../collection/CollectPointSelect';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -26,16 +26,17 @@ interface BulkCollectionModalProps {
   onClose: () => void;
   method: Method;
   vehicles: VehicleItem[];
-  addresses?: AddressItem[]; // required when method === 'collect_point'
-  minDate?: string; // required when method === 'bring_to_yard'
-  initialAddressId?: string; // optional preselected address
-  initialEtaIso?: string; // optional preselected date in YYYY-MM-DD
+  addresses?: AddressItem[];
+  minDate?: string;
+  initialAddressId?: string;
+  initialEtaIso?: string;
   onApply: (payload: {
     method: Method;
     vehicleIds: string[];
     addressId?: string;
     estimated_arrival_date?: string;
   }) => Promise<void>;
+  statusCounts?: Record<string, number>;
 }
 
 const normalize = (v?: string | null) =>
@@ -53,6 +54,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   onApply,
   initialAddressId,
   initialEtaIso,
+  statusCounts,
 }) => {
   const [selectDefinicao, setSelectDefinicao] = useState(true);
   const [selectChegada, setSelectChegada] = useState(true);
@@ -62,20 +64,22 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hiddenDateRef = useRef<HTMLInputElement | null>(null);
+  const [selectMudancaData, setSelectMudancaData] = useState(true);
+  const [selectAprovacao, setSelectAprovacao] = useState(true);
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<Set<string>>(new Set());
 
   const counts = useMemo(() => {
-    let definicao = 0;
-    let chegada = 0;
-    let coleta = 0;
-    vehicles.forEach(v => {
-      const s = normalize(v.status);
-      if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') definicao += 1;
-      else if (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO')
-        chegada += 1;
-      else if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') coleta += 1;
-    });
-    return { definicao, chegada, coleta };
-  }, [vehicles]);
+    if (!statusCounts) return { definicao: 0, chegada: 0, aprovacao: 0, mudancaData: 0 };
+
+    return {
+      definicao: statusCounts['AGUARDANDO DEFINIÇÃO DE COLETA'] || 0,
+      chegada:
+        (statusCounts['AGUARDANDO CHEGADA DO CLIENTE'] || 0) +
+        (statusCounts['AGUARDANDO CHEGADA DO VEÍCULO'] || 0),
+      aprovacao: statusCounts['AGUARDANDO APROVAÇÃO DA COLETA'] || 0,
+      mudancaData: statusCounts['SOLICITAÇÃO DE MUDANÇA DE DATA'] || 0, // novo
+    };
+  }, [statusCounts]);
 
   const selectedIds = useMemo(() => {
     const selected: string[] = [];
@@ -87,18 +91,40 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO')
       )
         selected.push(v.id);
-      else if (selectColeta && (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO'))
-        selected.push(v.id);
+      else if (selectAprovacao && s === 'AGUARDANDO APROVAÇÃO DA COLETA') selected.push(v.id);
+      else if (selectMudancaData && s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') selected.push(v.id);
     });
     return selected;
-  }, [vehicles, selectDefinicao, selectChegada, selectColeta]);
+  }, [vehicles, selectDefinicao, selectChegada, selectAprovacao, selectMudancaData]);
 
   const canSubmit = useMemo(() => {
     if (!selectedIds.length) return false;
     if (method === 'collect_point') return !!addressId && !!eta;
     if (method === 'bring_to_yard') return !!eta;
     return false;
-  }, [selectedIds.length, method, addressId, eta]);
+  }, [
+    selectedIds.length,
+    method,
+    addressId,
+    eta,
+    selectDefinicao,
+    selectChegada,
+    selectAprovacao,
+    selectMudancaData,
+  ]);
+
+  const handleToggleStatus = (status: string, checked: boolean) => {
+    setSelectedVehicleIds(prev => {
+      const next = new Set(prev);
+      vehicles.forEach(v => {
+        if (normalize(v.status) === status) {
+          if (checked) next.add(v.id);
+          else next.delete(v.id);
+        }
+      });
+      return next;
+    });
+  };
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -181,36 +207,62 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
             <input
               type="checkbox"
               checked={selectDefinicao}
-              onChange={e => setSelectDefinicao(e.target.checked)}
+              onChange={e => {
+                setSelectDefinicao(e.target.checked);
+                handleToggleStatus('AGUARDANDO DEFINIÇÃO DE COLETA', e.target.checked);
+              }}
               disabled={counts.definicao === 0}
             />
             <span>Aguardando definição de coleta</span>
             <span className="bcm-count">({counts.definicao})</span>
           </label>
+
           <label className="bcm-checkbox-row">
             <input
               type="checkbox"
               checked={selectChegada}
-              onChange={e => setSelectChegada(e.target.checked)}
+              onChange={e => {
+                setSelectChegada(e.target.checked);
+                handleToggleStatus('AGUARDANDO CHEGADA DO CLIENTE', e.target.checked);
+                handleToggleStatus('AGUARDANDO CHEGADA DO VEÍCULO', e.target.checked);
+              }}
               disabled={counts.chegada === 0}
             />
             <span>Aguardando chegada do veículo</span>
             <span className="bcm-count">({counts.chegada})</span>
           </label>
+
           <label className="bcm-checkbox-row">
             <input
               type="checkbox"
-              checked={selectColeta}
-              onChange={e => setSelectColeta(e.target.checked)}
-              disabled={counts.coleta === 0}
+              checked={selectAprovacao}
+              onChange={e => {
+                setSelectAprovacao(e.target.checked);
+                handleToggleStatus('AGUARDANDO APROVAÇÃO DA COLETA', e.target.checked);
+              }}
+              disabled={counts.aprovacao === 0}
             />
-            <span>Aguardando coleta</span>
-            <span className="bcm-count">({counts.coleta})</span>
+            <span>Aguardando aprovação da coleta</span>
+            <span className="bcm-count">({counts.aprovacao})</span>
+          </label>
+
+          <label className="bcm-checkbox-row">
+            <input
+              type="checkbox"
+              checked={selectMudancaData}
+              onChange={e => {
+                setSelectMudancaData(e.target.checked);
+                handleToggleStatus('SOLICITAÇÃO DE MUDANÇA DE DATA', e.target.checked);
+              }}
+              disabled={counts.mudancaData === 0}
+            />
+            <span>Solicitação de mudança de data</span>
+            <span className="bcm-count">({counts.mudancaData})</span>
           </label>
         </div>
 
         <div className="bcm-affected">
-          Veículos afetados: <b>{selectedIds.length}</b>
+          Veículos afetados: <b>{selectedVehicleIds.size}</b>
         </div>
 
         {error && <div className="bcm-error">{error}</div>}

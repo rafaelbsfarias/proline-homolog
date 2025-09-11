@@ -5,7 +5,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
 import RowCollectionModal from './RowCollectionModal';
-import BulkCollectionModal from './BulkCollectionModal';
+import BulkCollectionModal from './modals/BulkCollectionModal/BulkCollectionModal';
 import StatusChips from './StatusChips';
 import VehicleFilters from './VehicleFilters';
 import BulkCollectionControls from './BulkCollectionControls/BulkCollectionControls';

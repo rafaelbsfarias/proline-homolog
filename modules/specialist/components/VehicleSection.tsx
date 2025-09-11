@@ -276,7 +276,12 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
           ))}
         </div>
       )}
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        currentItemsCount={filteredVehicles.length}
+      />
     </div>
   );
 };
