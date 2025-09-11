@@ -5,12 +5,26 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  currentItemsCount: number; // quantidade de itens na página atual
 }
 
-const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPageChange }) => {
+const ITEMS_PER_PAGE = 10;
+
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+  currentItemsCount,
+}) => {
   if (totalPages <= 1) {
-    return null; // Don't render pagination if there's only one page
+    return null; // Oculta paginacao se só uma página
   }
+
+  const disableNavigation = currentItemsCount < ITEMS_PER_PAGE;
+
+  console.log('disableNavigation', disableNavigation);
+  console.log('ITEMS_PER_PAGE', ITEMS_PER_PAGE);
+  console.log('currentItemsCount', currentItemsCount);
 
   const handlePrevious = () => {
     if (currentPage > 1) {
@@ -26,13 +40,21 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
 
   return (
     <div className={styles.paginationContainer}>
-      <button onClick={handlePrevious} disabled={currentPage === 1} className={styles.button}>
+      <button
+        onClick={handlePrevious}
+        disabled={currentPage === 1 || disableNavigation}
+        className={styles.button}
+      >
         Anterior
       </button>
       <span className={styles.pageInfo}>
         Página {currentPage} de {totalPages}
       </span>
-      <button onClick={handleNext} disabled={currentPage === totalPages} className={styles.button}>
+      <button
+        onClick={handleNext}
+        disabled={currentPage === totalPages || disableNavigation}
+        className={styles.button}
+      >
         Próxima
       </button>
     </div>

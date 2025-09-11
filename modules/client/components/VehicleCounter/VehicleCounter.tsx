@@ -188,13 +188,12 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           </div>
 
           {/* Paginação só aparece se tiver mais de uma página */}
-          {totalPagesAdjusted > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPagesAdjusted}
-              onPageChange={onPageChange}
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPagesAdjusted}
+            onPageChange={onPageChange}
+            currentItemsCount={vehicles.length}
+          />
         </div>
       )}
 
