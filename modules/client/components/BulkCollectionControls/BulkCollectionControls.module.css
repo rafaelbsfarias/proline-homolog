@@ -1,0 +1,42 @@
+/* .container {
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+} */
+
+.header {
+  color: #333;
+  font-weight: 700;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.row {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.row select,
+.row .select-wrapper {
+  /* ou a classe interna do seu Select */
+  height: 40px; /* mesmo tamanho do botão */
+  display: flex;
+  align-items: center;
+}
+
+.solidButtonCustom {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}

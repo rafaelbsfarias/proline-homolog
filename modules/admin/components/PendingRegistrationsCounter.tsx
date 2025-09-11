@@ -5,11 +5,21 @@ import styles from './Toolbar.module.css';
 import { useRouter } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
-const PendingRegistrationsCounter: React.FC = () => {
+interface PendingRegistrationsCounterProps {
+  onLoadingChange?: (loading: boolean) => void;
+}
+
+const PendingRegistrationsCounter: React.FC<PendingRegistrationsCounterProps> = ({
+  onLoadingChange,
+}) => {
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { get } = useAuthenticatedFetch();
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   useEffect(() => {
     const fetchCount = async () => {

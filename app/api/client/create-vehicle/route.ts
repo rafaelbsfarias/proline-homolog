@@ -1,54 +1,77 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ClientVehicleService } from '@/modules/client/services/ClientVehicleService'; // New import
+import { NextResponse } from 'next/server';
+import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import {
-  ConflictError,
-  DatabaseError,
-  NotFoundError,
-  ValidationError,
-  AppError,
-} from '@/modules/common/errors';
-import { sanitizeNumber } from '@/modules/common/utils/inputSanitization';
+import { ClientVehicleService } from '@/modules/client/services/ClientVehicleService';
+import { getLogger } from '@/modules/logger';
+import { ValidationError, NotFoundError, DatabaseError, AppError } from '@/modules/common/errors';
 
-async function createVehicleHandler(req: NextRequest) {
+const logger = getLogger('api:client:create-vehicle');
+const vehicleService = new ClientVehicleService();
+
+export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
   try {
-    const rawData = await req.json();
-    const { plate, brand, model, color, year, initialKm, fipe_value, observations } = rawData;
-
-    // Validação de campos obrigatórios
-    if (!plate || !brand || !model || !color || !year) {
-      throw new ValidationError('Campos obrigatórios não informados.');
-    }
-
-    // Obtain the authenticated user's ID from the authorization header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Token de autorização não fornecido.' }, { status: 401 });
-    }
-    const token = authHeader.substring(7);
+    const body = await req.json();
+    logger.info('request_received', {
+      userId: req.user?.id?.slice(0, 8),
+      hasBody: !!body,
+    });
 
     const {
-      data: { user },
-      error: userError,
-    } = await SupabaseService.getInstance().getClient().auth.getUser(token);
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Usuário não autenticado ou inválido.' }, { status: 401 });
+      plate,
+      brand,
+      model,
+      color,
+      year,
+      initialKm,
+      fipe_value,
+      observations,
+      preparacao,
+      comercializacao,
+    } = body ?? {}; // Validação de campos obrigatórios
+    if (!plate || !brand || !model || !color || !year) {
+      logger.warn('missing_required_fields', {
+        userId: req.user?.id?.slice(0, 8),
+        missing: [
+          !plate && 'plate',
+          !brand && 'brand',
+          !model && 'model',
+          !color && 'color',
+          !year && 'year',
+        ]
+          .filter(Boolean)
+          .join(', '),
+      });
+      return NextResponse.json(
+        { error: 'Preencha todos os campos obrigatórios.', code: 'INVALID_INPUT' },
+        { status: 400 }
+      );
     }
 
-    const clientId = user.id;
+    const clientId = req.user.id;
+    logger.info('creating_vehicle', {
+      userId: clientId.slice(0, 8),
+      plate,
+      brand,
+      model,
+    });
 
-    const clientVehicleService = new ClientVehicleService();
-    const vehicle = await clientVehicleService.createVehicle({
+    const vehicle = await vehicleService.createVehicle({
       plate: plate as string,
       brand: brand as string,
       model: model as string,
       color: color as string,
       year: year as number,
-      initialKm: initialKm ? sanitizeNumber(initialKm) : undefined,
-      fipe_value: fipe_value ? sanitizeNumber(fipe_value) : undefined,
+      initialKm: initialKm ? Number(initialKm) : undefined,
+      fipe_value: fipe_value ? Number(fipe_value) : undefined,
       observations: observations as string,
       clientId: clientId,
+      preparacao: preparacao as boolean,
+      comercializacao: comercializacao as boolean,
+    });
+    logger.info('success', {
+      userId: clientId.slice(0, 8),
+      vehicleId: vehicle.id.slice(0, 8),
+      plate,
     });
 
     return NextResponse.json({
@@ -65,25 +88,31 @@ async function createVehicleHandler(req: NextRequest) {
       message: 'Veículo cadastrado com sucesso!',
     });
   } catch (error: unknown) {
-    if (error instanceof ConflictError) {
-      return NextResponse.json(
-        { error: error.message, code: 'DUPLICATE_PLATE' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        { error: error.message, code: 'ACCESS_DENIED' },
-        { status: error.statusCode }
-      );
-    }
     if (error instanceof ValidationError) {
+      logger.warn('validation_error', {
+        userId: req.user?.id?.slice(0, 8),
+        error: error.message,
+      });
       return NextResponse.json(
         { error: error.message, code: 'INVALID_INPUT' },
         { status: error.statusCode }
       );
     }
+    if (error instanceof NotFoundError) {
+      logger.warn('access_denied', {
+        userId: req.user?.id?.slice(0, 8),
+        error: error.message,
+      });
+      return NextResponse.json(
+        { error: error.message, code: 'ACCESS_DENIED' },
+        { status: error.statusCode }
+      );
+    }
     if (error instanceof DatabaseError) {
+      logger.error('db_error', {
+        userId: req.user?.id?.slice(0, 8),
+        error: error.message,
+      });
       return NextResponse.json(
         { error: error.message, code: 'DATABASE_ERROR' },
         { status: error.statusCode }
@@ -91,6 +120,10 @@ async function createVehicleHandler(req: NextRequest) {
     }
     if (error instanceof AppError) {
       // Catch any other custom AppError
+      logger.error('app_error', {
+        userId: req.user?.id?.slice(0, 8),
+        error: error.message,
+      });
       return NextResponse.json(
         { error: error.message, code: 'APP_ERROR' },
         { status: error.statusCode }
@@ -98,6 +131,10 @@ async function createVehicleHandler(req: NextRequest) {
     }
 
     const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('unhandled_error', {
+      userId: req.user?.id?.slice(0, 8),
+      error: errorMessage,
+    });
     return NextResponse.json(
       {
         error: 'Erro interno do servidor.',
@@ -106,6 +143,4 @@ async function createVehicleHandler(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-export const POST = createVehicleHandler;
+});

@@ -1,0 +1,16 @@
+.vcc {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+}
+.vcc-title { margin-top: 0; }
+.vcc-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
+.vcc-flex { display: flex; gap: 16px; align-items: center; }
+.vcc-inline { display: flex; gap: 8px; align-items: center; }
+.vcc-select, .vcc-input, .vcc-btn { padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; }
+.vcc-btn { cursor: pointer; }
+.vcc-rows { display: grid; gap: 8px; }
+.vcc-row { display: grid; grid-template-columns: 140px 1fr 1fr 120px; gap: 8px; align-items: center; }
+.vcc-plate { font-weight: 600; }
+

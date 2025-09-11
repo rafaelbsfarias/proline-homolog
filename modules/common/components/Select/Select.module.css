@@ -1,0 +1,55 @@
+.formGroup {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 6px;
+  color: #002e4c;
+  font-weight: 500;
+}
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.inputWrapper select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color: #757575;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+
+  padding: 8px 36px 8px 12px;
+}
+
+.inputWrapper .icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #757575;
+  font-size: 1.2rem;
+}
+
+.inputWrapper select option[value=''] {
+  color: #757575;
+}
+
+.inputWrapper select:focus {
+  outline: none;
+  border-color: #0044a0;
+  box-shadow: 0 0 5px rgba(0, 68, 160, 0.3);
+}
+
+.inputWrapper select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}

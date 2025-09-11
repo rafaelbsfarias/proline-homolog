@@ -240,13 +240,12 @@ export class ErrorHandlerService {
    */
   private async logToServer(error: AppError): Promise<void> {
     try {
-      // TODO: Implementar envio para serviço de log (ex: Sentry)
       const payload = {
         ...error,
         originalError: error.originalError?.message || error.originalError,
       };
 
-      // Placeholder para envio real
+      // Log para desenvolvimento - pode ser substituído por Sentry em produção
       if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
         console.log('Log enviado para servidor:', payload);

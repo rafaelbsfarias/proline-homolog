@@ -1,5 +1,4 @@
 DROP FUNCTION IF EXISTS get_clients_with_vehicle_count();
-
 CREATE OR REPLACE FUNCTION get_clients_with_vehicle_count()
 RETURNS TABLE (
     id UUID,

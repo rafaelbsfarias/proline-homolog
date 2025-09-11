@@ -1,12 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import {
-  ConflictError,
-  DatabaseError,
-  NotFoundError,
-  ValidationError,
-  AppError,
-} from '@/lib/utils/errors';
+import { ConflictError, DatabaseError, NotFoundError, ValidationError } from '@/lib/utils/errors';
 import {
   validatePlate,
   preparePlateForStorage,
@@ -27,6 +21,23 @@ interface VehicleCreationData {
   fipe_value?: number;
   estimated_arrival_date?: string;
   createdBy?: string; // User ID of the admin creating the vehicle
+  preparacao?: boolean;
+  comercializacao?: boolean;
+}
+
+interface VehicleData {
+  id: string;
+  plate: string;
+  brand: string;
+  model: string;
+  color: string;
+  year: number;
+  fipe_value: number | null;
+  estimated_arrival_date: string | null;
+  preparacao: boolean;
+  comercializacao: boolean;
+  status: string;
+  created_at: string;
 }
 
 export class VehicleCreationService {
@@ -37,7 +48,7 @@ export class VehicleCreationService {
     logger.info('VehicleCreationService initialized.');
   }
 
-  async createVehicle(data: VehicleCreationData): Promise<any> {
+  async createVehicle(data: VehicleCreationData): Promise<VehicleData> {
     const {
       clientId,
       plate,
@@ -48,6 +59,8 @@ export class VehicleCreationService {
       fipe_value,
       estimated_arrival_date,
       createdBy,
+      preparacao,
+      comercializacao,
     } = data;
 
     logger.info(`Attempting to create vehicle for client ${clientId} with plate ${plate}.`);
@@ -134,6 +147,8 @@ export class VehicleCreationService {
         fipe_value: sanitizedfipe_value,
         estimated_arrival_date: estimated_arrival_date,
         created_by: createdBy,
+        preparacao: preparacao || false,
+        comercializacao: comercializacao || false,
         status: 'definir opção de coleta',
       })
       .select(
@@ -146,6 +161,8 @@ export class VehicleCreationService {
         year,
         fipe_value,
         estimated_arrival_date,
+        preparacao,
+        comercializacao,
         status,
         created_at
       `

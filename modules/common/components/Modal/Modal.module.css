@@ -1,0 +1,121 @@
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-height: 90vh;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tamanhos base com max-height */
+.sm {
+  width: min(400px, 100%);
+}
+
+.md {
+  width: min(600px, 100%);
+}
+
+.lg {
+  width: min(800px, 100%);
+}
+
+.modalHeader {
+  background: #002e4c;
+  color: #ffffff;
+  text-align: center;
+  padding: clamp(15px, 3vw, 20px);
+  flex-shrink: 0; /* Impede que o header encolha */
+  z-index: 1;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: clamp(18px, 4vw, 22px);
+}
+
+.modalHeader p {
+  margin: 8px 0 0 0;
+  font-size: clamp(12px, 2.5vw, 14px);
+  color: #e8f1ff;
+}
+
+.modalClose {
+  position: absolute;
+  top: clamp(8px, 2vw, 10px);
+  right: clamp(8px, 2vw, 10px);
+  background: transparent;
+  border: none;
+  font-size: clamp(20px, 4vw, 24px);
+  color: #ffffff;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.modalBody {
+  padding: clamp(15px, 3vw, 30px);
+  overflow-y: auto;
+  flex-grow: 1; /* Faz o corpo crescer e ocupar o espaço */
+  overflow-y: auto;
+}
+
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(10px, 2vw, 20px);
+  margin-bottom: clamp(15px, 3vw, 20px);
+}
+
+.formRow > * {
+  flex: 1 1 300px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: clamp(10px, 2vw, 20px);
+}
+
+/* Media Queries ajustados */
+@media (max-width: 768px) {
+  .modalContent {
+    max-height: 85vh;
+  }
+
+  .formRow > * {
+    flex: 1 1 100%;
+  }
+}
+
+/* Adiciona suporte para orientação landscape em mobile */
+@media (max-height: 480px) and (orientation: landscape) {
+  .modalContent {
+    height: auto;
+    max-height: 90vh;
+  }
+}

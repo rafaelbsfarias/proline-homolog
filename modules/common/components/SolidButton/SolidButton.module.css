@@ -1,0 +1,31 @@
+.solidButton {
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  background: #002e4c;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.solidButton:hover:not(:disabled) {
+  background: #001f36;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.solidButton:disabled {
+  background: #d3d3d3;
+  color: #f5f3f4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .outlineButton {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+}

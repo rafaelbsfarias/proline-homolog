@@ -19,7 +19,6 @@ BEGIN
     VALUES ('vehicle-media', 'vehicle-media', false);
   END IF;
 END $$;
-
 -- 2) Helper comments (not executable logic, just documentation)
 -- Comments removed to avoid ownership errors on schema/table
 
@@ -52,7 +51,6 @@ BEGIN
     DROP POLICY "vehicle_media_owner_delete" ON storage.objects;
   END IF;
 END $$;
-
 -- 3.1) Admin: full access to the bucket (ALL)
 CREATE POLICY "vehicle_media_admin_all"
 ON storage.objects
@@ -72,7 +70,6 @@ WITH CHECK (
     WHERE p.id = auth.uid() AND p.role = 'admin'
   )
 );
-
 -- 3.2) Client: can READ media for their own vehicles
 CREATE POLICY "vehicle_media_client_read"
 ON storage.objects
@@ -87,7 +84,6 @@ USING (
       AND v.client_id = auth.uid()
   )
 );
-
 -- 3.3) Specialist: can READ media for vehicles of clients linked to them
 CREATE POLICY "vehicle_media_specialist_read"
 ON storage.objects
@@ -103,7 +99,6 @@ USING (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 -- 3.4) Partner: can READ only their own uploads
 CREATE POLICY "vehicle_media_partner_read_own"
 ON storage.objects
@@ -113,7 +108,6 @@ USING (
   bucket_id = 'vehicle-media'
   AND split_part(name, '/', 2) = auth.uid()::text
 );
-
 -- 3.5) Specialist: can INSERT only under /<vehicle_id>/<auth.uid()>/** when linked to that vehicle's client
 CREATE POLICY "vehicle_media_specialist_insert"
 ON storage.objects
@@ -130,7 +124,6 @@ WITH CHECK (
       AND cs.specialist_id = auth.uid()
   )
 );
-
 -- 3.6) Partner: can INSERT only under /<vehicle_id>/<auth.uid()>/** when linked by a service order
 CREATE POLICY "vehicle_media_partner_insert"
 ON storage.objects
@@ -147,7 +140,6 @@ WITH CHECK (
       AND q.partner_id = auth.uid()
   )
 );
-
 -- 3.7) Owner (uploader) can UPDATE/DELETE their own objects; Admin already covered by admin_all
 CREATE POLICY "vehicle_media_owner_write"
 ON storage.objects
@@ -161,7 +153,6 @@ WITH CHECK (
   bucket_id = 'vehicle-media'
   AND split_part(name, '/', 2) = auth.uid()::text
 );
-
 CREATE POLICY "vehicle_media_owner_delete"
 ON storage.objects
 FOR DELETE

@@ -5,11 +5,18 @@ import {
 } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
+import { checkSpecialistClientLink } from '@/modules/specialist/utils/authorization';
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
   try {
     const url = new URL(req.url);
     const clientId = url.searchParams.get('clientId') || '';
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(url.searchParams.get('pageSize') || `${DEFAULT_PAGE_SIZE}`, 10);
+    const plateFilter = url.searchParams.get('plate') || '';
+    const statusFilter = url.searchParams.get('status') || '';
 
     if (!validateUUID(clientId)) {
       return NextResponse.json({ error: 'clientId inválido' }, { status: 400 });
@@ -18,34 +25,37 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Authorization: ensure this specialist is linked to the client
-    const { data: link, error: linkError } = await supabase
-      .from('client_specialists')
-      .select('client_id')
-      .eq('client_id', clientId)
-      .eq('specialist_id', req.user.id)
-      .maybeSingle();
-
-    if (linkError) {
-      return NextResponse.json({ error: 'Erro ao verificar vínculo' }, { status: 500 });
+    const authResult = await checkSpecialistClientLink(supabase, req.user.id, clientId);
+    if (!authResult.authorized) {
+      return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    if (!link) {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    // Debug: log received filters before calling RPC
+    console.info('client-vehicles: fetching', {
+      clientId,
+      page,
+      pageSize,
+      plateFilter,
+      statusFilter,
+    });
 
-    // Fetch vehicles for the client
-    const { data: vehicles, error } = await supabase
-      .from('vehicles')
-      .select('id, plate, brand, model, color, year, status')
-      .eq('client_id', clientId)
-      .order('created_at', { ascending: false });
+    // Fetch paginated vehicles using the RPC function, passing filters
+    const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
+      p_client_id: clientId,
+      p_page_size: pageSize,
+      p_page_num: page,
+      p_plate_filter: plateFilter,
+      p_status_filter: statusFilter,
+    });
 
     if (error) {
+      console.error('RPC Error fetching vehicles:', error);
       return NextResponse.json({ error: 'Erro ao buscar veículos' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, vehicles: vehicles || [] });
-  } catch {
+    return NextResponse.json({ success: true, ...data });
+  } catch (e) {
+    console.error('GET client-vehicles error:', e);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 });

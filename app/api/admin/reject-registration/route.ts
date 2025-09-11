@@ -3,6 +3,7 @@ import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils
 import { RegistrationRejectionService } from '@/modules/admin/services/RegistrationRejectionService';
 import { NotFoundError, DatabaseError, AppError, ValidationError } from '@/modules/common/errors';
 import { getLogger, ILogger } from '@/modules/logger';
+import { respondWithError } from '@/modules/common/utils/apiErrorResponse';
 
 const logger: ILogger = getLogger('AdminRejectRegistrationAPI');
 
@@ -33,37 +34,7 @@ async function rejectRegistrationHandler(request: AuthenticatedRequest) {
     });
   } catch (error: unknown) {
     logger.error('Error in rejectRegistrationHandler:', error);
-
-    if (error instanceof NotFoundError) {
-      return NextResponse.json(
-        { error: error.message, code: 'USER_NOT_FOUND' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message, code: 'INVALID_INPUT' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof DatabaseError) {
-      return NextResponse.json(
-        { error: error.message, code: 'DATABASE_ERROR' },
-        { status: error.statusCode }
-      );
-    }
-    if (error instanceof AppError) {
-      return NextResponse.json(
-        { error: error.message, code: 'APP_ERROR' },
-        { status: error.statusCode }
-      );
-    }
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return NextResponse.json(
-      { error: 'Erro interno do servidor', details: errorMessage },
-      { status: 500 }
-    );
+    return respondWithError(error);
   }
 }
 

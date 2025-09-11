@@ -4,7 +4,9 @@ import dynamic from 'next/dynamic';
 
 const DynamicLoginPageContainer = dynamic(
   () =>
-    import('@/modules/common/components/LoginPageContainer').then(mod => mod.LoginPageContainer),
+    import('@/modules/common/components/Login/LoginPageContainer').then(
+      mod => mod.LoginPageContainer
+    ),
   { ssr: false }
 );
 

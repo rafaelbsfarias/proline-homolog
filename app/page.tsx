@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AuthProvider } from '../modules/common/services/AuthProvider';
-import { LoginPageContainer } from '@/modules/common/components/LoginPageContainer';
+import { LoginPageContainer } from '@/modules/common/components/Login/LoginPageContainer';
 import { setupDIContainer } from './di/setup';
 
 // Inicializa o container de DI

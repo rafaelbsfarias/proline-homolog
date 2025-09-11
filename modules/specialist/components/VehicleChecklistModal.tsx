@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import Modal from '@/modules/common/components/Modal';
+import Modal from '@/modules/common/components/Modal/Modal';
 import styles from './VehicleChecklistModal.module.css';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { sanitizeString } from '@/modules/common/utils/inputSanitization';
@@ -21,6 +21,8 @@ interface VehicleChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicle: VehicleInfo | null;
+  onSaved?: () => void;
+  onFinalized?: () => void;
 }
 
 // Form types and defaults moved to checklist/types and managed by hook
@@ -31,6 +33,8 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   isOpen,
   onClose,
   vehicle,
+  onSaved,
+  onFinalized,
 }) => {
   const { showToast } = useToast();
   const {
@@ -45,6 +49,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isFinalized, setIsFinalized] = useState(false);
 
   const title = useMemo(() => {
     if (!vehicle) return 'Checklist do Veículo';
@@ -61,6 +66,51 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   };
 
   // form state handled by useChecklistForm
+
+  // Load existing checklist (collaborative, latest non-finalized)
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!isOpen || !vehicle) return;
+        const url = `/api/specialist/get-checklist?vehicleId=${vehicle.id}`;
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const resp = await fetch(url, {
+          method: 'GET',
+          headers: {
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data?.inspection) {
+          setField('date', data.inspection.inspection_date);
+          setField('odometer', String(data.inspection.odometer ?? ''));
+          setField('fuelLevel', data.inspection.fuel_level || 'half');
+          setField('observations', data.inspection.observations || '');
+          (data.services || []).forEach((s: any) => {
+            const map: Record<string, keyof typeof form.services> = {
+              mechanics: 'mechanics',
+              bodyPaint: 'bodyPaint',
+              washing: 'washing',
+              tires: 'tires',
+              loja: 'loja',
+              patio_atacado: 'patioAtacado',
+            };
+            const key = map[s.category];
+            if (key) {
+              setServiceFlag(key, !!s.required);
+              setServiceNotes(key, s.notes || '');
+            }
+          });
+          setIsFinalized(!!data.inspection.finalized);
+        }
+      } catch (e) {
+        // ignore prefill errors
+      }
+    })();
+  }, [isOpen, vehicle]);
 
   // cleanup moved to hook
 
@@ -92,6 +142,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isFinalized) return; // read-only when finalized
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -124,49 +175,60 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
         uploadedPaths = await uploadFiles(userId, vehicle.id);
       }
 
-      // Persist locally (including uploaded paths)
-      try {
-        const key = `${STORAGE_PREFIX}${vehicle.id}`;
-        const existingRaw = localStorage.getItem(key);
-        const list = existingRaw ? (JSON.parse(existingRaw) as any[]) : [];
-        const payload = {
-          ...form,
-          date: sanitizeString(form.date),
-          odometer: sanitizeString(form.odometer),
-          observations: sanitizeString(form.observations),
-          services: {
-            mechanics: {
-              required: form.services.mechanics.required,
-              notes: sanitizeString(form.services.mechanics.notes),
-            },
-            bodyPaint: {
-              required: form.services.bodyPaint.required,
-              notes: sanitizeString(form.services.bodyPaint.notes),
-            },
-            washing: {
-              required: form.services.washing.required,
-              notes: sanitizeString(form.services.washing.notes),
-            },
-            tires: {
-              required: form.services.tires.required,
-              notes: sanitizeString(form.services.tires.notes),
-            },
+      // Persist in backend (inspections + services + media)
+      const payload = {
+        vehicleId: vehicle.id,
+        date: form.date,
+        odometer: Number(form.odometer),
+        fuelLevel: form.fuelLevel,
+        observations: sanitizeString(form.observations),
+        services: {
+          mechanics: {
+            required: form.services.mechanics.required,
+            notes: sanitizeString(form.services.mechanics.notes),
           },
-          savedAt: new Date().toISOString(),
-          vehicle: { id: vehicle.id, plate: vehicle.plate },
-          mediaPaths: uploadedPaths,
-        };
-        list.push(payload);
-        localStorage.setItem(key, JSON.stringify(list));
-      } catch (_) {
-        // ignore storage errors
+          bodyPaint: {
+            required: form.services.bodyPaint.required,
+            notes: sanitizeString(form.services.bodyPaint.notes),
+          },
+          washing: {
+            required: form.services.washing.required,
+            notes: sanitizeString(form.services.washing.notes),
+          },
+          tires: {
+            required: form.services.tires.required,
+            notes: sanitizeString(form.services.tires.notes),
+          },
+          loja: {
+            required: form.services.loja.required,
+            notes: sanitizeString(form.services.loja.notes),
+          },
+          patioAtacado: {
+            required: form.services.patioAtacado.required,
+            notes: sanitizeString(form.services.patioAtacado.notes),
+          },
+        },
+        mediaPaths: uploadedPaths,
+      };
+
+      const resp = await fetch('/api/specialist/save-checklist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        throw new Error(data?.error || 'Erro ao salvar checklist');
       }
 
-      setSuccess(files.length ? 'Checklist + fotos enviados.' : 'Checklist salvo localmente.');
-      showToast(
-        'success',
-        files.length ? 'Fotos enviadas com sucesso.' : 'Checklist salvo localmente.'
-      );
+      setSuccess('Checklist salvo com sucesso.');
+      showToast('success', 'Checklist salvo com sucesso.');
+      try {
+        onSaved && onSaved();
+      } catch {}
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
       setError(msg);
@@ -181,128 +243,163 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={title}>
       <form className={styles.container} onSubmit={handleSubmit}>
-        <div className={styles.vehicleHeader}>
-          <div>
-            Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
-          </div>
-          <div>Placa: {vehicle.plate}</div>
-          {vehicle.color && <div>Cor: {vehicle.color}</div>}
-        </div>
-
-        {/* Dados básicos da inspeção */}
-        <div className={styles.grid}>
-          <div className={styles.field}>
-            <label htmlFor="date">Data da inspeção</label>
-            <input
-              id="date"
-              name="date"
-              type="date"
-              value={form.date}
-              onChange={e => setField('date', e.target.value)}
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="odometer">Quilometragem atual (km)</label>
-            <input
-              id="odometer"
-              name="odometer"
-              type="number"
-              min="0"
-              inputMode="numeric"
-              value={form.odometer}
-              onChange={e => setField('odometer', e.target.value)}
-              required
-            />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="fuelLevel">Nível de combustível</label>
-            <select
-              id="fuelLevel"
-              name="fuelLevel"
-              value={form.fuelLevel}
-              onChange={e => setField('fuelLevel', e.target.value)}
-            >
-              <option value="empty">Vazio</option>
-              <option value="quarter">1/4</option>
-              <option value="half">1/2</option>
-              <option value="three_quarters">3/4</option>
-              <option value="full">Cheio</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Sinalização de serviços necessários por categoria */}
-        <div className={styles.group}>
-          <h4 className={styles.groupTitle}>Serviços necessários</h4>
-          <div className={styles.grid}>
-            <ServiceCategoryField
-              label="Mecânica"
-              checked={form.services.mechanics.required}
-              notes={form.services.mechanics.notes}
-              onToggle={v => setServiceFlag('mechanics', v)}
-              onNotesChange={v => setServiceNotes('mechanics', v)}
-            />
-            <ServiceCategoryField
-              label="Funilaria/Pintura"
-              checked={form.services.bodyPaint.required}
-              notes={form.services.bodyPaint.notes}
-              onToggle={v => setServiceFlag('bodyPaint', v)}
-              onNotesChange={v => setServiceNotes('bodyPaint', v)}
-            />
-            <ServiceCategoryField
-              label="Lavagem"
-              checked={form.services.washing.required}
-              notes={form.services.washing.notes}
-              onToggle={v => setServiceFlag('washing', v)}
-              onNotesChange={v => setServiceNotes('washing', v)}
-            />
-            <ServiceCategoryField
-              label="Pneus"
-              checked={form.services.tires.required}
-              notes={form.services.tires.notes}
-              onToggle={v => setServiceFlag('tires', v)}
-              onNotesChange={v => setServiceNotes('tires', v)}
-            />
-          </div>
-        </div>
-
-        {/* Upload de fotos (galeria/câmera) */}
-        <div className={styles.upload}>
-          <label htmlFor="photos">Fotos do veículo</label>
-          <input
-            id="photos"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            onChange={e => handleFiles(e.target.files)}
-          />
-          <small>
-            Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
-          </small>
-          {!!previews.length && (
-            <div className={styles.previews}>
-              {previews.map((src, i) => (
-                <div key={src} className={styles.previewItem}>
-                  <img
-                    src={src}
-                    alt={`Pré-visualização ${i + 1}`}
-                    className={styles.previewImage}
-                  />
-                  <button type="button" className={styles.removeBtn} onClick={() => removeFile(i)}>
-                    ×
-                  </button>
-                </div>
-              ))}
+        {/* Área de conteúdo que vai rolar */}
+        <div className={styles.content}>
+          <div className={styles.vehicleHeader}>
+            <div>
+              Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
             </div>
-          )}
+            <div>Placa: {vehicle.plate}</div>
+            {vehicle.color && <div>Cor: {vehicle.color}</div>}
+            {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
+          </div>
+
+          {/* Dados básicos da inspeção */}
+          <div className={styles.grid}>
+            <div className={styles.field}>
+              <label htmlFor="date">Data da inspeção</label>
+              <input
+                id="date"
+                name="date"
+                type="date"
+                value={form.date}
+                onChange={e => setField('date', e.target.value)}
+                required
+                disabled={isFinalized}
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="odometer">Quilometragem atual (km)</label>
+              <input
+                id="odometer"
+                name="odometer"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={form.odometer}
+                onChange={e => setField('odometer', e.target.value)}
+                disabled={isFinalized}
+                required
+              />
+            </div>
+            <div className={styles.field}>
+              <label htmlFor="fuelLevel">Nível de combustível</label>
+              <select
+                id="fuelLevel"
+                name="fuelLevel"
+                value={form.fuelLevel}
+                onChange={e => setField('fuelLevel', e.target.value)}
+                disabled={isFinalized}
+              >
+                <option value="empty">Vazio</option>
+                <option value="quarter">1/4</option>
+                <option value="half">1/2</option>
+                <option value="three_quarters">3/4</option>
+                <option value="full">Cheio</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Sinalização de serviços necessários por categoria */}
+          <div className={styles.group}>
+            <h4 className={styles.groupTitle}>Serviços necessários</h4>
+            <div className={styles.grid}>
+              <ServiceCategoryField
+                label="Mecânica"
+                checked={form.services.mechanics.required}
+                notes={form.services.mechanics.notes}
+                onToggle={v => setServiceFlag('mechanics', v)}
+                onNotesChange={v => setServiceNotes('mechanics', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Funilaria/Pintura"
+                checked={form.services.bodyPaint.required}
+                notes={form.services.bodyPaint.notes}
+                onToggle={v => setServiceFlag('bodyPaint', v)}
+                onNotesChange={v => setServiceNotes('bodyPaint', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Lavagem"
+                checked={form.services.washing.required}
+                notes={form.services.washing.notes}
+                onToggle={v => setServiceFlag('washing', v)}
+                onNotesChange={v => setServiceNotes('washing', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Pneus"
+                checked={form.services.tires.required}
+                notes={form.services.tires.notes}
+                onToggle={v => setServiceFlag('tires', v)}
+                onNotesChange={v => setServiceNotes('tires', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Loja"
+                checked={form.services.loja.required}
+                notes={form.services.loja.notes}
+                onToggle={v => setServiceFlag('loja', v)}
+                onNotesChange={v => setServiceNotes('loja', v)}
+                disabled={isFinalized}
+              />
+              <ServiceCategoryField
+                label="Pátio Atacado"
+                checked={form.services.patioAtacado.required}
+                notes={form.services.patioAtacado.notes}
+                onToggle={v => setServiceFlag('patioAtacado', v)}
+                onNotesChange={v => setServiceNotes('patioAtacado', v)}
+                disabled={isFinalized}
+              />
+            </div>
+          </div>
+
+          {/* Upload de fotos (galeria/câmera) */}
+          <div className={styles.upload}>
+            <label htmlFor="photos">Fotos do veículo</label>
+            <input
+              id="photos"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              onChange={e => handleFiles(e.target.files)}
+              disabled={isFinalized}
+            />
+            <small>
+              Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
+            </small>
+            {!!previews.length && (
+              <div className={styles.previews}>
+                {previews.map((src, i) => (
+                  <div key={src} className={styles.previewItem}>
+                    <img
+                      src={src}
+                      alt={`Pré-visualização ${i + 1}`}
+                      className={styles.previewImage}
+                    />
+                    {!isFinalized && (
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => removeFile(i)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {error && <div className={styles.error}>{error}</div>}
+          {success && <div className={styles.success}>{success}</div>}
         </div>
 
-        {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>{success}</div>}
-
-        <div className={styles.actions}>
+        {/* Rodapé de Ações Fixo */}
+        <div className={`${styles.actions} ${styles.actionsFooter}`}>
           <button
             type="button"
             className={styles.secondary}
@@ -311,8 +408,50 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           >
             Fechar
           </button>
-          <button type="submit" className={styles.primary} disabled={saving}>
-            {saving ? 'Salvando...' : 'Salvar checklist (local)'}
+          <button type="submit" className={styles.primary} disabled={saving || isFinalized}>
+            {saving ? 'Salvando...' : 'Salvar checklist'}
+          </button>
+          <button
+            type="button"
+            className={styles.primary}
+            onClick={async () => {
+              if (!vehicle || isFinalized) return;
+              try {
+                setSaving(true);
+                const {
+                  data: { session },
+                } = await supabase.auth.getSession();
+                const resp = await fetch('/api/specialist/finalize-checklist', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token
+                      ? { Authorization: `Bearer ${session.access_token}` }
+                      : {}),
+                  },
+                  body: JSON.stringify({ vehicleId: vehicle.id }),
+                });
+                if (!resp.ok) {
+                  const data = await resp.json().catch(() => ({}));
+                  throw new Error(data?.error || 'Erro ao finalizar checklist');
+                }
+                setIsFinalized(true);
+                setSuccess('Checklist finalizado.');
+                showToast('success', 'Checklist finalizado.');
+                try {
+                  onFinalized && onFinalized();
+                } catch {}
+              } catch (err) {
+                const msg = err instanceof Error ? err.message : 'Erro ao finalizar checklist.';
+                setError(msg);
+                showToast('error', msg);
+              } finally {
+                setSaving(false);
+              }
+            }}
+            disabled={saving || isFinalized}
+          >
+            Finalizar checklist
           </button>
         </div>
       </form>

@@ -15,6 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
@@ -22,6 +23,8 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@collections": ["modules/collections/index.ts"],
+      "@collections/*": ["modules/collections/*"],
       "@/*": ["./*"],
       "@/app/*": ["./app/*"],
       "@/modules/*": ["./modules/*"],
@@ -37,7 +40,10 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "lib/**/*.ts",
-    ".next/types/**/*.ts"
+    "modules/**/*.ts",
+    "modules/**/*.tsx",
+    ".next/types/**/*.ts",
+    "modules/client/components/dashboard/VehicleCounter.tsx"
   ],
   "exclude": ["node_modules"]
 }

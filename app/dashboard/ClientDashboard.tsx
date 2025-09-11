@@ -1,296 +1,162 @@
 import React, { useEffect, useState } from 'react';
-import styles from '@/modules/common/components/SignupPage.module.css';
 import Header from '@/modules/admin/components/Header';
-import { supabase } from '../../modules/common/services/supabaseClient';
-import ClientVehicleRegistrationModal from '@/modules/common/components/ClientVehicleRegistrationModal';
-import VehicleCounter from '@/modules/common/components/VehicleCounter';
+import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
+import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
+import VehicleCounter from '@/modules/client/components/VehicleCounter/VehicleCounter';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import '@/modules/client/components/ClientDashboard.css';
+import VehicleCollectionSection from '@/modules/client/components/collection/VehicleCollectionSection';
+import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
+import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
+import ContractAcceptanceScreen from '@/modules/client/components/dashboard/ContractAcceptanceScreen';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 interface ProfileData {
   full_name: string;
+  must_change_password?: boolean; // Made optional to prevent type errors
   clients: {
     parqueamento?: number;
     taxa_operacao?: number;
   }[];
 }
 
-const ClientDashboard = () => {
-  const [accepted, setAccepted] = useState(false);
+const ClientDashboard: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { profileData, userId, loading } = useUserProfile();
+  const { accepted, setAccepted, loadingAcceptance, acceptContract } =
+    useContractAcceptance(userId);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
-  const [vehicleCount, setVehicleCount] = useState(0);
+  const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
+  const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
+
+  const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
+  const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
+
+  const isComponentLoading = vehicleCounterLoading || collectionSectionLoading;
 
   useEffect(() => {
-    async function fetchUserAndAcceptance() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        // Fetch profile and client data in parallel
-        const [profileResponse, clientResponse] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-          supabase
-            .from('clients')
-            .select('parqueamento, taxa_operacao')
-            .eq('profile_id', user.id)
-            .single(),
-        ]);
-
-        const { data: profile } = profileResponse;
-        const { data: clientData } = clientResponse;
-
-        if (profile) {
-          setUserName(profile.full_name || '');
-          setProfileData({
-            full_name: profile.full_name || '',
-            clients: [
-              {
-                parqueamento: clientData?.parqueamento,
-                taxa_operacao: clientData?.taxa_operacao,
-              },
-            ],
-          });
-        } else {
-        }
-
-        // Verifica aceite do contrato
-        const { data: acceptance } = await supabase
-          .from('client_contract_acceptance')
-          .select('accepted_at')
-          .eq('client_id', user.id)
-          .maybeSingle();
-        setAccepted(!!acceptance);
+    if (profileData) {
+      setUserName(profileData.full_name || '');
+      if (profileData.must_change_password) {
+        setShowForceChangePasswordModal(true);
       }
-      setLoading(false);
     }
-    fetchUserAndAcceptance();
-  }, []);
-
-  useEffect(() => {
-    const fetchVehicleCount = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (token) {
-        try {
-          const response = await fetch('/api/client/vehicles-count', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (response.ok) {
-            const vehicleData = await response.json();
-
-            setVehicleCount(vehicleData.vehicle_count || 0);
-          }
-        } catch (error) {}
-      }
-    };
-
-    fetchVehicleCount();
   }, [profileData]);
 
   async function handleAcceptContract() {
-    setLoading(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      if (!profileData || !profileData.clients || profileData.clients.length === 0) {
-        setLoading(false);
-        return;
-      }
+    if (!profileData?.clients?.length) return;
+    const contentToSend = JSON.stringify(profileData.clients[0]);
+    await acceptContract(contentToSend);
+  }
 
-      const contentToSend = JSON.stringify(profileData.clients[0]);
+  const [showOverallLoader, setShowOverallLoader] = useState(true);
 
-      // Tenta usar a RPC; se indisponível, faz upsert direto como fallback
-      const { data, error } = await supabase.rpc('accept_client_contract', {
-        p_client_id: user.id,
-        p_content: contentToSend,
-      });
-
-      if (error) {
-        // Fallback: upsert direto, caso a função não exista no banco
-        const { error: upsertError } = await supabase.from('client_contract_acceptance').upsert(
-          {
-            client_id: user.id,
-            content: contentToSend,
-            accepted_at: new Date().toISOString(),
-          },
-          { onConflict: 'client_id' }
-        );
-        if (upsertError) {
-          setLoading(false);
-          return;
-        }
-      }
-
-      setAccepted(true);
+  useEffect(() => {
+    if (loading || (accepted && isComponentLoading)) {
+      setShowOverallLoader(true);
+    } else {
+      const timeout = setTimeout(() => setShowOverallLoader(false), 300);
+      return () => clearTimeout(timeout);
     }
-    setLoading(false);
-  }
-
-  if (loading) {
-    return <div style={{ padding: 48, textAlign: 'center' }}>Carregando...</div>;
-  }
-
-  if (!profileData) {
-    return (
-      <div style={{ padding: 48, textAlign: 'center' }}>
-        <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
-      </div>
-    );
-  }
+  }, [loading, accepted, isComponentLoading]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      {!accepted ? (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 10px 0 0' }}>
-          <h1
-            style={{
-              fontSize: 2.4 + 'rem',
-              fontWeight: 600,
-              marginBottom: 8,
-              textAlign: 'center',
-              color: '#333',
-            }}
-          >
-            Termos do Contrato
-          </h1>
-          <p
-            style={{ textAlign: 'center', color: '#666', fontSize: 1.15 + 'rem', marginBottom: 32 }}
-          >
-            Por favor, leia e aceite os termos abaixo para ter acesso completo ao seu painel.
-          </p>
-          <div
-            style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'center' }}
-          >
-            <div
-              style={{
-                background: '#fafafa',
-                borderRadius: 12,
-                boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
-                padding: '36px 32px 32px 32px',
-                minWidth: 600,
-                maxWidth: 900,
-                marginBottom: 32,
-              }}
-            >
-              <h2 style={{ fontWeight: 600, fontSize: '1.3rem', marginBottom: 18 }}>
-                Detalhes do Serviço
-              </h2>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Parqueamento:</b> R${' '}
-                {profileData?.clients[0]?.parqueamento?.toFixed(2) || '0.00'}
-              </div>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>
-                <b>Taxa de Operação:</b> R${' '}
-                {profileData?.clients[0]?.taxa_operacao?.toFixed(2) || '0.00'}
-              </div>
-              <div style={{ fontSize: '1.08rem', color: '#222', marginBottom: 8 }}>...</div>
-              <div style={{ color: '#888', fontSize: '1.08rem', marginTop: 18 }}>
-                Demais termos e condições serão detalhados em documento anexo.
-              </div>
-              <div style={{ marginTop: 32 }}>
-                <label
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontSize: '1.08rem',
-                    color: '#222',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={e => setChecked(e.target.checked)}
-                    style={{ marginRight: 8 }}
-                  />
-                  Li e concordo com os termos do contrato
-                </label>
-              </div>
-              <button
-                className={styles.submitButton}
-                style={{
-                  marginTop: 24,
-                  background: '#aab0bb',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: '1.13rem',
-                  opacity: checked ? 1 : 0.7,
-                  cursor: checked ? 'pointer' : 'not-allowed',
-                }}
-                disabled={!checked || loading}
-                onClick={handleAcceptContract}
-              >
-                Aceitar Contrato
+
+      {showOverallLoader && <Loading />}
+
+      <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
+        {!profileData ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>
+            <p>Erro ao carregar dados do perfil. Tente recarregar a página.</p>
+          </div>
+        ) : !accepted ? (
+          <ContractAcceptanceScreen
+            fullName={userName}
+            parqueamento={profileData?.clients[0]?.parqueamento}
+            taxaOperacao={profileData?.clients[0]?.taxa_operacao}
+            checked={checked}
+            setChecked={setChecked}
+            loading={loadingAcceptance}
+            onAccept={handleAcceptContract}
+          />
+        ) : (
+          <main className="dashboard-main">
+            {/*   <h1 className="dashboard-title">Painel do Cliente</h1> */}
+            <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
+
+            <div className="dashboard-actions">
+              <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
+                Cadastrar Novo Veículo
+              </button>
+              <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
+                Adicionar Ponto de Coleta
               </button>
             </div>
-          </div>
-        </main>
-      ) : (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
-            Painel do Cliente
-          </h1>
-          <p style={{ color: '#666', fontSize: '1.15rem', marginBottom: 24 }}>
-            Bem-vindo, {userName}!
-          </p>
 
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-            <button
-              onClick={() => setShowCadastrarVeiculoModal(true)}
-              style={{
-                padding: '10px 20px',
-                fontSize: 16,
-                borderRadius: 6,
-                border: 'none',
-                background: '#002e4c',
-                color: '#fff',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(25,119,242,0.08)',
-                cursor: 'pointer',
-                transition: 'filter 0.2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
-              onMouseOut={e => (e.currentTarget.style.filter = 'none')}
-            >
-              Cadastrar Novo Veículo
-            </button>
-            <button
-              onClick={() => {}}
-              style={{
-                padding: '10px 20px',
-                fontSize: 16,
-                borderRadius: 6,
-                border: 'none',
-                background: '#002e4c',
-                color: '#fff',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(25,119,242,0.08)',
-                cursor: 'pointer',
-                transition: 'filter 0.2s',
-              }}
-              onMouseOver={e => (e.currentTarget.style.filter = 'brightness(1.08)')}
-              onMouseOut={e => (e.currentTarget.style.filter = 'none')}
-            >
-              Adicionar Ponto de Coleta
-            </button>
-          </div>
+            <div className="dashboard-counter">
+              <VehicleCounter
+                key={refreshVehicleCounter}
+                onLoadingChange={setVehicleCounterLoading}
+              />
+            </div>
 
-          {/* Contador de Veículos */}
-          <div style={{ marginBottom: 24 }}>
-            <VehicleCounter />
-          </div>
-        </main>
-      )}
+            <div className="dashboard-counter">
+              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+            </div>
+          </main>
+        )}
+      </div>
+
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
+        onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
       />
+      <ClientCollectPointModal
+        isOpen={showAddCollectPointModal}
+        onClose={() => setShowAddCollectPointModal(false)}
+        onSuccess={() => {
+          setShowAddCollectPointModal(false);
+        }}
+      />
+      <ForceChangePasswordModal
+        isOpen={showForceChangePasswordModal}
+        onClose={() => setShowForceChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowForceChangePasswordModal(false);
+          setShowSuccessModal(true);
+        }}
+        onError={message => {
+          setErrorMessage(message);
+          setShowErrorModal(true);
+        }}
+      />
+
+      {showSuccessModal && (
+        <MessageModal
+          title="Sucesso!"
+          message="Sua senha foi atualizada com sucesso."
+          variant="success"
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
+      {showErrorModal && (
+        <MessageModal
+          title="Erro"
+          message={errorMessage}
+          variant="error"
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };

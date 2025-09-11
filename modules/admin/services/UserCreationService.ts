@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ConflictError, DatabaseError, ValidationError, AppError } from '@/modules/common/errors';
 import { getLogger, ILogger } from '@/modules/logger';
+import { generateTemporaryPassword } from '@/lib/security/passwordUtils';
 
 const logger: ILogger = getLogger('UserCreationService');
 
@@ -9,14 +10,6 @@ interface UserCreationData {
   email: string;
   fullName: string;
   role: 'admin' | 'specialist';
-}
-
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let out = '';
-  for (let i = 0; i < 12; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  logger.debug('Generated temporary password.');
-  return out;
 }
 
 export class UserCreationService {

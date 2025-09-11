@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import styles from './AddUserModal.module.css';
-import MessageModal from '@/modules/common/components/MessageModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 
 interface AddUserModalProps {
   isOpen: boolean;

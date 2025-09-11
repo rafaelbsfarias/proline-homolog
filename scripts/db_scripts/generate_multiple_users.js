@@ -29,6 +29,35 @@ const ROLES_TO_GENERATE = ['admin', 'client', 'partner', 'specialist'];
 const NUM_USERS_PER_ROLE = 10;
 const BASE_PASSWORD = '123qwe';
 
+// Utilitários para gerar CPFs/CNPJs aleatórios formatados, reduzindo colisões
+function randDigits(len) {
+  let out = '';
+  for (let i = 0; i < len; i++) out += Math.floor(Math.random() * 10);
+  return out;
+}
+
+function formatCPF(d11) {
+  // d11: string com 11 dígitos
+  return `${d11.slice(0,3)}.${d11.slice(3,6)}.${d11.slice(6,9)}-${d11.slice(9,11)}`;
+}
+
+function formatCNPJ(d14) {
+  // d14: string com 14 dígitos
+  return `${d14.slice(0,2)}.${d14.slice(2,5)}.${d14.slice(5,8)}/${d14.slice(8,12)}-${d14.slice(12,14)}`;
+}
+
+function generateCPF(seed = '') {
+  // Gera 11 dígitos pseudoaleatórios; inclui parte do timestamp/seed para reduzir colisão
+  const base = (Date.now().toString() + seed + randDigits(11)).slice(-11);
+  return formatCPF(base);
+}
+
+function generateCNPJ(seed = '') {
+  // Gera 14 dígitos pseudoaleatórios; inclui parte do timestamp/seed
+  const base = (Date.now().toString() + seed + randDigits(14)).slice(-14);
+  return formatCNPJ(base);
+}
+
 async function generateUsers() {
   for (const role of ROLES_TO_GENERATE) {
     console.log(`
@@ -94,7 +123,7 @@ async function generateUsers() {
         let specificTableError = null;
         switch (role) {
           case 'client':
-            const documentNumber = `111.111.111-${String(i).padStart(2, '0')}`;
+            const documentNumber = generateCPF(`${role}-${i}`);
             const companyName = `Empresa Cliente ${i}`;
             const { error: clientError } = await supabase.from('clients').upsert(
               {
@@ -102,13 +131,18 @@ async function generateUsers() {
                 document_type: 'CPF',
                 document_number: documentNumber,
                 company_name: companyName,
+                // termos de contrato como inteiros
+                percentual_fipe: 50,
+                taxa_operacao: 10,
+                parqueamento: 25,
+                quilometragem: 100,
               },
               { onConflict: 'profile_id' }
             );
             specificTableError = clientError;
             break;
           case 'partner':
-            const cnpj = `00.000.000/0001-${String(i).padStart(2, '0')}`;
+            const cnpj = generateCNPJ(`${role}-${i}`);
             const partnerCompanyName = `Oficina Parceira ${i}`;
             const { error: partnerError } = await supabase.from('partners').upsert(
               {
@@ -116,6 +150,7 @@ async function generateUsers() {
                 cnpj: cnpj,
                 company_name: partnerCompanyName,
                 is_active: true,
+                category: 'Oficina Mecânica',
               },
               { onConflict: 'profile_id' }
             );

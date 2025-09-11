@@ -1,0 +1,32 @@
+.outlineButton {
+  padding: 10px 20px;
+  border: 1px solid #002e4c;
+  border-radius: 8px;
+  background: transparent;
+  color: #002e4c;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.outlineButton:hover:not(:disabled) {
+  background: #e8f1ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.outlineButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  color: #666;
+}
+
+@media (max-width: 480px) {
+  .outlineButton {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+}

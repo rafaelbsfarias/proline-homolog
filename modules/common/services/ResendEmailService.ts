@@ -198,7 +198,48 @@ export class ResendEmailService implements EmailServiceInterface {
    */
   async sendSignupApprovalEmail(recipientEmail: string, recipientName: string): Promise<void> {
     const subject = 'Cadastro Aprovado - ProLine Hub';
-    const html = `<p>Olá ${recipientName}, seu cadastro foi aprovado!</p>`;
+    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.prolineauto.com.br'}/login`;
+    const html = `<!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${subject}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #002E4C 100%, #002E4C 100%); padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+        .header p { color: #e8f1ff; margin: 10px 0 0 0; }
+        .content { padding: 30px; }
+        .content h2 { color: #002E4C; margin: 0 0 10px 0; }
+        .content p { color: #4a5568; line-height: 1.6; margin: 0 0 16px 0; }
+        .button-container { text-align: center; margin: 24px 0; }
+        .button { display: inline-block; background: #002E4C; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef; }
+        .footer p { color: #6c757d; margin: 0; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Cadastro Aprovado!</h1>
+          <p>Sua jornada com o ProLine Hub começa agora.</p>
+        </div>
+        <div class="content">
+          <h2>Olá, ${recipientName}!</h2>
+          <p>Temos o prazer de informar que seu cadastro em nossa plataforma foi aprovado com sucesso.</p>
+          <p>Você já pode acessar o ProLine Hub usando suas credenciais e explorar todas as ferramentas que oferecemos para a gestão inteligente da sua frota.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${loginLink}" style="display: inline-block; background: #002E4C; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px;">Acessar ProLine Hub</a>
+          </div>
+          <p style="text-align:center; color:#6c757d; font-size: 14px;">Se o botão não funcionar, copie e cole este link no seu navegador: <br/> <span style="word-break:break-all;color:#495057;">${loginLink}</span></p>
+        </div>
+        <div class="footer">
+          <p>Atenciosamente,<br /><strong style="color:#002E4C;">Equipe ProLine Hub</strong></p>
+        </div>
+      </div>
+    </body>
+    </html>`;
     await this.sendEmail({ to: recipientEmail, subject, html });
   }
 
@@ -216,13 +257,80 @@ export class ResendEmailService implements EmailServiceInterface {
   }
 
   /**
-   * Envia email de recuperação de senha.
+   * Envia email de recuperação de senha usando o action_link do Supabase.
+   * O link do Supabase cuidará do fluxo de verificação e redirecionará
+   * para o APP com access_token e refresh_token no fragmento da URL.
    */
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  // async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  //   const subject = 'Redefinição de Senha - ProLine Hub';
+  //   const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password#token=${resetToken}`;
+  //   const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
+  //   await this.sendEmail({ to: email, subject, html });
+  // }
+
+  async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${resetToken}`;
     const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
+  }
+
+  /**
+   * Envia email com senha temporária para reset.
+   */
+  async sendTemporaryPasswordForReset(
+    recipientEmail: string,
+    recipientName: string,
+    temporaryPassword: string
+  ): Promise<void> {
+    const subject = 'Sua nova senha de acesso - ProLine Hub';
+    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login`;
+    const html = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+      <title>${subject}</title>
+    </head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f7fa;margin:0;padding:20px;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#002E4C 100%,#002E4C 100%);padding:30px;text-align:center;">
+          <h1 style="color:#ffffff;margin:0;font-size:24px;">Redefinição de Senha</h1>
+          <p style="color:#e8f1ff;margin:10px 0 0 0;">ProLine Hub</p>
+        </div>
+        <div style="padding:30px;">
+          <h2 style="color:#002E4C;margin:0 0 10px 0;">Olá, ${recipientName}!</h2>
+          <p style="color:#4a5568;line-height:1.6;margin:0 0 16px 0;">
+            Você solicitou uma redefinição de senha. Uma nova senha temporária foi gerada para você.
+          </p>
+          <div style="background:#fff8e1;border:1px solid #ffe08a;padding:14px;border-radius:8px;margin:18px 0;">
+            <p style="color:#7a5b00;margin:0 0 6px 0;font-weight:600;">Sua nova senha temporária</p>
+            <code style="display:block;background:#fff3cd;border:1px dashed #ffd56a;padding:10px;border-radius:6px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
+              ${temporaryPassword}
+            </code>
+          </div>
+          <p style="color:#4a5568;line-height:1.6;margin:0 0 10px 0;">
+            Por favor, faça login e <strong>altere sua senha</strong> assim que possível. Por segurança, você será solicitado a criar uma nova senha no seu primeiro acesso.
+          </p>
+          <div style="text-align:center;margin:24px 0;">
+            <a href="${loginLink}"
+               style="display:inline-block;background:linear-gradient(135deg,#002E4C 0%,#0044a0 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:6px;font-weight:600;font-size:16px;">
+              Acessar ProLine Hub
+            </a>
+          </div>
+          <p style="color:#6c757d;margin:16px 0 0 0;font-size:14px;text-align:center;">
+            Se você não solicitou esta redefinição, por favor, ignore este email.
+          </p>
+        </div>
+        <div style="background:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e9ecef;">
+          <p style="color:#6c757d;margin:0;font-size:14px;">
+            Atenciosamente,<br />
+            <strong style="color:#002E4C;">Equipe ProLine Hub</strong>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>`;
+    await this.sendEmail({ to: recipientEmail, subject, html });
   }
 
   /**
@@ -391,9 +499,10 @@ export class ResendEmailService implements EmailServiceInterface {
    */
   async sendEmail(options: EmailOptions): Promise<void> {
     if (!this.isEmailConfigured()) {
-      logger.error('RESEND_API_KEY não está configurada. O e-mail não será enviado.');
-      // Em um cenário de produção, você poderia lançar um erro ou logar em um serviço de monitoramento.
-      return;
+      const errorMessage = 'RESEND_API_KEY não está configurada. O e-mail não pode ser enviado.';
+      logger.error(errorMessage);
+      // Lança um erro para notificar o chamador sobre a falha.
+      throw new Error(errorMessage);
     }
 
     try {
@@ -423,10 +532,23 @@ export class ResendEmailService implements EmailServiceInterface {
         logger.info(`E-mail enviado com sucesso via Resend. ID: ${data.id}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      logger.error('Falha no envio do e-mail via Resend:', errorMessage);
+      // Log the full error object for detailed diagnostics
+      logger.error('ResendEmailService: An unexpected error occurred.', { error });
+
+      let detailedMessage = 'Erro desconhecido ao enviar e-mail.';
+      if (error instanceof Error) {
+        detailedMessage = error.message;
+        // The 'cause' property often has more details on fetch failures
+        if ((error as any).cause) {
+          const cause = (error as any).cause;
+          logger.error('Underlying cause:', { cause });
+          detailedMessage += ` (Causa: ${cause.code || cause.message || JSON.stringify(cause)})`;
+        }
+      }
+
+      logger.error('Falha no envio do e-mail via Resend:', detailedMessage);
       // Lançar o erro permite que a camada superior decida como lidar com a falha.
-      throw new Error(errorMessage);
+      throw new Error(detailedMessage);
     }
   }
 

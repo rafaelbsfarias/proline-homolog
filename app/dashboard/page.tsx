@@ -8,6 +8,7 @@ import AdminDashboard from './AdminDashboard';
 import ClientDashboard from './ClientDashboard';
 import SpecialistDashboard from './SpecialistDashboard';
 import PartnerDashboard from './PartnerDashboard';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const DashboardPage: React.FC = () => {
   const [role, setRole] = useState<string | null>(null);
@@ -38,7 +39,13 @@ const DashboardPage: React.FC = () => {
     SupabaseService.debugAuth();
   };
 
-  if (loading) return <div>Carregando dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loading fullScreen />
+      </div>
+    );
+  }
   if (!role) return <div>Usuário sem role definida.</div>;
 
   return (

@@ -21,7 +21,6 @@ BEGIN
     EXECUTE 'ALTER TABLE public.vehicles ADD CONSTRAINT vehicles_plate_key UNIQUE USING INDEX vehicles_plate_key';
   END IF;
 END $$;
-
 -- 2) Ensure client FK has ON DELETE CASCADE
 DO $$
 DECLARE
@@ -53,4 +52,3 @@ BEGIN
     EXECUTE 'ALTER TABLE public.vehicles ADD CONSTRAINT vehicles_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(profile_id) ON DELETE CASCADE';
   END IF;
 END $$;
-

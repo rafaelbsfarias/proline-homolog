@@ -1,110 +1,68 @@
-# 📚 Documentação do Projeto
+# Documentação do Projeto ProLine Hub
 
-Esta pasta contém toda a documentação técnica do projeto, organizada por categorias para facilitar a navegação e manutenção.
+## Estrutura da Documentação
 
-## 📂 Estrutura da Documentação
+```
+docs/
+├── architecture/          # Documentação de arquitetura técnica
+├── bugs/                 # Tracking de bugs e issues conhecidos
+├── business-flows/       # Fluxos de negócio e processos
+├── components/           # Documentação de componentes React
+├── cypress/              # 🧪 Documentação completa do Cypress E2E
+├── development/         # Documentação de desenvolvimento e refatoração
+├── security/             # Documentação de segurança e auditorias
+├── CYPRESS.md            # 🧪 Atalho para documentação Cypress
+├── DEVELOPMENT_INSTRUCTIONS.md  # Diretrizes de desenvolvimento
+└── indice_geral.md       # Índice completo da documentação
+```
 
-### � [Guia de Migração](./MIGRATION_GUIDE.md)
-Referência para encontrar arquivos após reorganização
+## Visão Geral por Categoria
 
-### 📖 [Instruções de Desenvolvimento](./DEVELOPMENT_INSTRUCTIONS.md)
-Instruções gerais de desenvolvimento do projeto
+### 🧪 Cypress E2E Testing (`cypress/`)
+Documentação completa para configuração, uso e desenvolvimento de testes end-to-end com Cypress.
 
-### �🚀 [Setup](./setup/)
-Guias de configuração e instalação do projeto
+**📚 Conteúdo:**
+- Guia de configuração completa
+- Exemplos práticos de testes
+- Templates para novos testes
+- Checklist de verificação
+- Troubleshooting e debugging
 
-- **[QUICK_START.md](./setup/QUICK_START.md)** - Guia rápido para começar
-- **[SUPABASE_LOCAL_SETUP.md](./setup/SUPABASE_LOCAL_SETUP.md)** - Configuração completa do ambiente local Supabase
-- **[EDGE_FUNCTIONS_SETUP.md](./setup/EDGE_FUNCTIONS_SETUP.md)** - Configuração das Edge Functions
-- **[SUPABASE_EMAIL_SETUP.md](./setup/SUPABASE_EMAIL_SETUP.md)** - Configuração do sistema de emails
-- **[EMAIL-PROVIDER-MODULE.md](./setup/EMAIL-PROVIDER-MODULE.md)** - Módulo de provedores de email
-- **[CONFIGURACAO_EMAIL_SUPABASE_RESEND.md](./setup/CONFIGURACAO_EMAIL_SUPABASE_RESEND.md)** - Configuração de email com Supabase e Resend
-- **[FASE1_COMPLETED.md](./setup/FASE1_COMPLETED.md)** - Documentação da Fase 1 concluída
-- **[FASE_3_COMPLETED.md](./setup/FASE_3_COMPLETED.md)** - Documentação da Fase 3 concluída
-- **[QA-OPTIMIZATION-COMPLETE.md](./setup/QA-OPTIMIZATION-COMPLETE.md)** - Otimizações de QA implementadas
-- **[QA-SETUP-COMPLETE.md](./setup/QA-SETUP-COMPLETE.md)** - Setup de QA concluído
-- **[FASE_3_COMPLETED.md](./setup/FASE_3_COMPLETED.md)** - Documentação da Fase 3 concluída
+**🚀 Acesso Rápido:**
+- [Página Inicial Cypress](./cypress/README.md)
+- [Guia Rápido (5 min)](./cypress/quick-start.md)
+- [Configuração Completa](./cypress/configuration-guide.md)
 
-### 🏗️ [Architecture](./architecture/)
-Documentação de arquitetura e fluxos do sistema
+### 🏗️ Arquitetura (`architecture/`)
+Documentação técnica da arquitetura do sistema, componentes e decisões de design.
 
-- **[FASE_4_ARCHITECTURE.md](./architecture/FASE_4_ARCHITECTURE.md)** - Arquitetura da Fase 4
-- **[FINAL_AUTH_SOLUTION.md](./architecture/FINAL_AUTH_SOLUTION.md)** - Solução final de autenticação
-- **[FLUXO_CRIACAO_USUARIO_SUPABASE.md](./architecture/FLUXO_CRIACAO_USUARIO_SUPABASE.md)** - Fluxo de criação de usuários
+### 🐛 Bugs (`bugs/`)
+Tracking de bugs conhecidos, classificação por prioridade e processo de resolução.
 
-### ⚡ [Features](./features/)
-Documentação de funcionalidades específicas
+### 💼 Fluxos de Negócio (`business-flows/`)
+Documentação dos processos de negócio, fluxos de aprovação, mudanças e rejeições.
 
-- **[VEHICLE_REGISTRATION_CLIENT.md](./features/VEHICLE_REGISTRATION_CLIENT.md)** - Cadastro de veículos para clientes
-- **[EDGE_FUNCTION_RENAMING_GUIDE.md](./features/EDGE_FUNCTION_RENAMING_GUIDE.md)** - Guia de renomeação de Edge Functions
-- **[QUICK_TESTING_GUIDE.md](./features/QUICK_TESTING_GUIDE.md)** - Guia de testes rápidos
-- **[VEHICLE_REGISTRATION_ANALYSIS.md](./features/VEHICLE_REGISTRATION_ANALYSIS.md)** - Análise do cadastro de veículos
-- **[CLIENT_CONTRACT_TERMS.md](./features/CLIENT_CONTRACT_TERMS.md)** - Termos de contrato do cliente
-- **[PENDING_REGISTRATIONS_IMPLEMENTATION.md](./features/PENDING_REGISTRATIONS_IMPLEMENTATION.md)** - Implementação de cadastros pendentes
-- **[USER_MODAL_FIX.md](./features/USER_MODAL_FIX.md)** - Correção do modal de usuário
+### 🔧 Desenvolvimento (`development/`)
+Documentação do processo de desenvolvimento, refatorações e práticas técnicas.
 
-### 🔧 [Troubleshooting](./troubleshooting/)
-Guias de resolução de problemas e debugging
+### 🔒 Segurança (`security/`)
+Auditorias de segurança, relatórios e planos de ação para mitigação de riscos.
 
-- **[EMAIL_DEBUG_GUIDE.md](./troubleshooting/EMAIL_DEBUG_GUIDE.md)** - Guia de debug de problemas com emails
-- **[EMAIL_DIAGNOSTICS.md](./troubleshooting/EMAIL_DIAGNOSTICS.md)** - Diagnóstico de sistema de emails
-- **[AUTHENTICATION_TROUBLESHOOTING.md](./troubleshooting/AUTHENTICATION_TROUBLESHOOTING.md)** - Solução de problemas de autenticação
-- **[ERROR_HANDLING_IMPROVEMENTS.md](./troubleshooting/ERROR_HANDLING_IMPROVEMENTS.md)** - Melhorias de tratamento de erros
-- **[RATE_LIMIT_TROUBLESHOOTING.md](./troubleshooting/RATE_LIMIT_TROUBLESHOOTING.md)** - Solução de problemas de rate limits
-- **[LINT_GUIDE.md](./troubleshooting/LINT_GUIDE.md)** - Guia de linting
-- **[QA-TOOLS.md](./troubleshooting/QA-TOOLS.md)** - Ferramentas de QA
-- **[QUICK_LINT_REFERENCE.md](./troubleshooting/QUICK_LINT_REFERENCE.md)** - Referência rápida de linting
-- **[VERCEL-BUILD-FIXED.md](./troubleshooting/VERCEL-BUILD-FIXED.md)** - Correção de problemas de build na Vercel
-- **[QA-TOOLS.md](./troubleshooting/QA-TOOLS.md)** - Ferramentas de QA
-- **[RATE_LIMIT_ANALYSIS.md](./troubleshooting/RATE_LIMIT_ANALYSIS.md)** - Análise de rate limits
-- **[VERCEL-BUILD-FIXED.md](./troubleshooting/VERCEL-BUILD-FIXED.md)** - Correção de build no Vercel
+## Arquivos Principais
 
-### 🏛️ [Sistema](./sistema/)
-Documentação específica do sistema
+- **`DEVELOPMENT_INSTRUCTIONS.md`** - Diretrizes e princípios de desenvolvimento
+- **`indice_geral.md`** - Ponto de entrada para navegação completa da documentação
 
-- **[DATABASE_SCHEMA_DOCUMENTATION.md](./sistema/database_schema_documentation.md)** - Documentação do esquema do banco de dados
+## Padrões de Documentação
 
-### 🤝 [MOC](./moc/)
-Mecanismo de Orquestração de Contexto para Refatoração Colaborativa
+1. **Nomenclatura**: Todos os arquivos usam `kebab-case` e extensão `.md`
+2. **Estrutura**: Cada diretório possui um `indice.md` para navegação local
+3. **Atualização**: Documentos devem ser mantidos atualizados com as implementações
+4. **Consistência**: Seguir templates padrão quando disponível
 
-## 📋 Outros Documentos Importantes
+## Contribuindo com a Documentação
 
-- **[DEVELOPMENT_INSTRUCTIONS.md](./DEVELOPMENT_INSTRUCTIONS.md)** - Instruções gerais de desenvolvimento
-
-## 🎯 Como Usar Esta Documentação
-
-### Para Desenvolvedores Novos
-1. Comece com **[QUICK_START.md](./setup/QUICK_START.md)**
-2. Configure o ambiente seguindo **[SUPABASE_LOCAL_SETUP.md](./setup/SUPABASE_LOCAL_SETUP.md)**
-3. Entenda a arquitetura em **[Architecture](./architecture/)**
-
-### Para Debugging
-1. Consulte **[Troubleshooting](./troubleshooting/)** para problemas comuns
-2. Use **[DEBUG_EMAIL.md](./troubleshooting/DEBUG_EMAIL.md)** para problemas de email
-3. Verifique **[AUTHENTICATION_FIX.md](./troubleshooting/AUTHENTICATION_FIX.md)** para problemas de auth
-
-### Para Novas Features
-1. Consulte **[Features](./features/)** para implementações similares
-2. Siga os padrões de arquitetura em **[Architecture](./architecture/)**
-3. Use os guias de setup em **[Setup](./setup/)**
-
-## 📋 Convenções de Documentação
-
-- **Setup**: Documentos que ensinam como configurar algo
-- **Architecture**: Documentos que explicam como o sistema funciona
-- **Features**: Documentos sobre funcionalidades específicas
-- **Troubleshooting**: Documentos para resolver problemas
-- **Sistema**: Documentação específica do domínio do projeto
-
-## 🔄 Atualizando a Documentação
-
-Quando adicionar nova documentação:
-1. Coloque na pasta apropriada
-2. Atualize este README.md
-3. Use nomes descritivos para os arquivos
-4. Mantenha a documentação atualizada com o código
-
----
-
-📅 **Última atualização:** Agosto 2025  
-👥 **Mantenedores:** Equipe de Desenvolvimento
+1. Siga os padrões de nomenclatura e estrutura
+2. Mantenha a documentação atualizada com as mudanças de código
+3. Use índices locais para facilitar a navegação
+4. Referencie documentos relacionados quando apropriado

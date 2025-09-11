@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega variáveis de ambiente do .env.local na raiz do projeto
-const envPath = path.resolve(__dirname, '../../.env.remoto');
+const envPath = path.resolve(__dirname, '../../.env.local');
 dotenv.config({ path: envPath, debug: true });
 
 console.log(`
@@ -160,6 +160,11 @@ async function main() {
       document_type: 'CPF',
       document_number: `111.111.111-${String(randomClientId).padStart(2, '0')}`,
       company_name: `Empresa Cliente ${randomClientId}`,
+      // garantir inteiros para termos de contrato
+      percentual_fipe: 50,
+      taxa_operacao: 10,
+      parqueamento: 25,
+      quilometragem: 100,
     }
   );
 
@@ -174,6 +179,7 @@ async function main() {
       cnpj: `00.000.000/0001-${String(randomPartnerId).padStart(2, '0')}`,
       company_name: `Oficina Parceira ${randomPartnerId}`,
       is_active: true,
+      category: 'Oficina Mecânica',
     }
   );
 

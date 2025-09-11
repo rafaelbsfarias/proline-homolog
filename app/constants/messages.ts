@@ -132,6 +132,30 @@ export const FORM_MESSAGES = {
   DRAFT_SAVED: 'Rascunho salvo.',
 } as const;
 
+// ==================== CONSTANTES DE VEÍCULO ====================
+export const VEHICLE_CONSTANTS = {
+  // Níveis de combustível
+  FUEL_LEVELS: {
+    empty: 'Vazio',
+    quarter: '1/4',
+    half: '1/2',
+    three_quarters: '3/4',
+    full: 'Cheio',
+  } as const,
+
+  // Status do veículo
+  VEHICLE_STATUS: {
+    aguardando_chegada: 'Aguardando Chegada',
+    chegada_confirmada: 'Chegada Confirmada',
+    em_analise: 'Em Análise',
+    analise_finalizada: 'Análise Finalizada',
+    definir_opcao_de_coleta: 'Definir Opção de Coleta',
+    active: 'Ativo',
+    ativo: 'Ativo',
+    inativo: 'Inativo',
+  } as const,
+} as const;
+
 // ==================== HELPER FUNCTIONS ====================
 
 /**
@@ -189,6 +213,23 @@ export const getSuccessMessage = (action: string): string => {
 };
 
 /**
+ * Traduz nível de combustível do inglês para português
+ */
+export const translateFuelLevel = (fuelLevel: string | undefined): string => {
+  if (!fuelLevel) return 'N/A';
+
+  const translations: Record<string, string> = {
+    empty: 'Vazio',
+    quarter: '1/4',
+    half: '1/2',
+    three_quarters: '3/4',
+    full: 'Cheio',
+  };
+
+  return translations[fuelLevel] || fuelLevel;
+};
+
+/**
  * Hook para usar mensagens em componentes React
  */
 export const useMessages = () => ({
@@ -198,7 +239,9 @@ export const useMessages = () => ({
   admin: ADMIN_MESSAGES,
   dashboard: DASHBOARD_MESSAGES,
   form: FORM_MESSAGES,
+  vehicle: VEHICLE_CONSTANTS,
   formatMessage,
   getErrorMessage,
   getSuccessMessage,
+  translateFuelLevel,
 });

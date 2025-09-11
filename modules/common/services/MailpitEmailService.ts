@@ -56,11 +56,67 @@ export class MailpitEmailService implements EmailServiceInterface {
     await this.sendEmail({ to: email, subject, html });
   }
 
-  async sendPasswordResetEmail(email: string, resetToken: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
     const subject = 'Redefinição de Senha - ProLine Hub';
-    const link = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-    const html = `<p>Para redefinir sua senha, <a href="${link}">clique aqui</a>.</p>`;
+    // O resetLink já é a URL completa e correta gerada pelo Supabase.
+    const html = `<p>Para redefinir sua senha, <a href="${resetLink}">clique aqui</a>.</p>`;
     await this.sendEmail({ to: email, subject, html });
+  }
+
+  async sendTemporaryPasswordForReset(
+    recipientEmail: string,
+    recipientName: string,
+    temporaryPassword: string
+  ): Promise<void> {
+    const subject = 'Sua nova senha de acesso - ProLine Hub';
+    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login`;
+    const html = `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+      <title>${subject}</title>
+    </head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f7fa;margin:0;padding:20px;">
+      <div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#002E4C 100%,#002E4C 100%);padding:30px;text-align:center;">
+          <h1 style="color:#ffffff;margin:0;font-size:24px;">Redefinição de Senha</h1>
+          <p style="color:#e8f1ff;margin:10px 0 0 0;">ProLine Hub</p>
+        </div>
+        <div style="padding:30px;">
+          <h2 style="color:#002E4C;margin:0 0 10px 0;">Olá, ${recipientName}!</h2>
+          <p style="color:#4a5568;line-height:1.6;margin:0 0 16px 0;">
+            Você solicitou uma redefinição de senha. Uma nova senha temporária foi gerada para você.
+          </p>
+          <div style="background:#fff8e1;border:1px solid #ffe08a;padding:14px;border-radius:8px;margin:18px 0;">
+            <p style="color:#7a5b00;margin:0 0 6px 0;font-weight:600;">Sua nova senha temporária</p>
+            <code style="display:block;background:#fff3cd;border:1px dashed #ffd56a;padding:10px;border-radius:6px;font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">
+              ${temporaryPassword}
+            </code>
+          </div>
+          <p style="color:#4a5568;line-height:1.6;margin:0 0 10px 0;">
+            Por favor, faça login e <strong>altere sua senha</strong> assim que possível. Por segurança, você será solicitado a criar uma nova senha no seu primeiro acesso.
+          </p>
+          <div style="text-align:center;margin:24px 0;">
+            <a href="${loginLink}"
+               style="display:inline-block;background:linear-gradient(135deg,#002E4C 0%,#0044a0 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:6px;font-weight:600;font-size:16px;">
+              Acessar ProLine Hub
+            </a>
+          </div>
+          <p style="color:#6c757d;margin:16px 0 0 0;font-size:14px;text-align:center;">
+            Se você não solicitou esta redefinição, por favor, ignore este email.
+          </p>
+        </div>
+        <div style="background:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e9ecef;">
+          <p style="color:#6c757d;margin:0;font-size:14px;">
+            Atenciosamente,<br />
+            <strong style="color:#002E4C;">Equipe ProLine Hub</strong>
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>`;
+    await this.sendEmail({ to: recipientEmail, subject, html });
   }
 
   async sendWelcomeEmailWithTemporaryPassword(

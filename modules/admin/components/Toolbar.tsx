@@ -6,7 +6,7 @@ import { AddUserModal } from './AddUserModal';
 import { AddPartnerModal } from './AddPartnerModal';
 import { AddClientModal } from './AddClientModal';
 import React, { useState } from 'react';
-import VehicleRegistrationModal from '@/modules/common/components/VehicleRegistrationModal';
+import VehicleRegistrationModal from './VehicleRegistrationModal';
 
 const Toolbar: React.FC = () => {
   const [showAddUser, setShowAddUser] = useState(false);

@@ -1,0 +1,56 @@
+.footer {
+  margin-top: 20px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.selectedFile {
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.button {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem; /* Padronizado */
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 24px; /* Padronizado */
+  cursor: pointer;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.buttonPrimary {
+  background-color: #28a745; /* Verde (Adicionar) */
+}
+
+.buttonSecondary {
+  background-color: #002e4c; /* Azul escuro (Importar) */
+}
+
+.buttonConfirm {
+  background-color: #007bff; /* Azul (Confirmar) */
+}
+
+.message {
+  margin-top: 10px;
+}
+
+.errorMessage {
+  color: red;
+}
+
+.successMessage {
+  color: green;
+}

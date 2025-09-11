@@ -3,8 +3,11 @@ import React from 'react';
 interface DataTableProps<T> {
   title: string;
   data: T[];
-  columns: { key: keyof T; header: string }[];
+  columns: { key: string; header: string }[];
   emptyMessage: string;
+  onEdit?: (item: T) => void;
+  onDelete?: (item: T) => void | Promise<void>;
+  showActions?: boolean;
 }
 
 const DataTable = <T extends { id: React.Key }>({
@@ -12,7 +15,13 @@ const DataTable = <T extends { id: React.Key }>({
   data,
   columns,
   emptyMessage,
+  onEdit,
+  onDelete,
+  showActions = false,
 }: DataTableProps<T>) => {
+  // Add Actions column if showActions is true
+  const displayColumns = showActions ? [...columns, { key: 'actions', header: 'Ações' }] : columns;
+
   return (
     <div
       style={{
@@ -30,9 +39,9 @@ const DataTable = <T extends { id: React.Key }>({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f0f0f0' }}>
-              {columns.map(column => (
+              {displayColumns.map(column => (
                 <th
-                  key={column.key as string}
+                  key={column.key}
                   style={{ padding: '10px', borderBottom: '1px solid #ddd', textAlign: 'left' }}
                 >
                   {column.header}
@@ -44,13 +53,46 @@ const DataTable = <T extends { id: React.Key }>({
             {data.map(row => (
               <tr key={row.id}>
                 {columns.map(column => (
-                  <td
-                    key={column.key as string}
-                    style={{ padding: '10px', borderBottom: '1px solid #eee' }}
-                  >
-                    {String(row[column.key])}
+                  <td key={column.key} style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
+                    {String((row as Record<string, unknown>)[column.key])}
                   </td>
                 ))}
+                {showActions && (
+                  <td style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Editar
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          onClick={() => onDelete(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Excluir
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

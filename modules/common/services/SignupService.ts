@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ConflictError, DatabaseError } from '@/modules/common/errors';
+import { ResendEmailService } from './ResendEmailService';
 
 interface SignupData {
   fullName: string;
@@ -13,9 +14,11 @@ interface SignupData {
 
 export class SignupService {
   private supabase: SupabaseClient;
+  private emailService: ResendEmailService;
 
   constructor() {
     this.supabase = SupabaseService.getInstance().getAdminClient();
+    this.emailService = new ResendEmailService();
   }
 
   async registerUser(data: SignupData): Promise<string> {
@@ -62,7 +65,21 @@ export class SignupService {
       });
 
       if (clientError) {
+        // Check for unique constraint violation on document_number
+        if (clientError.message.includes('clients_document_number_key')) {
+          throw new ConflictError('Este CNPJ já está cadastrado.');
+        }
         throw new DatabaseError(`Erro ao criar client: ${clientError.message}`);
+      }
+
+      // 4. Send confirmation email
+      try {
+        await this.emailService.sendRegistrationSuccessEmail(data.email, data.fullName);
+      } catch (emailError) {
+        console.error(
+          `Falha ao enviar e-mail de confirmação de cadastro para ${data.email}`,
+          emailError
+        );
       }
 
       return userId;

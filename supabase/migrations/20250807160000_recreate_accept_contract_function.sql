@@ -8,11 +8,9 @@ BEGIN
     END IF;
 END
 $$;
-
 -- Step 2: Drop the existing function with its old signature
 -- This is necessary because CREATE OR REPLACE FUNCTION does not allow renaming parameters.
 DROP FUNCTION IF EXISTS public.accept_partner_contract(uuid, text, boolean, text);
-
 -- Step 3: Create the function with the corrected parameter name (p_signed)
 CREATE OR REPLACE FUNCTION public.accept_partner_contract(
     p_partner_id uuid,

@@ -1,0 +1,105 @@
+/* Minimal styles to match existing admin overview look-and-feel */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.note {
+  color: #666;
+  margin-bottom: 18px;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.muted {
+  color: #777;
+  margin: -6px 0 10px 0;
+}
+
+.tableWrap {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.table,
+.subtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td,
+.subtable th,
+.subtable td {
+  border-top: 1px solid #e5e7eb;
+  padding: 10px 8px;
+}
+
+.table thead th,
+.subtable thead th {
+  border-top: none;
+  text-align: left;
+  color: #374151;
+  font-weight: 600;
+}
+
+.thLeft {
+  text-align: left;
+}
+.thCenter {
+  text-align: center;
+}
+.estimatedTotal {
+  font-weight: 600;
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.actions button,
+.rowActions button {
+  background: #002e4c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.actions button:disabled,
+.rowActions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+}
+
+.totalsRow {
+  text-align: right;
+  font-weight: 600;
+}
+.nowrap {
+  white-space: nowrap;
+}

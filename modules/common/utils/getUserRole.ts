@@ -1,3 +1,4 @@
+import { createAdminClient } from './../services/supabaseClient';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 
 export interface UserRole {
@@ -11,7 +12,8 @@ export interface UserRole {
  */
 export async function getUserRole(userId: string): Promise<UserRole> {
   try {
-    const supabase = SupabaseService.createAdminClient();
+    //const supabase = SupabaseService.createAdminClient();
+    const supabase = createAdminClient();
 
     const { data: profile, error } = await supabase
       .from('profiles')

@@ -8,7 +8,6 @@ BEGIN
     DROP POLICY "vehicle_media_specialist_insert" ON storage.objects;
   END IF;
 END $$;
-
 -- New specialist insert policy: only role + path ownership are enforced
 CREATE POLICY "vehicle_media_specialist_insert"
 ON storage.objects
@@ -18,4 +17,3 @@ WITH CHECK (
   AND split_part(name, '/', 2) = auth.uid()::text
   AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.role = 'specialist')
 );
-

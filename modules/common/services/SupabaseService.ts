@@ -47,12 +47,6 @@ export class SupabaseService {
   getAdminClient() {
     if (!this.adminClient) {
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      // Temporary log for debugging Vercel environment variable
-      console.log(
-        'DEBUG: Initializing AdminClient with key:',
-        serviceRoleKey ? serviceRoleKey.substring(0, 5) + '...' : 'NOT_SET'
-      );
-
       this.adminClient = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         serviceRoleKey!, // Use the variable
