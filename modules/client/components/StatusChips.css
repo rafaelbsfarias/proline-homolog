@@ -9,9 +9,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #333;
+  border: 1px solid #d9e0e7;
   border-radius: 16px;
   padding: 4px 10px;
   font-size: 0.85rem;
@@ -25,4 +24,3 @@
   font-weight: 600;
   line-height: 1;
 }
-

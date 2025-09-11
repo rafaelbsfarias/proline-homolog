@@ -7,7 +7,7 @@ import styles from './Input.module.css';
 interface InputProps {
   id: string;
   name: string;
-  label: string;
+  label?: string;
   type?: 'text' | 'password' | 'email' | 'tel' | 'number';
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

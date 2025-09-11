@@ -24,6 +24,7 @@
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .inputWrapper input:focus {

@@ -4,7 +4,6 @@
   border: none;
   background: #002e4c;
   color: white;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -16,7 +15,8 @@
 }
 
 .solidButton:disabled {
-  background: #ccc;
+  background: #d3d3d3;
+  color: #f5f3f4;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;

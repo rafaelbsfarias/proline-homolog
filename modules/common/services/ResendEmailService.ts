@@ -198,7 +198,48 @@ export class ResendEmailService implements EmailServiceInterface {
    */
   async sendSignupApprovalEmail(recipientEmail: string, recipientName: string): Promise<void> {
     const subject = 'Cadastro Aprovado - ProLine Hub';
-    const html = `<p>Olá ${recipientName}, seu cadastro foi aprovado!</p>`;
+    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.prolineauto.com.br'}/login`;
+    const html = `<!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>${subject}</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #002E4C 100%, #002E4C 100%); padding: 30px; text-align: center; }
+        .header h1 { color: #ffffff; margin: 0; font-size: 24px; }
+        .header p { color: #e8f1ff; margin: 10px 0 0 0; }
+        .content { padding: 30px; }
+        .content h2 { color: #002E4C; margin: 0 0 10px 0; }
+        .content p { color: #4a5568; line-height: 1.6; margin: 0 0 16px 0; }
+        .button-container { text-align: center; margin: 24px 0; }
+        .button { display: inline-block; background: #002E4C; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e9ecef; }
+        .footer p { color: #6c757d; margin: 0; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Cadastro Aprovado!</h1>
+          <p>Sua jornada com o ProLine Hub começa agora.</p>
+        </div>
+        <div class="content">
+          <h2>Olá, ${recipientName}!</h2>
+          <p>Temos o prazer de informar que seu cadastro em nossa plataforma foi aprovado com sucesso.</p>
+          <p>Você já pode acessar o ProLine Hub usando suas credenciais e explorar todas as ferramentas que oferecemos para a gestão inteligente da sua frota.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${loginLink}" style="display: inline-block; background: #002E4C; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 16px;">Acessar ProLine Hub</a>
+          </div>
+          <p style="text-align:center; color:#6c757d; font-size: 14px;">Se o botão não funcionar, copie e cole este link no seu navegador: <br/> <span style="word-break:break-all;color:#495057;">${loginLink}</span></p>
+        </div>
+        <div class="footer">
+          <p>Atenciosamente,<br /><strong style="color:#002E4C;">Equipe ProLine Hub</strong></p>
+        </div>
+      </div>
+    </body>
+    </html>`;
     await this.sendEmail({ to: recipientEmail, subject, html });
   }
 
@@ -491,10 +532,23 @@ export class ResendEmailService implements EmailServiceInterface {
         logger.info(`E-mail enviado com sucesso via Resend. ID: ${data.id}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      logger.error('Falha no envio do e-mail via Resend:', errorMessage);
+      // Log the full error object for detailed diagnostics
+      logger.error('ResendEmailService: An unexpected error occurred.', { error });
+
+      let detailedMessage = 'Erro desconhecido ao enviar e-mail.';
+      if (error instanceof Error) {
+        detailedMessage = error.message;
+        // The 'cause' property often has more details on fetch failures
+        if ((error as any).cause) {
+          const cause = (error as any).cause;
+          logger.error('Underlying cause:', { cause });
+          detailedMessage += ` (Causa: ${cause.code || cause.message || JSON.stringify(cause)})`;
+        }
+      }
+
+      logger.error('Falha no envio do e-mail via Resend:', detailedMessage);
       // Lançar o erro permite que a camada superior decida como lidar com a falha.
-      throw new Error(errorMessage);
+      throw new Error(detailedMessage);
     }
   }
 

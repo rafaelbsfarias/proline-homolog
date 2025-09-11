@@ -14,6 +14,7 @@ import CollectionHistory from '@/modules/admin/components/overview/CollectionHis
 // PendingApprovalSection and DateChangeRequestedSection were replaced by unified section
 import AdminDateAdequacyFlow from '@/modules/admin/components/overview/AdminDateAdequacyFlow';
 import DatePendingUnifiedSection from '@/modules/admin/components/overview/DatePendingUnifiedSection';
+import ClientVehiclesCard from '@/modules/admin/components/overview/ClientVehiclesCard';
 
 const Page = () => {
   const params = useParams<{ id: string }>();
@@ -110,6 +111,9 @@ const Page = () => {
 
         {/* 5) Histórico */}
         <CollectionHistory history={history} />
+
+        {/* 6) Veículos do cliente */}
+        <ClientVehiclesCard clientId={clientId} />
 
         {message && (
           <MessageModal message={message} onClose={() => setMessage(null)} variant="success" />

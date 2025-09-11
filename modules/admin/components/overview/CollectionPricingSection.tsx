@@ -94,10 +94,10 @@ const CollectionPricingSection: React.FC<Props> = ({
                 {formatTotalCurrencyBR(fees[req.addressId], req.vehicle_count || 0)}
               </td>
               <td className={styles.thCenter}>
-                {req.proposed_date
-                  ? isoToBr(req.proposed_date)
-                  : req.collection_date
-                    ? isoToBr(req.collection_date)
+                {req.collection_date
+                  ? isoToBr(req.collection_date)
+                  : req.proposed_date
+                    ? isoToBr(req.proposed_date)
                     : '-'}
               </td>
               <td className={styles.thCenter}>
@@ -113,7 +113,7 @@ const CollectionPricingSection: React.FC<Props> = ({
                   }
                   onClick={() => {
                     setProposingFor({ addressId: req.addressId, address: req.address });
-                    setProposedDate(req.proposed_date || '');
+                    setProposedDate(req.collection_date || req.proposed_date || '');
                     setProposeError(null);
                     setProposeMessage(null);
                   }}
@@ -146,7 +146,7 @@ const CollectionPricingSection: React.FC<Props> = ({
                 collectionFeePerVehicle: Number(fees[r.addressId] || 0),
                 collectionDate: r.collection_date || undefined,
                 address: r.address,
-                proposedOrClientDate: r.proposed_date || r.collection_date || undefined,
+                proposedOrClientDate: r.collection_date || r.proposed_date || undefined,
               }))
               .filter(
                 x =>

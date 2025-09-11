@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
@@ -8,91 +8,88 @@ import RowCollectionModal from '../RowCollectionModal';
 import BulkCollectionModal from '../BulkCollectionModal';
 import StatusChips from '../StatusChips';
 import VehicleFilters from '../VehicleFilters';
-import BulkCollectionControls from '../BulkCollectionControls';
+import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
-import { useStatusCounters } from '@/modules/client/hooks/useStatusCounters';
-import { sanitizeStatus, statusLabel, canClientModify } from '@/modules/client/utils/status';
-import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
+import { makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle, Method } from '@/modules/client/types';
-import VehicleItemRow from '../VehicleItemRow';
-import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
-import { LuRefreshCw } from 'react-icons/lu';
-import { LuMinus } from 'react-icons/lu';
-import { LuPlus } from 'react-icons/lu';
-import { LuTriangleAlert } from 'react-icons/lu';
-
-// Types moved to modules/client/types.ts
-
-// API response normalization moved to hooks
+import VehicleItemRow from './VehicleItemRow';
+import Spinner from '@/modules/common/components/Spinner/Spinner';
+import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
+import Pagination from '@/modules/common/components/Pagination';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
   onLoadingChange?: (loading: boolean) => void;
 }
 
-// Status helpers moved to utils
-
 export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
-  const { vehicles, loading, error, refetch } = useVehicleManager();
-  const count = vehicles.length;
-
-  console.log('VehicleCounter render', { vehicles });
+  const [filterPlate, setFilterPlate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
-  // only need post for actions
-  const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-
-  // Collection controls state
-  const { addresses } = useAddresses();
   const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
   const [bulkAddressId, setBulkAddressId] = useState('');
-  // bulkEta (ISO YYYY-MM-DD) — não exigido na abertura do modal
   const [bulkEta, setBulkEta] = useState('');
   const [savingAll, setSavingAll] = useState(false);
-  const [rowMethod, setRowMethod] = useState<Record<string, Method>>({});
-  const [rowAddress, setRowAddress] = useState<Record<string, string>>({});
-  const [rowEta, setRowEta] = useState<Record<string, string>>({});
-  const [savingRow, setSavingRow] = useState<Record<string, boolean>>({});
-  const { post } = useAuthenticatedFetch();
   const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
   const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  // Data helpers
-  const minDateIsoLocal = makeLocalIsoDate();
+  const { addresses } = useAddresses();
+  const { post } = useAuthenticatedFetch();
 
-  const formatDate = formatDateBR;
+  const pageSize = 10;
 
-  const { statusOptions, statusCounts, sorter } = useStatusCounters(vehicles);
-
-  const filteredVehicles = (vehicles || []).filter(v => {
-    const plateOk = filterPlate
-      ? v.plate.toUpperCase().includes(filterPlate.trim().toUpperCase())
-      : true;
-    const statusOk = filterStatus
-      ? (v.status ?? '').toLowerCase() === filterStatus.toLowerCase()
-      : true;
-    return plateOk && statusOk;
+  const {
+    vehicles,
+    loading,
+    error,
+    refetch,
+    totalCount, // total do backend, já filtrado
+    currentPage,
+    onPageChange,
+    statusCounts,
+  } = useVehicleManager({
+    paginated: true,
+    filterPlate,
+    filterStatus,
   });
 
-  const allVehiclesAllowed = vehicles.every(v => canClientModify(v.status));
+  const sorter = (a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]);
+  const statusOptions = Object.keys(statusCounts);
 
-  // if (loading) {
-  //   return (
-  //     <div className="vehicle-counter loading" role="status" aria-live="polite">
-  //       <div className="counter-content">
-  //         <h3>Carregando...</h3>
-  //         <p>Contando seus veículos</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  const minDateIsoLocal = makeLocalIsoDate();
 
+  // Total de páginas recalculado com base em totalCount filtrado
+  const totalPagesAdjusted = useMemo(() => {
+    return Math.ceil(totalCount / pageSize);
+  }, [totalCount]);
+
+  // Resetar página ao mudar filtros
   useEffect(() => {
-    onLoadingChange?.(loading);
-  }, [loading, onLoadingChange]);
+    if (currentPage !== 1) {
+      onPageChange(1);
+    }
+  }, [filterPlate, filterStatus]);
+
+  // Evita que currentPage fique maior que totalPagesAdjusted
+  useEffect(() => {
+    if (currentPage > totalPagesAdjusted && totalPagesAdjusted > 0) {
+      onPageChange(1);
+    }
+  }, [totalPagesAdjusted]);
+
+  // Loading inicial
+  useEffect(() => {
+    if (onLoadingChange && isInitialLoading) {
+      onLoadingChange(loading);
+    }
+    if (isInitialLoading && !loading) {
+      setIsInitialLoading(false);
+    }
+  }, [loading, onLoadingChange, isInitialLoading]);
 
   if (error) {
     return (
@@ -117,9 +114,9 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
         <div className="counter-content">
           <h3>Meus Veículos</h3>
           <div className="counter-number" aria-live="polite">
-            {count}
+            {totalCount}
           </div>
-          <p>{count === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
+          <p>{totalCount === 1 ? 'Veículo cadastrado' : 'Veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
         <VehicleFilters
@@ -138,7 +135,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           >
             <LuRefreshCw />
           </button>
-          {count > 0 && (
+          {totalCount > 0 && (
             <button
               onClick={() => setShowDetails(v => !v)}
               className="details-button"
@@ -154,7 +151,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
       {showDetails && (
         <div className="vehicles-details" id="vehicles-details">
-          {vehicles.length > 0 && (
+          {totalCount > 0 && (
             <BulkCollectionControls
               method={bulkMethod}
               setMethod={setBulkMethod}
@@ -166,31 +163,42 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             />
           )}
 
-          <h4>Detalhes dos Veículos:</h4>
-
-          {count > 0 && vehicles.length === 0 && (
-            <p className="vehicles-hint">
-              Encontramos registros, mas a lista não foi retornada pela API. Clique em atualizar.
-            </p>
-          )}
+          <h4 className="header">Detalhes dos Veículos:</h4>
 
           <div className="vehicles-list">
-            {filteredVehicles.map(vehicle => (
-              <VehicleItemRow
-                key={vehicle.id}
-                vehicle={vehicle}
-                addresses={addresses as any}
-                onOpenDetails={v => {
-                  setSelectedVehicle(v);
-                  setShowModal(true);
-                }}
-                onOpenRowModal={v => setRowModalVehicle(v)}
-              />
-            ))}
+            {loading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+                <Spinner />
+              </div>
+            ) : (
+              vehicles.map(vehicle => (
+                <VehicleItemRow
+                  key={vehicle.id}
+                  vehicle={vehicle as Vehicle}
+                  addresses={addresses as any}
+                  collectionFee={vehicle.collection_fee ?? undefined}
+                  onOpenDetails={v => {
+                    setSelectedVehicle(v as Vehicle);
+                    setShowModal(true);
+                  }}
+                  onOpenRowModal={v => setRowModalVehicle(v as Vehicle)}
+                />
+              ))
+            )}
           </div>
+
+          {/* Paginação só aparece se tiver mais de uma página */}
+          {totalPagesAdjusted > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPagesAdjusted}
+              onPageChange={onPageChange}
+            />
+          )}
         </div>
       )}
 
+      {/* Modais */}
       {showModal && (
         <VehicleDetailsModal
           isOpen={showModal}
@@ -230,7 +238,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           isOpen={!!bulkModalOpen}
           onClose={() => setBulkModalOpen(null)}
           method={bulkModalOpen}
-          vehicles={vehicles}
+          vehicles={vehicles as Vehicle[]}
           addresses={addresses as any}
           minDate={minDateIsoLocal}
           initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}

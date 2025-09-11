@@ -40,10 +40,8 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: 'Erro ao buscar status de veículos' }, { status: 500 });
     }
 
-    // Map and trim/lowercase statuses, then ensure uniqueness in case of DB inconsistencies
-    const uniqueStatuses = Array.from(
-      new Set((data || []).map(row => String(row.status).trim().toLowerCase()))
-    );
+    // Map and trim statuses, preserving original casing, then ensure uniqueness in case of DB inconsistencies
+    const uniqueStatuses = Array.from(new Set((data || []).map(row => String(row.status).trim())));
 
     return NextResponse.json({ success: true, statuses: uniqueStatuses });
   } catch (e) {

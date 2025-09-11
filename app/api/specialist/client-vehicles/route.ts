@@ -30,6 +30,15 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
+    // Debug: log received filters before calling RPC
+    console.info('client-vehicles: fetching', {
+      clientId,
+      page,
+      pageSize,
+      plateFilter,
+      statusFilter,
+    });
+
     // Fetch paginated vehicles using the RPC function, passing filters
     const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
       p_client_id: clientId,

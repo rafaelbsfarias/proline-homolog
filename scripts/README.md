@@ -154,6 +154,92 @@ Para problemas específicos:
 - **Dados de teste:** `./data/verify-partner-services.js`
 - **API endpoints:** `./tests/test-endpoints.sh`
 
+## 🔍 Scripts de Verificação de Banco de Dados
+
+Scripts especializados para análise completa do estado do banco de dados PostgreSQL:
+
+### `check-database-state-pg.js` (Recomendado)
+
+Script completo que testa todas as funcionalidades usando conexão direta com PostgreSQL.
+
+**Funcionalidades:**
+
+- ✅ Verificação de estruturas das tabelas
+- ✅ Análise completa do estado das collections
+- ✅ Análise do estado dos veículos
+- ✅ Verificação do histórico de collections
+- ✅ Teste de triggers e functions
+- ✅ Verificação de audit logs
+- ✅ Testes de consistência de dados
+- ✅ Geração de relatório JSON detalhado
+
+**Como usar:**
+
+```bash
+cd /home/rafael/workspace/proline-homolog
+node scripts/check-database-state-pg.js
+```
+
+### `check-database-state.js` (Supabase)
+
+Versão que usa o cliente Supabase (menos confiável para testes avançados).
+
+## 📊 Estado Atual do Banco (10/09/2025)
+
+#### 📈 **Estatísticas Gerais:**
+
+- **Collections ativas:** 3 (2 requested, 1 approved)
+- **Total de veículos:** 100
+- **Registros históricos:** 1
+- **Receita total:** R$ 10,00
+
+#### 🚗 **Estado dos Veículos:**
+
+- **AGUARDANDO COLETA:** 1 veículo
+- **SOLICITAÇÃO DE MUDANÇA DE DATA:** 1 veículo (ABC256U4)
+- **AGUARDANDO DEFINIÇÃO DE COLETA:** 98 veículos
+- **Com collections associadas:** 2 veículos
+- **Sem collections:** 98 veículos
+
+#### 📦 **Estado das Collections:**
+
+- **Collection órfã:** 1 (ID: 3182ff31... - data 20/09/2025)
+- **Collections com veículos:** 2
+- **Última atualização:** 20/09/2025
+
+#### ⚙️ **Sistema de Triggers:**
+
+- **Total de triggers:** 7
+- **Trigger importante:** `trigger_create_collection_history` (ativo)
+- **Functions disponíveis:** 17
+
+## 🚨 Problemas Identificados
+
+### **Críticos:**
+
+1. **1 collection órfã** - Collection criada mas não associada a veículo
+2. **Audit logs vazios** - Sistema não está registrando atividades
+
+### **Mudanças de Data:**
+
+- **Veículo ABC256U4:** Data alterada de 14/09/2025 → 20/09/2025
+- **Status:** SOLICITAÇÃO DE MUDANÇA DE DATA
+- **Collection associada:** Mantém a original (156bc434...)
+
+## ✅ Funcionando Corretamente:
+
+- Triggers de histórico estão ativos
+- Mudanças de data são aplicadas no banco
+- Estruturas das tabelas estão íntegras
+- Consistência de dados está mantida
+
+## 📋 Recomendações:
+
+1. **Limpar collections órfãs** que não estão associadas a veículos
+2. **Ativar sistema de audit logs** para rastreamento de mudanças
+3. **Processar solicitações de mudança de data** pendentes
+4. **Otimizar fluxo de criação de collections** para evitar órfãos
+
 ## ⚠️ Avisos Importantes
 
 - Scripts na pasta `data/` **modificam o banco de dados**

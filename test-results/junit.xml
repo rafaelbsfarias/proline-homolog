@@ -1,7 +1,76 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.013740508">
-    <testsuite name="app/hooks/useAuthenticatedFetch.test.ts" timestamp="2025-08-03T08:17:19.753Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.013740508">
-        <testcase classname="app/hooks/useAuthenticatedFetch.test.ts" name="useAuthenticatedFetch &gt; deve fazer GET básico" time="0.011859961">
+<testsuites name="vitest tests" tests="15" failures="3" errors="0" time="0.066806995">
+    <testsuite name="test/unit/set-vehicles-collection.test.ts" timestamp="2025-09-11T03:47:23.887Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0">
+        <testcase classname="test/unit/set-vehicles-collection.test.ts" name="test/unit/set-vehicles-collection.test.ts" time="0">
+            <failure message="No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts" type="Error">
+Error: No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/admin/api/accept-client-proposed-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.006714779">
+        <testcase classname="tests/admin/api/accept-client-proposed-date.test.ts" name="admin accept-client-proposed-date (integrated with orchestrator) &gt; creates requested if missing, links vehicles, sets status, approves collection" time="0.005713383">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/admin/api/propose-collection-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.007258229">
+        <testcase classname="tests/admin/api/propose-collection-date.test.ts" name="admin propose-collection-date (integrated with orchestrator) &gt; upserts requested, syncs dates, links vehicles, and removes old requested orphans" time="0.006300145">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/admin/history/enrich.test.ts" timestamp="2025-09-11T03:47:23.890Z" hostname="pop-os" tests="3" failures="0" errors="0" skipped="0" time="0.010877937">
+        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; keeps plate under same collection when vehicles.collection_id is set" time="0.002193877">
+        </testcase>
+        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; demonstrates jumping: when vehicles.collection_id is missing and date moved, enrichment assigns plate to the new date row" time="0.000527365">
+        </testcase>
+        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; one-plate-per-line formatting: single vehicle produces a single-plate row; multiple can be grouped" time="0.006624491">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/admin/summary/history-no-fallback.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.002674456">
+        <testcase classname="tests/admin/summary/history-no-fallback.mocked.test.ts" name="clientCollectionsSummary - no fallback for history &gt; keeps collectionHistory empty when no detailed snapshot exists" time="0.001365989">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/admin/summary/history-source.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.007893318">
+        <testcase classname="tests/admin/summary/history-source.mocked.test.ts" name="clientCollectionsSummary - uses detailed immutable history &gt; preserves vehicles/plates from detailed snapshot without enrich()" time="0.006956569">
+            <failure message="expected [] to have a length of 1 but got +0" type="AssertionError">
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/admin/summary/history-source.mocked.test.ts:103:35
+            </failure>
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/client/api/accept-proposal.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="2" failures="0" errors="0" skipped="0" time="0.008841181">
+        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; links vehicles to collection_id and approves collection on final acceptance" time="0.006614045">
+        </testcase>
+        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; finalizes in one click when starting from SOLICITAÇÃO DE MUDANÇA DE DATA" time="0.001211902">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/common/services/collection-orchestrator.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.005922482">
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; upserts a requested collection and prevents overwriting approved" time="0.002720747">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; syncs vehicle dates only for allowed statuses" time="0.000831691">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; links vehicles to a collection by address/date and allowed statuses" time="0.00064337">
+        </testcase>
+        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; approves a requested collection" time="0.000463794">
+        </testcase>
+    </testsuite>
+    <testsuite name="app/api/admin/create-vehicle/route.test.ts" timestamp="2025-09-11T03:47:23.894Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.016624613">
+        <testcase classname="app/api/admin/create-vehicle/route.test.ts" name="POST /api/admin/create-vehicle &gt; adiciona veículo para cliente com sucesso (admin)" time="0.015144266">
+            <failure message="expected 403 to be 200 // Object.is equality" type="AssertionError">
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ ❯ app/api/admin/create-vehicle/route.test.ts:82:24
+            </failure>
         </testcase>
     </testsuite>
 </testsuites>

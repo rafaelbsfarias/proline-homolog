@@ -15,7 +15,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "types": ["cypress", "node", "mocha"],
+    "types": ["node"],
     "plugins": [
       {
         "name": "next"
@@ -23,6 +23,8 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@collections": ["modules/collections/index.ts"],
+      "@collections/*": ["modules/collections/*"],
       "@/*": ["./*"],
       "@/app/*": ["./app/*"],
       "@/modules/*": ["./modules/*"],
@@ -41,8 +43,7 @@
     "modules/**/*.ts",
     "modules/**/*.tsx",
     ".next/types/**/*.ts",
-    "cypress/**/*.ts",
-    "cypress/**/*.tsx"
+    "modules/client/components/dashboard/VehicleCounter.tsx"
   ],
   "exclude": ["node_modules"]
 }

@@ -6,7 +6,6 @@ import Spinner from '@/modules/common/components/Spinner/Spinner';
 
 interface VehicleSectionProps {
   clientName: string;
-  vehicles: VehicleData[];
   loading: boolean;
   error: string | null;
   onRefetch: () => void;
@@ -24,11 +23,12 @@ interface VehicleSectionProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  // Optional render actions override (composition-friendly)
+  renderActions?: (vehicle: VehicleData) => React.ReactNode;
 }
 
 const VehicleSection: React.FC<VehicleSectionProps> = ({
   clientName,
-  vehicles,
   loading,
   error,
   onRefetch,
@@ -45,6 +45,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   currentPage,
   totalPages,
   onPageChange,
+  renderActions,
 }) => {
   return (
     <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 16 }}>
@@ -64,12 +65,26 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         >
           Atualizar
         </button>
+        <button
+          type="button"
+          onClick={onClearFilters}
+          disabled={loading}
+          style={{
+            padding: '4px 10px',
+            borderRadius: 6,
+            border: '1px solid #ccc',
+            background: '#fff',
+            cursor: 'pointer',
+          }}
+        >
+          Limpar filtros
+        </button>
       </div>
 
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
       {loading ? (
         <Spinner size={30} />
-      ) : vehicles.length === 0 ? (
+      ) : filteredVehicles.length === 0 ? (
         <p style={{ marginTop: 8 }}>Nenhum veículo cadastrado para este cliente.</p>
       ) : (
         <div
@@ -166,87 +181,96 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
               <div style={{ color: '#555' }}>Cor: {v.color}</div>
               {v.status && <div style={{ color: '#555' }}>Status: {v.status}</div>}
               <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => onOpenChecklist(v)}
-                  disabled={
-                    !(() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return (
+                {renderActions ? (
+                  renderActions(v)
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onOpenChecklist(v)}
+                      disabled={
+                        !(() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return (
+                            s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE
+                          );
+                        })()
+                      }
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        background: (() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                            s === VehicleStatus.EM_ANALISE
+                            ? '#fff'
+                            : '#f0f0f0';
+                        })(),
+                        cursor: (() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return s === VehicleStatus.CHEGADA_CONFIRMADA ||
+                            s === VehicleStatus.EM_ANALISE
+                            ? 'pointer'
+                            : 'not-allowed';
+                        })(),
+                      }}
+                      aria-label={`Abrir checklist para o veículo ${v.plate}`}
+                      title={(s =>
                         s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE
-                      );
-                    })()
-                  }
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #ccc',
-                    background: (() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return s === VehicleStatus.CHEGADA_CONFIRMADA ||
-                        s === VehicleStatus.EM_ANALISE
-                        ? '#fff'
-                        : '#f0f0f0';
-                    })(),
-                    cursor: (() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return s === VehicleStatus.CHEGADA_CONFIRMADA ||
-                        s === VehicleStatus.EM_ANALISE
-                        ? 'pointer'
-                        : 'not-allowed';
-                    })(),
-                  }}
-                  aria-label={`Abrir checklist para o veículo ${v.plate}`}
-                  title={(s =>
-                    s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE
-                      ? 'Abrir checklist'
-                      : 'Disponível após confirmar chegada')(String(v.status || '').toUpperCase())}
-                >
-                  Checklist
-                </button>
+                          ? 'Abrir checklist'
+                          : 'Disponível após confirmar chegada')(
+                        String(v.status || '').toUpperCase()
+                      )}
+                    >
+                      Checklist
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => onConfirmArrival(v)}
-                  disabled={
-                    !!confirming[v.id] ||
-                    !(() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return (
+                    <button
+                      type="button"
+                      onClick={() => onConfirmArrival(v)}
+                      disabled={
+                        !!confirming[v.id] ||
+                        !(() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return (
+                            s === VehicleStatus.AGUARDANDO_COLETA ||
+                            s === VehicleStatus.AGUARDANDO_CHEGADA
+                          );
+                        })()
+                      }
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        background: (() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return s === VehicleStatus.AGUARDANDO_COLETA ||
+                            s === VehicleStatus.AGUARDANDO_CHEGADA
+                            ? '#e8f5e9'
+                            : '#f0f0f0';
+                        })(),
+                        cursor: (() => {
+                          const s = String(v.status || '').toUpperCase();
+                          return s === VehicleStatus.AGUARDANDO_COLETA ||
+                            s === VehicleStatus.AGUARDANDO_CHEGADA
+                            ? 'pointer'
+                            : 'not-allowed';
+                        })(),
+                      }}
+                      aria-label={`Confirmar chegada do veículo ${v.plate}`}
+                      title={(s =>
                         s === VehicleStatus.AGUARDANDO_COLETA ||
                         s === VehicleStatus.AGUARDANDO_CHEGADA
-                      );
-                    })()
-                  }
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: 6,
-                    border: '1px solid #ccc',
-                    background: (() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return s === VehicleStatus.AGUARDANDO_COLETA ||
-                        s === VehicleStatus.AGUARDANDO_CHEGADA
-                        ? '#e8f5e9'
-                        : '#f0f0f0';
-                    })(),
-                    cursor: (() => {
-                      const s = String(v.status || '').toUpperCase();
-                      return s === VehicleStatus.AGUARDANDO_COLETA ||
-                        s === VehicleStatus.AGUARDANDO_CHEGADA
-                        ? 'pointer'
-                        : 'not-allowed';
-                    })(),
-                  }}
-                  aria-label={`Confirmar chegada do veículo ${v.plate}`}
-                  title={(s =>
-                    s === VehicleStatus.AGUARDANDO_COLETA || s === VehicleStatus.AGUARDANDO_CHEGADA
-                      ? 'Confirmar chegada'
-                      : `Disponível quando status for ${VehicleStatus.AGUARDANDO_COLETA} ou ${VehicleStatus.AGUARDANDO_CHEGADA}`)(
-                    String(v.status || '').toUpperCase()
-                  )}
-                >
-                  {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
-                </button>
+                          ? 'Confirmar chegada'
+                          : `Disponível quando status for ${VehicleStatus.AGUARDANDO_COLETA} ou ${VehicleStatus.AGUARDANDO_CHEGADA}`)(
+                        String(v.status || '').toUpperCase()
+                      )}
+                    >
+                      {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

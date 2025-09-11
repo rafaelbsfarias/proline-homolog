@@ -14,7 +14,7 @@ export interface UpdateServiceData {
   name: string;
   description: string;
   price: number;
-  category?: string | null;
+  category: string;
 }
 
 // --- Hook ---

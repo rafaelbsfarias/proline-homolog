@@ -47,6 +47,16 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Only create history record when status changes to 'approved'
     IF NEW.status = 'approved' AND (OLD.status IS NULL OR OLD.status != 'approved') THEN
+        -- Check if history record already exists for this collection and date
+        IF EXISTS (
+            SELECT 1 FROM public.collection_history
+            WHERE collection_id = NEW.id AND collection_date = NEW.collection_date
+        ) THEN
+            -- Log that we're skipping duplicate creation
+            RAISE NOTICE 'History record already exists for collection % on date %, skipping creation', NEW.id, NEW.collection_date;
+            RETURN NEW;
+        END IF;
+
         -- Count vehicles for this collection
         DECLARE
             vehicle_count_val INTEGER;
@@ -80,7 +90,7 @@ BEGIN
                 NEW.payment_received_at,
                 vehicle_count_val
             );
-        END;
+        END IF;
     END IF;
 
     RETURN NEW;

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import DataTable from '@/modules/partner/components/dashboard/DataTable';
+import DataTable from '@/modules/partner/components/DataTable';
 import { PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 
 interface ServicesContentProps {
@@ -47,7 +47,7 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
       {!loading && !error && (
         <DataTable
           title="Serviços"
-          data={formattedServices}
+          data={formattedServices as PartnerService[]}
           columns={columns}
           emptyMessage="Nenhum serviço cadastrado."
           onEdit={onEdit}

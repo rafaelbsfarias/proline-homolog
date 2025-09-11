@@ -18,8 +18,8 @@ BEGIN
     FROM public.vehicles
     WHERE
         client_id = p_client_id
-        AND (p_plate_filter IS NULL OR p_plate_filter = '' OR plate ILIKE (p_plate_filter || '%'))
-        AND (p_status_filter IS NULL OR p_status_filter = '' OR status ILIKE p_status_filter);
+    AND (p_plate_filter IS NULL OR p_plate_filter = '' OR plate ILIKE (p_plate_filter || '%'))
+    AND (p_status_filter IS NULL OR p_status_filter = '' OR trim(lower(status)) = trim(lower(p_status_filter)));
 
     -- Get the paginated vehicle data, applying filters
     SELECT COALESCE(json_agg(v.*), '[]'::json) INTO v_vehicles
@@ -37,7 +37,7 @@ BEGIN
         WHERE
             client_id = p_client_id
             AND (p_plate_filter IS NULL OR p_plate_filter = '' OR plate ILIKE (p_plate_filter || '%'))
-            AND (p_status_filter IS NULL OR p_status_filter = '' OR status ILIKE p_status_filter)
+            AND (p_status_filter IS NULL OR p_status_filter = '' OR trim(lower(status)) = trim(lower(p_status_filter)))
         ORDER BY
             created_at DESC
         LIMIT

@@ -2,6 +2,6 @@
 export { ClientAddressService } from './ClientAddressService';
 export { ClientContractService } from './ClientContractService';
 export { ClientVehicleService } from './ClientVehicleService';
-export { CollectionProposalService } from './CollectionProposalService';
+export { CollectionProposalService } from '@collections/client/services/CollectionProposalService';
 export { useClientApi } from './clientApi';
 export { clientDashboardService } from './clientDashboardService';

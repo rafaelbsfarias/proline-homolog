@@ -46,6 +46,12 @@ function sanitizeStatus(status?: string) {
 }
 function fmtDate(d?: string | null) {
   if (!d) return 'N/A';
+  // Evitar shift de timezone quando recebemos apenas AAAA-MM-DD
+  const onlyDate = /^\d{4}-\d{2}-\d{2}$/;
+  if (onlyDate.test(d)) {
+    const [y, m, dd] = d.split('-');
+    return `${dd}/${m}/${y}`;
+  }
   const dt = new Date(d);
   return isNaN(dt.getTime()) ? 'N/A' : dt.toLocaleDateString('pt-BR');
 }

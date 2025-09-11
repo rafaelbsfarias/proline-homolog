@@ -1,0 +1,22 @@
+{
+  "body": {
+    "method": "collect_point",
+    "vehicleIds": ["492b4739-9d1d-4746-afc4-9acaaceac658"],
+    "addressId": "8a677dd9-ab25-425b-869e-b1149c3d220e",
+    "estimated_arrival_date": "2025-09-18"
+  },
+  "headers": {
+    "host": "localhost:3000",
+    "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0",
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.5",
+    "accept-encoding": "gzip, deflate",
+    "referer": "http://localhost:3000/dashboard",
+    "content-type": "application/json",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjU0MzIxL2F1dGgvdjEiLCJzdWIiOiIwYTZhODIxNC04MWJiLTQxY2ItYmNjNC1jYjA0NDAyODA0YTUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3NTE3OTY1LCJpYXQiOjE3NTc1MTQzNjUsImVtYWlsIjoiY2xpZW50ZUBwcm9saW5lYXV0by5jb20uYnIiLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmdWxsX25hbWUiOiJDbGllbnRlIFRlc3RlIDg5NDQ4IiwicHJvZmlsZV9pZCI6IjBhNmE4MjE0LTgxYmItNDFjYi1iY2M0LWNiMDQ0MDI4MDRhNSIsInJvbGUiOiJjbGllbnQifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NzUxNDM2NX1dLCJzZXNzaW9uX2lkIjoiNjEzYTEwMWMtMjA1MS00MDQ2LWExZjEtMTY0MjRhNDU5ZDYyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.m2bB9tBzqHhzrCna9JNFCz9EDGUXZgXDficBk58tbVo",
+    "content-length": "169",
+    "origin": "http://localhost:3000",
+    "connection": "keep-alive",
+    "priority": "u=4"
+  }
+}

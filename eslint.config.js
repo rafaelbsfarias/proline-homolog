@@ -163,4 +163,13 @@ export default [
       'no-undef': 'off',
     },
   },
+  // Scripts and maintenance files - allow console logging and relaxed rules
+  {
+    files: ['scripts/**/*.{js,ts}', 'scripts/**'],
+    rules: {
+      'no-console': 'off',
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
+    },
+  },
 ];

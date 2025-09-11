@@ -293,7 +293,7 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       </div>
 
       {/* Calendário: marca todas as datas de coleta agendadas */}
-      <div
+      {/* <div
         style={{
           marginTop: 12,
           background: 'rgba(255,255,255,0.08)',
@@ -310,7 +310,7 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
           message={feedback.msg}
           onClose={() => setFeedback(null)}
         />
-      )}
+      )}*/}
     </div>
   );
 };

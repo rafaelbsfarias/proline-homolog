@@ -3,7 +3,7 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
-import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
+import { CollectionProposalService } from '@collections';
 
 const logger = getLogger('api:client:collection-reject-proposal');
 const collectionService = CollectionProposalService.getInstance();
