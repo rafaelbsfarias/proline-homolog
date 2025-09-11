@@ -1,4 +1,7 @@
 import { STATUS } from '@/modules/common/constants/status';
+import { MetricsService } from '@/modules/common/services/MetricsService';
+import { getLogger } from '@/modules/logger';
+import { logFields } from '@/modules/common/utils/logging';
 
 export type AdminClient = any;
 
@@ -111,5 +114,87 @@ export class CollectionOrchestrator {
       .eq('id', collectionId)
       .eq('status', STATUS.REQUESTED);
     if (error) throw error;
+  }
+
+  /**
+   * Cleanup orphan vehicle_collections in REQUESTED status with no vehicles linked
+   * Supports optional scoping by client and/or address, excluding a given date,
+   * limiting number of records, and dry-run mode.
+   */
+  static async cleanupOrphanedCollections(
+    admin: AdminClient,
+    params: {
+      clientId?: string;
+      addressLabel?: string;
+      excludeDate?: string;
+      limit?: number;
+      dryRun?: boolean;
+    }
+  ): Promise<{ detected: number; deleted: number; items: any[]; dryRun: boolean }> {
+    const { clientId, addressLabel, excludeDate, limit, dryRun = true } = params || {};
+    const logger = getLogger('CollectionOrchestrator');
+    const metrics = MetricsService.getInstance();
+
+    // Load requested collections with optional filters
+    let q = admin
+      .from('vehicle_collections')
+      .select('id, client_id, collection_address, collection_date, status')
+      .eq('status', STATUS.REQUESTED);
+    if (clientId) q = q.eq('client_id', clientId);
+    if (addressLabel) q = q.eq('collection_address', addressLabel);
+    if (excludeDate) q = q.neq('collection_date', excludeDate);
+    if (limit && Number.isFinite(limit) && limit > 0) q = q.limit(Math.floor(limit));
+
+    const { data: requested, error: reqErr } = await q;
+    if (reqErr) throw reqErr;
+
+    const ids = (requested || []).map((r: any) => r.id).filter(Boolean);
+    if (!ids.length) {
+      logger.info('cleanup_orphans_no_requested_found', {
+        ...logFields({ client_id: clientId || null, address_label: addressLabel || null }),
+      });
+      return { detected: 0, deleted: 0, items: [], dryRun };
+    }
+
+    // Count vehicles per collection_id
+    const { data: vehiclesRows, error: vErr } = await admin
+      .from('vehicles')
+      .select('id, collection_id')
+      .in('collection_id', ids);
+    if (vErr) throw vErr;
+
+    const counts = new Map<string, number>();
+    (vehiclesRows || []).forEach((r: any) => {
+      const cid = String(r?.collection_id || '');
+      if (!cid) return;
+      counts.set(cid, (counts.get(cid) || 0) + 1);
+    });
+
+    const orphans = (requested || []).filter((r: any) => (counts.get(r.id) || 0) === 0);
+    const detected = orphans.length;
+    if (detected) metrics.inc('orphan_requested_detected', detected);
+
+    if (dryRun || detected === 0) {
+      logger.info('cleanup_orphans_dry_run', {
+        ...logFields({ client_id: clientId || null, address_label: addressLabel || null }),
+        detected,
+      });
+      return { detected, deleted: 0, items: orphans, dryRun: true };
+    }
+
+    const orphanIds = orphans.map((o: any) => o.id);
+    const { error: delErr } = await admin
+      .from('vehicle_collections')
+      .delete()
+      .in('id', orphanIds)
+      .eq('status', STATUS.REQUESTED);
+    if (delErr) throw delErr;
+
+    metrics.inc('orphan_requested_cleaned', orphanIds.length);
+    logger.info('cleanup_orphans_deleted', {
+      ...logFields({ client_id: clientId || null, address_label: addressLabel || null }),
+      deleted: orphanIds.length,
+    });
+    return { detected, deleted: orphanIds.length, items: orphans, dryRun: false };
   }
 }

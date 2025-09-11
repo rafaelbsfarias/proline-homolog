@@ -219,54 +219,14 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         });
       }
 
-      // 5.2) Limpeza: remover collections REQUESTED sem veículos (órfãs) deste endereço (datas antigas)
+      // 5.2) Limpeza centralizada: remover collections REQUESTED sem veículos (órfãs) deste endereço (datas antigas)
       try {
-        const metrics = MetricsService.getInstance();
-        const { data: requestedCols } = await admin
-          .from('vehicle_collections')
-          .select('id, collection_date')
-          .eq('client_id', clientId)
-          .eq('collection_address', addressLabel)
-          .eq('status', STATUS.REQUESTED)
-          .neq('collection_date', new_date);
-        for (const c of requestedCols || []) {
-          const cid = c?.id as string;
-          if (!cid) continue;
-          const { data: anyVehicle } = await admin
-            .from('vehicles')
-            .select('id')
-            .eq('collection_id', cid)
-            .limit(1);
-          if (!anyVehicle || anyVehicle.length === 0) {
-            metrics.inc('orphan_requested_detected');
-            const { error: delErr } = await admin
-              .from('vehicle_collections')
-              .delete()
-              .eq('id', cid)
-              .eq('status', STATUS.REQUESTED);
-            if (delErr) {
-              logger.warn('orphan_collection_cleanup_failed', {
-                ...logFields({
-                  client_id: clientId,
-                  address_id: addressId,
-                  address_label: addressLabel,
-                  collection_id: cid,
-                }),
-                error: delErr.message,
-              });
-            } else {
-              metrics.inc('orphan_requested_cleaned');
-              logger.info('orphan_collection_removed', {
-                ...logFields({
-                  client_id: clientId,
-                  address_id: addressId,
-                  address_label: addressLabel,
-                  collection_id: cid,
-                }),
-              });
-            }
-          }
-        }
+        await CollectionOrchestrator.cleanupOrphanedCollections(admin, {
+          clientId,
+          addressLabel,
+          excludeDate: new_date,
+          dryRun: false,
+        });
       } catch (e: unknown) {
         logger.warn('orphan_cleanup_error', {
           ...logFields({ client_id: clientId, address_id: addressId, address_label: addressLabel }),

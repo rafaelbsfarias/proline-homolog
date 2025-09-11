@@ -89,9 +89,7 @@ const SpecialistDashboard = () => {
     totalPages,
   } = useClientVehicles(selectedClientId || undefined, filters);
 
-  const { statuses: availableStatuses, loading: loadingStatuses } = useClientVehicleStatuses(
-    selectedClientId || undefined
-  );
+  const { statuses: availableStatuses } = useClientVehicleStatuses(selectedClientId || undefined);
 
   useEffect(() => {
     async function fetchUser() {
@@ -164,7 +162,6 @@ const SpecialistDashboard = () => {
                 {selectedClient && (
                   <VehicleSection
                     clientName={selectedClient.client_full_name}
-                    vehicles={vehicles}
                     loading={loadingVehicles}
                     error={vehiclesError}
                     onRefetch={refetch}
