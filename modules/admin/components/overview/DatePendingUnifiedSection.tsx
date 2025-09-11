@@ -141,14 +141,14 @@ const DatePendingUnifiedSection: React.FC<Props> = ({ clientId, groups, total = 
                     }}
                     title="Propor uma nova data"
                     style={{
-                      backgroundColor: '#007bff',
+                      backgroundColor: '#002e4c',
                       color: 'white',
                       border: 'none',
                       padding: '4px 8px',
                       borderRadius: '4px',
                     }}
                   >
-                    {g.proposed_by === 'client' ? '📅 Propor nova data' : '✏️ Editar proposta'}
+                    {g.proposed_by === 'client' ? 'Propor nova data' : 'Editar proposta'}
                   </button>
                 </div>
               </td>

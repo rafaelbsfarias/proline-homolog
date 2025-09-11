@@ -4,6 +4,8 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
 import { formatAddressLabel, normalizeAddressLabel } from '@/modules/common/utils/address';
+import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
+import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
 
 const logger = getLogger('api:admin:propose-collection-date');
 
@@ -70,18 +72,16 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       addressData: addr,
     });
 
-    // 2) Selecionar fee correto: priorizar último aprovado (>0); fallback: último (>0)
-    const { data: feeRows, error: feeErr } = await admin
-      .from('vehicle_collections')
-      .select('id, collection_fee_per_vehicle, status, collection_address, updated_at, created_at')
-      .eq('client_id', clientId)
-      .eq('collection_address', addressLabel)
-      .in('status', ['requested', 'approved'])
-      .order('updated_at', { ascending: false });
-
-    if (feeErr) {
+    // 2) Selecionar fee correto via util compartilhado
+    let selectedFee: number | null = null;
+    let selectedStrategy: 'approved' | 'non_zero' | 'none' = 'none';
+    try {
+      const sel = await selectFeeForAddress(admin, clientId, addressLabel);
+      selectedFee = sel.selectedFee;
+      selectedStrategy = sel.strategy;
+    } catch (feeErr: any) {
       logger.error('load_collections_failed', {
-        error: feeErr.message,
+        error: feeErr?.message,
         clientId,
         addressLabel,
       });
@@ -91,29 +91,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const latestApproved = (feeRows || []).find(
-      (r: any) =>
-        String(r?.status) === 'approved' &&
-        typeof r?.collection_fee_per_vehicle === 'number' &&
-        Number(r.collection_fee_per_vehicle) > 0
-    );
-    const latestNonZero = (feeRows || []).find(
-      (r: any) =>
-        typeof r?.collection_fee_per_vehicle === 'number' &&
-        Number(r.collection_fee_per_vehicle) > 0
-    );
-
-    const selected = latestApproved || latestNonZero || null;
-    const selectedFee = selected ? Number(selected.collection_fee_per_vehicle) : null;
-    const selectedStrategy = latestApproved ? 'approved' : latestNonZero ? 'non_zero' : 'none';
-
     logger.info('propose_date_fee_selection', {
       clientId,
       addressLabel,
       selectedStrategy,
       selectedFee,
-      selectedCollectionId: selected?.id,
-      totalCandidates: feeRows?.length || 0,
+      note: 'fee selected via util',
     });
 
     if (!selectedFee) {
@@ -123,17 +106,19 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // 3) Impedir alteração de coletas já aprovadas para a mesma (address,date)
+    // 3) Upsert idempotente via orquestrador
+    let collectionId: string;
     try {
-      const { data: approvedExisting } = await admin
-        .from('vehicle_collections')
-        .select('id')
-        .eq('client_id', clientId)
-        .eq('collection_address', addressLabel)
-        .eq('collection_date', new_date)
-        .eq('status', STATUS.APPROVED)
-        .maybeSingle();
-      if (approvedExisting?.id) {
+      const res = await CollectionOrchestrator.upsertCollection(admin, {
+        clientId,
+        addressLabel,
+        dateIso: new_date,
+        feePerVehicle: selectedFee,
+      } as any);
+      collectionId = res.collectionId;
+      logger.info('propose_date_upsert_success', { collection_id: collectionId });
+    } catch (e: any) {
+      if (String(e?.message).includes('approved_collection_already_exists')) {
         return NextResponse.json(
           {
             success: false,
@@ -143,51 +128,25 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
           { status: 400 }
         );
       }
-    } catch (e: unknown) {
-      logger.warn('approved_check_failed', { error: (e as Error)?.message });
-    }
-
-    // 4) Upsert por (client_id, collection_address, collection_date) com fee selecionado
-    const upsertPayload = {
-      client_id: clientId,
-      collection_address: addressLabel,
-      collection_date: new_date,
-      collection_fee_per_vehicle: selectedFee,
-      status: STATUS.REQUESTED,
-    } as const;
-
-    const { data: upserted, error: upsertErr } = await admin
-      .from('vehicle_collections')
-      .upsert(upsertPayload, {
-        onConflict: 'client_id,collection_address,collection_date',
-        ignoreDuplicates: false,
-      })
-      .select('id, collection_address, collection_date, collection_fee_per_vehicle, status')
-      .limit(1);
-
-    if (upsertErr) {
-      logger.error('propose_date_upsert_failed', { error: upsertErr.message, upsertPayload });
+      logger.error('propose_date_upsert_failed', { error: e?.message });
       return NextResponse.json(
         { success: false, error: 'Falha ao salvar proposta' },
         { status: 500 }
       );
     }
 
-    logger.info('propose_date_upsert_success', { upserted });
-
     // 5) Sincronizar data apenas para veículos não-finalizados (evitar tocar histórico)
     logger.info('synchronizing_vehicle_dates', { clientId, addressId, newDate: new_date });
-    const { error: vehicleSyncError } = await admin
-      .from('vehicles')
-      .update({ estimated_arrival_date: new_date })
-      .eq('client_id', clientId)
-      .eq('pickup_address_id', addressId)
-      .in('status', [
-        STATUS.PONTO_COLETA_SELECIONADO,
-        STATUS.SOLICITACAO_MUDANCA_DATA,
-        STATUS.AGUARDANDO_APROVACAO,
-        STATUS.APROVACAO_NOVA_DATA,
-      ]);
+    let vehicleSyncError: any = null;
+    try {
+      await CollectionOrchestrator.syncVehicleDates(admin, {
+        clientId,
+        addressId,
+        newDateIso: new_date,
+      });
+    } catch (e: any) {
+      vehicleSyncError = e;
+    }
 
     if (vehicleSyncError) {
       logger.warn('vehicle_date_sync_failed', {
@@ -198,25 +157,19 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     } else {
       logger.info('vehicle_date_sync_success', { clientId, addressId, synchronizedDate: new_date });
       // 5.1) Após sincronizar datas, vincular veículos à nova collection REQUESTED
-      const newCollectionId = upserted?.[0]?.id as string | undefined;
-      if (newCollectionId) {
-        const { error: linkErr2 } = await admin
-          .from('vehicles')
-          .update({ collection_id: newCollectionId })
-          .eq('client_id', clientId)
-          .eq('pickup_address_id', addressId)
-          .eq('estimated_arrival_date', new_date)
-          .in('status', [
-            STATUS.PONTO_COLETA_SELECIONADO,
-            STATUS.SOLICITACAO_MUDANCA_DATA,
-            STATUS.AGUARDANDO_APROVACAO,
-            STATUS.APROVACAO_NOVA_DATA,
-          ]);
-        if (linkErr2) {
-          logger.warn('link_vehicles_after_sync_failed', { error: linkErr2.message, newCollectionId });
-        } else {
-          logger.info('link_vehicles_after_sync_success', { collection_id: newCollectionId });
-        }
+      try {
+        await CollectionOrchestrator.linkVehiclesToCollection(admin, {
+          clientId,
+          addressId,
+          dateIso: new_date,
+          collectionId,
+        });
+        logger.info('link_vehicles_after_sync_success', { collection_id: collectionId });
+      } catch (e: any) {
+        logger.warn('link_vehicles_after_sync_failed', {
+          error: e?.message,
+          collection_id: collectionId,
+        });
       }
 
       // 5.2) Limpeza: remover collections REQUESTED sem veículos (órfãs) deste endereço (datas antigas)

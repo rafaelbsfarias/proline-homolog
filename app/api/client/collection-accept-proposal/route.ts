@@ -5,6 +5,8 @@ import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
 import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
 import { formatAddressLabel } from '@/modules/common/utils/address';
+import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
+import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
 
 const logger = getLogger('api:client:collection-accept-proposal');
 const collectionService = CollectionProposalService.getInstance();
@@ -43,7 +45,9 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     const statuses = new Set((rawVehicles as any[]).map(v => String(v.status)));
     const hasSolicitacaoMudanca = statuses.has(STATUS.SOLICITACAO_MUDANCA_DATA);
     const hasAguardandoAprovacao = statuses.has(STATUS.AGUARDANDO_APROVACAO);
-    const targetDate = (rawVehicles.find(v => v.estimated_arrival_date)?.estimated_arrival_date || '').slice(0, 10);
+    const targetDate = (
+      rawVehicles.find(v => v.estimated_arrival_date)?.estimated_arrival_date || ''
+    ).slice(0, 10);
 
     // Aceitar proposta - atualizar status dos veículos
     const acceptResult = await collectionService.acceptProposal({
@@ -66,7 +70,8 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       const addressLabel = formatAddressLabel(addressResult.address);
 
       if (targetDate) {
-        // Encontrar collection REQUESTED exata por (cliente, endereço, data)
+        // Garantir collection REQUESTED para (cliente, endereço, data)
+        let collectionId: string | undefined;
         const { data: collRow } = await admin
           .from('vehicle_collections')
           .select('id, status')
@@ -75,54 +80,47 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           .eq('collection_date', targetDate)
           .eq('status', STATUS.REQUESTED)
           .maybeSingle();
+        collectionId = collRow?.id as string | undefined;
 
-        const collId = collRow?.id as string | undefined;
-
-        if (collId) {
-          // 1) Vincular veículos a esta collection (garante contagem no histórico)
-          const { error: linkErr } = await admin
-            .from('vehicles')
-            .update({ collection_id: collId })
-            .eq('client_id', userId)
-            .eq('pickup_address_id', addressId)
-            .eq('estimated_arrival_date', targetDate);
-          if (linkErr) logger.warn('link_vehicles_on_accept_failed', { error: linkErr.message, collId });
-
-          // 2) Colocar veículos em AGUARDANDO COLETA (antes de aprovar)
-          const { error: updVehiclesFinal } = await admin
-            .from('vehicles')
-            .update({ status: STATUS.AGUARDANDO_COLETA })
-            .eq('client_id', userId)
-            .eq('pickup_address_id', addressId)
-            .eq('estimated_arrival_date', targetDate)
-            .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.SOLICITACAO_MUDANCA_DATA]);
-          if (updVehiclesFinal) logger.warn('finalize_vehicles_status_failed', { error: updVehiclesFinal.message });
-
-          // 3) Aprovar a collection (dispara trigger de histórico)
-          const { error: updColErr } = await admin
-            .from('vehicle_collections')
-            .update({ status: STATUS.APPROVED })
-            .eq('id', collId)
-            .eq('status', STATUS.REQUESTED);
-          if (updColErr) {
-            logger.warn('approve_collection_failed', { error: updColErr.message, collId, addressLabel, targetDate });
-          }
-        } else if (hasSolicitacaoMudanca && !hasAguardandoAprovacao) {
-          // Passo intermediário para não falhar (mantém compatibilidade)
-          const { error: upd1 } = await admin
-            .from('vehicles')
-            .update({ status: STATUS.AGUARDANDO_APROVACAO })
-            .eq('client_id', userId)
-            .eq('pickup_address_id', addressId)
-            .eq('status', STATUS.SOLICITACAO_MUDANCA_DATA);
-          if (upd1) {
-            logger.error('accept-admin-proposal-failed', { error: upd1.message, userId, addressId });
+        if (!collectionId) {
+          // Selecionar fee e criar requested se necessário
+          const sel = await selectFeeForAddress(admin, userId, addressLabel);
+          if (!sel.selectedFee) {
             return NextResponse.json(
-              { success: false, error: 'Erro ao aceitar proposta do administrador' },
-              { status: 500 }
+              { success: false, error: 'Precifique o endereço antes de aprovar a coleta.' },
+              { status: 400 }
             );
           }
+          const up = await CollectionOrchestrator.upsertCollection(admin, {
+            clientId: userId,
+            addressLabel,
+            dateIso: targetDate,
+            feePerVehicle: sel.selectedFee,
+          } as any);
+          collectionId = up.collectionId;
         }
+
+        // 1) Vincular veículos (garante contagem no histórico)
+        await CollectionOrchestrator.linkVehiclesToCollection(admin, {
+          clientId: userId,
+          addressId,
+          dateIso: targetDate,
+          collectionId,
+        });
+
+        // 2) Colocar veículos em AGUARDANDO COLETA (antes de aprovar)
+        const { error: updVehiclesFinal } = await admin
+          .from('vehicles')
+          .update({ status: STATUS.AGUARDANDO_COLETA })
+          .eq('client_id', userId)
+          .eq('pickup_address_id', addressId)
+          .eq('estimated_arrival_date', targetDate)
+          .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.SOLICITACAO_MUDANCA_DATA]);
+        if (updVehiclesFinal)
+          logger.warn('finalize_vehicles_status_failed', { error: updVehiclesFinal.message });
+
+        // 3) Aprovar a collection (dispara trigger de histórico)
+        await CollectionOrchestrator.approveCollection(admin, collectionId);
       }
     }
 

@@ -25,7 +25,9 @@ export async function getClientCollectionsSummary(
   const admin = SupabaseService.getInstance().getAdminClient();
 
   // 1) Groups
-  const { approvedGroups, approvedTotal } = await buildApprovedGroups(admin, clientId);
+  // Approved groups: prefer derivar do histórico detalhado (imutável) para convergir com a seção de histórico
+  let approvedGroups: ApprovedCollectionGroup[] = [];
+  let approvedTotal = 0;
   const groups: CollectionPricingRequest[] = await buildPricingRequests(admin, clientId);
   const { approvalGroups, approvalTotal } = await buildPendingApprovalGroups(admin, clientId);
   const rescheduleGroups = await buildRescheduleGroups(admin, clientId);
@@ -44,27 +46,59 @@ export async function getClientCollectionsSummary(
   // 3) Status totals
   const statusTotals = await getStatusTotals(admin, clientId);
 
-  // 4) History from immutable collection_history table
+  // 4) History from immutable collection_history (prefer detailed snapshot)
   let collectionHistory: HistoryRow[] = [];
   try {
     const historyService = CollectionHistoryService.getInstance();
-    const immutableHistory = await historyService.getClientHistory(clientId);
+    const detailed = await historyService.getClientHistoryDetailed(clientId);
 
-    // Convert to HistoryRow format for compatibility
-    collectionHistory = immutableHistory.map(record => ({
-      collection_address: record.collection_address,
-      collection_fee_per_vehicle: record.collection_fee_per_vehicle,
-      collection_date: record.collection_date,
-      // Nesta etapa não exibimos estados de pagamento; padronizamos como 'COLETA APROVADA'.
-      status: 'COLETA APROVADA',
-      vehicles: [],
-    }));
+    if (Array.isArray(detailed) && detailed.length) {
+      // Map detailed history to UI rows
+      collectionHistory = detailed.map(record => ({
+        collection_id: record.collection_id,
+        collection_address: record.collection_address,
+        collection_fee_per_vehicle: record.collection_fee_per_vehicle,
+        collection_date: record.collection_date,
+        status: record.current_status || 'COLETA APROVADA',
+        vehicles: (record.vehicles || []).map(v => ({ plate: v.plate, status: v.status })),
+      }));
 
-    // Enrich with current vehicle status for display purposes
-    collectionHistory = await enrichHistoryWithVehicleStatus(admin, clientId, collectionHistory);
+      // Build approved groups from the same immutable source to avoid divergence
+      // Resolve addressId via addresses table to keep UI keys stable
+      const { data: addrRows } = await admin
+        .from('addresses')
+        .select('id, street, number, city, profile_id')
+        .eq('profile_id', clientId);
+      const idByLabel = new Map<string, string>();
+      (addrRows || []).forEach((a: any) => {
+        idByLabel.set(labelOf(a), String(a.id));
+      });
+
+      approvedGroups = detailed.map(record => {
+        const address = record.collection_address;
+        const addressId = idByLabel.get(address) || address; // fallback: use label as key
+        const vehicle_count = Number(record.vehicle_count || (record.vehicles || []).length || 0);
+        const collection_fee = Number(record.collection_fee_per_vehicle || 0);
+        const collection_date = record.collection_date || null;
+        if (collection_fee && vehicle_count) approvedTotal += collection_fee * vehicle_count;
+        return {
+          addressId,
+          address,
+          vehicle_count,
+          collection_fee: isFinite(collection_fee) ? collection_fee : null,
+          collection_date,
+          status: 'COLETA APROVADA',
+        } as ApprovedCollectionGroup;
+      });
+    } else {
+      // No detailed history: keep both approvedGroups and collectionHistory empty to avoid mixing live data
+      approvedGroups = [];
+      approvedTotal = 0;
+      collectionHistory = [];
+    }
   } catch (e: unknown) {
     const error = e as Error;
-    logger.warn('history_enrich_failed', { error: error?.message });
+    logger.warn('history_load_failed', { error: error?.message });
   }
 
   return {

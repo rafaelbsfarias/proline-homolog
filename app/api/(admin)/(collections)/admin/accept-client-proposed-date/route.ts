@@ -4,6 +4,7 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { formatAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
+import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
 import { STATUS } from '@/modules/common/constants/status';
 
 const logger = getLogger('api:admin:accept-client-proposed-date');
@@ -71,7 +72,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     // Procurar collection existente exata
     const { data: existingRequested } = await admin
       .from('vehicle_collections')
-      .select('id, status, collection_fee_per_vehicle')
+      .select('id, status')
       .eq('client_id', clientId)
       .eq('collection_address', addressLabel)
       .eq('collection_date', proposedDate)
@@ -79,7 +80,6 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .maybeSingle();
 
     let collectionId = existingRequested?.id as string | undefined;
-    let collectionFee = existingRequested?.collection_fee_per_vehicle as number | undefined;
 
     // Se não existe requested, criar uma (com fee selecionado por util compartilhado)
     if (!collectionId) {
@@ -90,25 +90,13 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
           { status: 400 }
         );
       }
-      collectionFee = sel.selectedFee;
-      const { data: inserted, error: insErr } = await admin
-        .from('vehicle_collections')
-        .insert({
-          client_id: clientId,
-          collection_address: addressLabel,
-          collection_date: proposedDate,
-          collection_fee_per_vehicle: collectionFee,
-          status: STATUS.REQUESTED,
-        })
-        .select('id')
-        .limit(1);
-      if (insErr) {
-        return NextResponse.json(
-          { success: false, error: 'Falha ao criar coleta para aprovação' },
-          { status: 500 }
-        );
-      }
-      collectionId = inserted?.[0]?.id as string | undefined;
+      const up = await CollectionOrchestrator.upsertCollection(admin, {
+        clientId,
+        addressLabel,
+        dateIso: proposedDate,
+        feePerVehicle: sel.selectedFee,
+      } as any);
+      collectionId = up.collectionId;
     }
 
     if (!collectionId) {
@@ -119,15 +107,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     // 3) Linkar veículos do endereço/data para esta collection
-    const { error: linkErr } = await admin
-      .from('vehicles')
-      .update({ collection_id: collectionId })
-      .eq('client_id', clientId)
-      .eq('pickup_address_id', addressId)
-      .eq('estimated_arrival_date', proposedDate);
-    if (linkErr) {
-      logger.warn('admin_accept_link_failed', { error: linkErr.message, collectionId });
-    }
+    await CollectionOrchestrator.linkVehiclesToCollection(admin, {
+      clientId,
+      addressId,
+      dateIso: proposedDate,
+      collectionId,
+    });
 
     // 4) Atualizar status dos veículos para 'COLETA APROVADA' (requisito de UI/Admin)
     const { error: vehFinal } = await admin
@@ -142,14 +127,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     // 5) Aprovar a collection (dispara trigger de histórico)
-    const { error: approveErr } = await admin
-      .from('vehicle_collections')
-      .update({ status: STATUS.APPROVED })
-      .eq('id', collectionId)
-      .eq('status', STATUS.REQUESTED);
-    if (approveErr) {
-      logger.warn('admin_accept_collection_approve_failed', { error: approveErr.message });
-    }
+    await CollectionOrchestrator.approveCollection(admin, collectionId);
 
     return NextResponse.json({ success: true });
   } catch (e: unknown) {

@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="0.003997284">
-    <testsuite name="tests/common/services/collection-orchestrator.test.ts" timestamp="2025-09-10T22:54:21.402Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.003997284">
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; upserts a requested collection and prevents overwriting approved" time="0.002024814">
-        </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; syncs vehicle dates only for allowed statuses" time="0.000406799">
-        </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; links vehicles to a collection by address/date and allowed statuses" time="0.000311085">
-        </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; approves a requested collection" time="0.000227626">
+<testsuites name="vitest tests" tests="1" failures="1" errors="0" time="0.012444808">
+    <testsuite name="tests/admin/summary/approved-from-detailed.mocked.test.ts" timestamp="2025-09-11T02:05:28.034Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.012444808">
+        <testcase classname="tests/admin/summary/approved-from-detailed.mocked.test.ts" name="approved groups derived from detailed history &gt; builds approvedGroups and collectionHistory from immutable detailed snapshot" time="0.010666458">
+            <failure message="expected [] to have a length of 1 but got +0" type="AssertionError">
+AssertionError: expected [] to have a length of 1 but got +0
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ tests/admin/summary/approved-from-detailed.mocked.test.ts:67:35
+            </failure>
         </testcase>
     </testsuite>
 </testsuites>
