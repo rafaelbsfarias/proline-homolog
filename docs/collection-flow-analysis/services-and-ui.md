@@ -9,7 +9,7 @@ Este documento lista os serviços e componentes que constroem a visão para Admi
     - `buildPricingRequests` (pricing.ts)
     - `buildPendingApprovalGroups` (pendingApproval.ts)
     - `buildRescheduleGroups` (reschedule.ts)
-    - `CollectionHistoryService.getClientHistory` + `enrichHistoryWithVehicleStatus`
+    - `CollectionHistoryService.getClientHistoryDetailed` (histórico imutável — sem enriquecimento “ao vivo”)
 
 - Pricing (endereços com “PONTO DE COLETA SELECIONADO”)
   - Arquivo: `modules/admin/services/client-collections/groups/pricing.ts`
@@ -30,12 +30,10 @@ Este documento lista os serviços e componentes que constroem a visão para Admi
   - Foca em `APROVAÇÃO NOVA DATA` e agrega por endereço+data.
   - Seleção de fee idem: `approved > 0` com fallback para último `> 0`.
 
-- Histórico e enriquecimento
+- Histórico (imutável)
   - Serviço: `modules/common/services/CollectionHistoryService.ts`
-    - Lê `collection_history` (imutável) e visão detalhada, se necessário.
-  - Enriquecimento: `modules/admin/services/client-collections/history/enrich.ts`
-    - Prioriza agrupar por `collection_id` indiretamente via mapeamento `collection_address → addressId` e data.
-    - Monta lista estável de placas por `(addressId | date)` e calcula o “status dominante” para exibição.
+    - Lê `collection_history` e a visão `collection_history_detailed`.
+    - O UI usa apenas o snapshot detalhado — fontes “ao vivo” e enriquecimento foram removidos.
 
 ## Admin — Componentes
 - `modules/admin/components/overview/CollectionPricingSection.tsx` (não inspecionado aqui linha a linha)
@@ -56,4 +54,3 @@ Este documento lista os serviços e componentes que constroem a visão para Admi
 ## Observações de UI e Formatação de Data
 - Evitar D-1: data é sempre manipulada como ISO local de forma segura (em componentes do app).
 - “Sempre manter a data do cliente”: quando o Admin propõe, ele deve respeitar a data do cliente quando aplicável; na prática, os serviços tratam `collection_date` por chave composta para não sobrescrever linhas antigas.
-

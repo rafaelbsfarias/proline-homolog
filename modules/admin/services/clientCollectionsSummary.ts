@@ -10,11 +10,9 @@ import type {
   PendingApprovalGroup,
   ApprovedCollectionGroup,
 } from './client-collections/types';
-import { buildApprovedGroups } from './client-collections/groups/approved';
 import { buildPricingRequests } from './client-collections/groups/pricing';
 import { buildPendingApprovalGroups } from './client-collections/groups/pendingApproval';
 import { getStatusTotals } from './client-collections/statusTotals';
-import { enrichHistoryWithVehicleStatus } from './client-collections/history/enrich';
 import { buildRescheduleGroups } from './client-collections/groups/reschedule';
 
 const logger = getLogger('api:admin:client-collections-summary');
