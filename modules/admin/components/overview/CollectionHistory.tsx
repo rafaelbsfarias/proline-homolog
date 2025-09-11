@@ -13,7 +13,7 @@ const CollectionHistory: React.FC<Props> = ({ history }) => {
 
   return (
     <div className={styles.tableWrap}>
-      <h3 className={styles.sectionTitle}>Histórico de coletas</h3>
+      <h3 className={styles.sectionTitle}>Histórico</h3>
       <table className={styles.subtable}>
         <thead>
           <tr>

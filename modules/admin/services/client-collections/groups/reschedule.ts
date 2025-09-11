@@ -1,4 +1,5 @@
 import { labelOf } from '../helpers';
+import { mapAddressIdsToLabels, getFeeLookups } from '../groupUtils';
 import type { DateChangeRequestGroup } from '../types';
 
 export async function buildRescheduleGroups(
@@ -26,48 +27,14 @@ export async function buildRescheduleGroups(
   });
 
   const addrIdsArr = Array.from(addressIds);
-  const { data: addrs } = await admin
-    .from('addresses')
-    .select('id, street, number, city')
-    .in('id', addrIdsArr);
-  const addrLabelMap = new Map<string, string>();
-  addrIdsArr.forEach(aid => {
-    const a = (addrs || []).find((x: any) => x.id === aid);
-    addrLabelMap.set(aid, labelOf(a));
-  });
+  const addrLabelMap = await mapAddressIdsToLabels(admin, addrIdsArr);
 
   const labels = Array.from(addrLabelMap.values()).filter(Boolean);
-  const feeByAddrDate = new Map<string, number>();
-  // Priorizar último fee aprovado por endereço
-  const approvedFeeByAddr = new Map<string, number>();
-  // Fallback: último fee (>0) por endereço
-  const latestNonZeroFeeByAddr = new Map<string, number>();
-  if (labels.length) {
-    const { data: feeRows } = await admin
-      .from('vehicle_collections')
-      .select(
-        'collection_address, collection_fee_per_vehicle, collection_date, status, updated_at, created_at'
-      )
-      .eq('client_id', clientId)
-      .in('status', ['requested', 'approved'])
-      .in('collection_address', labels)
-      .order('updated_at', { ascending: false });
-    (feeRows || []).forEach((r: any) => {
-      const addr = r?.collection_address;
-      const fee = r?.collection_fee_per_vehicle;
-      const date = r?.collection_date ? String(r.collection_date) : '';
-      if (addr && typeof fee === 'number') {
-        const nfee = Number(fee);
-        feeByAddrDate.set(`${addr}|${date}`, nfee);
-        if (!approvedFeeByAddr.has(addr) && String(r?.status) === 'approved' && nfee > 0) {
-          approvedFeeByAddr.set(addr, nfee);
-        }
-        if (!latestNonZeroFeeByAddr.has(addr) && nfee > 0) {
-          latestNonZeroFeeByAddr.set(addr, nfee);
-        }
-      }
-    });
-  }
+  const { feeByAddrDate, approvedFeeByAddr, latestNonZeroFeeByAddr } = await getFeeLookups(
+    admin,
+    clientId,
+    labels
+  );
 
   const groups: DateChangeRequestGroup[] = Array.from(byAddressDate.entries()).map(
     ([key, count]) => {

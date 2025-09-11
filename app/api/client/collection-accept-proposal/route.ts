@@ -7,6 +7,7 @@ import { CollectionProposalService } from '@/modules/client/services/CollectionP
 import { formatAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
 import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { logFields } from '@/modules/common/utils/logging';
 
 const logger = getLogger('api:client:collection-accept-proposal');
 const collectionService = CollectionProposalService.getInstance();
@@ -107,6 +108,14 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           dateIso: targetDate,
           collectionId,
         });
+        logger.info('client_accept_linked_vehicles', {
+          ...logFields({
+            client_id: userId,
+            address_id: addressId,
+            date: targetDate,
+            collection_id: collectionId,
+          }),
+        });
 
         // 2) Colocar veículos em AGUARDANDO COLETA (antes de aprovar)
         const { error: updVehiclesFinal } = await admin
@@ -117,10 +126,26 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           .eq('estimated_arrival_date', targetDate)
           .in('status', [STATUS.AGUARDANDO_APROVACAO, STATUS.SOLICITACAO_MUDANCA_DATA]);
         if (updVehiclesFinal)
-          logger.warn('finalize_vehicles_status_failed', { error: updVehiclesFinal.message });
+          logger.warn('finalize_vehicles_status_failed', {
+            ...logFields({
+              client_id: userId,
+              address_id: addressId,
+              date: targetDate,
+              collection_id: collectionId,
+            }),
+            error: updVehiclesFinal.message,
+          });
 
         // 3) Aprovar a collection (dispara trigger de histórico)
         await CollectionOrchestrator.approveCollection(admin, collectionId);
+        logger.info('client_approved_collection', {
+          ...logFields({
+            client_id: userId,
+            address_id: addressId,
+            date: targetDate,
+            collection_id: collectionId,
+          }),
+        });
       }
     }
 

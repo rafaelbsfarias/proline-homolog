@@ -53,15 +53,65 @@ export async function getClientCollectionsSummary(
     const detailed = await historyService.getClientHistoryDetailed(clientId);
 
     if (Array.isArray(detailed) && detailed.length) {
+      // Helper: choose majority vehicle status and map to friendly PT-BR
+      const friendlyVehicleStatus = (s: string): string => {
+        const u = String(s || '')
+          .trim()
+          .toUpperCase();
+        if (!u) return '-';
+        if (u === 'AGUARDANDO COLETA') return 'Aguardando coleta';
+        if (u === 'AGUARDANDO APROVAÇÃO DA COLETA') return 'Aguardando aprovação';
+        if (u === 'SOLICITAÇÃO DE MUDANÇA DE DATA') return 'Solicitação de mudança de data';
+        if (u === 'APROVAÇÃO NOVA DATA') return 'Aprovação nova data';
+        if (u === 'PONTO DE COLETA SELECIONADO') return 'Ponto de coleta selecionado';
+        return s;
+      };
+
+      const mapCollectionStatusPt = (s?: string): string => {
+        const v = String(s || '')
+          .trim()
+          .toLowerCase();
+        if (v === 'approved') return 'Aguardando coleta';
+        if (v === 'requested') return 'Solicitado';
+        return s || '-';
+      };
+
       // Map detailed history to UI rows
-      collectionHistory = detailed.map(record => ({
-        collection_id: record.collection_id,
-        collection_address: record.collection_address,
-        collection_fee_per_vehicle: record.collection_fee_per_vehicle,
-        collection_date: record.collection_date,
-        status: record.current_status || 'COLETA APROVADA',
-        vehicles: (record.vehicles || []).map(v => ({ plate: v.plate, status: v.status })),
-      }));
+      collectionHistory = detailed.map(record => {
+        const vehicles = (record.vehicles || []).map(v => ({ plate: v.plate, status: v.status }));
+        // Derive display status: prefer majority vehicle status; fallback to collection status mapped to PT
+        let statusDisplay = '-';
+        if (vehicles.length) {
+          const counts = new Map<string, number>();
+          vehicles.forEach(v => {
+            const key = String(v.status || '')
+              .trim()
+              .toUpperCase();
+            if (!key) return;
+            counts.set(key, (counts.get(key) || 0) + 1);
+          });
+          let chosen = '';
+          let max = -1;
+          counts.forEach((n, k) => {
+            if (n > max) {
+              max = n;
+              chosen = k;
+            }
+          });
+          statusDisplay = friendlyVehicleStatus(chosen);
+        } else {
+          statusDisplay = mapCollectionStatusPt(record.current_status);
+        }
+
+        return {
+          collection_id: record.collection_id,
+          collection_address: record.collection_address,
+          collection_fee_per_vehicle: record.collection_fee_per_vehicle,
+          collection_date: record.collection_date,
+          status: statusDisplay,
+          vehicles,
+        } as HistoryRow;
+      });
 
       // Build approved groups from the same immutable source to avoid divergence
       // Resolve addressId via addresses table to keep UI keys stable
@@ -87,7 +137,7 @@ export async function getClientCollectionsSummary(
           vehicle_count,
           collection_fee: isFinite(collection_fee) ? collection_fee : null,
           collection_date,
-          status: 'COLETA APROVADA',
+          status: 'Aguardando coleta',
         } as ApprovedCollectionGroup;
       });
     } else {

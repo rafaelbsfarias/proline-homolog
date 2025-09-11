@@ -77,7 +77,7 @@ vi.mock('@/modules/common/services/CollectionHistoryService', () => ({
           updated_at: '2024-08-02T00:00:00Z',
           client_name: 'Client X',
           client_email: 'x@example.com',
-          current_status: 'COLETA APROVADA',
+          current_status: 'approved',
           vehicles: [
             {
               plate: 'AAA-0001',
@@ -102,6 +102,6 @@ describe('clientCollectionsSummary - uses detailed immutable history', () => {
     const res = await getClientCollectionsSummary('client1');
     expect(res.collectionHistory).toHaveLength(1);
     expect(res.collectionHistory[0].vehicles?.map(v => v.plate)).toEqual(['AAA-0001']);
-    expect(res.collectionHistory[0].status).toBe('COLETA APROVADA');
+    expect(res.collectionHistory[0].status).toBe('Aguardando coleta');
   });
 });

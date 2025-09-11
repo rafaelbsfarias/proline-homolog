@@ -1,4 +1,5 @@
 import { labelOf } from '../helpers';
+import { mapAddressIdsToLabels, getFeeLookups } from '../groupUtils';
 import type { PendingApprovalGroup } from '../types';
 
 export async function buildPendingApprovalGroups(
@@ -35,50 +36,15 @@ export async function buildPendingApprovalGroups(
     });
 
     const addrIdsArr = Array.from(addressIds2);
-    const { data: addrs2 } = await admin
-      .from('addresses')
-      .select('id, street, number, city')
-      .in('id', addrIdsArr);
-    const addrLabelMap2 = new Map<string, string>();
-    addrIdsArr.forEach(aid => {
-      const a = (addrs2 || []).find((x: any) => x.id === aid);
-      addrLabelMap2.set(aid, labelOf(a));
-    });
+    const addrLabelMap2 = await mapAddressIdsToLabels(admin, addrIdsArr);
 
     const labels2 = Array.from(addrLabelMap2.values()).filter(Boolean);
     const feeByAddrDate2 = new Map<string, number>(seedFeeMap);
-    // Último fee aprovado por endereço (prioritário)
-    const approvedFeeByAddr = new Map<string, number>();
-    // Último fee (> 0) por endereço, independente de status (fallback)
-    const latestNonZeroFeeByAddr = new Map<string, number>();
-    if (labels2.length) {
-      const { data: feeRows2 } = await admin
-        .from('vehicle_collections')
-        .select(
-          'collection_address, collection_fee_per_vehicle, collection_date, status, updated_at, created_at'
-        )
-        .eq('client_id', clientId)
-        .in('status', ['requested', 'approved'])
-        .in('collection_address', labels2)
-        .order('updated_at', { ascending: false });
-
-      (feeRows2 || []).forEach((r: any) => {
-        const addr = r?.collection_address;
-        const fee = r?.collection_fee_per_vehicle;
-        const date = r?.collection_date ? String(r.collection_date) : '';
-        if (addr && typeof fee === 'number') {
-          feeByAddrDate2.set(`${addr}|${date}`, Number(fee));
-          // Preencher primeiro fee aprovado (mais recente, pois ordenado desc)
-          if (!approvedFeeByAddr.has(addr) && String(r?.status) === 'approved' && Number(fee) > 0) {
-            approvedFeeByAddr.set(addr, Number(fee));
-          }
-          // Preencher primeiro fee (>0) como fallback mais recente
-          if (!latestNonZeroFeeByAddr.has(addr) && Number(fee) > 0) {
-            latestNonZeroFeeByAddr.set(addr, Number(fee));
-          }
-        }
-      });
-    }
+    const lookups = await getFeeLookups(admin, clientId, labels2);
+    // Mesclar lookups com seedFeeMap preservando semântica existente
+    lookups.feeByAddrDate.forEach((v, k) => feeByAddrDate2.set(k, v));
+    const approvedFeeByAddr = lookups.approvedFeeByAddr;
+    const latestNonZeroFeeByAddr = lookups.latestNonZeroFeeByAddr;
 
     approvalGroups = Array.from(byAddressDate.entries()).map(([key, count]) => {
       const [aid, d] = key.split('|');

@@ -1,4 +1,5 @@
 import { labelOf } from '../helpers';
+import { mapAddressIdsToLabels, getFeeLookups } from '../groupUtils';
 import type { ApprovedCollectionGroup } from '../types';
 
 export async function buildApprovedGroups(
@@ -8,7 +9,9 @@ export async function buildApprovedGroups(
   approvedGroups: ApprovedCollectionGroup[];
   approvedTotal: number;
 }> {
-  const approvedStatusValues = ['COLETA APROVADA', 'approved'];
+  // Veículos considerados "aprovados" para exibição de coletas aprovadas
+  // No ciclo atual, usamos 'AGUARDANDO COLETA' como status final pós-aceite
+  const approvedStatusValues = ['AGUARDANDO COLETA', 'approved'];
   const { data: vehiclesApproved } = await admin
     .from('vehicles')
     .select('id, client_id, status, pickup_address_id, estimated_arrival_date')
@@ -30,32 +33,10 @@ export async function buildApprovedGroups(
     });
 
     const addrIdsArr = Array.from(addressIds);
-    const { data: addrs } = await admin
-      .from('addresses')
-      .select('id, street, number, city')
-      .in('id', addrIdsArr);
-    const addrLabelMap = new Map<string, string>();
-    addrIdsArr.forEach(aid => {
-      const a = (addrs || []).find((x: any) => x.id === aid);
-      addrLabelMap.set(aid, labelOf(a));
-    });
+    const addrLabelMap = await mapAddressIdsToLabels(admin, addrIdsArr);
 
     const labels = Array.from(addrLabelMap.values()).filter(Boolean);
-    const feeByAddrDate = new Map<string, number>();
-    if (labels.length) {
-      const { data: feeRows3 } = await admin
-        .from('vehicle_collections')
-        .select('collection_address, collection_fee_per_vehicle, collection_date')
-        .eq('client_id', clientId)
-        .in('status', ['requested', 'approved'])
-        .in('collection_address', labels);
-      (feeRows3 || []).forEach((r: any) => {
-        const addr = r?.collection_address;
-        const fee = r?.collection_fee_per_vehicle;
-        const date = r?.collection_date ? String(r.collection_date) : '';
-        if (addr && typeof fee === 'number') feeByAddrDate.set(`${addr}|${date}`, Number(fee));
-      });
-    }
+    const { feeByAddrDate } = await getFeeLookups(admin, clientId, labels);
 
     approvedGroups = Array.from(byAddressDate.entries()).map(([key, count]) => {
       const [aid, d] = key.split('|');

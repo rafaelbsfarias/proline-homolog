@@ -6,6 +6,8 @@ import { STATUS } from '@/modules/common/constants/status';
 import { formatAddressLabel, normalizeAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
 import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { MetricsService } from '@/modules/common/services/MetricsService';
+import { logFields } from '@/modules/common/utils/logging';
 
 const logger = getLogger('api:admin:propose-collection-date');
 
@@ -26,9 +28,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     const new_date: string | undefined = body?.new_date;
 
     logger.info('propose_collection_date_params', {
-      clientId,
-      addressId,
-      new_date,
+      ...logFields({ client_id: clientId, address_id: addressId, date: new_date || null }),
       hasClientId: !!clientId,
       hasAddressId: !!addressId,
       hasNewDate: !!new_date,
@@ -59,17 +59,18 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .eq('id', addressId)
       .maybeSingle();
     if (addrErr || !addr) {
-      logger.error('address_not_found', { addressId, error: addrErr });
+      logger.error('address_not_found', {
+        ...logFields({ client_id: clientId, address_id: addressId, date: new_date || null }),
+        error: addrErr,
+      });
       return NextResponse.json({ success: false, error: 'Endereço inválido' }, { status: 400 });
     }
     const addressLabel = formatAddressLabel(addr);
     const normalizedLabel = normalizeAddressLabel(addressLabel);
 
     logger.info('address_found', {
-      addressId,
-      addressLabel,
+      ...logFields({ client_id: clientId, address_id: addressId, address_label: addressLabel }),
       normalizedLabel,
-      addressData: addr,
     });
 
     // 2) Selecionar fee correto via util compartilhado
@@ -81,9 +82,8 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       selectedStrategy = sel.strategy;
     } catch (feeErr: any) {
       logger.error('load_collections_failed', {
+        ...logFields({ client_id: clientId, address_id: addressId, address_label: addressLabel }),
         error: feeErr?.message,
-        clientId,
-        addressLabel,
       });
       return NextResponse.json(
         { success: false, error: 'Erro ao buscar coleções' },
@@ -92,8 +92,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     logger.info('propose_date_fee_selection', {
-      clientId,
-      addressLabel,
+      ...logFields({ client_id: clientId, address_id: addressId, address_label: addressLabel }),
       selectedStrategy,
       selectedFee,
       note: 'fee selected via util',
@@ -116,7 +115,15 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         feePerVehicle: selectedFee,
       } as any);
       collectionId = res.collectionId;
-      logger.info('propose_date_upsert_success', { collection_id: collectionId });
+      logger.info('propose_date_upsert_success', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+          collection_id: collectionId,
+        }),
+      });
     } catch (e: any) {
       if (String(e?.message).includes('approved_collection_already_exists')) {
         return NextResponse.json(
@@ -128,7 +135,15 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
           { status: 400 }
         );
       }
-      logger.error('propose_date_upsert_failed', { error: e?.message });
+      logger.error('propose_date_upsert_failed', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date || null,
+        }),
+        error: e?.message,
+      });
       return NextResponse.json(
         { success: false, error: 'Falha ao salvar proposta' },
         { status: 500 }
@@ -136,7 +151,14 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     // 5) Sincronizar data apenas para veículos não-finalizados (evitar tocar histórico)
-    logger.info('synchronizing_vehicle_dates', { clientId, addressId, newDate: new_date });
+    logger.info('synchronizing_vehicle_dates', {
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        address_label: addressLabel,
+        date: new_date,
+      }),
+    });
     let vehicleSyncError: any = null;
     try {
       await CollectionOrchestrator.syncVehicleDates(admin, {
@@ -150,12 +172,23 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     if (vehicleSyncError) {
       logger.warn('vehicle_date_sync_failed', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+        }),
         error: vehicleSyncError.message,
-        clientId,
-        addressId,
       });
     } else {
-      logger.info('vehicle_date_sync_success', { clientId, addressId, synchronizedDate: new_date });
+      logger.info('vehicle_date_sync_success', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+        }),
+      });
       // 5.1) Após sincronizar datas, vincular veículos à nova collection REQUESTED
       try {
         await CollectionOrchestrator.linkVehiclesToCollection(admin, {
@@ -164,16 +197,31 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
           dateIso: new_date,
           collectionId,
         });
-        logger.info('link_vehicles_after_sync_success', { collection_id: collectionId });
+        logger.info('link_vehicles_after_sync_success', {
+          ...logFields({
+            client_id: clientId,
+            address_id: addressId,
+            address_label: addressLabel,
+            date: new_date,
+            collection_id: collectionId,
+          }),
+        });
       } catch (e: any) {
         logger.warn('link_vehicles_after_sync_failed', {
+          ...logFields({
+            client_id: clientId,
+            address_id: addressId,
+            address_label: addressLabel,
+            date: new_date,
+            collection_id: collectionId,
+          }),
           error: e?.message,
-          collection_id: collectionId,
         });
       }
 
       // 5.2) Limpeza: remover collections REQUESTED sem veículos (órfãs) deste endereço (datas antigas)
       try {
+        const metrics = MetricsService.getInstance();
         const { data: requestedCols } = await admin
           .from('vehicle_collections')
           .select('id, collection_date')
@@ -190,20 +238,40 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
             .eq('collection_id', cid)
             .limit(1);
           if (!anyVehicle || anyVehicle.length === 0) {
+            metrics.inc('orphan_requested_detected');
             const { error: delErr } = await admin
               .from('vehicle_collections')
               .delete()
               .eq('id', cid)
               .eq('status', STATUS.REQUESTED);
             if (delErr) {
-              logger.warn('orphan_collection_cleanup_failed', { cid, error: delErr.message });
+              logger.warn('orphan_collection_cleanup_failed', {
+                ...logFields({
+                  client_id: clientId,
+                  address_id: addressId,
+                  address_label: addressLabel,
+                  collection_id: cid,
+                }),
+                error: delErr.message,
+              });
             } else {
-              logger.info('orphan_collection_removed', { cid, addressLabel });
+              metrics.inc('orphan_requested_cleaned');
+              logger.info('orphan_collection_removed', {
+                ...logFields({
+                  client_id: clientId,
+                  address_id: addressId,
+                  address_label: addressLabel,
+                  collection_id: cid,
+                }),
+              });
             }
           }
         }
       } catch (e: unknown) {
-        logger.warn('orphan_cleanup_error', { error: (e as Error)?.message });
+        logger.warn('orphan_cleanup_error', {
+          ...logFields({ client_id: clientId, address_id: addressId, address_label: addressLabel }),
+          error: (e as Error)?.message,
+        });
       }
     }
 
@@ -224,8 +292,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       .eq('pickup_address_id', addressId);
 
     logger.info('vehicles_debug_info', {
-      clientId,
-      addressId,
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        address_label: addressLabel,
+        date: new_date,
+      }),
       vehiclesInApprovalCount: vehiclesInApproval?.length || 0,
       allVehiclesForAddressCount: allVehiclesForAddress?.length || 0,
       allVehiclesForAddress: allVehiclesForAddress?.map(
@@ -245,6 +317,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       allowedPrev = [STATUS.APROVACAO_NOVA_DATA];
       newStatus = STATUS.SOLICITACAO_MUDANCA_DATA;
       logger.info('propose_collection_date_context', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+        }),
         context: 'responding_to_client',
         vehiclesInApprovalCount: vehiclesInApproval.length,
         allowedPrev,
@@ -255,6 +333,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       allowedPrev = [STATUS.PONTO_COLETA_SELECIONADO, STATUS.AGUARDANDO_APROVACAO];
       newStatus = STATUS.SOLICITACAO_MUDANCA_DATA;
       logger.info('propose_collection_date_context', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+        }),
         context: 'initial_admin_proposal',
         vehiclesInApprovalCount: 0,
         allowedPrev,
@@ -271,8 +355,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     // Log detalhado sobre a atualização dos veículos
     logger.info('vehicle_update_attempt', {
-      clientId,
-      addressId,
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        address_label: addressLabel,
+        date: new_date,
+      }),
       allowedPrev,
       newStatus,
       updateError: vehErr?.message,
@@ -288,9 +376,13 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
         .eq('pickup_address_id', addressId);
 
       logger.error('vehicle_update_analysis', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          address_label: addressLabel,
+          date: new_date,
+        }),
         error: vehErr.message,
-        clientId,
-        addressId,
         allowedPrev,
         newStatus,
         totalVehiclesForAddress: allVehiclesCheck?.length || 0,
@@ -311,9 +403,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     }
 
     logger.info('propose_collection_date_success', {
-      clientId,
-      addressId,
-      new_date,
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        address_label: addressLabel,
+        date: new_date,
+      }),
       context: vehiclesInApproval && vehiclesInApproval.length > 0 ? 'response' : 'initial',
     });
 

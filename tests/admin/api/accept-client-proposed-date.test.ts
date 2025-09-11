@@ -185,6 +185,6 @@ describe('admin accept-client-proposed-date (integrated with orchestrator)', () 
     expect(created?.status).toBe('approved');
     const veh = admin.__store.vehicles.find((v: any) => v.id === 'v1');
     expect(veh.collection_id).toBe(created.id);
-    expect(veh.status).toBe('COLETA APROVADA');
+    expect(veh.status).toBe('AGUARDANDO COLETA');
   });
 });

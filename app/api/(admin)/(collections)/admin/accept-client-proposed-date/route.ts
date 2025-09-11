@@ -6,6 +6,7 @@ import { formatAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
 import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
 import { STATUS } from '@/modules/common/constants/status';
+import { logFields } from '@/modules/common/utils/logging';
 
 const logger = getLogger('api:admin:accept-client-proposed-date');
 
@@ -54,9 +55,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       // Usar a data do primeiro veículo (todos deveriam ter a mesma data proposta)
       proposedDate = vehiclesWithNewDate[0].estimated_arrival_date;
       logger.info('client_proposed_date_found', {
-        clientId,
-        addressId,
-        proposedDate,
+        ...logFields({ client_id: clientId, address_id: addressId, date: proposedDate }),
         vehiclesCount: vehiclesWithNewDate.length,
       });
     }
@@ -113,21 +112,45 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       dateIso: proposedDate,
       collectionId,
     });
+    logger.info('admin_accept_linked_vehicles', {
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        date: proposedDate,
+        collection_id: collectionId,
+      }),
+    });
 
-    // 4) Atualizar status dos veículos para 'COLETA APROVADA' (requisito de UI/Admin)
+    // 4) Atualizar status dos veículos para 'AGUARDANDO COLETA' (consistência do ciclo)
     const { error: vehFinal } = await admin
       .from('vehicles')
-      .update({ status: 'COLETA APROVADA' })
+      .update({ status: STATUS.AGUARDANDO_COLETA })
       .eq('client_id', clientId)
       .eq('pickup_address_id', addressId)
       .eq('estimated_arrival_date', proposedDate)
       .in('status', [STATUS.APROVACAO_NOVA_DATA, STATUS.AGUARDANDO_APROVACAO]);
     if (vehFinal) {
-      logger.warn('admin_accept_vehicle_status_failed', { error: vehFinal.message });
+      logger.warn('admin_accept_vehicle_status_failed', {
+        ...logFields({
+          client_id: clientId,
+          address_id: addressId,
+          date: proposedDate,
+          collection_id: collectionId,
+        }),
+        error: vehFinal.message,
+      });
     }
 
     // 5) Aprovar a collection (dispara trigger de histórico)
     await CollectionOrchestrator.approveCollection(admin, collectionId);
+    logger.info('admin_approved_collection', {
+      ...logFields({
+        client_id: clientId,
+        address_id: addressId,
+        date: proposedDate,
+        collection_id: collectionId,
+      }),
+    });
 
     return NextResponse.json({ success: true });
   } catch (e: unknown) {
