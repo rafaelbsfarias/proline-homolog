@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { CollectionOrchestrator } from '@collections';
 import { STATUS } from '@/modules/common/constants/status';
 
 function makeAdminMock(initial?: Partial<{ vehicles: any[]; vehicle_collections: any[] }>) {

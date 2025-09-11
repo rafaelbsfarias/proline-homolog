@@ -1,6 +1,5 @@
-import { labelOf } from '../helpers';
-import { mapAddressIdsToLabels, getFeeLookups } from '../groupUtils';
-import type { DateChangeRequestGroup } from '../types';
+import { labelOf, mapAddressIdsToLabels, getFeeLookups } from '@collections/admin/helpers';
+import type { DateChangeRequestGroup } from '@/modules/admin/services/client-collections/types';
 
 export async function buildRescheduleGroups(
   admin: any,

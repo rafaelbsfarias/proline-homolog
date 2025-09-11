@@ -5,7 +5,7 @@ import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
 import { formatAddressLabel, normalizeAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
-import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { CollectionOrchestrator } from '@collections';
 import { MetricsService } from '@/modules/common/services/MetricsService';
 import { logFields } from '@/modules/common/utils/logging';
 

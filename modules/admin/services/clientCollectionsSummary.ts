@@ -1,7 +1,7 @@
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import { CollectionHistoryService } from '@/modules/common/services/CollectionHistoryService';
+import { CollectionHistoryService } from '@collections';
 import { getLogger } from '@/modules/logger';
-import { labelOf } from './client-collections/helpers';
+import { labelOf } from '@collections/admin/helpers';
 import type {
   ClientCollectionsSummaryResult,
   ClientSummary,
@@ -11,9 +11,9 @@ import type {
   ApprovedCollectionGroup,
 } from './client-collections/types';
 import { buildPricingRequests } from './client-collections/groups/pricing';
-import { buildPendingApprovalGroups } from './client-collections/groups/pendingApproval';
+import { buildPendingApprovalGroups } from '@collections/admin/groups/pendingApproval';
 import { getStatusTotals } from './client-collections/statusTotals';
-import { buildRescheduleGroups } from './client-collections/groups/reschedule';
+import { buildRescheduleGroups } from '@collections/admin/groups/reschedule';
 
 const logger = getLogger('api:admin:client-collections-summary');
 

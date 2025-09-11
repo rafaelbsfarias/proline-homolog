@@ -23,6 +23,8 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@collections": ["modules/collections/index.ts"],
+      "@collections/*": ["modules/collections/*"],
       "@/*": ["./*"],
       "@/app/*": ["./app/*"],
       "@/modules/*": ["./modules/*"],

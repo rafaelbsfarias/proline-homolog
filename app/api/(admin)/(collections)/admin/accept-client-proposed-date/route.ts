@@ -4,7 +4,7 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { formatAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
-import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { CollectionOrchestrator } from '@collections';
 import { STATUS } from '@/modules/common/constants/status';
 import { logFields } from '@/modules/common/utils/logging';
 

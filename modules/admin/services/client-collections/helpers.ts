@@ -1,3 +1,1 @@
-import { formatAddressLabel } from '@/modules/common/utils/address';
-
-export const labelOf = (a: any) => formatAddressLabel(a);
+export { labelOf } from '@collections/admin/helpers/helpers';

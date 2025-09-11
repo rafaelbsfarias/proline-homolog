@@ -3,10 +3,10 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { STATUS } from '@/modules/common/constants/status';
-import { CollectionProposalService } from '@/modules/client/services/CollectionProposalService';
+import { CollectionProposalService } from '@collections';
 import { formatAddressLabel } from '@/modules/common/utils/address';
 import { selectFeeForAddress } from '@/modules/common/utils/feeSelection';
-import { CollectionOrchestrator } from '@/modules/common/services/CollectionOrchestrator';
+import { CollectionOrchestrator } from '@collections';
 import { logFields } from '@/modules/common/utils/logging';
 
 const logger = getLogger('api:client:collection-accept-proposal');

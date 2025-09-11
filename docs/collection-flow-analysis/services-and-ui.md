@@ -7,9 +7,9 @@ Este documento lista os serviços e componentes que constroem a visão para Admi
   - Agrega dados por cliente: grupos de precificação, pendências de aprovação, aprovados e solicitações de remarcação, além de histórico imutável.
   - Consome:
     - `buildPricingRequests` (pricing.ts)
-    - `buildPendingApprovalGroups` (pendingApproval.ts)
-    - `buildRescheduleGroups` (reschedule.ts)
-    - `CollectionHistoryService.getClientHistoryDetailed` (histórico imutável — sem enriquecimento “ao vivo”)
+    - `buildPendingApprovalGroups` (`@collections/admin/groups/pendingApproval`)
+    - `buildRescheduleGroups` (`@collections/admin/groups/reschedule`)
+    - `CollectionHistoryService.getClientHistoryDetailed` (`@collections`) — histórico imutável
 
 - Pricing (endereços com “PONTO DE COLETA SELECIONADO”)
   - Arquivo: `modules/admin/services/client-collections/groups/pricing.ts`
@@ -20,18 +20,18 @@ Este documento lista os serviços e componentes que constroem a visão para Admi
     - Exposição de `proposed_date` é suprimida se já existir `collection_date` do cliente para o pedido atual.
 ****
 - Pendências de aprovação (Cliente precisa aceitar)
-  - Arquivo: `modules/admin/services/client-collections/groups/pendingApproval.ts`
+  - Arquivo: `@collections/admin/groups/pendingApproval`
   - Busca veículos em `AGUARDANDO APROVAÇÃO DA COLETA` ou `SOLICITAÇÃO DE MUDANÇA DE DATA`.
   - Forma grupos por `(addressId, estimated_arrival_date)`.
   - Aplica a estratégia de fee: `approved > 0` → fallback `> 0` → data específica → sem fee.
 
 - Remarcações solicitadas pelo cliente
-  - Arquivo: `modules/admin/services/client-collections/groups/reschedule.ts`
+  - Arquivo: `@collections/admin/groups/reschedule`
   - Foca em `APROVAÇÃO NOVA DATA` e agrega por endereço+data.
   - Seleção de fee idem: `approved > 0` com fallback para último `> 0`.
 
 - Histórico (imutável)
-  - Serviço: `modules/common/services/CollectionHistoryService.ts`
+  - Serviço: `@collections` (`CollectionHistoryService`)
     - Lê `collection_history` e a visão `collection_history_detailed`.
     - O UI usa apenas o snapshot detalhado — fontes “ao vivo” e enriquecimento foram removidos.
 

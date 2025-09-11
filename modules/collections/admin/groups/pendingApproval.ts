@@ -1,6 +1,5 @@
-import { labelOf } from '../helpers';
-import { mapAddressIdsToLabels, getFeeLookups } from '../groupUtils';
-import type { PendingApprovalGroup } from '../types';
+import { labelOf, mapAddressIdsToLabels, getFeeLookups } from '@collections/admin/helpers';
+import type { PendingApprovalGroup } from '@/modules/admin/services/client-collections/types';
 
 export async function buildPendingApprovalGroups(
   admin: any,
