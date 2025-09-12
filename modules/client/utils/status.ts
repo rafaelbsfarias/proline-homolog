@@ -15,6 +15,7 @@ export function statusLabel(status?: string): string {
   if (s === 'CHEGADA CONFIRMADA') return 'Chegada confirmada';
   if (s === 'EM ANÁLISE') return 'Em análise';
   if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 'Análise finalizada';
+  if (s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') return 'Solicitação de mudança de data';
   return raw;
 }
 
