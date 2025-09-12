@@ -4,7 +4,7 @@ import styles from './BulkCollectionControls.module.css';
 import Radio from '@/modules/common/components/Radio/Radio';
 import Select from '@/modules/common/components/Select/Select';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
-import BulkCollectionModal from '../modals/BulkCollectionModal/BulkCollectionModal';
+import BulkCollectionModal from '../Modals/BulkCollectionModal/BulkCollectionModal';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
 
 interface Props {
