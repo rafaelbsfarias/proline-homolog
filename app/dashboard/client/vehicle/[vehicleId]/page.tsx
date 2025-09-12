@@ -291,7 +291,7 @@ const VehicleDetailsPage = () => {
                     e.currentTarget.style.backgroundColor = '#002E4C';
                   }}
                 >
-                  Ver Fotos ({inspection.media.length})
+                  Ver Evidências ({inspection.media.length})
                 </button>
               )}
             </div>

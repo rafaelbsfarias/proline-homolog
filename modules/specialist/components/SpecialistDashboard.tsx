@@ -18,7 +18,8 @@ interface Vehicle {
   brand: string;
   model: string;
   year: number;
-  license_plate: string;
+  plate: string;
+  client_id: string;
 }
 
 interface DashboardState {
@@ -94,7 +95,7 @@ const VehicleList: React.FC<{ vehicles: Vehicle[]; onOpenDetails: (v: Vehicle) =
             {vehicle.brand} {vehicle.model}
           </h3>
           <p>Ano: {vehicle.year}</p>
-          <p>Placa: {vehicle.license_plate}</p>
+          <p>Placa: {vehicle.plate}</p>
           <div style={{ marginTop: 8 }}>
             <button
               type="button"
@@ -259,7 +260,7 @@ const SpecialistDashboard: React.FC = () => {
             selectedVehicle
               ? {
                   id: selectedVehicle.id,
-                  plate: selectedVehicle.license_plate,
+                  plate: selectedVehicle.plate,
                   brand: selectedVehicle.brand,
                   model: selectedVehicle.model,
                   year: selectedVehicle.year,
@@ -279,8 +280,17 @@ const SpecialistDashboard: React.FC = () => {
                 }
               : null
           }
-          // Evitar chamada ao endpoint de cliente neste contexto
-          specialistsLoader={async () => ({ names: '' })}
+          specialistsLoader={async () => {
+            if (!selectedVehicle?.client_id) return { names: '' };
+            const resp = await get<{ success: boolean; names?: string; error?: string }>(
+              `/api/specialist/client-specialists?clientId=${encodeURIComponent(selectedVehicle.client_id)}`
+            );
+            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
+            return { names: '' };
+          }}
+          onNavigateToDetails={vehicleId => {
+            window.location.href = `/dashboard/vehicle/${vehicleId}`;
+          }}
         />
       )}
     </div>
