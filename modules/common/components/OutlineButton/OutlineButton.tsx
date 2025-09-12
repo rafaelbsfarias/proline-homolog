@@ -3,9 +3,9 @@ import style from './OutlineButton.module.css';
 
 interface OutlineButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {}
 
-export const OutlineButton: React.FC<OutlineButtonProps> = ({ children, ...props }) => {
+export const OutlineButton: React.FC<OutlineButtonProps> = ({ children, className, ...props }) => {
   return (
-    <button className={style.outlineButton} {...props}>
+    <button className={`${style.outlineButton} ${className || ''}`} {...props}>
       {children}
     </button>
   );

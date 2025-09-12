@@ -4,7 +4,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './BulkCollectionModal.css';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
-import CollectPointSelect from '../collection/CollectPointSelect';
+import CollectPointSelect from '../../collection/CollectPointSelect';
+import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
+import Modal from '@/modules/common/components/Modal/Modal';
+import Select from '@/modules/common/components/Select/Select';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -26,16 +29,17 @@ interface BulkCollectionModalProps {
   onClose: () => void;
   method: Method;
   vehicles: VehicleItem[];
-  addresses?: AddressItem[]; // required when method === 'collect_point'
-  minDate?: string; // required when method === 'bring_to_yard'
-  initialAddressId?: string; // optional preselected address
-  initialEtaIso?: string; // optional preselected date in YYYY-MM-DD
+  addresses?: AddressItem[];
+  minDate?: string;
+  initialAddressId?: string;
+  initialEtaIso?: string;
   onApply: (payload: {
     method: Method;
     vehicleIds: string[];
     addressId?: string;
     estimated_arrival_date?: string;
   }) => Promise<void>;
+  statusCounts?: Record<string, number>;
 }
 
 const normalize = (v?: string | null) =>
@@ -53,6 +57,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   onApply,
   initialAddressId,
   initialEtaIso,
+  statusCounts,
 }) => {
   const [selectDefinicao, setSelectDefinicao] = useState(true);
   const [selectChegada, setSelectChegada] = useState(true);
@@ -62,20 +67,21 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hiddenDateRef = useRef<HTMLInputElement | null>(null);
+  const [selectMudancaData, setSelectMudancaData] = useState(true);
+  const [selectAprovacao, setSelectAprovacao] = useState(true);
 
   const counts = useMemo(() => {
-    let definicao = 0;
-    let chegada = 0;
-    let coleta = 0;
-    vehicles.forEach(v => {
-      const s = normalize(v.status);
-      if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') definicao += 1;
-      else if (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO')
-        chegada += 1;
-      else if (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO') coleta += 1;
-    });
-    return { definicao, chegada, coleta };
-  }, [vehicles]);
+    if (!statusCounts) return { definicao: 0, chegada: 0, aprovacao: 0, mudancaData: 0 };
+
+    return {
+      definicao: statusCounts['AGUARDANDO DEFINIÇÃO DE COLETA'] || 0,
+      chegada:
+        (statusCounts['AGUARDANDO CHEGADA DO CLIENTE'] || 0) +
+        (statusCounts['AGUARDANDO CHEGADA DO VEÍCULO'] || 0),
+      aprovacao: statusCounts['AGUARDANDO APROVAÇÃO DA COLETA'] || 0,
+      mudancaData: statusCounts['SOLICITAÇÃO DE MUDANÇA DE DATA'] || 0,
+    };
+  }, [statusCounts]);
 
   const selectedIds = useMemo(() => {
     const selected: string[] = [];
@@ -87,11 +93,11 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         (s === 'AGUARDANDO CHEGADA DO CLIENTE' || s === 'AGUARDANDO CHEGADA DO VEÍCULO')
       )
         selected.push(v.id);
-      else if (selectColeta && (s === 'AGUARDANDO COLETA' || s === 'PONTO DE COLETA SELECIONADO'))
-        selected.push(v.id);
+      else if (selectAprovacao && s === 'AGUARDANDO APROVAÇÃO DA COLETA') selected.push(v.id);
+      else if (selectMudancaData && s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') selected.push(v.id);
     });
     return selected;
-  }, [vehicles, selectDefinicao, selectChegada, selectColeta]);
+  }, [vehicles, selectDefinicao, selectChegada, selectAprovacao, selectMudancaData]);
 
   const canSubmit = useMemo(() => {
     if (!selectedIds.length) return false;
@@ -120,29 +126,33 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   if (!isOpen) return null;
 
   const node = (
-    <div className="bcm-overlay" role="dialog" aria-modal="true">
-      <div className="bcm-modal">
-        <div className="bcm-header">
-          <h3 className="bcm-title">
-            {method === 'collect_point'
-              ? 'Definir ponto de coleta em lote'
-              : 'Levar ao pátio ProLine em lote'}
-          </h3>
-          <button type="button" onClick={onClose} className="bcm-close" aria-label="Fechar">
-            ×
-          </button>
-        </div>
-
+    <div role="dialog" aria-modal="true">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={
+          method === 'collect_point'
+            ? 'Definir ponto de coleta em lote'
+            : 'Levar ao pátio ProLine em lote'
+        }
+        size="lg"
+      >
         {/* Seletor de parâmetros conforme método */}
         {method === 'collect_point' ? (
           <>
             <div className="bcm-form-group">
               <label className="bcm-label">Ponto de coleta</label>
-              <CollectPointSelect
-                className="bcm-select"
-                addresses={addresses as any}
+              <Select
+                id="addressId"
+                name="addressId"
                 value={addressId}
-                onChange={setAddressId}
+                onChange={e => setAddressId(e.target.value)}
+                options={addresses.map(addr => ({
+                  value: addr.id,
+                  label: `${addr.street || ''} ${addr.number || ''} - ${addr.city || ''}`,
+                }))}
+                placeholder="Selecione um ponto de coleta"
+                className="bcm-select"
               />
             </div>
             <div className="bcm-form-group">
@@ -176,37 +186,55 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         )}
 
         {/* Checkboxes de seleção por status */}
+        <label className="bcm-label">Selecione os status que deseja modificar:</label>
         <div className="bcm-grid">
-          <label className="bcm-checkbox-row">
-            <input
-              type="checkbox"
+          <div className="bcm-checkbox-row">
+            <Checkbox
+              id="definicao"
+              name="definicao"
+              label="Aguardando definição de coleta"
               checked={selectDefinicao}
-              onChange={e => setSelectDefinicao(e.target.checked)}
+              onChange={setSelectDefinicao}
               disabled={counts.definicao === 0}
             />
-            <span>Aguardando definição de coleta</span>
             <span className="bcm-count">({counts.definicao})</span>
-          </label>
-          <label className="bcm-checkbox-row">
-            <input
-              type="checkbox"
+          </div>
+
+          <div className="bcm-checkbox-row">
+            <Checkbox
+              id="chegada"
+              name="chegada"
+              label="Aguardando chegada do veículo"
               checked={selectChegada}
-              onChange={e => setSelectChegada(e.target.checked)}
+              onChange={setSelectChegada}
               disabled={counts.chegada === 0}
             />
-            <span>Aguardando chegada do veículo</span>
             <span className="bcm-count">({counts.chegada})</span>
-          </label>
-          <label className="bcm-checkbox-row">
-            <input
-              type="checkbox"
-              checked={selectColeta}
-              onChange={e => setSelectColeta(e.target.checked)}
-              disabled={counts.coleta === 0}
+          </div>
+
+          <div className="bcm-checkbox-row">
+            <Checkbox
+              id="aprovacao"
+              name="aprovacao"
+              label="Aguardando aprovação da coleta"
+              checked={selectAprovacao}
+              onChange={setSelectAprovacao}
+              disabled={counts.aprovacao === 0}
             />
-            <span>Aguardando coleta</span>
-            <span className="bcm-count">({counts.coleta})</span>
-          </label>
+            <span className="bcm-count">({counts.aprovacao})</span>
+          </div>
+
+          <div className="bcm-checkbox-row">
+            <Checkbox
+              id="mudancaData"
+              name="mudancaData"
+              label="Solicitação de mudança de data"
+              checked={selectMudancaData}
+              onChange={setSelectMudancaData}
+              disabled={counts.mudancaData === 0}
+            />
+            <span className="bcm-count">({counts.mudancaData})</span>
+          </div>
         </div>
 
         <div className="bcm-affected">
@@ -255,7 +283,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
               : 'Aplicar data de entrega ao pátio'}
           </button>
         </div>
-      </div>
+      </Modal>
     </div>
   );
 

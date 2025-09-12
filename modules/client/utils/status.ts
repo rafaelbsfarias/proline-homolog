@@ -14,7 +14,8 @@ export function statusLabel(status?: string): string {
   if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 'Aguardando chegada do veículo';
   if (s === 'CHEGADA CONFIRMADA') return 'Chegada confirmada';
   if (s === 'EM ANÁLISE') return 'Em análise';
-  if (s === 'ANÁLISE FINALIZADA') return 'Análise finalizada';
+  if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 'Análise finalizada';
+  if (s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') return 'Solicitação de mudança de data';
   return raw;
 }
 
@@ -37,10 +38,14 @@ export function statusOrder(statusRaw: string): number {
 export function canClientModify(status?: string): boolean {
   const s = String(status || '').toUpperCase();
   return (
+    // s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
+    // s === 'PONTO DE COLETA SELECIONADO' ||
+    // s === 'AGUARDANDO COLETA' ||
+    // s === 'AGUARDANDO CHEGADA DO VEÍCULO' ||
+    // s === 'AGUARDANDO CHEGADA DO CLIENTE'
     s === 'AGUARDANDO DEFINIÇÃO DE COLETA' ||
-    s === 'PONTO DE COLETA SELECIONADO' ||
-    s === 'AGUARDANDO COLETA' ||
     s === 'AGUARDANDO CHEGADA DO VEÍCULO' ||
-    s === 'AGUARDANDO CHEGADA DO CLIENTE'
+    s === 'AGUARDANDO APROVAÇÃO DA COLETA' ||
+    s === 'SOLICITAÇÃO DE MUDANÇA DE DATA'
   );
 }

@@ -5,14 +5,13 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
 import RowCollectionModal from '../RowCollectionModal';
-import BulkCollectionModal from '../BulkCollectionModal';
 import StatusChips from '../StatusChips';
 import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
-import type { Vehicle, Method } from '@/modules/client/types';
+import type { Vehicle } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
@@ -29,11 +28,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [bulkMethod, setBulkMethod] = useState<Method>('collect_point');
-  const [bulkAddressId, setBulkAddressId] = useState('');
-  const [bulkEta, setBulkEta] = useState('');
-  const [savingAll, setSavingAll] = useState(false);
-  const [bulkModalOpen, setBulkModalOpen] = useState<null | Method>(null);
   const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -62,26 +56,22 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
   const minDateIsoLocal = makeLocalIsoDate();
 
-  // Total de páginas recalculado com base em totalCount filtrado
   const totalPagesAdjusted = useMemo(() => {
     return Math.ceil(totalCount / pageSize);
   }, [totalCount]);
 
-  // Resetar página ao mudar filtros
   useEffect(() => {
     if (currentPage !== 1) {
       onPageChange(1);
     }
   }, [filterPlate, filterStatus]);
 
-  // Evita que currentPage fique maior que totalPagesAdjusted
   useEffect(() => {
     if (currentPage > totalPagesAdjusted && totalPagesAdjusted > 0) {
       onPageChange(1);
     }
   }, [totalPagesAdjusted]);
 
-  // Loading inicial
   useEffect(() => {
     if (onLoadingChange && isInitialLoading) {
       onLoadingChange(loading);
@@ -151,17 +141,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
       {showDetails && (
         <div className="vehicles-details" id="vehicles-details">
-          {totalCount > 0 && (
-            <BulkCollectionControls
-              method={bulkMethod}
-              setMethod={setBulkMethod}
-              addressId={bulkAddressId}
-              setAddressId={setBulkAddressId}
-              saving={savingAll}
-              onOpenModal={m => setBulkModalOpen(m)}
-              addresses={addresses as any}
-            />
-          )}
+          {totalCount > 0 && <BulkCollectionControls onSuccess={refetch} />}
 
           <h4 className="header">Detalhes dos Veículos:</h4>
 
@@ -187,18 +167,15 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             )}
           </div>
 
-          {/* Paginação só aparece se tiver mais de uma página */}
-          {totalPagesAdjusted > 1 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPagesAdjusted}
-              onPageChange={onPageChange}
-            />
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPagesAdjusted}
+            onPageChange={onPageChange}
+            currentItemsCount={vehicles.length}
+          />
         </div>
       )}
 
-      {/* Modais */}
       {showModal && (
         <VehicleDetailsModal
           isOpen={showModal}
@@ -230,24 +207,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
                 }
               : null
           }
-        />
-      )}
-
-      {bulkModalOpen && (
-        <BulkCollectionModal
-          isOpen={!!bulkModalOpen}
-          onClose={() => setBulkModalOpen(null)}
-          method={bulkModalOpen}
-          vehicles={vehicles as Vehicle[]}
-          addresses={addresses as any}
-          minDate={minDateIsoLocal}
-          initialAddressId={bulkMethod === 'collect_point' ? bulkAddressId : undefined}
-          initialEtaIso={bulkMethod === 'bring_to_yard' ? bulkEta : undefined}
-          onApply={async payload => {
-            const resp = await post('/api/client/set-vehicles-collection', payload);
-            if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar');
-            refetch();
-          }}
         />
       )}
 
