@@ -13,17 +13,9 @@
 }
 
 .bcm-calendar-btn {
-  position: absolute;
-  right: 6px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #555;
+  right: 8px;
+  width: 30px;
+  height: 30px;
 }
 .bcm-calendar-btn:hover {
   color: #111;
@@ -78,21 +70,27 @@
 }
 
 .bcm-form-group {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 .bcm-label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 18px;
+  font-weight: 500;
 }
-.bcm-select {
+
+.bcm-select,
+.bcm-date-input {
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px; /* antes 8px 10px */
+  border: 1px solid #ccc;
+  border-radius: 8px; /* antes 6px */
+  font-size: 14px;
 }
 
 .bcm-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 12px;
 }
 .bcm-checkbox-row {
   display: flex;
@@ -105,10 +103,12 @@
 }
 
 .bcm-affected {
-  margin-top: 12px;
-  font-size: 14px;
-  color: #444;
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
 }
+
 .bcm-error {
   color: #c62828;
   margin-top: 8px;
@@ -117,15 +117,16 @@
 .bcm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 16px; /* antes 10px */
+  margin-top: 20px; /* antes 16px */
 }
+
 .bcm-btn {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  cursor: pointer;
+  padding: 10px 16px; /* antes 8px 12px */
+  font-size: 14px;
+  border-radius: 8px; /* antes 6px */
 }
+
 .bcm-btn-secondary {
   border-color: #ccc;
   background: #fafafa;
