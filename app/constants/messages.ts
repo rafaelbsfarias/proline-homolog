@@ -230,6 +230,37 @@ export const translateFuelLevel = (fuelLevel: string | undefined): string => {
 };
 
 /**
+ * Traduz categoria de serviço do inglês para português
+ */
+export const translateServiceCategory = (category: string | undefined): string => {
+  if (!category) return 'N/A';
+
+  const translations: Record<string, string> = {
+    mechanics: 'Mecânica',
+    body_paint: 'Funilaria e Pintura',
+    washing: 'Lavagem',
+    tires: 'Pneus',
+    engine_oil: 'Óleo do Motor',
+    brakes: 'Freios',
+    battery: 'Bateria',
+    filters: 'Filtros',
+    transmission: 'Transmissão',
+    air_filter: 'Filtro de Ar',
+    oil_filter: 'Filtro de Óleo',
+    coolant: 'Sistema de Arrefecimento',
+    suspension: 'Suspensão',
+    electrical: 'Sistema Elétrico',
+    tires_service: 'Serviços de Pneus',
+    body_work: 'Funilaria',
+    painting: 'Pintura',
+  };
+
+  return (
+    translations[category] || category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  );
+};
+
+/**
  * Hook para usar mensagens em componentes React
  */
 export const useMessages = () => ({
@@ -244,4 +275,5 @@ export const useMessages = () => ({
   getErrorMessage,
   getSuccessMessage,
   translateFuelLevel,
+  translateServiceCategory,
 });

@@ -6,7 +6,11 @@ import Header from '@/modules/admin/components/Header';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import { translateFuelLevel, VEHICLE_CONSTANTS } from '@/app/constants/messages';
+import {
+  translateFuelLevel,
+  VEHICLE_CONSTANTS,
+  translateServiceCategory,
+} from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 
@@ -546,7 +550,7 @@ const VehicleDetailsPage = () => {
                       }}
                     >
                       <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
-                        {service.category.replace('_', ' ')}
+                        {translateServiceCategory(service.category)}
                       </span>
                       <span
                         style={{

@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE public.vehicle_collections (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     collection_address TEXT NOT NULL,
     collection_fee_per_vehicle NUMERIC,

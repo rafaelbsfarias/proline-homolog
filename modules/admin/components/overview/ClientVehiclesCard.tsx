@@ -4,6 +4,9 @@ import { useAdminClientVehicles } from '@/modules/admin/hooks/useAdminClientVehi
 import { useAdminClientVehicleStatuses } from '@/modules/admin/hooks/useAdminClientVehicleStatuses';
 import { useAdminClientName } from '@/modules/admin/hooks/useAdminClientName';
 import { useAdminClientVehicleStatusCounts } from '@/modules/admin/hooks/useAdminClientVehicleStatusCounts';
+import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
+import type { AdminVehicleData } from '@/modules/admin/hooks/useAdminClientVehicles';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 interface Props {
   clientId: string;
@@ -13,6 +16,9 @@ interface Props {
 const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' }) => {
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<AdminVehicleData | null>(null);
+  const { get } = useAuthenticatedFetch();
 
   const filters = useMemo(
     () => ({ plate: filterPlate, status: filterStatus }),
@@ -84,8 +90,66 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
-        renderActions={() => null}
+        renderActions={v => (
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedVehicle(v as any);
+              setShowDetails(true);
+            }}
+            style={{
+              padding: '6px 10px',
+              borderRadius: 6,
+              border: '1px solid #ccc',
+              background: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Detalhes
+          </button>
+        )}
       />
+
+      {showDetails && (
+        <VehicleDetailsModal
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setSelectedVehicle(null);
+          }}
+          vehicle={
+            selectedVehicle
+              ? {
+                  id: selectedVehicle.id,
+                  plate: selectedVehicle.plate,
+                  brand: selectedVehicle.brand,
+                  model: selectedVehicle.model,
+                  year: selectedVehicle.year,
+                  color: selectedVehicle.color,
+                  status: selectedVehicle.status || '',
+                  created_at: '',
+                  fipe_value: undefined,
+                  client_name: undefined,
+                  analyst: undefined,
+                  arrival_forecast: undefined,
+                  current_km: undefined,
+                  params: undefined,
+                  notes: undefined,
+                  estimated_arrival_date: undefined,
+                  current_odometer: undefined,
+                  fuel_level: undefined,
+                }
+              : null
+          }
+          specialistsLoader={async () => {
+            const resp = await get<{ success: boolean; names?: string; error?: string }>(
+              `/api/admin/client-specialists?clientId=${encodeURIComponent(clientId)}`
+            );
+            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
+            return { names: '' };
+          }}
+        />
+      )}
     </section>
   );
 };
