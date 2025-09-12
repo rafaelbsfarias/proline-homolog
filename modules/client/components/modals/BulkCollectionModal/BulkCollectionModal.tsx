@@ -93,7 +93,6 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
       else if (selectAprovacao && s === 'AGUARDANDO APROVAÇÃO DA COLETA') selected.push(v.id);
       else if (selectMudancaData && s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') selected.push(v.id);
     });
-    console.log('Veículos selecionados:', selected);
     return selected;
   }, [vehicles, selectDefinicao, selectChegada, selectAprovacao, selectMudancaData]);
 
