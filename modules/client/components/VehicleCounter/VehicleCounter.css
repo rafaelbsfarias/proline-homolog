@@ -305,33 +305,6 @@
   }
 }
 
-.approve-button {
-  background-color: #4caf50; /* Green */
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  margin-right: 8px;
-}
-
-.approve-button:hover {
-  background-color: #45a049;
-}
-
-.reject-button {
-  background-color: #f44336; /* Red */
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-
-.reject-button:hover {
-  background-color: #da190b;
-}
-
 .buttonVehicleCustom {
   background: #d9e0e7;
   color: #333;

@@ -6,7 +6,7 @@ import VehicleCounter from '@/modules/client/components/VehicleCounter/VehicleCo
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import '@/modules/client/components/ClientDashboard.css';
-import VehicleCollectionSection from '@/modules/client/components/collection/VehicleCollectionSection';
+import VehicleCollectionSection from '@/modules/client/components/collection/VehicleCollectionSection/VehicleCollectionSection';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
 import ContractAcceptanceScreen from '@/modules/client/components/dashboard/ContractAcceptanceScreen';
