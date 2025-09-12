@@ -6,7 +6,12 @@ import Header from '@/modules/admin/components/Header';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import { translateFuelLevel, VEHICLE_CONSTANTS } from '@/app/constants/messages';
+import {
+  translateFuelLevel,
+  VEHICLE_CONSTANTS,
+  translateServiceCategory,
+} from '@/app/constants/messages';
+import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 
 interface VehicleDetails {
@@ -69,13 +74,21 @@ const AdminVehicleDetailsPage = () => {
     media: Array<{ storage_path: string; uploaded_by: string; created_at: string }>
   ) => {
     const urls: Record<string, string> = {};
+
     for (const mediaItem of media) {
       try {
+        // Usar endpoint admin para buscar URLs assinadas
         const urlResp = await get<{ success: boolean; signedUrl?: string; error?: string }>(
           `/api/admin/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
         );
+
         if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
           urls[mediaItem.storage_path] = urlResp.data.signedUrl;
+        } else {
+          logger.warn('Failed to get signed URL for media:', {
+            storagePath: mediaItem.storage_path.slice(0, 20),
+            error: urlResp.data?.error,
+          });
         }
       } catch (err) {
         logger.error('Error fetching signed URL:', {
@@ -84,14 +97,14 @@ const AdminVehicleDetailsPage = () => {
         });
       }
     }
+
     setMediaUrls(urls);
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchVehicleDetails = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         // Buscar dados básicos do veículo (admin)
         const vehicleResp = await get<{
@@ -121,7 +134,7 @@ const AdminVehicleDetailsPage = () => {
           }
         }
       } catch (err) {
-        logger.error('Error fetching vehicle details (admin):', err);
+        logger.error('Error fetching vehicle details:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados do veículo');
       } finally {
         setLoading(false);
@@ -129,9 +142,19 @@ const AdminVehicleDetailsPage = () => {
     };
 
     if (vehicleId) {
-      fetchData();
+      fetchVehicleDetails();
     }
   }, [vehicleId, get]);
+
+  const formatDate = (date: string | undefined) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  const formatCurrency = (value: number | undefined) => {
+    if (!value) return 'N/A';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
 
   const getStatusLabel = (status: string) => {
     return (
@@ -189,104 +212,505 @@ const AdminVehicleDetailsPage = () => {
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
+
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
-        <h1 style={{ color: '#2c3e50', marginBottom: '16px' }}>
-          {vehicle.brand} {vehicle.model} ({vehicle.year}) — {vehicle.plate}
-        </h1>
+        <div style={{ marginBottom: '24px' }}>
+          <button
+            onClick={() => router.back()}
+            style={{
+              padding: '8px 16px',
+              background: '#ecf0f1',
+              border: '1px solid #bdc3c7',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginBottom: '16px',
+            }}
+          >
+            ← Voltar
+          </button>
+          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
+            Detalhes do Veículo
+          </h1>
+          <p style={{ color: '#666', fontSize: '1.15rem' }}>
+            {vehicle.brand} {vehicle.model} • {vehicle.plate}
+          </p>
+        </div>
 
-        <section style={{ background: '#fff', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-          <h2>Informações do Veículo</h2>
-          <p>
-            <strong>Status:</strong> {getStatusLabel(vehicle.status)}
-          </p>
-          <p>
-            <strong>Cor:</strong> {vehicle.color || 'N/A'}
-          </p>
-          <p>
-            <strong>Odômetro atual:</strong> {vehicle.current_odometer ?? 'N/A'}
-          </p>
-          <p>
-            <strong>Nível de combustível:</strong> {translateFuelLevel(vehicle.fuel_level || '')}
-          </p>
-          <p>
-            <strong>Previsão de chegada:</strong> {vehicle.estimated_arrival_date || 'N/A'}
-          </p>
-          <p>
-            <strong>FIPE:</strong>{' '}
-            {vehicle.fipe_value
-              ? new Intl.NumberFormat('pt-BR', {
-                  style: 'currency',
-                  currency: 'BRL',
-                }).format(vehicle.fipe_value)
-              : 'N/A'}
-          </p>
-        </section>
-
-        <section style={{ background: '#fff', borderRadius: 8, padding: 16 }}>
-          <h2>Inspeção/Checklist</h2>
-          {!inspection ? (
-            <p>Nenhuma inspeção encontrada</p>
-          ) : (
-            <div>
-              <p>
-                <strong>Data:</strong>{' '}
-                {new Date(inspection.inspection_date).toLocaleDateString('pt-BR')}
-              </p>
-              <p>
-                <strong>Odômetro:</strong> {inspection.odometer}
-              </p>
-              <p>
-                <strong>Combustível:</strong> {translateFuelLevel(inspection.fuel_level)}
-              </p>
-              <p>
-                <strong>Observações:</strong> {inspection.observations || '—'}
-              </p>
-              <p>
-                <strong>Status:</strong> {inspection.finalized ? 'Finalizada' : 'Em andamento'}
-              </p>
-
-              {inspection.services?.length ? (
-                <div>
-                  <h3>Serviços</h3>
-                  <ul>
-                    {inspection.services.map((s, idx) => (
-                      <li key={idx}>
-                        {s.category} — {s.required ? 'Obrigatório' : 'Opcional'} — {s.notes || '—'}
-                      </li>
-                    ))}
-                  </ul>
+        <div style={{ display: 'grid', gap: '24px', gridTemplateColumns: '1fr 1fr' }}>
+          {/* Informações Básicas */}
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              padding: '24px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, margin: 0, color: '#333' }}>
+                Informações Básicas
+              </h2>
+              {/* Debug: sempre mostrar estado das imagens */}
+              {inspection && (
+                <div style={{ fontSize: '12px', color: '#666', marginRight: '8px' }}>
+                  Inspeção: {inspection ? 'Sim' : 'Não'} | Mídia:{' '}
+                  {inspection?.media ? `${inspection.media.length} fotos` : 'Sem mídia'}
                 </div>
-              ) : null}
+              )}
 
-              {inspection.media?.length ? (
+              {/* temporary test button removed */}
+
+              {inspection?.media && inspection.media.length > 0 && (
+                <button
+                  onClick={() => setIsImageViewerOpen(true)}
+                  style={{
+                    padding: '8px 16px',
+                    background: '#002E4C',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    transition: 'background-color 0.2s ease',
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.backgroundColor = '#001F36';
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.backgroundColor = '#002E4C';
+                  }}
+                >
+                  Ver Evidências ({inspection.media.length})
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'grid', gap: '16px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Placa:</span>
+                <span style={{ fontFamily: 'monospace' }}>{vehicle.plate}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Marca:</span>
+                <span>{vehicle.brand}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Modelo:</span>
+                <span>
+                  {vehicle.model} ({vehicle.year})
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Cor:</span>
+                <span>{vehicle.color || 'N/A'}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Status:</span>
+                <span
+                  style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.875rem',
+                    background: '#e8f5e8',
+                    color: '#2e7d32',
+                  }}
+                >
+                  {getStatusLabel(vehicle.status)}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Valor FIPE:</span>
+                <span>{formatCurrency(vehicle.fipe_value)}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>KM Atual:</span>
+                <span>{vehicle.current_odometer || 'N/A'}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Nível de Combustível:</span>
+                <span>{translateFuelLevel(vehicle.fuel_level)}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Cadastrado em:</span>
+                <span>{formatDateBR(vehicle.created_at)}</span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <span style={{ fontWeight: 500 }}>Previsão de Chegada:</span>
+                <span>{formatDateBR(vehicle.estimated_arrival_date)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline e Status */}
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              padding: '24px',
+            }}
+          >
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
+              Timeline do Veículo
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: '#3498db',
+                  }}
+                ></div>
                 <div>
-                  <h3>Mídias</h3>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {inspection.media.map((m, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setIsImageViewerOpen(true)}
-                        style={{ padding: '6px 10px', border: '1px solid #ccc', borderRadius: 6 }}
-                      >
-                        Ver imagem {idx + 1}
-                      </button>
-                    ))}
+                  <div style={{ fontWeight: 500 }}>Veículo Cadastrado</div>
+                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                    {formatDateBR(vehicle.created_at)}
                   </div>
                 </div>
-              ) : null}
+              </div>
+
+              {vehicle.estimated_arrival_date && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#f39c12',
+                    }}
+                  ></div>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Previsão de Chegada</div>
+                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                      {formatDate(vehicle.estimated_arrival_date)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {inspection && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#e74c3c',
+                    }}
+                  ></div>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Análise Iniciada</div>
+                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                      {formatDate(inspection.inspection_date)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {inspection?.finalized && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#27ae60',
+                    }}
+                  ></div>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>Análise Finalizada</div>
+                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                      {formatDate(inspection.inspection_date)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Serviços Necessários */}
+          {inspection?.services && inspection.services.length > 0 && (
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                padding: '24px',
+                gridColumn: '1 / -1',
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
+                Serviços Necessários
+              </h2>
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '16px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                }}
+              >
+                {inspection.services.map((service, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      padding: '16px',
+                      border: '1px solid #eee',
+                      borderRadius: '8px',
+                      background: service.required ? '#fff5f5' : '#f8f9fa',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
+                        {translateServiceCategory(service.category)}
+                      </span>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          fontSize: '0.75rem',
+                          background: service.required ? '#e74c3c' : '#95a5a6',
+                          color: 'white',
+                        }}
+                      >
+                        {service.required ? 'Necessário' : 'Opcional'}
+                      </span>
+                    </div>
+                    {service.notes && (
+                      <div style={{ fontSize: '0.875rem', color: '#666', marginTop: '8px' }}>
+                        <strong>Observações:</strong> {service.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </section>
+
+          {/* Fotos do Veículo */}
+          {inspection?.media && inspection.media.length > 0 && (
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                padding: '24px',
+                gridColumn: '1 / -1',
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
+                Fotos do Veículo
+              </h2>
+              <div
+                style={{
+                  display: 'grid',
+                  gap: '16px',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                }}
+              >
+                {inspection.media.map((media, index) => (
+                  <div key={index} style={{ textAlign: 'center' }}>
+                    <img
+                      src={
+                        mediaUrls[media.storage_path] ||
+                        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`
+                      }
+                      alt={`Foto ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '150px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        border: '1px solid #ddd',
+                      }}
+                      onError={e => {
+                        // Fallback para URL pública se a assinada falhar
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('public')) {
+                          target.src = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`;
+                        }
+                      }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+                      {formatDateBR(media.created_at)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Observações da Inspeção */}
+          {inspection?.observations && (
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                padding: '24px',
+                gridColumn: '1 / -1',
+              }}
+            >
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
+                Observações do Especialista
+              </h2>
+              <div
+                style={{
+                  padding: '16px',
+                  background: '#f8f9fa',
+                  borderRadius: '8px',
+                  borderLeft: '4px solid #3498db',
+                }}
+              >
+                {inspection.observations}
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
-      {isImageViewerOpen && inspection?.media && (
+      {/* Modal de Visualização de Imagens */}
+      {inspection?.media && inspection.media.length > 0 ? (
         <ImageViewerModal
           isOpen={isImageViewerOpen}
           onClose={() => setIsImageViewerOpen(false)}
           images={inspection.media}
           mediaUrls={mediaUrls}
-          vehiclePlate={vehicle.plate}
+          vehiclePlate={vehicle?.plate || ''}
         />
+      ) : (
+        isImageViewerOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <div
+              style={{
+                background: 'white',
+                padding: '32px',
+                borderRadius: '12px',
+                textAlign: 'center',
+                maxWidth: '400px',
+              }}
+            >
+              <h3 style={{ marginBottom: '16px', color: '#333' }}>Nenhuma Imagem Disponível</h3>
+              <p style={{ color: '#666', marginBottom: '24px' }}>
+                Este veículo ainda não possui imagens de inspeção cadastradas.
+              </p>
+              <button
+                onClick={() => setIsImageViewerOpen(false)}
+                style={{
+                  padding: '8px 24px',
+                  background: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )
       )}
     </div>
   );
