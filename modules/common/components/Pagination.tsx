@@ -22,10 +22,6 @@ const Pagination: React.FC<PaginationProps> = ({
 
   const disableNavigation = currentItemsCount < ITEMS_PER_PAGE;
 
-  console.log('disableNavigation', disableNavigation);
-  console.log('ITEMS_PER_PAGE', ITEMS_PER_PAGE);
-  console.log('currentItemsCount', currentItemsCount);
-
   const handlePrevious = () => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
@@ -40,11 +36,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className={styles.paginationContainer}>
-      <button
-        onClick={handlePrevious}
-        disabled={currentPage === 1 || disableNavigation}
-        className={styles.button}
-      >
+      <button onClick={handlePrevious} disabled={currentPage === 1} className={styles.button}>
         Anterior
       </button>
       <span className={styles.pageInfo}>
