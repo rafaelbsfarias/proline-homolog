@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
     // Guard: only allow status changes from allowed current statuses
     const allowedPrevious = new Set([
       'AGUARDANDO DEFINIÇÃO DE COLETA',
-      'PONTO DE COLETA SELECIONADO',
-      'AGUARDANDO COLETA',
+      'AGUARDANDO APROVAÇÃO DA COLETA',
       'AGUARDANDO CHEGADA DO VEÍCULO',
+      'AGUARDANDO APROVAÇÃO DA COLETA',
     ]);
     const { data: currentVehicles, error: curErr } = await admin
       .from('vehicles')

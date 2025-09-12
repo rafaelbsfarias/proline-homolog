@@ -5,6 +5,7 @@ import {
   UsersCounter,
   DataPanel,
   VehiclesCounter,
+  PartnersCard,
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
@@ -25,13 +26,15 @@ const AdminDashboard: React.FC = () => {
   const [usersCounterLoading, setUsersCounterLoading] = useState(true);
   const [vehiclesCounterLoading, setVehiclesCounterLoading] = useState(true);
   const [dataPanelLoading, setDataPanelLoading] = useState(true);
+  const [partnersCardLoading, setPartnersCardLoading] = useState(true);
 
   const showOverallLoader =
     userLoading ||
     pendingRegLoading ||
     usersCounterLoading ||
     vehiclesCounterLoading ||
-    dataPanelLoading;
+    dataPanelLoading ||
+    partnersCardLoading;
 
   useEffect(() => {
     async function fetchUser() {
@@ -106,6 +109,9 @@ const AdminDashboard: React.FC = () => {
       </div>
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
         <DataPanel onLoadingChange={setDataPanelLoading} />
+      </div>
+      <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
+        <PartnersCard onLoadingChange={setPartnersCardLoading} />
       </div>
     </div>
   );

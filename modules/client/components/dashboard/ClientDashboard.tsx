@@ -7,8 +7,8 @@ import { useToast } from '@/modules/common/components/ToastProvider';
 import { VehicleCounterHeader } from './VehicleCounterHeader';
 import { VehicleCounterActions } from '../VehicleCounterActions';
 import { VehicleCounterError } from '../VehicleCounterError';
-import { VehicleRegistrationModal } from '../modals';
-import { ClientCollectPointModal } from '../modals';
+import { VehicleRegistrationModal } from '../Modals';
+import { ClientCollectPointModal } from '../Modals';
 import styles from './ClientDashboard.module.css';
 
 interface ProfileData {

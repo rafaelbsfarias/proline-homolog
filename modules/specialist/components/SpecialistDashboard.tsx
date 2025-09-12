@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/modules/common/services/AuthProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import styles from './SpecialistDashboard.module.css';
+import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 
 interface Client {
   id: string;
@@ -17,7 +18,8 @@ interface Vehicle {
   brand: string;
   model: string;
   year: number;
-  license_plate: string;
+  plate: string;
+  client_id: string;
 }
 
 interface DashboardState {
@@ -77,7 +79,10 @@ const ClientList: React.FC<{ clients: Client[] }> = ({ clients }) => {
 };
 
 // Single Responsibility: Componente de lista de veículos
-const VehicleList: React.FC<{ vehicles: Vehicle[] }> = ({ vehicles }) => {
+const VehicleList: React.FC<{ vehicles: Vehicle[]; onOpenDetails: (v: Vehicle) => void }> = ({
+  vehicles,
+  onOpenDetails,
+}) => {
   if (vehicles.length === 0) {
     return <div className={styles.emptyState}>Nenhum veículo cadastrado</div>;
   }
@@ -90,7 +95,16 @@ const VehicleList: React.FC<{ vehicles: Vehicle[] }> = ({ vehicles }) => {
             {vehicle.brand} {vehicle.model}
           </h3>
           <p>Ano: {vehicle.year}</p>
-          <p>Placa: {vehicle.license_plate}</p>
+          <p>Placa: {vehicle.plate}</p>
+          <div style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={() => onOpenDetails(vehicle)}
+              className={styles.refreshButton}
+            >
+              Detalhes
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -116,6 +130,8 @@ const SpecialistDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const { get } = useAuthenticatedFetch();
   const [state, setState] = useState<DashboardState>(DashboardStateManager.getInitialState());
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   // Single Responsibility: Buscar dados do dashboard
   const fetchDashboardData = useCallback(async () => {
@@ -221,11 +237,62 @@ const SpecialistDashboard: React.FC = () => {
             {/* Seção de Veículos */}
             <section className={styles.section}>
               <h2>Veículos dos Clientes</h2>
-              <VehicleList vehicles={state.vehicles} />
+              <VehicleList
+                vehicles={state.vehicles}
+                onOpenDetails={v => {
+                  setSelectedVehicle(v);
+                  setShowDetails(true);
+                }}
+              />
             </section>
           </>
         )}
       </main>
+
+      {showDetails && (
+        <VehicleDetailsModal
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setSelectedVehicle(null);
+          }}
+          vehicle={
+            selectedVehicle
+              ? {
+                  id: selectedVehicle.id,
+                  plate: selectedVehicle.plate,
+                  brand: selectedVehicle.brand,
+                  model: selectedVehicle.model,
+                  year: selectedVehicle.year,
+                  color: '',
+                  status: '',
+                  created_at: '',
+                  fipe_value: undefined,
+                  client_name: undefined,
+                  analyst: undefined,
+                  arrival_forecast: undefined,
+                  current_km: undefined,
+                  params: undefined,
+                  notes: undefined,
+                  estimated_arrival_date: undefined,
+                  current_odometer: undefined,
+                  fuel_level: undefined,
+                }
+              : null
+          }
+          specialistsLoader={async () => {
+            if (!selectedVehicle?.client_id) return { names: '' };
+            const resp = await get<{ success: boolean; names?: string; error?: string }>(
+              `/api/specialist/client-specialists?clientId=${encodeURIComponent(selectedVehicle.client_id)}`
+            );
+            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
+            return { names: '' };
+          }}
+          onNavigateToDetails={vehicleId => {
+            window.location.href = `/dashboard/vehicle/${vehicleId}`;
+          }}
+        />
+      )}
     </div>
   );
 };
