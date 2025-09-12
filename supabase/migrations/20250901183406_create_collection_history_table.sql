@@ -2,7 +2,7 @@
 -- This table stores finalized collection data that should never be modified
 
 CREATE TABLE public.collection_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     collection_id UUID NOT NULL REFERENCES public.vehicle_collections(id) ON DELETE CASCADE,
     collection_address TEXT NOT NULL,

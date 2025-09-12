@@ -56,11 +56,11 @@ interface InspectionResponse {
   error?: string;
 }
 
-const VehicleDetailsPage = () => {
+const AdminVehicleDetailsPage = () => {
   const params = useParams();
   const router = useRouter();
   const vehicleId = params.vehicleId as string;
-  const logger = getLogger('client:VehicleDetailsPage');
+  const logger = getLogger('admin:VehicleDetailsPage');
   const { get } = useAuthenticatedFetch();
 
   const [vehicle, setVehicle] = useState<VehicleDetails | null>(null);
@@ -69,6 +69,7 @@ const VehicleDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+
   const fetchMediaUrls = async (
     media: Array<{ storage_path: string; uploaded_by: string; created_at: string }>
   ) => {
@@ -76,10 +77,9 @@ const VehicleDetailsPage = () => {
 
     for (const mediaItem of media) {
       try {
-        // Determinar qual endpoint usar baseado no role do usuário
-        // Como estamos na página do cliente, usamos o endpoint do cliente
+        // Usar endpoint admin para buscar URLs assinadas
         const urlResp = await get<{ success: boolean; signedUrl?: string; error?: string }>(
-          `/api/client/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
+          `/api/admin/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
         );
 
         if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
@@ -106,12 +106,12 @@ const VehicleDetailsPage = () => {
       try {
         setLoading(true);
 
-        // Buscar dados básicos do veículo
+        // Buscar dados básicos do veículo (admin)
         const vehicleResp = await get<{
           success: boolean;
           vehicle?: VehicleDetails;
           error?: string;
-        }>(`/api/client/vehicles/${vehicleId}`);
+        }>(`/api/admin/vehicles/${vehicleId}`);
 
         if (!vehicleResp.ok || !vehicleResp.data?.success) {
           throw new Error(vehicleResp.data?.error || 'Erro ao carregar veículo');
@@ -119,9 +119,9 @@ const VehicleDetailsPage = () => {
 
         setVehicle(vehicleResp.data.vehicle || null);
 
-        // Buscar dados da inspeção/checklist mais recente
+        // Buscar dados da inspeção/checklist mais recente (admin)
         const inspectionResp = await get<InspectionResponse>(
-          `/api/client/vehicle-inspection?vehicleId=${vehicleId}`
+          `/api/admin/vehicle-inspection?vehicleId=${vehicleId}`
         );
 
         if (inspectionResp.ok && inspectionResp.data?.success) {
@@ -716,4 +716,4 @@ const VehicleDetailsPage = () => {
   );
 };
 
-export default VehicleDetailsPage;
+export default AdminVehicleDetailsPage;

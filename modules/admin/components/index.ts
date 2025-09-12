@@ -7,3 +7,4 @@ export { default as PendingRegistrationsCounter } from './PendingRegistrationsCo
 export { default as Toolbar } from './Toolbar';
 export { default as UsersCounter } from './UsersCounter';
 export { default as UserList } from './UserList';
+export { default as PartnersCard } from './PartnersCard';
