@@ -78,13 +78,12 @@
   font-weight: 500;
 }
 
-.bcm-select,
 .bcm-date-input {
   width: 100%;
-  padding: 10px 12px; /* antes 8px 10px */
+  padding: 0.9rem 1rem;
   border: 1px solid #ccc;
-  border-radius: 8px; /* antes 6px */
-  font-size: 14px;
+  border-radius: 8px;
+  font-size: 1rem;
 }
 
 .bcm-grid {
@@ -135,4 +134,9 @@
   border-color: #1b5e20;
   background: #2e7d32;
   color: #fff;
+}
+
+.bcm-form-group .bcm-select {
+  padding: 0.9rem 2.5rem 0.9rem 1rem;
+  font-size: 1rem;
 }
