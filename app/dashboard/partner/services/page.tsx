@@ -4,76 +4,53 @@ import React, { useState } from 'react';
 import ServicesLayout from '@/modules/partner/components/services/ServicesLayout';
 import ServicesContent from '@/modules/partner/components/services/ServicesContent';
 import EditServiceModal from '@/modules/partner/components/services/EditServiceModal';
-import { type PartnerService } from '@/modules/partner/hooks/usePartnerServices';
+import {
+  usePartnerServices,
+  type PartnerService,
+} from '@/modules/partner/hooks/usePartnerServices';
 import { useEditServiceModal } from '@/modules/partner/hooks/useEditServiceModal';
 
-// Dados mock para teste
-const mockServices: PartnerService[] = [
-  {
-    id: '1',
-    name: 'Lavagem Completa',
-    description: 'Lavagem externa e interna completa do veículo',
-    price: 85.0,
-    category: 'Lavagem',
-  },
-  {
-    id: '2',
-    name: 'Polimento de Faróis',
-    description: 'Polimento e restauração de faróis',
-    price: 45.0,
-    category: 'Polimento',
-  },
-  {
-    id: '3',
-    name: 'Higienização de Ar-Condicionado',
-    description: 'Limpeza completa do sistema de ar-condicionado',
-    price: 120.0,
-    category: 'Higienização',
-  },
-  {
-    id: '4',
-    name: 'Lavagem de Motor',
-    description: 'Lavagem especializada do motor',
-    price: 65.0,
-    category: 'Lavagem',
-  },
-  {
-    id: '5',
-    name: 'Aplicação de Cera',
-    description: 'Aplicação de cera protetora na pintura',
-    price: 35.0,
-    category: 'Polimento',
-  },
-  {
-    id: '6',
-    name: 'Limpeza de Estofados',
-    description: 'Limpeza profunda dos estofados',
-    price: 95.0,
-    category: null,
-  },
-];
-
 const ServicesPage = () => {
-  // Usar dados mock para teste
-  const services = mockServices;
-  const loading = false;
-  const error = null;
+  // Usar hook real para buscar dados do banco
+  const { services, loading, error, updateService, deleteService } = usePartnerServices();
 
   const { editingService, isModalOpen, updateLoading, openModal, closeModal } =
     useEditServiceModal();
 
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>();
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   const handleEdit = (service: PartnerService) => {
     openModal(service);
   };
 
   const handleDelete = async () => {
-    // Simular exclusão
+    if (editingService) {
+      try {
+        await deleteService(editingService.id);
+        closeModal();
+        setOperationError(null); // Limpar erro anterior
+      } catch {
+        setOperationError('Erro ao excluir serviço. Tente novamente.');
+      }
+    }
   };
 
   const onSave = async () => {
-    // Simular salvamento
+    if (editingService) {
+      try {
+        await updateService(editingService.id, {
+          name: editingService.name,
+          description: editingService.description,
+          price: editingService.price,
+          category: editingService.category || '',
+        });
+        closeModal();
+        setOperationError(null); // Limpar erro anterior
+      } catch {
+        setOperationError('Erro ao salvar serviço. Tente novamente.');
+      }
+    }
   };
 
   const handleServiceSelect = (service: PartnerService) => {
@@ -93,6 +70,22 @@ const ServicesPage = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+
+      {operationError && (
+        <div
+          style={{
+            marginTop: '16px',
+            padding: '12px',
+            backgroundColor: '#f8d7da',
+            color: '#721c24',
+            border: '1px solid #f5c6cb',
+            borderRadius: '4px',
+            fontSize: '14px',
+          }}
+        >
+          {operationError}
+        </div>
+      )}
 
       <EditServiceModal
         service={editingService}

@@ -4,13 +4,14 @@ import React, { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePartnerServices, PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 import { useBudget } from '@/modules/partner/hooks/useBudget';
-import BudgetServiceSelector from '@/modules/partner/components/budget/BudgetServiceSelector';
-import BudgetSummary from '@/modules/partner/components/budget/BudgetSummary';
-import BudgetLayout from '@/modules/partner/components/budget/BudgetLayout';
+import BudgetServiceSelector from '../../../../modules/partner/components/budget/BudgetServiceSelector';
+import BudgetSummary from '../../../../modules/partner/components/budget/BudgetSummary';
+import BudgetLayout from '../../../../modules/partner/components/budget/BudgetLayout';
 
 const OrcamentoPage = () => {
   const searchParams = useSearchParams();
   const quoteId = searchParams.get('quoteId');
+  // Usar hook real para buscar dados do banco
   const { services, loading: servicesLoading, error: servicesError } = usePartnerServices();
   const { budget, addService, removeService, updateQuantity, updateBudgetInfo, clearBudget } =
     useBudget();
