@@ -8,6 +8,8 @@ import CollectPointSelect from '../../collection/CollectPointSelect';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 import Modal from '@/modules/common/components/Modal/Modal';
 import Select from '@/modules/common/components/Select/Select';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -244,10 +246,11 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         {error && <div className="bcm-error">{error}</div>}
 
         <div className="bcm-actions">
-          <button type="button" onClick={onClose} className="bcm-btn bcm-btn-secondary">
+          <OutlineButton type="button" onClick={onClose}>
             Cancelar
-          </button>
-          <button
+          </OutlineButton>
+
+          <SolidButton
             type="button"
             disabled={!canSubmit || submitting}
             onClick={async () => {
@@ -276,12 +279,11 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
                 setSubmitting(false);
               }
             }}
-            className="bcm-btn bcm-btn-primary"
           >
             {method === 'collect_point'
               ? 'Aplicar ponto de coleta'
               : 'Aplicar data de entrega ao pátio'}
-          </button>
+          </SolidButton>
         </div>
       </Modal>
     </div>
