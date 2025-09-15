@@ -4,7 +4,14 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PartnerServiceApplicationServiceImpl } from '../../services/PartnerServiceApplicationServiceImpl';
-import { PartnerService } from '../../../entities/PartnerService';
+import type { PartnerService } from '../../../entities/PartnerService';
+
+// Mock do PartnerService
+vi.mock('../../../entities/PartnerService', () => ({
+  PartnerService: {
+    create: vi.fn(),
+  },
+}));
 
 // Mock do repositório
 const mockRepository = {
@@ -64,7 +71,8 @@ describe('PartnerServiceApplicationServiceImpl', () => {
 
       // Mock do PartnerService.create
       const { PartnerService } = await import('../../../entities/PartnerService');
-      vi.mocked(PartnerService.create).mockReturnValue({
+      const mockCreate = vi.mocked(PartnerService.create);
+      mockCreate.mockReturnValue({
         success: true,
         data: mockService,
       });
@@ -124,7 +132,8 @@ describe('PartnerServiceApplicationServiceImpl', () => {
 
       // Mock do PartnerService.create
       const { PartnerService } = await import('../../../entities/PartnerService');
-      vi.mocked(PartnerService.create).mockReturnValue({
+      const mockCreate = vi.mocked(PartnerService.create);
+      mockCreate.mockReturnValue({
         success: false,
         error: new Error('Nome do serviço não pode ser vazio'),
       });
