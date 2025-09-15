@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useToast } from '@/modules/common/components/ToastProvider';
 
-export interface PartnerChecklistForm {
+export interface SpecialistChecklistForm {
   date: string;
   odometer: string;
   fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
@@ -81,7 +81,7 @@ export interface VehicleInfo {
   color?: string;
 }
 
-const initialForm: PartnerChecklistForm = {
+const initialForm: SpecialistChecklistForm = {
   date: new Date().toISOString().split('T')[0],
   odometer: '',
   fuelLevel: 'half',
@@ -150,7 +150,7 @@ const initialForm: PartnerChecklistForm = {
   observations: '',
 };
 
-export function usePartnerChecklist() {
+export function useSpecialistChecklist() {
   const { showToast } = useToast();
 
   // Dados mockados para desenvolvimento
@@ -163,7 +163,7 @@ export function usePartnerChecklist() {
     color: 'Prata',
   };
 
-  const [form, setForm] = useState<PartnerChecklistForm>(initialForm);
+  const [form, setForm] = useState<SpecialistChecklistForm>(initialForm);
   const [vehicle] = useState<VehicleInfo | null>(mockVehicle);
   const [loading] = useState(false); // Começar com false para evitar loading
   const [saving, setSaving] = useState(false);
@@ -183,7 +183,7 @@ export function usePartnerChecklist() {
   // }, [quoteId, showToast]);
 
   const setField = (
-    field: keyof PartnerChecklistForm,
+    field: keyof SpecialistChecklistForm,
     value: string | 'ok' | 'attention' | 'critical'
   ) => {
     setForm(prev => ({ ...prev, [field]: value }));

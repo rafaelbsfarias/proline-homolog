@@ -2,14 +2,14 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
-import PartnerInspectionGroups from '@/modules/partner/components/checklist/PartnerInspectionGroups';
+import { useSpecialistChecklist } from '@/modules/specialist/hooks/useSpecialistChecklist';
+import SpecialistInspectionGroups from '@/modules/specialist/components/checklist/SpecialistInspectionGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const ChecklistPage = () => {
   const router = useRouter();
   const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
-    usePartnerChecklist();
+    useSpecialistChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -326,7 +326,7 @@ const ChecklistPage = () => {
               Grupos de Inspeção
             </h2>
 
-            <PartnerInspectionGroups
+            <SpecialistInspectionGroups
               values={{
                 clutch: form.clutch,
                 sparkPlugs: form.sparkPlugs,

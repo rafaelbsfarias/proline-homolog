@@ -1,11 +1,12 @@
 import React from 'react';
-import type { PartnerChecklistForm } from '../hooks/usePartnerChecklist';
+import type { SpecialistChecklistForm } from '../../hooks/useSpecialistChecklist';
+import styles from './SpecialistInspectionGroups.module.css';
 
 type InspectionStatus = 'ok' | 'attention' | 'critical';
 
 interface InspectionItem {
   key: keyof Pick<
-    PartnerChecklistForm,
+    SpecialistChecklistForm,
     | 'clutch'
     | 'sparkPlugs'
     | 'belts'
@@ -38,7 +39,7 @@ interface InspectionItem {
     | 'battery'
   >;
   notesKey: keyof Pick<
-    PartnerChecklistForm,
+    SpecialistChecklistForm,
     | 'clutchNotes'
     | 'sparkPlugsNotes'
     | 'beltsNotes'
@@ -77,7 +78,7 @@ interface InspectionItem {
 
 interface Props {
   values: Pick<
-    PartnerChecklistForm,
+    SpecialistChecklistForm,
     | 'clutch'
     | 'sparkPlugs'
     | 'belts'
@@ -141,7 +142,7 @@ interface Props {
   >;
   onChange: (
     name: keyof Pick<
-      PartnerChecklistForm,
+      SpecialistChecklistForm,
       | 'clutch'
       | 'sparkPlugs'
       | 'belts'
@@ -433,20 +434,7 @@ const inspectionItems: InspectionItem[] = [
   },
 ];
 
-const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
-  const getStatusColor = (status: InspectionStatus) => {
-    switch (status) {
-      case 'ok':
-        return '#10b981';
-      case 'attention':
-        return '#f59e0b';
-      case 'critical':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
-
+const SpecialistInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
   const getStatusLabel = (status: InspectionStatus) => {
     switch (status) {
       case 'ok':
@@ -473,109 +461,33 @@ const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className={styles.container}>
       {Object.entries(groupedItems).map(([category, items]) => (
-        <div
-          key={category}
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e1e5e9',
-            borderRadius: '12px',
-            padding: '20px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: '700',
-              color: '#111827',
-              marginBottom: '16px',
-              borderBottom: '2px solid #e1e5e9',
-              paddingBottom: '8px',
-            }}
-          >
-            {category}
-          </h3>
+        <div key={category} className={styles.categoryCard}>
+          <h3 className={styles.categoryTitle}>{category}</h3>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-              gap: '20px',
-            }}
-          >
+          <div className={styles.itemsGrid}>
             {items.map(item => (
-              <div
-                key={item.key}
-                style={{
-                  background: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  padding: '16px',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <h4
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#111827',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      {item.label}
-                    </h4>
+              <div key={item.key} className={styles.itemCard}>
+                <div className={styles.itemHeader}>
+                  <div className={styles.itemInfo}>
+                    <h4 className={styles.itemTitle}>{item.label}</h4>
                     {item.description && (
-                      <p
-                        style={{
-                          fontSize: '12px',
-                          color: '#6b7280',
-                          margin: 0,
-                          fontStyle: 'italic',
-                        }}
-                      >
-                        {item.description}
-                      </p>
+                      <p className={styles.itemDescription}>{item.description}</p>
                     )}
                   </div>
 
                   <span
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      backgroundColor: getStatusColor(values[item.key]),
-                      color: 'white',
-                      fontWeight: '600',
-                      marginLeft: '12px',
-                    }}
+                    className={`${styles.statusBadge} ${styles[`status${values[item.key].charAt(0).toUpperCase() + values[item.key].slice(1)}`]}`}
                   >
                     {getStatusLabel(values[item.key])}
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className={styles.itemContent}>
+                  <div className={styles.radioGroup}>
                     <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border:
-                          values[item.key] === 'ok' ? '2px solid #10b981' : '2px solid transparent',
-                        backgroundColor: values[item.key] === 'ok' ? '#f0fdf4' : 'transparent',
-                      }}
+                      className={`${styles.radioLabel} ${values[item.key] === 'ok' ? styles.radioLabelOk : ''}`}
                     >
                       <input
                         type="radio"
@@ -583,30 +495,13 @@ const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
                         value="ok"
                         checked={values[item.key] === 'ok'}
                         onChange={() => onChange(item.key, 'ok')}
-                        style={{ margin: 0 }}
+                        className={styles.radioInput}
                       />
-                      <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-                        OK
-                      </span>
+                      <span className={styles.radioText}>OK</span>
                     </label>
 
                     <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border:
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                            ? '2px solid #ef4444'
-                            : '2px solid transparent',
-                        backgroundColor:
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                            ? '#fef2f2'
-                            : 'transparent',
-                      }}
+                      className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
                     >
                       <input
                         type="radio"
@@ -616,40 +511,19 @@ const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
                           values[item.key] === 'attention' || values[item.key] === 'critical'
                         }
                         onChange={() => onChange(item.key, 'attention')}
-                        style={{ margin: 0 }}
+                        className={styles.radioInput}
                       />
-                      <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-                        NOK
-                      </span>
+                      <span className={styles.radioText}>NOK</span>
                     </label>
                   </div>
 
-                  <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      Observações
-                    </label>
+                  <div className={styles.notesSection}>
+                    <label className={styles.notesLabel}>Observações</label>
                     <textarea
                       value={values[item.notesKey]}
                       onChange={e => onChange(item.notesKey, e.target.value)}
                       placeholder="Digite observações (opcional)"
-                      style={{
-                        width: '100%',
-                        minHeight: '60px',
-                        padding: '8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                      }}
+                      className={styles.notesTextarea}
                     />
                   </div>
                 </div>
@@ -662,4 +536,4 @@ const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
   );
 };
 
-export default PartnerInspectionGroups;
+export default SpecialistInspectionGroups;
