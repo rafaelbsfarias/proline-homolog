@@ -117,3 +117,4 @@ async function getServicesHandler(req: AuthenticatedRequest): Promise<NextRespon
 }
 
 export const GET = withPartnerAuth(getServicesHandler);
+export const POST = withPartnerAuth(createServiceHandler);
