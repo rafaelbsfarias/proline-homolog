@@ -1,45 +1,53 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="20" failures="0" errors="0" time="0.016602608">
-    <testsuite name="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" timestamp="2025-09-15T16:30:40.755Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.016602608">
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar serviço quando encontrado" time="0.003515924">
+<testsuites name="vitest tests" tests="20" failures="2" errors="0" time="0.013485306">
+    <testsuite name="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" timestamp="2025-09-15T16:43:01.983Z" hostname="pop-os" tests="20" failures="2" errors="0" skipped="0" time="0.013485306">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve criar serviço com sucesso" time="0.004222758">
+            <failure message="vi.mocked(...).mockReturnValue is not a function" type="TypeError">
+TypeError: vi.mocked(...).mockReturnValue is not a function
+ ❯ modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts:67:40
+            </failure>
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando serviço não encontrado" time="0.000737315">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar ao tentar criar serviço com nome duplicado" time="0.002130743">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando ocorre erro" time="0.000603284">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar quando validação do serviço falha" time="0.000584945">
+            <failure message="vi.mocked(...).mockReturnValue is not a function" type="TypeError">
+TypeError: vi.mocked(...).mockReturnValue is not a function
+ ❯ modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts:127:40
+            </failure>
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista de serviços" time="0.001122685">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve atualizar serviço com sucesso" time="0.000794137">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista vazia quando ocorre erro" time="0.0008092">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando serviço não existe" time="0.000195795">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve salvar serviço com sucesso" time="0.000687545">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando nome já existe para outro serviço do mesmo parceiro" time="0.000261547">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve lançar erro quando falha ao salvar" time="0.001244663">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve desativar serviço com sucesso" time="0.000296013">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve deletar serviço com sucesso" time="0.000480344">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve falhar quando serviço já está desativado" time="0.000159464">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve lançar erro quando falha ao deletar" time="0.000385891">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve reativar serviço com sucesso" time="0.000379073">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByPartnerId &gt; deve retornar serviços do parceiro" time="0.000489038">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve falhar quando serviço já está ativo" time="0.000286583">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findActiveByPartnerId &gt; deve retornar apenas serviços ativos do parceiro" time="0.000442354">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar serviço quando encontrado" time="0.000185293">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByName &gt; deve buscar serviços por nome" time="0.000449819">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar null quando serviço não encontrado" time="0.000134637">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve contar serviços do parceiro" time="0.00025041">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServicesByPartner &gt; deve retornar serviços paginados do parceiro" time="0.000348708">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000362283">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome sem filtro de parceiro" time="0.000329951">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar true quando serviço existe" time="0.000391856">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome com filtro de parceiro" time="0.000553431">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar false quando serviço não existe" time="0.000340242">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar true quando nome é único" time="0.00019261">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve desativar serviços com sucesso" time="0.00039637">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar false quando nome já existe" time="0.000181074">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000260771">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve excluir serviço específico da validação quando informado" time="0.000148131">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar serviços paginados" time="0.000614999">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateAllServices &gt; deve desativar todos os serviços do parceiro" time="0.000244214">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar resultado vazio quando ocorre erro" time="0.000327151">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; countActiveServices &gt; deve contar serviços ativos do parceiro" time="0.000169754">
         </testcase>
     </testsuite>
 </testsuites>

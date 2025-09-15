@@ -27,6 +27,6 @@ export {
 export type { PartnerServiceRepository } from './repositories/PartnerServiceRepository';
 export { SupabasePartnerServiceRepository } from './repositories/SupabasePartnerServiceRepository';
 
-// Re-export dos tipos comuns do domínio
-export type { Result } from '@/modules/common/types/domain';
-export { createSuccess, createError } from '@/modules/common/types/domain';
+// Application Services
+export type { PartnerServiceApplicationService } from './application/services/PartnerServiceApplicationService';
+export { PartnerServiceApplicationServiceImpl } from './application/services/PartnerServiceApplicationServiceImpl';
