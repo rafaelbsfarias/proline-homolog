@@ -91,8 +91,9 @@ const PartnerDashboard = () => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
-  const handleEditQuote = () => {
-    // Implementar lógica para editar orçamento
+  const handleEditQuote = (quote: PendingQuoteDisplay) => {
+    // Navegar para a página de orçamento com o ID da cotação
+    router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
   const handleDeleteQuote = () => {
