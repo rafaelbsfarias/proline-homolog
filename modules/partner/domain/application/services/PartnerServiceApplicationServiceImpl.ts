@@ -14,6 +14,7 @@ import {
   PartnerServiceFilters,
   PaginatedPartnerServices,
 } from './PartnerServiceApplicationService';
+import { getCacheService, CACHE_KEYS } from '@/modules/common/services/cache/CacheService';
 
 /**
  * Implementação do Application Service para PartnerService
@@ -21,6 +22,7 @@ import {
  */
 export class PartnerServiceApplicationServiceImpl implements PartnerServiceApplicationService {
   private readonly logger = getLogger('PartnerServiceApplicationService');
+  private readonly cache = getCacheService();
 
   constructor(private readonly repository: PartnerServiceRepository) {}
 
@@ -69,6 +71,11 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
 
       // Salvar no repositório
       const savedService = await this.repository.save(createResult.data);
+
+      // Invalidar cache do parceiro
+      this.cache.invalidatePartnerServices(command.partnerId);
+      // Invalidar contagem de serviços ativos
+      this.cache.invalidateActiveServicesCount(command.partnerId);
 
       this.logger.info('Serviço criado com sucesso', {
         serviceId: savedService.id,
@@ -158,6 +165,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       // Salvar no repositório
       const savedService = await this.repository.save(updatedService);
 
+      // Invalidar cache do serviço específico e do parceiro
+      this.cache.invalidateService(savedService.id);
+      this.cache.invalidatePartnerServices(savedService.partnerId);
+      // Invalidar contagem de serviços ativos
+      this.cache.invalidateActiveServicesCount(savedService.partnerId);
+
       this.logger.info('Serviço atualizado com sucesso', {
         serviceId: savedService.id,
         partnerId: savedService.partnerId,
@@ -201,6 +214,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       // Salvar no repositório
       await this.repository.save(deactivatedService);
 
+      // Invalidar cache do serviço específico e do parceiro
+      this.cache.invalidateService(serviceId);
+      this.cache.invalidatePartnerServices(existingService.partnerId);
+      // Invalidar contagem de serviços ativos
+      this.cache.invalidateActiveServicesCount(existingService.partnerId);
+
       this.logger.info('Serviço desativado com sucesso', {
         serviceId,
         partnerId: existingService.partnerId,
@@ -241,6 +260,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       // Salvar no repositório
       const savedService = await this.repository.save(reactivatedService);
 
+      // Invalidar cache do serviço específico e do parceiro
+      this.cache.invalidateService(serviceId);
+      this.cache.invalidatePartnerServices(existingService.partnerId);
+      // Invalidar contagem de serviços ativos
+      this.cache.invalidateActiveServicesCount(existingService.partnerId);
+
       this.logger.info('Serviço reativado com sucesso', {
         serviceId,
         partnerId: existingService.partnerId,
@@ -262,9 +287,26 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     try {
       this.logger.debug('Buscando serviço por ID', { serviceId });
 
+      // Criar chave de cache
+      const cacheKey = CACHE_KEYS.service(serviceId);
+
+      // Verificar cache primeiro
+      const cachedService = this.cache.get<PartnerService | null>(cacheKey);
+      if (cachedService !== null) {
+        this.logger.debug('Serviço retornado do cache', { serviceId });
+        return createSuccess(cachedService);
+      }
+
       const service = await this.repository.findById(serviceId);
 
-      this.logger.debug('Serviço encontrado', { serviceId, found: service !== null });
+      // Armazenar no cache (TTL de 10 minutos para itens individuais)
+      this.cache.set(cacheKey, service, 600000);
+
+      this.logger.debug('Serviço encontrado', {
+        serviceId,
+        found: service !== null,
+        cached: false,
+      });
 
       return createSuccess(service);
     } catch (error) {
@@ -287,6 +329,16 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     try {
       this.logger.debug('Listando serviços do parceiro', { partnerId, page, limit, filters });
 
+      // Criar chave de cache
+      const cacheKey = CACHE_KEYS.partnerServices(partnerId, page, limit, filters?.nameFilter);
+
+      // Verificar cache primeiro
+      const cachedResult = this.cache.get<PaginatedPartnerServices>(cacheKey);
+      if (cachedResult) {
+        this.logger.debug('Resultado retornado do cache', { partnerId, cacheKey });
+        return createSuccess(cachedResult);
+      }
+
       const paginationOptions = {
         page,
         limit,
@@ -296,12 +348,16 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
 
       const result = await this.repository.findWithPagination(paginationOptions);
 
+      // Armazenar no cache (TTL de 5 minutos para listagens)
+      this.cache.set(cacheKey, result, 300000);
+
       this.logger.debug('Serviços do parceiro listados', {
         partnerId,
         count: result.services.length,
         total: result.total,
         page,
         limit,
+        cached: false,
       });
 
       return createSuccess(result);
@@ -355,6 +411,16 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     try {
       this.logger.debug('Pesquisando serviços por nome', { name, partnerId });
 
+      // Criar chave de cache
+      const cacheKey = CACHE_KEYS.searchServices(name, partnerId);
+
+      // Verificar cache primeiro
+      const cachedServices = this.cache.get<PartnerService[]>(cacheKey);
+      if (cachedServices) {
+        this.logger.debug('Serviços retornados do cache', { name, partnerId, cacheKey });
+        return createSuccess(cachedServices);
+      }
+
       let services: PartnerService[];
 
       if (partnerId) {
@@ -368,10 +434,14 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
         services = await this.repository.findByName(name);
       }
 
+      // Armazenar no cache (TTL de 3 minutos para pesquisas)
+      this.cache.set(cacheKey, services, 180000);
+
       this.logger.debug('Serviços encontrados por nome', {
         name,
         partnerId,
         count: services.length,
+        cached: false,
       });
 
       return createSuccess(services);
@@ -394,6 +464,21 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     try {
       this.logger.debug('Buscando serviços por faixa de preço', { minPrice, maxPrice, partnerId });
 
+      // Criar chave de cache
+      const cacheKey = CACHE_KEYS.priceRangeServices(minPrice, maxPrice, partnerId);
+
+      // Verificar cache primeiro
+      const cachedServices = this.cache.get<PartnerService[]>(cacheKey);
+      if (cachedServices) {
+        this.logger.debug('Serviços retornados do cache', {
+          minPrice,
+          maxPrice,
+          partnerId,
+          cacheKey,
+        });
+        return createSuccess(cachedServices);
+      }
+
       let services = await this.repository.findByPriceRange(minPrice, maxPrice);
 
       // Filtrar por parceiro se especificado
@@ -401,11 +486,15 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
         services = services.filter(service => service.partnerId === partnerId);
       }
 
+      // Armazenar no cache (TTL de 3 minutos para pesquisas)
+      this.cache.set(cacheKey, services, 180000);
+
       this.logger.debug('Serviços encontrados por faixa de preço', {
         minPrice,
         maxPrice,
         partnerId,
         count: services.length,
+        cached: false,
       });
 
       return createSuccess(services);
@@ -429,10 +518,27 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     try {
       this.logger.debug('Contando serviços ativos do parceiro', { partnerId });
 
+      // Criar chave de cache
+      const cacheKey = CACHE_KEYS.activeServicesCount(partnerId);
+
+      // Verificar cache primeiro
+      const cachedCount = this.cache.get<number>(cacheKey);
+      if (cachedCount !== null) {
+        this.logger.debug('Contagem retornada do cache', { partnerId, count: cachedCount });
+        return createSuccess(cachedCount);
+      }
+
       const activeServices = await this.repository.findActiveByPartnerId(partnerId);
       const count = activeServices.length;
 
-      this.logger.debug('Contagem de serviços ativos concluída', { partnerId, count });
+      // Armazenar no cache (TTL de 2 minutos para contagens)
+      this.cache.set(cacheKey, count, 120000);
+
+      this.logger.debug('Contagem de serviços ativos concluída', {
+        partnerId,
+        count,
+        cached: false,
+      });
 
       return createSuccess(count);
     } catch (error) {
@@ -451,6 +557,11 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       this.logger.debug('Desativando todos os serviços do parceiro', { partnerId });
 
       const count = await this.repository.deactivateAllByPartnerId(partnerId);
+
+      // Invalidar cache do parceiro
+      this.cache.invalidatePartnerServices(partnerId);
+      // Invalidar contagem de serviços ativos
+      this.cache.invalidateActiveServicesCount(partnerId);
 
       this.logger.info('Todos os serviços do parceiro desativados', { partnerId, count });
 
