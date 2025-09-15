@@ -149,7 +149,7 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
             return { names: '' };
           }}
           onNavigateToDetails={vehicleId => {
-            window.location.href = `/dashboard/admin/vehicle/${vehicleId}`;
+            window.location.href = `/dashboard/vehicle/${vehicleId}`;
           }}
         />
       )}

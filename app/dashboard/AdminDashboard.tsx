@@ -26,7 +26,7 @@ const AdminDashboard: React.FC = () => {
   const [usersCounterLoading, setUsersCounterLoading] = useState(true);
   const [vehiclesCounterLoading, setVehiclesCounterLoading] = useState(true);
   const [dataPanelLoading, setDataPanelLoading] = useState(true);
-  const [partnersCardLoading, setPartnersCardLoading] = useState(true);
+  const [partnersCardLoading, setPartnersCardLoading] = useState(false);
 
   const showOverallLoader =
     userLoading ||
@@ -111,7 +111,7 @@ const AdminDashboard: React.FC = () => {
         <DataPanel onLoadingChange={setDataPanelLoading} />
       </div>
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
-        <PartnersCard onLoadingChange={setPartnersCardLoading} />
+        <PartnersCard />
       </div>
     </div>
   );
