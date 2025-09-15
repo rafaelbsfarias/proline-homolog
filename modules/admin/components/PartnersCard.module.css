@@ -79,9 +79,23 @@
   background: #f8f9fa;
 }
 
-.companyName {
-  font-weight: 500;
-  color: #333;
+.companyCell {
+  padding: 12px 8px;
+}
+
+.servicesCell {
+  text-align: center;
+  padding: 12px 8px;
+}
+
+.budgetCell {
+  text-align: center;
+  padding: 12px 8px;
+}
+
+.numberCell {
+  text-align: center;
+  padding: 12px 8px;
 }
 
 .servicesCount {

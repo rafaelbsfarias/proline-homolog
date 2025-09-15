@@ -26,7 +26,7 @@ const AdminDashboard: React.FC = () => {
   const [usersCounterLoading, setUsersCounterLoading] = useState(true);
   const [vehiclesCounterLoading, setVehiclesCounterLoading] = useState(true);
   const [dataPanelLoading, setDataPanelLoading] = useState(true);
-  const [partnersCardLoading, setPartnersCardLoading] = useState(true);
+  const [partnersCardLoading, setPartnersCardLoading] = useState(false);
 
   const showOverallLoader =
     userLoading ||
