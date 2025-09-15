@@ -114,8 +114,6 @@ const PartnerDashboard = () => {
 
   const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client_name', header: 'Cliente' },
-    { key: 'service_description', header: 'Serviço' },
     { key: 'status', header: 'Status' },
     { key: 'total_value', header: 'Valor' },
     { key: 'date', header: 'Data' },
@@ -123,8 +121,6 @@ const PartnerDashboard = () => {
 
   const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client_name', header: 'Cliente' },
-    { key: 'service_description', header: 'Serviço' },
     { key: 'status', header: 'Status' },
   ];
 
