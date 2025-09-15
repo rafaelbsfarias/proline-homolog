@@ -1,76 +1,129 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="15" failures="3" errors="0" time="0.066806995">
-    <testsuite name="test/unit/set-vehicles-collection.test.ts" timestamp="2025-09-11T03:47:23.887Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0">
-        <testcase classname="test/unit/set-vehicles-collection.test.ts" name="test/unit/set-vehicles-collection.test.ts" time="0">
-            <failure message="No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts" type="Error">
-Error: No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts
-            </failure>
+<testsuites name="vitest tests" tests="60" failures="0" errors="0" time="0.028679873">
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" timestamp="2025-09-15T15:15:11.382Z" hostname="pop-os" tests="16" failures="0" errors="0" skipped="0" time="0.008398849">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve criar ServiceName com nome válido" time="0.001856801">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome vazio" time="0.000618844">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome apenas espaços" time="0.000458775">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito curto" time="0.000395636">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito longo" time="0.000354535">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com caracteres especiais perigosos" time="0.00064685">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve aceitar nome com espaços internos" time="0.000285647">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no início" time="0.000440407">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no fim" time="0.00022675">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar true para nomes iguais" time="0.000174399">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar false para nomes diferentes" time="0.000113887">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve ser case sensitive" time="0.000085953">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toString &gt; deve retornar o valor como string" time="0.000147628">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.0002403">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; value getter &gt; deve retornar o valor interno" time="0.000160286">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000666453">
         </testcase>
     </testsuite>
-    <testsuite name="tests/admin/api/accept-client-proposed-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.006714779">
-        <testcase classname="tests/admin/api/accept-client-proposed-date.test.ts" name="admin accept-client-proposed-date (integrated with orchestrator) &gt; creates requested if missing, links vehicles, sets status, approves collection" time="0.005713383">
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" timestamp="2025-09-15T15:15:11.383Z" hostname="pop-os" tests="21" failures="0" errors="0" skipped="0" time="0.011470027">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (número)" time="0.002885416">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (string)" time="0.001029267">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço negativo" time="0.000534311">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço muito alto" time="0.000281729">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com string inválida" time="0.000261568">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com NaN" time="0.000174853">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com Infinity" time="0.000151553">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço zero" time="0.000339921">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço com 2 casas decimais" time="0.000269263">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com mais de 2 casas decimais" time="0.000285959">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores inteiros" time="0.000233604">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores decimais" time="0.000237651">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar true para preços iguais" time="0.000158191">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar false para preços diferentes" time="0.000312979">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve comparar corretamente preços próximos" time="0.000136875">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isGreaterThan deve funcionar corretamente" time="0.000162287">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isLessThan deve funcionar corretamente" time="0.000124662">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toString &gt; deve retornar o preço formatado" time="0.000301479">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toJSON &gt; deve retornar o valor numérico para JSON" time="0.000114583">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; value getter &gt; deve retornar o valor numérico interno" time="0.000147457">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000713883">
         </testcase>
     </testsuite>
-    <testsuite name="tests/admin/api/propose-collection-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.007258229">
-        <testcase classname="tests/admin/api/propose-collection-date.test.ts" name="admin propose-collection-date (integrated with orchestrator) &gt; upserts requested, syncs dates, links vehicles, and removes old requested orphans" time="0.006300145">
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" timestamp="2025-09-15T15:15:11.386Z" hostname="pop-os" tests="23" failures="0" errors="0" skipped="0" time="0.008810997">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve criar ServiceDescription com descrição válida" time="0.00177858">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/history/enrich.test.ts" timestamp="2025-09-11T03:47:23.890Z" hostname="pop-os" tests="3" failures="0" errors="0" skipped="0" time="0.010877937">
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; keeps plate under same collection when vehicles.collection_id is set" time="0.002193877">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição vazia" time="0.000482686">
         </testcase>
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; demonstrates jumping: when vehicles.collection_id is missing and date moved, enrichment assigns plate to the new date row" time="0.000527365">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição apenas espaços" time="0.000562699">
         </testcase>
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; one-plate-per-line formatting: single vehicle produces a single-plate row; multiple can be grouped" time="0.006624491">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito curta" time="0.000238882">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/summary/history-no-fallback.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.002674456">
-        <testcase classname="tests/admin/summary/history-no-fallback.mocked.test.ts" name="clientCollectionsSummary - no fallback for history &gt; keeps collectionHistory empty when no detailed snapshot exists" time="0.001365989">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito longa" time="0.000171178">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/summary/history-source.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.007893318">
-        <testcase classname="tests/admin/summary/history-source.mocked.test.ts" name="clientCollectionsSummary - uses detailed immutable history &gt; preserves vehicles/plates from detailed snapshot without enrich()" time="0.006956569">
-            <failure message="expected [] to have a length of 1 but got +0" type="AssertionError">
-AssertionError: expected [] to have a length of 1 but got +0
-
-- Expected
-+ Received
-
-- 1
-+ 0
-
- ❯ tests/admin/summary/history-source.mocked.test.ts:103:35
-            </failure>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição no limite máximo" time="0.000166191">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/client/api/accept-proposal.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="2" failures="0" errors="0" skipped="0" time="0.008841181">
-        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; links vehicles to collection_id and approves collection on final acceptance" time="0.006614045">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição com espaços internos" time="0.000121366">
         </testcase>
-        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; finalizes in one click when starting from SOLICITAÇÃO DE MUDANÇA DE DATA" time="0.001211902">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no início" time="0.000131767">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/common/services/collection-orchestrator.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.005922482">
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; upserts a requested collection and prevents overwriting approved" time="0.002720747">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no fim" time="0.00014799">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; syncs vehicle dates only for allowed statuses" time="0.000831691">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com caracteres de controle" time="0.000135363">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; links vehicles to a collection by address/date and allowed statuses" time="0.00064337">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar resumo para descrições longas" time="0.000167718">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; approves a requested collection" time="0.000463794">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar descrição completa para textos curtos" time="0.000098125">
         </testcase>
-    </testsuite>
-    <testsuite name="app/api/admin/create-vehicle/route.test.ts" timestamp="2025-09-11T03:47:23.894Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.016624613">
-        <testcase classname="app/api/admin/create-vehicle/route.test.ts" name="POST /api/admin/create-vehicle &gt; adiciona veículo para cliente com sucesso (admin)" time="0.015144266">
-            <failure message="expected 403 to be 200 // Object.is equality" type="AssertionError">
-AssertionError: expected 403 to be 200 // Object.is equality
-
-- Expected
-+ Received
-
-- 200
-+ 403
-
- ❯ app/api/admin/create-vehicle/route.test.ts:82:24
-            </failure>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; length &gt; deve retornar o comprimento correto da descrição" time="0.000136729">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar true para descrições iguais" time="0.000466135">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar false para descrições diferentes" time="0.000227121">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve ser case sensitive" time="0.000139373">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve encontrar palavra-chave existente" time="0.000190912">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve retornar false para palavra-chave inexistente" time="0.00013001">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve ser case insensitive" time="0.000100624">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toString &gt; deve retornar o valor como string" time="0.000172685">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.000129736">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; value getter &gt; deve retornar o valor interno" time="0.000111234">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000666406">
         </testcase>
     </testsuite>
 </testsuites>
