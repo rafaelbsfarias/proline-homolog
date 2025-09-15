@@ -1,0 +1,57 @@
+.detailTable {
+  width: 100%;
+  border-collapse: separate; /* preciso ser separate pra borda arredondada funcionar */
+  border-spacing: 0; /* sem espaçamento extra */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  color: #203243;
+}
+
+.detailTable th,
+.detailTable td {
+  border: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
+/* Cores e estilos base */
+.detailTable th {
+  text-align: left;
+  background-color: #f4f6f8;
+  font-weight: 600;
+  color: #596475;
+  width: 180px;
+}
+
+.detailTable td {
+  font-weight: 500;
+  color: #33475b;
+  background-color: #ffffff;
+}
+
+/* Linhas pares */
+.detailTable tr:nth-child(even) td {
+  background-color: #f9fafb;
+}
+
+/* Hover discreto */
+.detailTable tr:hover td {
+  background-color: #e6f0fa;
+}
+
+/* Bordas arredondadas: apenas primeira e última célula da linha */
+.detailTable tr:first-child th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.detailTable tr:first-child td:last-child {
+  border-top-right-radius: 12px;
+}
+
+.detailTable tr:last-child th:first-child {
+  border-bottom-left-radius: 12px;
+}
+
+.detailTable tr:last-child td:last-child {
+  border-bottom-right-radius: 12px;
+}
