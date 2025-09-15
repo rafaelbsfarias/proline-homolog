@@ -111,7 +111,7 @@ const AdminDashboard: React.FC = () => {
         <DataPanel onLoadingChange={setDataPanelLoading} />
       </div>
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
-        <PartnersCard />
+        <PartnersCard onLoadingChange={setPartnersCardLoading} />
       </div>
     </div>
   );
