@@ -15,6 +15,6 @@ export const CalendarButton: React.FC<Props> = ({ className, onClick, buttonRef 
     aria-label="Abrir calendário"
     ref={buttonRef}
   >
-    <LuCalendarDays />
+    <LuCalendarDays className="calendarIcon" />
   </button>
 );
