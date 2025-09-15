@@ -280,17 +280,6 @@ const SpecialistDashboard: React.FC = () => {
                 }
               : null
           }
-          specialistsLoader={async () => {
-            if (!selectedVehicle?.client_id) return { names: '' };
-            const resp = await get<{ success: boolean; names?: string; error?: string }>(
-              `/api/specialist/client-specialists?clientId=${encodeURIComponent(selectedVehicle.client_id)}`
-            );
-            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
-            return { names: '' };
-          }}
-          onNavigateToDetails={vehicleId => {
-            window.location.href = `/dashboard/vehicle/${vehicleId}`;
-          }}
         />
       )}
     </div>

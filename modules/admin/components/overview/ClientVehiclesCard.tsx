@@ -6,7 +6,6 @@ import { useAdminClientName } from '@/modules/admin/hooks/useAdminClientName';
 import { useAdminClientVehicleStatusCounts } from '@/modules/admin/hooks/useAdminClientVehicleStatusCounts';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import type { AdminVehicleData } from '@/modules/admin/hooks/useAdminClientVehicles';
-import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 interface Props {
   clientId: string;
@@ -18,7 +17,6 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
   const [filterStatus, setFilterStatus] = useState('');
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<AdminVehicleData | null>(null);
-  const { get } = useAuthenticatedFetch();
 
   const filters = useMemo(
     () => ({ plate: filterPlate, status: filterStatus }),
@@ -94,7 +92,7 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
           <button
             type="button"
             onClick={() => {
-              setSelectedVehicle(v as any);
+              setSelectedVehicle(v as AdminVehicleData);
               setShowDetails(true);
             }}
             style={{
@@ -141,16 +139,6 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
                 }
               : null
           }
-          specialistsLoader={async () => {
-            const resp = await get<{ success: boolean; names?: string; error?: string }>(
-              `/api/admin/client-specialists?clientId=${encodeURIComponent(clientId)}`
-            );
-            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
-            return { names: '' };
-          }}
-          onNavigateToDetails={vehicleId => {
-            window.location.href = `/dashboard/vehicle/${vehicleId}`;
-          }}
         />
       )}
     </section>
