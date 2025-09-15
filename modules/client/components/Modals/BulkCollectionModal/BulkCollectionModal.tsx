@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './BulkCollectionModal.css';
 import DatePickerBR from '@/modules/common/components/DatePickerBR';
-import CollectPointSelect from '../../collection/CollectPointSelect';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 import Modal from '@/modules/common/components/Modal/Modal';
 import Select from '@/modules/common/components/Select/Select';

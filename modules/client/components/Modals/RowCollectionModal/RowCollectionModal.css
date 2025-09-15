@@ -1,61 +1,21 @@
-.rcm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 10000;
-  padding-top: 40px;
-}
-
-.rcm-modal {
-  background: #fff;
-  color: #222;
-  border-radius: 10px;
-  width: min(560px, 96vw);
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-}
-
-.rcm-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.rcm-title {
-  margin: 0;
-  font-size: 1.15rem;
-}
-
-.rcm-close {
-  background: transparent;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-}
-
 .rcm-method-row {
   display: flex;
-  gap: 12px;
-  align-items: center;
-  margin-bottom: 12px;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .rcm-form-group {
-  margin-bottom: 12px;
+  margin-bottom: 1.5rem;
 }
 
 .rcm-label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
   display: block;
-  margin-bottom: 6px;
+  color: #333;
 }
 
-.rcm-input,
-.rcm-select {
+.rcm-input {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid #ccc;
@@ -76,6 +36,11 @@
   border-radius: 6px;
 }
 
+.rcm-form-group .rcm-select {
+  padding: 0.9rem 2.5rem 0.9rem 1rem;
+  font-size: 1rem;
+}
+
 .rcm-calendar-btn {
   position: absolute;
   right: 6px;
@@ -89,7 +54,9 @@
   height: 28px;
   color: #555;
 }
-.rcm-calendar-btn:hover { color: #111; }
+.rcm-calendar-btn:hover {
+  color: #111;
+}
 
 .rcm-hidden-date {
   position: absolute;
@@ -116,15 +83,4 @@
   border-radius: 6px;
   border: 1px solid transparent;
   cursor: pointer;
-}
-
-.rcm-btn-secondary {
-  border-color: #ccc;
-  background: #fafafa;
-}
-
-.rcm-btn-primary {
-  border-color: #1b5e20;
-  background: #2e7d32;
-  color: #fff;
 }

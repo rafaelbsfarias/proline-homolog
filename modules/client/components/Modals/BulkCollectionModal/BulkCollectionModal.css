@@ -5,7 +5,7 @@
 
 .bcm-date-input {
   width: 100%;
-  padding: 8px 36px 8px 10px;
+  padding: 8px 36px 8px 10px; /* espaço para o ícone */
   border: 1px solid #ccc;
   border-radius: 6px;
 }
@@ -33,53 +33,15 @@
   pointer-events: none;
 }
 
-.bcm-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  z-index: 10000;
-  padding-top: 40px;
-}
-
-.bcm-modal {
-  background: #fff;
-  color: #222;
-  border-radius: 10px;
-  width: min(760px, 96vw);
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-}
-
-.bcm-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.bcm-title {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.bcm-close {
-  background: transparent;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-}
-
 .bcm-form-group {
   margin-bottom: 20px;
 }
+
 .bcm-label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
   display: block;
-  margin-bottom: 18px;
-  font-weight: 500;
+  color: #333;
 }
 
 .bcm-date-input {
@@ -137,16 +99,6 @@
   padding: 10px 16px;
   font-size: 14px;
   border-radius: 8px;
-}
-
-.bcm-btn-secondary {
-  border-color: #ccc;
-  background: #fafafa;
-}
-.bcm-btn-primary {
-  border-color: #1b5e20;
-  background: #2e7d32;
-  color: #fff;
 }
 
 .bcm-form-group .bcm-select {

@@ -1,7 +1,7 @@
 import React from 'react';
 import type { VehicleData } from '../hooks/useClientVehicles';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
-import Pagination from '@/modules/common/components/Pagination';
+import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 
 interface VehicleSectionProps {

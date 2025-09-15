@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
-import RowCollectionModal from '../RowCollectionModal';
+import RowCollectionModal from '../Modals/RowCollectionModal/RowCollectionModal';
 import StatusChips from '../StatusChips';
 import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
@@ -15,7 +15,7 @@ import type { Vehicle } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
-import Pagination from '@/modules/common/components/Pagination';
+import Pagination from '@/modules/common/components/Pagination/Pagination';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
