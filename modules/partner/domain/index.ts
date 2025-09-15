@@ -1,6 +1,6 @@
 /**
  * Domínio Partner - Exportações centralizadas
- * Value Objects e Entities do módulo Partner
+ * Value Objects, Entities e Repositories do módulo Partner
  */
 
 // Value Objects
@@ -22,6 +22,10 @@ export {
   PartnerService,
   ValidationError as PartnerServiceValidationError,
 } from './entities/PartnerService';
+
+// Repositories
+export type { PartnerServiceRepository } from './repositories/PartnerServiceRepository';
+export { SupabasePartnerServiceRepository } from './repositories/SupabasePartnerServiceRepository';
 
 // Re-export dos tipos comuns do domínio
 export type { Result } from '@/modules/common/types/domain';

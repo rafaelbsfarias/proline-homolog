@@ -1,189 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="89" failures="0" errors="0" time="0.050345069">
-    <testsuite name="modules/partner/domain/__tests__/entities/PartnerService.test.ts" timestamp="2025-09-15T15:35:00.365Z" hostname="pop-os" tests="29" failures="0" errors="0" skipped="0" time="0.017273282">
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve criar PartnerService com dados válidos" time="0.002055607">
+<testsuites name="vitest tests" tests="20" failures="0" errors="0" time="0.016602608">
+    <testsuite name="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" timestamp="2025-09-15T16:30:40.755Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.016602608">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar serviço quando encontrado" time="0.003515924">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve falhar com ID vazio" time="0.000443159">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando serviço não encontrado" time="0.000737315">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve falhar com partner ID vazio" time="0.000490309">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando ocorre erro" time="0.000603284">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve falhar com nome inválido" time="0.000307796">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista de serviços" time="0.001122685">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve falhar com preço inválido" time="0.000363063">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista vazia quando ocorre erro" time="0.0008092">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; create &gt; deve falhar com descrição inválida" time="0.000171213">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve salvar serviço com sucesso" time="0.000687545">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; reconstruct &gt; deve reconstruir PartnerService a partir de dados persistidos" time="0.000647712">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve lançar erro quando falha ao salvar" time="0.001244663">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateName &gt; deve atualizar nome com sucesso" time="0.000325218">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve deletar serviço com sucesso" time="0.000480344">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateName &gt; deve falhar com nome inválido" time="0.000155775">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve lançar erro quando falha ao deletar" time="0.000385891">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updatePrice &gt; deve atualizar preço com sucesso" time="0.000232827">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByPartnerId &gt; deve retornar serviços do parceiro" time="0.000489038">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updatePrice &gt; deve falhar com preço inválido" time="0.000144317">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findActiveByPartnerId &gt; deve retornar apenas serviços ativos do parceiro" time="0.000442354">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateDescription &gt; deve atualizar descrição com sucesso" time="0.000226576">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByName &gt; deve buscar serviços por nome" time="0.000449819">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateMultiple &gt; deve atualizar múltiplas propriedades com sucesso" time="0.000224339">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve contar serviços do parceiro" time="0.00025041">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateMultiple &gt; deve atualizar apenas propriedades fornecidas" time="0.000546565">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000362283">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; updateMultiple &gt; deve falhar se alguma propriedade for inválida" time="0.000199985">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar true quando serviço existe" time="0.000391856">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; deactivate/reactivate &gt; deve desativar serviço" time="0.000199565">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar false quando serviço não existe" time="0.000340242">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; deactivate/reactivate &gt; deve reativar serviço" time="0.000204653">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve desativar serviços com sucesso" time="0.00039637">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; canBeOffered deve retornar true para serviço ativo" time="0.000136267">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000260771">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; canBeOffered deve retornar false para serviço inativo" time="0.000073189">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar serviços paginados" time="0.000614999">
         </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; belongsToPartner deve funcionar corretamente" time="0.000103142">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; nameContains deve funcionar corretamente" time="0.000169514">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; descriptionContains deve funcionar corretamente" time="0.000116305">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; isPriceInRange deve funcionar corretamente" time="0.000137614">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; calculateDiscountedPrice deve calcular desconto corretamente" time="0.000162702">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; business logic methods &gt; calculateDiscountedPrice deve falhar com percentual inválido" time="0.000107438">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; toJSON &gt; deve retornar representação JSON correta" time="0.006051516">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; equals &gt; deve retornar true para serviços com mesmo ID" time="0.000197535">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; equals &gt; deve retornar false para serviços com IDs diferentes" time="0.000095334">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/entities/PartnerService.test.ts" name="PartnerService &gt; imutabilidade &gt; deve ser imutável após criação" time="0.001101076">
-        </testcase>
-    </testsuite>
-    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" timestamp="2025-09-15T15:35:00.369Z" hostname="pop-os" tests="23" failures="0" errors="0" skipped="0" time="0.012284629">
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve criar ServiceDescription com descrição válida" time="0.001836142">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição vazia" time="0.00052658">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição apenas espaços" time="0.000587878">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito curta" time="0.000421895">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito longa" time="0.000296039">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição no limite máximo" time="0.000278813">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição com espaços internos" time="0.000212015">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no início" time="0.000235536">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no fim" time="0.000257341">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com caracteres de controle" time="0.000281643">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar resumo para descrições longas" time="0.000349502">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar descrição completa para textos curtos" time="0.00019936">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; length &gt; deve retornar o comprimento correto da descrição" time="0.000196984">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar true para descrições iguais" time="0.000450756">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar false para descrições diferentes" time="0.00026556">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve ser case sensitive" time="0.000376127">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve encontrar palavra-chave existente" time="0.000370452">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve retornar false para palavra-chave inexistente" time="0.00029637">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve ser case insensitive" time="0.000286203">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toString &gt; deve retornar o valor como string" time="0.000368805">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.000263996">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; value getter &gt; deve retornar o valor interno" time="0.000229276">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; imutabilidade &gt; deve ser imutável após criação" time="0.001228974">
-        </testcase>
-    </testsuite>
-    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" timestamp="2025-09-15T15:35:00.371Z" hostname="pop-os" tests="16" failures="0" errors="0" skipped="0" time="0.013345189">
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve criar ServiceName com nome válido" time="0.00275328">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome vazio" time="0.000768704">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome apenas espaços" time="0.00056247">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito curto" time="0.000544509">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito longo" time="0.000631176">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com caracteres especiais perigosos" time="0.000805888">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve aceitar nome com espaços internos" time="0.000305206">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no início" time="0.00042734">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no fim" time="0.000439689">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar true para nomes iguais" time="0.000375574">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar false para nomes diferentes" time="0.000263598">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve ser case sensitive" time="0.000269703">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toString &gt; deve retornar o valor como string" time="0.00038993">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.000488841">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; value getter &gt; deve retornar o valor interno" time="0.000392942">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; imutabilidade &gt; deve ser imutável após criação" time="0.001272687">
-        </testcase>
-    </testsuite>
-    <testsuite name="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" timestamp="2025-09-15T15:35:00.373Z" hostname="pop-os" tests="21" failures="0" errors="0" skipped="0" time="0.007441969">
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (número)" time="0.001292963">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (string)" time="0.000392698">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço negativo" time="0.000408978">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço muito alto" time="0.000289923">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com string inválida" time="0.000193742">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com NaN" time="0.000135215">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com Infinity" time="0.000117448">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço zero" time="0.000335316">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço com 2 casas decimais" time="0.000336639">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com mais de 2 casas decimais" time="0.000233553">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores inteiros" time="0.000224207">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores decimais" time="0.000192468">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar true para preços iguais" time="0.000138054">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar false para preços diferentes" time="0.000210679">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve comparar corretamente preços próximos" time="0.000118396">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isGreaterThan deve funcionar corretamente" time="0.000129885">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isLessThan deve funcionar corretamente" time="0.000126015">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toString &gt; deve retornar o preço formatado" time="0.000198042">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toJSON &gt; deve retornar o valor numérico para JSON" time="0.000093307">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; value getter &gt; deve retornar o valor numérico interno" time="0.000127092">
-        </testcase>
-        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000612169">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar resultado vazio quando ocorre erro" time="0.000327151">
         </testcase>
     </testsuite>
 </testsuites>
