@@ -14,7 +14,7 @@
   border-top: 1px solid #e0e0e0;
 }
 
-.row {
+/* .row {
   margin-top: 1.5rem;
   display: flex;
   gap: 1rem;
@@ -23,20 +23,44 @@
 
 .row select,
 .row .select-wrapper {
-  /* ou a classe interna do seu Select */
-  height: 40px; /* mesmo tamanho do botão */
+  height: 40px;
   display: flex;
+  align-items: center;
+} */
+
+.row {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
   align-items: center;
 }
 
-.solidButtonCustom {
-  padding: 12px;
+.row > * {
+  height: 40px;
+  font-size: 1rem;
+  line-height: 1.2; /* alinhamento vertical do texto */
+  box-sizing: border-box; /* garante que padding não quebre a altura */
+}
+
+.row select,
+.row .select-wrapper select {
+  flex: 1;
+  padding: 0 12px; /* só horizontal */
+  height: 40px;
+  line-height: 40px; /* centraliza verticalmente o texto */
+  display: block;
   border-radius: 8px;
-  border: none;
-  font-weight: 500;
-  cursor: pointer;
+  border: 1px solid #ccc;
+  appearance: none;
+  background-color: #fff;
+}
+
+.solidButtonCustom {
+  height: 40px; /* mesma altura */
+  line-height: 40px; /* centraliza verticalmente o texto */
+  padding: 0 16px; /* horizontal */
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
 }
