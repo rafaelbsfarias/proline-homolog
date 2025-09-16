@@ -131,9 +131,12 @@
 
 .rescheduleSection {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rescheduleSection .datePickerWrapper {
+  width: 100%;
 }
 
 .totalSection {

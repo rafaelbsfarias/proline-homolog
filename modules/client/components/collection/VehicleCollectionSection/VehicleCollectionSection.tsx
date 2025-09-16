@@ -11,6 +11,7 @@ import CalendarMonth from '../Calendar/CalendarMonth';
 import styles from './VehicleCollectionSection.module.css';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import Modal from '@/modules/common/components/Modal/Modal';
 
 interface VehicleCollectionSectionProps {
   onLoadingChange?: (loading: boolean) => void;
@@ -196,28 +197,36 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       </div>
 
       {rescheduleOpenFor && (
-        <div className={styles.rescheduleSection}>
-          <DatePickerBR
-            valueIso={newDateIso}
-            minIso={minIso}
-            disabledDatesIso={(() => {
-              const g = groups.find(x => x.addressId === rescheduleOpenFor);
-              const arr: string[] = [];
-              if (g?.collection_date) arr.push(g.collection_date);
-              if (g?.original_date) arr.push(g.original_date);
-              return arr.filter(Boolean) as string[];
-            })()}
-            onChangeIso={setNewDateIso}
-            ariaLabel="Selecionar nova data"
-          />
-          <OutlineButton
-            onClick={handleRescheduleSubmit}
-            aria-busy={!!busyReschedule[rescheduleOpenFor]}
-            disabled={!!busyReschedule[rescheduleOpenFor]}
-          >
-            {busyReschedule[rescheduleOpenFor] ? 'Enviando…' : 'Enviar sugestão'}
-          </OutlineButton>
-        </div>
+        <Modal
+          isOpen={!!rescheduleOpenFor}
+          onClose={() => setRescheduleOpenFor(null)}
+          title="Sugerir Nova Data"
+          size="sm"
+          showCloseButton
+        >
+          <div className={styles.rescheduleSection}>
+            <DatePickerBR
+              valueIso={newDateIso}
+              minIso={minIso}
+              disabledDatesIso={(() => {
+                const g = groups.find(x => x.addressId === rescheduleOpenFor);
+                const arr: string[] = [];
+                if (g?.collection_date) arr.push(g.collection_date);
+                if (g?.original_date) arr.push(g.original_date);
+                return arr.filter(Boolean) as string[];
+              })()}
+              onChangeIso={setNewDateIso}
+              ariaLabel="Selecionar nova data"
+            />
+            <SolidButton
+              onClick={handleRescheduleSubmit}
+              aria-busy={!!busyReschedule[rescheduleOpenFor]}
+              disabled={!!busyReschedule[rescheduleOpenFor]}
+            >
+              {busyReschedule[rescheduleOpenFor] ? 'Enviando…' : 'Enviar sugestão'}
+            </SolidButton>
+          </div>
+        </Modal>
       )}
 
       <div className={styles.totalSection}>
