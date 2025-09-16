@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CalendarMonth } from '../collection';
+import { CalendarMonth } from '.';
 
 interface CollectionCalendarProps {
   highlightDates: string[];

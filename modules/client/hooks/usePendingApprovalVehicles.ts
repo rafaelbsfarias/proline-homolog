@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { PendingApprovalGroup } from '@/modules/client/components/collection/types';
+import { PendingApprovalGroup } from '@/modules/client/components/Collection/types';
 
 export const usePendingApprovalVehicles = () => {
   const { get, post } = useAuthenticatedFetch();

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { CollectionGroup } from '@/modules/client/components/collection/types';
+import { CollectionGroup } from '@/modules/client/components/Collection/types';
 
 export interface UseCollectionApprovalReturn {
   approveAllCollections: (groups: CollectionGroup[]) => Promise<boolean>;

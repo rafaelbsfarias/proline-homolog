@@ -23,6 +23,10 @@
   margin-bottom: 24px;
 }
 
+.solidButtonLarge {
+  font-size: 1rem;
+}
+
 .dashboard-btn {
   padding: 10px 20px;
   font-size: 16px;
@@ -35,7 +39,10 @@
   cursor: pointer;
   transition: filter 0.2s;
 }
-.dashboard-btn:hover { filter: brightness(1.08); }
+.dashboard-btn:hover {
+  filter: brightness(1.08);
+}
 
-.dashboard-counter { margin-bottom: 24px; }
-
+.dashboard-counter {
+  margin-bottom: 24px;
+}

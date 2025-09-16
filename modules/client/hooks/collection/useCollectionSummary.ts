@@ -5,7 +5,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import type {
   CollectionGroup,
   CollectionSummaryData,
-} from '@/modules/client/components/collection/types';
+} from '@/modules/client/components/Collection/types';
 
 export interface UseCollectionSummaryReturn {
   data: CollectionSummaryData;
