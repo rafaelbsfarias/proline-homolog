@@ -230,28 +230,24 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       )}
 
       <div className={styles.totalSection}>
-        {loading
-          ? 'Carregando valor...'
-          : (() => {
-              const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
-              const approvableTotal = approvableGroups.reduce((sum, g) => {
-                if (typeof g.collection_fee === 'number') {
-                  return sum + g.collection_fee * g.vehicle_count;
-                }
-                return sum;
-              }, 0);
-              const approvableCount = approvableGroups.reduce((sum, g) => sum + g.vehicle_count, 0);
+        {!loading &&
+          (() => {
+            const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
+            if (approvableGroups.length === 0) return null; // nada a exibir
 
-              return approvableGroups.length > 0
-                ? `Total a pagar (${approvableCount} veículo(s)): ${approvableTotal.toLocaleString(
-                    'pt-BR',
-                    {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }
-                  )}`
-                : 'Nenhum item pendente de aprovação';
-            })()}
+            const approvableTotal = approvableGroups.reduce((sum, g) => {
+              if (typeof g.collection_fee === 'number') {
+                return sum + g.collection_fee * g.vehicle_count;
+              }
+              return sum;
+            }, 0);
+            const approvableCount = approvableGroups.reduce((sum, g) => sum + g.vehicle_count, 0);
+
+            return `Total a pagar (${approvableCount} veículo(s)): ${approvableTotal.toLocaleString(
+              'pt-BR',
+              { style: 'currency', currency: 'BRL' }
+            )}`;
+          })()}
       </div>
 
       {(() => {
