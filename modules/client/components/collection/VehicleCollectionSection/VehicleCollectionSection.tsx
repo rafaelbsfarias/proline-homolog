@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import { formatTotalCurrencyBR } from '@/modules/common/utils/format';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';

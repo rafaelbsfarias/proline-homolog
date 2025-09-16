@@ -1,0 +1,21 @@
+.datePickerWrapper {
+  position: relative;
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+}
+
+.datePickerWrapper input {
+  width: 100%;
+  padding: 0.9rem 3.2rem 0.9rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.datePickerWrapper input:focus {
+  outline: none;
+  border-color: #0044a0;
+  box-shadow: 0 0 5px rgba(0, 68, 160, 0.3);
+}

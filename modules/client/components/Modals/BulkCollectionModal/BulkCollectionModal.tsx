@@ -3,12 +3,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './BulkCollectionModal.css';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 import Modal from '@/modules/common/components/Modal/Modal';
 import Select from '@/modules/common/components/Select/Select';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -162,11 +162,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
                 valueIso={eta}
                 minIso={minDate}
                 onChangeIso={setEta}
-                ariaLabel="Data preferencial de coleta (dd/mm/aaaa)"
-                containerClass="bcm-date-field"
-                inputClass="bcm-date-input"
-                buttonClass="bcm-calendar-btn"
-                hiddenInputClass="bcm-hidden-date"
+                aria-label="Data preferencial de coleta (dd/mm/aaaa)"
               />
             </div>
           </>
@@ -177,11 +173,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
               valueIso={eta}
               minIso={minDate}
               onChangeIso={setEta}
-              ariaLabel="Data prevista de chegada ao pátio (dd/mm/aaaa)"
-              containerClass="bcm-date-field"
-              inputClass="bcm-date-input"
-              buttonClass="bcm-calendar-btn"
-              hiddenInputClass="bcm-hidden-date"
+              aria-label="Data prevista de chegada ao pátio (dd/mm/aaaa)"
             />
           </div>
         )}

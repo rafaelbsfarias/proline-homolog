@@ -1,6 +1,6 @@
 .calendarButton {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
@@ -15,5 +15,5 @@
 }
 
 .calendarIcon {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
 }

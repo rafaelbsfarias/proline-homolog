@@ -1,7 +1,6 @@
 .brInput {
   width: 100%;
   padding: 0.9rem 1rem;
-  padding-right: 2.5rem; /* Space for calendar icon */
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 1rem;

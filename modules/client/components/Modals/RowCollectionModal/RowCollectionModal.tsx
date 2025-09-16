@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RowCollectionModal.css';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 import CollectPointSelect from '../../CollectPointSelect';
 import Modal from '@/modules/common/components/Modal/Modal';
 import Radio from '@/modules/common/components/Radio/Radio';
@@ -149,10 +149,6 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                   }
                 }}
                 ariaLabel="Data preferencial de coleta (dd/mm/aaaa)"
-                containerClass="rcm-date-field"
-                inputClass="rcm-date-input"
-                buttonClass="rcm-calendar-btn"
-                hiddenInputClass="rcm-hidden-date"
               />
             </div>
           </>
@@ -173,10 +169,6 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                 }
               }}
               ariaLabel="Data prevista de chegada ao pátio (dd/mm/aaaa)"
-              containerClass="rcm-date-field"
-              inputClass="rcm-date-input"
-              buttonClass="rcm-calendar-btn"
-              hiddenInputClass="rcm-hidden-date"
             />
           </div>
         )}

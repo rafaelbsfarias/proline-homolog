@@ -1,5 +1,6 @@
 import React from 'react';
 import { LuCalendarDays } from 'react-icons/lu';
+import styles from './CalendarButton.module.css';
 
 interface Props {
   className?: string;
@@ -15,6 +16,6 @@ export const CalendarButton: React.FC<Props> = ({ className, onClick, buttonRef 
     aria-label="Abrir calendário"
     ref={buttonRef}
   >
-    <LuCalendarDays className="calendarIcon" />
+    <LuCalendarDays className={styles.calendarIcon} />
   </button>
 );
