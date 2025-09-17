@@ -73,13 +73,16 @@
 
 .counter-actions-wrapper {
   display: flex;
-  align-items: center; /* alinha verticalmente */
-  gap: 12px; /* espaço entre filtros e botões */
+  align-items: baseline;
+  gap: 12px;
 }
 
 .counter-actions {
   display: flex;
   gap: 8px;
+  /* Fine-tuning alignment */
+  position: relative;
+  top: 4px;
 }
 
 .refresh-button,
