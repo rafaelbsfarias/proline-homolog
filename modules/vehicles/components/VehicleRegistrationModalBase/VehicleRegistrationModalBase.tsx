@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './VehicleRegistrationModal.css';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import ClientSearch from '@/modules/common/components/ClientSearch';
@@ -14,6 +14,7 @@ import {
   VehicleFormData,
 } from '../../hooks/useVehicleRegistrationForm';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
+import { LuUpload } from 'react-icons/lu';
 
 export type Vehicle = {
   id: string;
@@ -39,6 +40,9 @@ export interface VehicleRegistrationBaseProps {
 
 function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
   const { isOpen, onClose, onSuccess, userRole, hiddenFields } = props;
+  const [csvData, setCsvData] = useState<VehicleFormData[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSubmittingCsv, setIsSubmittingCsv] = useState(false);
 
   const {
     formData,
@@ -80,10 +84,106 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
       });
       setError(null);
       setSuccess(false);
+      setCsvData([]);
     }
   }, [isOpen, setFormData, setError, setSuccess]);
 
   const handleClose = () => onClose();
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const content = e.target?.result as string;
+
+        const headerMapping: { [key: string]: keyof VehicleFormData } = {
+          placa: 'plate',
+          marca: 'brand',
+          modelo: 'model',
+          cor: 'color',
+          ano: 'year',
+          'km inicial': 'initialKm',
+          'valor fipe': 'fipe_value',
+          observações: 'observations',
+          'previsão de chegada': 'estimated_arrival_date',
+          preparacao: 'preparacao',
+          comercializacao: 'comercializacao',
+        };
+
+        const lines = content.split('\n').filter(line => line.trim() !== '');
+        if (lines.length < 1) {
+          setError('Arquivo CSV vazio ou inválido.');
+          return;
+        }
+
+        const headers = lines[0].split(',').map(header => header.trim().toLowerCase());
+        const mappedHeaders = headers.map(h => headerMapping[h] || (h as keyof VehicleFormData));
+
+        const vehicles: VehicleFormData[] = lines.slice(1).map(line => {
+          const data = line.split(',').map(item => item.trim());
+          const vehicle = mappedHeaders.reduce((obj, nextKey, index) => {
+            if (nextKey) {
+              const key = nextKey as keyof VehicleFormData;
+              const value = data[index];
+
+              if (key === 'preparacao' || key === 'comercializacao') {
+                // @ts-ignore
+                obj[key] = value.toLowerCase() === 'true';
+              } else {
+                // @ts-ignore
+                obj[key] = value;
+              }
+            }
+            return obj;
+          }, {} as Partial<VehicleFormData>);
+          return vehicle as VehicleFormData;
+        });
+        setCsvData(vehicles);
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+  };
+
+  const handleCsvSubmit = async () => {
+    if (csvData.length === 0) {
+      setError('Nenhum dado de CSV para enviar.');
+      return;
+    }
+
+    if (userRole === 'admin' && !selectedClient) {
+      setError('Selecione um cliente para associar aos veículos.');
+      return;
+    }
+
+    setIsSubmittingCsv(true);
+    setError(null);
+
+    let processedCount = 0;
+    try {
+      for (const vehicle of csvData) {
+        const vehicleWithClient = {
+          ...vehicle,
+          clientId: selectedClient?.id || '',
+        };
+        const syntheticEvent = {
+          preventDefault: () => {},
+        } as React.FormEvent<HTMLFormElement>;
+
+        await handleSubmit(syntheticEvent, vehicleWithClient);
+        processedCount++;
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Erro na linha ${processedCount + 2} do CSV: ${msg}`);
+    } finally {
+      setIsSubmittingCsv(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   if (!isOpen) return null;
 
@@ -256,7 +356,35 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
         </div>
 
         <div className="form-actions">
-          <OutlineButton onClick={onClose} disabled={loading}>
+          <div className="csv-upload-section">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+              ref={fileInputRef}
+            />
+            <OutlineButton
+              type="button"
+              onClick={handleUploadClick}
+              disabled={loading || isSubmittingCsv}
+              className="csv-upload-btn"
+            >
+              <LuUpload className="csv-icon" aria-hidden="true" />
+              <span className="csv-label">Carregar CSV</span>
+            </OutlineButton>
+            {csvData.length > 0 && (
+              <SolidButton
+                type="button"
+                onClick={handleCsvSubmit}
+                disabled={loading || isSubmittingCsv}
+                className="btn-sumit-csv"
+              >
+                {isSubmittingCsv ? 'Enviando...' : `Enviar ${csvData.length} Veículos`}
+              </SolidButton>
+            )}
+          </div>
+          <OutlineButton type="button" onClick={onClose} disabled={loading}>
             Cancelar
           </OutlineButton>
           <SolidButton type="submit" disabled={loading}>
