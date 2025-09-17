@@ -5,28 +5,34 @@ import { BudgetItem } from '@/modules/partner/hooks/useBudget';
 
 interface BudgetSummaryProps {
   budgetName: string;
-  clientName: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleBrand: string;
+  vehicleYear?: number;
   selectedServices: BudgetItem[];
   totalValue: number;
   onBudgetNameChange: (name: string) => void;
-  onClientNameChange: (clientName: string) => void;
   onQuantityChange: (serviceId: string, quantity: number) => void;
   onRemoveService: (serviceId: string) => void;
   onSave: () => void;
   onClear: () => void;
+  isLoading?: boolean;
 }
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({
   budgetName,
-  clientName,
+  vehiclePlate,
+  vehicleModel,
+  vehicleBrand,
+  vehicleYear,
   selectedServices,
   totalValue,
   onBudgetNameChange,
-  onClientNameChange,
   onQuantityChange,
   onRemoveService,
   onSave,
   onClear,
+  isLoading = false,
 }) => {
   return (
     <div
@@ -83,35 +89,65 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
           />
         </div>
 
-        <div style={{ marginBottom: '16px' }}>
-          <label
+        {/* Resumo do Veículo */}
+        <div
+          style={{
+            background: '#f8f9fa',
+            border: '1px solid #dee2e6',
+            borderRadius: '8px',
+            padding: '16px',
+            marginTop: '16px',
+          }}
+        >
+          <div
             style={{
-              display: 'block',
               fontSize: '14px',
               fontWeight: '600',
-              color: '#666',
-              marginBottom: '4px',
+              color: '#495057',
+              marginBottom: '12px',
             }}
           >
-            Nome do Cliente
-          </label>
-          <input
-            type="text"
-            value={clientName}
-            onChange={e => onClientNameChange(e.target.value)}
-            placeholder="Ex: João Silva"
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #ddd',
-              borderRadius: '6px',
-              fontSize: '14px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-            }}
-            onFocus={e => (e.target.style.borderColor = '#007bff')}
-            onBlur={e => (e.target.style.borderColor = '#ddd')}
-          />
+            🚗 Informações do Veículo
+          </div>
+
+          {vehiclePlate || vehicleModel || vehicleBrand || vehicleYear ? (
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              {vehiclePlate && (
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Placa:</strong>{' '}
+                  <span
+                    style={{
+                      fontFamily: 'monospace',
+                      background: '#e9ecef',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {vehiclePlate}
+                  </span>
+                </div>
+              )}
+              {vehicleModel && (
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Modelo:</strong> {vehicleModel}
+                </div>
+              )}
+              {vehicleBrand && (
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Marca:</strong> {vehicleBrand}
+                </div>
+              )}
+              {vehicleYear && (
+                <div style={{ marginBottom: '8px' }}>
+                  <strong>Ano:</strong> {vehicleYear}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: '14px', color: '#999', fontStyle: 'italic' }}>
+              Nenhum veículo selecionado
+            </div>
+          )}
         </div>
       </div>
 
@@ -313,12 +349,14 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button
           onClick={onSave}
-          disabled={selectedServices.length === 0 || !budgetName.trim() || !clientName.trim()}
+          disabled={
+            selectedServices.length === 0 || !budgetName.trim() || !vehiclePlate.trim() || isLoading
+          }
           style={{
             width: '100%',
             padding: '12px',
             background:
-              selectedServices.length > 0 && budgetName.trim() && clientName.trim()
+              selectedServices.length > 0 && budgetName.trim() && vehiclePlate.trim() && !isLoading
                 ? '#28a745'
                 : '#ccc',
             color: '#fff',
@@ -327,13 +365,13 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
             fontSize: '14px',
             fontWeight: '600',
             cursor:
-              selectedServices.length > 0 && budgetName.trim() && clientName.trim()
+              selectedServices.length > 0 && budgetName.trim() && vehiclePlate.trim() && !isLoading
                 ? 'pointer'
                 : 'not-allowed',
             transition: 'background-color 0.2s',
           }}
         >
-          Salvar Orçamento
+          {isLoading ? 'Salvando...' : 'Salvar Orçamento'}
         </button>
 
         <button

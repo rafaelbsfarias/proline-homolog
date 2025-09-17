@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePartnerServices, PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 import { useBudget } from '@/modules/partner/hooks/useBudget';
+import { supabase } from '@/modules/common/services/supabaseClient';
 import BudgetServiceSelector from '../../../../modules/partner/components/budget/BudgetServiceSelector';
 import BudgetSummary from '../../../../modules/partner/components/budget/BudgetSummary';
 import BudgetLayout from '../../../../modules/partner/components/budget/BudgetLayout';
@@ -19,6 +20,11 @@ const OrcamentoPage = () => {
   // Estado para controlar se estamos editando ou criando
   const [isEditing, setIsEditing] = React.useState(false);
   const [loadingQuote, setLoadingQuote] = React.useState(false);
+  const [savingBudget, setSavingBudget] = React.useState(false);
+  const [saveMessage, setSaveMessage] = React.useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Carregar dados da cotação se houver quoteId
   useEffect(() => {
@@ -32,7 +38,7 @@ const OrcamentoPage = () => {
       // Simulação de carregamento de dados
       setTimeout(() => {
         // Exemplo de como seria carregar dados de uma cotação existente
-        updateBudgetInfo(`Orçamento #${quoteId}`, 'Cliente Exemplo');
+        updateBudgetInfo(`Orçamento #${quoteId}`, 'ABC-1234', 'Civic', 'Honda', 2020);
 
         // Adicionar alguns serviços como exemplo
         if (services.length > 0) {
@@ -66,16 +72,107 @@ const OrcamentoPage = () => {
   };
 
   const handleBudgetNameChange = (name: string) => {
-    updateBudgetInfo(name, budget.clientName);
-  };
-
-  const handleClientNameChange = (clientName: string) => {
-    updateBudgetInfo(budget.name, clientName);
+    updateBudgetInfo(
+      name,
+      budget.vehiclePlate,
+      budget.vehicleModel,
+      budget.vehicleBrand,
+      budget.vehicleYear
+    );
   };
 
   const handleSaveBudget = async () => {
-    // Implementar salvamento do orçamento na API
-    // Por enquanto, apenas placeholder. Em produção, implementar chamada para API
+    if (!budget.name.trim()) {
+      setSaveMessage({ type: 'error', text: 'Por favor, informe o nome do orçamento.' });
+      return;
+    }
+
+    if (!budget.vehiclePlate.trim()) {
+      setSaveMessage({ type: 'error', text: 'Por favor, informe a placa do veículo.' });
+      return;
+    }
+
+    if (budget.items.length === 0) {
+      setSaveMessage({ type: 'error', text: 'Adicione pelo menos um serviço ao orçamento.' });
+      return;
+    }
+
+    setSavingBudget(true);
+    setSaveMessage(null);
+
+    try {
+      // Verificar se o usuário está autenticado
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setSaveMessage({ type: 'error', text: 'Usuário não autenticado. Faça login novamente.' });
+        return;
+      }
+
+      // Preparar dados para salvar
+      const budgetData = {
+        partner_id: user.id,
+        name: budget.name.trim(),
+        vehicle_plate: budget.vehiclePlate.trim(),
+        vehicle_model: budget.vehicleModel?.trim() || null,
+        vehicle_brand: budget.vehicleBrand?.trim() || null,
+        vehicle_year: budget.vehicleYear || null,
+        total_value: budget.totalValue,
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Salvar o orçamento
+      const { data: savedBudget, error: budgetError } = await supabase
+        .from('partner_budgets')
+        .insert(budgetData)
+        .select()
+        .single();
+
+      if (budgetError) {
+        setSaveMessage({ type: 'error', text: 'Erro ao salvar orçamento. Tente novamente.' });
+        return;
+      }
+
+      // Preparar e salvar os itens do orçamento
+      const budgetItems = budget.items.map(item => ({
+        budget_id: savedBudget.id,
+        service_id: item.service.id,
+        description: item.service.name,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        total_price: item.totalPrice,
+        created_at: new Date().toISOString(),
+      }));
+
+      const { error: itemsError } = await supabase.from('partner_budget_items').insert(budgetItems);
+
+      if (itemsError) {
+        // Tentar remover o orçamento se os itens falharam
+        await supabase.from('partner_budgets').delete().eq('id', savedBudget.id);
+        setSaveMessage({ type: 'error', text: 'Erro ao salvar serviços do orçamento.' });
+        return;
+      }
+
+      setSaveMessage({
+        type: 'success',
+        text: `Orçamento "${budget.name}" salvo com sucesso!`,
+      });
+
+      // Limpar o orçamento após salvar com sucesso
+      setTimeout(() => {
+        clearBudget();
+        setSaveMessage(null);
+      }, 3000);
+    } catch {
+      setSaveMessage({ type: 'error', text: 'Erro de conexão. Tente novamente.' });
+    } finally {
+      setSavingBudget(false);
+    }
   };
 
   const handleClearBudget = () => {
@@ -104,6 +201,25 @@ const OrcamentoPage = () => {
               ? 'Edite os serviços selecionados para este orçamento'
               : 'Selecione os serviços desejados para compor seu orçamento'}
           </p>
+
+          {/* Mensagem de confirmação */}
+          {saveMessage && (
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                backgroundColor: saveMessage.type === 'success' ? '#d4edda' : '#f8d7da',
+                border: `1px solid ${saveMessage.type === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+                color: saveMessage.type === 'success' ? '#155724' : '#721c24',
+                fontSize: '14px',
+                fontWeight: '500',
+              }}
+            >
+              {saveMessage.text}
+            </div>
+          )}
+
           {isEditing && quoteId && (
             <div
               style={{
@@ -135,15 +251,18 @@ const OrcamentoPage = () => {
           <div>
             <BudgetSummary
               budgetName={budget.name}
-              clientName={budget.clientName}
+              vehiclePlate={budget.vehiclePlate}
+              vehicleModel={budget.vehicleModel}
+              vehicleBrand={budget.vehicleBrand}
+              vehicleYear={budget.vehicleYear}
               selectedServices={budget.items}
               totalValue={budget.totalValue}
               onBudgetNameChange={handleBudgetNameChange}
-              onClientNameChange={handleClientNameChange}
               onQuantityChange={handleQuantityChange}
               onRemoveService={handleRemoveService}
               onSave={handleSaveBudget}
               onClear={handleClearBudget}
+              isLoading={savingBudget}
             />
           </div>
         </div>

@@ -11,7 +11,10 @@ export interface BudgetItem {
 export interface Budget {
   id?: string;
   name: string;
-  clientName: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleBrand: string;
+  vehicleYear?: number;
   items: BudgetItem[];
   totalValue: number;
   createdAt?: Date;
@@ -21,7 +24,10 @@ export interface Budget {
 export function useBudget() {
   const [budget, setBudget] = useState<Budget>({
     name: '',
-    clientName: '',
+    vehiclePlate: '',
+    vehicleModel: '',
+    vehicleBrand: '',
+    vehicleYear: undefined,
     items: [],
     totalValue: 0,
   });
@@ -105,18 +111,33 @@ export function useBudget() {
     [removeService]
   );
 
-  const updateBudgetInfo = useCallback((name: string, clientName: string) => {
-    setBudget(prev => ({
-      ...prev,
-      name,
-      clientName,
-    }));
-  }, []);
+  const updateBudgetInfo = useCallback(
+    (
+      name: string,
+      vehiclePlate: string,
+      vehicleModel: string,
+      vehicleBrand: string,
+      vehicleYear?: number
+    ) => {
+      setBudget(prev => ({
+        ...prev,
+        name,
+        vehiclePlate,
+        vehicleModel,
+        vehicleBrand,
+        vehicleYear,
+      }));
+    },
+    []
+  );
 
   const clearBudget = useCallback(() => {
     setBudget({
       name: '',
-      clientName: '',
+      vehiclePlate: '',
+      vehicleModel: '',
+      vehicleBrand: '',
+      vehicleYear: undefined,
       items: [],
       totalValue: 0,
     });
