@@ -288,6 +288,34 @@
     gap: 12px;
   }
 
+  .counter-actions-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 16px;
+  }
+
+  .counter-filters {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-left: 0;
+    gap: 12px;
+  }
+
+  .counter-filters input[type='text'],
+  .counter-filters select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .counter-actions {
+    justify-content: center;
+    width: 100%;
+    position: static;
+    top: auto;
+  }
+
   .counter-icon {
     font-size: 2rem;
   }
