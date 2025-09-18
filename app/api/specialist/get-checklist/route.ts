@@ -43,7 +43,9 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       .select('storage_path')
       .eq('inspection_id', inspection.id);
 
-    const mediaPaths = media ? media.map(item => item.storage_path) : [];
+    const mediaPaths = media
+      ? media.map((item: { storage_path: string }) => item.storage_path)
+      : [];
 
     const inspectionWithMedia = { ...inspection, mediaPaths };
 
