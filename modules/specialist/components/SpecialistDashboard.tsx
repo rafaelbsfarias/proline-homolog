@@ -272,7 +272,6 @@ const SpecialistDashboard: React.FC = () => {
                   analyst: undefined,
                   arrival_forecast: undefined,
                   current_km: undefined,
-                  params: undefined,
                   notes: undefined,
                   estimated_arrival_date: undefined,
                   current_odometer: undefined,
