@@ -9,6 +9,7 @@ import DetailTable, { DetailItem } from '@/modules/common/components/DetailTable
 import Modal from '@/modules/common/components/Modal/Modal';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import './VehicleDetailsModal.css';
+import Spinner from '@/modules/common/components/Spinner/Spinner';
 
 export type VehicleDetails = {
   id: string;
@@ -24,7 +25,6 @@ export type VehicleDetails = {
   analyst?: string;
   arrival_forecast?: string;
   current_km?: number;
-  params?: string;
   notes?: string;
   estimated_arrival_date?: string | null;
   current_odometer?: number | null;
@@ -90,25 +90,27 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
     async function fetchSpecialistsForClient() {
       try {
         setLoadingSpecialist(true);
+
         const resp = await get<{
           success: boolean;
           names?: string;
-          specialists?: any[];
-          error?: string;
         }>('/api/client/my-specialists');
+
         if (!resp.ok || !resp.data?.success) {
           if (active) setSpecialistNames('');
           return;
         }
-        const names = resp.data.names || '';
-        if (active) setSpecialistNames(names);
+
+        if (active) setSpecialistNames(resp.data.names || '');
       } catch {
         if (active) setSpecialistNames('');
       } finally {
         if (active) setLoadingSpecialist(false);
       }
     }
+
     if (isOpen) fetchSpecialistsForClient();
+
     return () => {
       active = false;
     };
@@ -155,11 +157,18 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
       size="md"
       showCloseButton
     >
-      <DetailTable items={vehicleItems} />
-
-      <div className="modal-actions-button">
-        <SolidButton onClick={handleNavigateToDetails}>Ver Detalhes Completos</SolidButton>
-      </div>
+      {loadingSpecialist ? (
+        <div className="flex justify-center my-10">
+          <Spinner size={60} />
+        </div>
+      ) : (
+        <>
+          <DetailTable items={vehicleItems} />
+          <div className="modal-actions-button">
+            <SolidButton onClick={handleNavigateToDetails}>Ver Detalhes Completos</SolidButton>
+          </div>
+        </>
+      )}
     </Modal>
   );
 
