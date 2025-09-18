@@ -32,6 +32,10 @@ interface VehicleDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicle: VehicleDetails | null;
+  // Optional override: fetch specialists names for non-client contexts
+  specialistsLoader?: () => Promise<{ names?: string } | void>;
+  // Optional override: navigation target when clicking full details
+  onNavigateToDetails?: (vehicleId: string) => void;
 }
 
 const statusLabels: Record<string, string> = {
@@ -60,7 +64,13 @@ function fmtBRL(n?: number | null) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
 }
 
-const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClose, vehicle }) => {
+const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
+  isOpen,
+  onClose,
+  vehicle,
+  specialistsLoader,
+  onNavigateToDetails,
+}) => {
   const [mounted, setMounted] = useState(false);
   const [specialistNames, setSpecialistNames] = useState<string>('');
   const [loadingSpecialist, setLoadingSpecialist] = useState<boolean>(false);
@@ -79,24 +89,30 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
     }
   }, [isOpen, mounted]);
 
-  // Buscar especialistas associados ao cliente (se endpoint suportar)
+  // Buscar especialistas associados ao cliente (customizable per role)
   useEffect(() => {
     let active = true;
     async function fetchSpecialistsForClient() {
       try {
         setLoadingSpecialist(true);
-        const resp = await get<{
-          success: boolean;
-          names?: string;
-          specialists?: any[];
-          error?: string;
-        }>('/api/client/my-specialists');
-        if (!resp.ok || !resp.data?.success) {
-          if (active) setSpecialistNames('');
-          return;
+        if (specialistsLoader) {
+          const data = (await specialistsLoader()) || {};
+          const names = (data as any).names || '';
+          if (active) setSpecialistNames(names);
+        } else {
+          const resp = await get<{
+            success: boolean;
+            names?: string;
+            specialists?: any[];
+            error?: string;
+          }>('/api/client/my-specialists');
+          if (!resp.ok || !resp.data?.success) {
+            if (active) setSpecialistNames('');
+            return;
+          }
+          const names = resp.data.names || '';
+          if (active) setSpecialistNames(names);
         }
-        const names = resp.data.names || '';
-        if (active) setSpecialistNames(names);
       } catch {
         if (active) setSpecialistNames('');
       } finally {
@@ -107,7 +123,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
     return () => {
       active = false;
     };
-  }, [isOpen, get]);
+  }, [isOpen, get, specialistsLoader]);
 
   if (!mounted || !isOpen || !vehicle) return null;
 
@@ -118,7 +134,11 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
 
   const handleNavigateToDetails = () => {
     if (vehicle && vehicle.id) {
-      router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+      if (onNavigateToDetails) {
+        onNavigateToDetails(vehicle.id);
+      } else {
+        router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+      }
     }
   };
 

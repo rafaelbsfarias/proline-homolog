@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleSection from '@/modules/specialist/components/VehicleSection';
 import { useAdminClientVehicles } from '@/modules/admin/hooks/useAdminClientVehicles';
 import { useAdminClientVehicleStatuses } from '@/modules/admin/hooks/useAdminClientVehicleStatuses';
@@ -13,6 +15,8 @@ interface Props {
 }
 
 const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' }) => {
+  const router = useRouter();
+  const { get } = useAuthenticatedFetch();
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -114,6 +118,16 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
           onClose={() => {
             setShowDetails(false);
             setSelectedVehicle(null);
+          }}
+          onNavigateToDetails={id => router.push(`/dashboard/admin/vehicle/${id}`)}
+          specialistsLoader={async () => {
+            try {
+              const resp = await get<{ success: boolean; names?: string }>(
+                `/api/admin/client-specialists?clientId=${clientId}`
+              );
+              if (resp.ok && resp.data?.success) return { names: resp.data.names };
+            } catch {}
+            return {} as any;
           }}
           vehicle={
             selectedVehicle

@@ -5,20 +5,20 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
-import { useClientVehicleDetails } from '@/modules/vehicles/hooks/useClientVehicleDetails';
 import VehicleHeader from '@/modules/vehicles/components/VehicleHeader';
 import VehicleInfoCard from '@/modules/vehicles/components/VehicleInfoCard';
 import TimelineSection from '@/modules/vehicles/components/TimelineSection';
 import ServicesSection from '@/modules/vehicles/components/ServicesSection';
 import PhotosSection from '@/modules/vehicles/components/PhotosSection';
 import ObservationsSection from '@/modules/vehicles/components/ObservationsSection';
+import { useSpecialistVehicleDetails } from '@/modules/vehicles/hooks/useSpecialistVehicleDetails';
 
-const VehicleDetailsPage = () => {
+const SpecialistVehicleDetailsPage = () => {
   const params = useParams();
   const router = useRouter();
   const vehicleId = params.vehicleId as string;
 
-  const { vehicle, inspection, mediaUrls, loading, error } = useClientVehicleDetails(vehicleId);
+  const { vehicle, inspection, mediaUrls, loading, error } = useSpecialistVehicleDetails(vehicleId);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   if (loading) {
@@ -109,4 +109,4 @@ const VehicleDetailsPage = () => {
   );
 };
 
-export default VehicleDetailsPage;
+export default SpecialistVehicleDetailsPage;
