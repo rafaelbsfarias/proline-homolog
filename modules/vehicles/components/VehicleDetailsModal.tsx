@@ -35,9 +35,9 @@ interface VehicleDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicle: VehicleDetails | null;
-  // Optional: override specialists fetch for non-client contexts
-  specialistsLoader?: () => Promise<{ names?: string } | { success?: boolean; names?: string }>;
-  // Optional: override navigation to full vehicle page
+  // Optional override: fetch specialists names for non-client contexts
+  specialistsLoader?: () => Promise<{ names?: string } | void>;
+  // Optional override: navigation target when clicking full details
   onNavigateToDetails?: (vehicleId: string) => void;
 }
 
@@ -95,15 +95,15 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
     }
   }, [isOpen, mounted]);
 
-  // Buscar especialistas associados ao cliente (suportando contexts via loader)
+  // Buscar especialistas associados ao cliente (customizable per role)
   useEffect(() => {
     let active = true;
     async function fetchSpecialistsForClient() {
       try {
         setLoadingSpecialist(true);
         if (specialistsLoader) {
-          const res = await specialistsLoader();
-          const names = (res as any)?.names || '';
+          const data = (await specialistsLoader()) || {};
+          const names = (data as any).names || '';
           if (active) setSpecialistNames(names);
         } else {
           const resp = await get<{
@@ -142,8 +142,11 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
 
   const handleNavigateToDetails = () => {
     if (vehicle && vehicle.id) {
-      if (onNavigateToDetails) onNavigateToDetails(vehicle.id);
-      else router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+      if (onNavigateToDetails) {
+        onNavigateToDetails(vehicle.id);
+      } else {
+        router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+      }
     }
   };
 

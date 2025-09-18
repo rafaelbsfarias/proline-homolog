@@ -12,6 +12,9 @@ export interface PendingQuote {
   date: string;
   status: 'pending_admin_approval' | 'pending_client_approval' | 'approved' | 'rejected';
   total_value?: number;
+  vehicle_plate?: string;
+  vehicle_brand?: string;
+  vehicle_model?: string;
 }
 
 export interface BudgetCounters {
@@ -26,6 +29,9 @@ export interface InProgressService {
   client_name: string;
   service_description: string;
   status: string;
+  vehicle_plate?: string;
+  vehicle_brand?: string;
+  vehicle_model?: string;
 }
 
 export interface PartnerDashboardData {
@@ -102,6 +108,15 @@ export function usePartnerDashboard() {
         in_progress_services?: { count: number; items: InProgressService[] };
         budget_counters?: BudgetCounters;
       };
+
+      // Debug: log dos dados recebidos da API
+      logger.info('📊 Dados recebidos da API dashboard:', {
+        apiDataKeys: Object.keys(apiData || {}),
+        pendingQuotesCount: apiData?.pending_quotes?.count,
+        pendingQuotesItems: apiData?.pending_quotes?.items?.length,
+        budgetCounters: apiData?.budget_counters,
+        rawApiData: apiData,
+      });
 
       setDashboardData({
         loading: false,

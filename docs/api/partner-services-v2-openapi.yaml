@@ -1,0 +1,509 @@
+openapi: 3.0.3
+info:
+  title: PartnerService API v2
+  description: |
+    API REST para gerenciamento de serviços de parceiros seguindo princípios DDD e Clean Architecture.
+
+    ## Funcionalidades
+    - **CRUD completo** de serviços para parceiros
+    - **Autenticação obrigatória** via JWT token
+    - **Validação rigorosa** de entrada usando Zod
+    - **Paginação** e filtros para listagem
+    - **Tratamento de erros** padronizado
+    - **Soft delete** para desativação de serviços
+
+    ## Autenticação
+    Todos os endpoints requerem autenticação do parceiro através do header `Authorization: Bearer <token>`.
+
+    ## Versionamento
+    Esta é a versão v2 da API, com melhorias significativas em relação à v1:
+    - Validação mais rigorosa
+    - Estrutura de resposta padronizada
+    - Melhor tratamento de erros
+    - Suporte a paginação avançada
+  version: 2.0.0
+  contact:
+    name: ProLine Development Team
+    email: dev@proline.com.br
+
+servers:
+  - url: https://api.proline.com.br
+    description: Production server
+  - url: http://localhost:3000
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/partner/services/v2:
+    get:
+      summary: Listar serviços do parceiro
+      description: |
+        Retorna uma lista paginada dos serviços do parceiro autenticado.
+        Suporta filtros por nome e paginação.
+      tags:
+        - Serviços
+      parameters:
+        - name: page
+          in: query
+          description: Número da página (começando em 1)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Número de itens por página
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: name
+          in: query
+          description: Filtro por nome do serviço (busca parcial)
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        '200':
+          description: Lista de serviços retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PaginatedServicesResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      summary: Criar novo serviço
+      description: |
+        Cria um novo serviço para o parceiro autenticado.
+        O serviço será associado automaticamente ao parceiro logado.
+      tags:
+        - Serviços
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateServiceRequest'
+            examples:
+              servico-basico:
+                summary: Serviço básico
+                value:
+                  name: "Troca de Óleo"
+                  price: 89.90
+                  description: "Troca completa de óleo do motor com filtro"
+              servico-completo:
+                summary: Serviço completo
+                value:
+                  name: "Revisão Completa"
+                  price: 299.99
+                  description: "Revisão completa do veículo com 15 itens verificados"
+      responses:
+        '201':
+          description: Serviço criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ServiceResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/partner/services/v2/{serviceId}:
+    get:
+      summary: Buscar serviço específico
+      description: |
+        Retorna os detalhes de um serviço específico pelo ID.
+        O serviço deve pertencer ao parceiro autenticado.
+      tags:
+        - Serviços
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          description: ID único do serviço
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Serviço encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ServiceResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      summary: Atualizar serviço
+      description: |
+        Atualiza os dados de um serviço específico.
+        Apenas campos fornecidos serão atualizados.
+      tags:
+        - Serviços
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          description: ID único do serviço
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateServiceRequest'
+            examples:
+              atualizar-preco:
+                summary: Atualizar apenas preço
+                value:
+                  price: 99.90
+              atualizar-nome-descricao:
+                summary: Atualizar nome e descrição
+                value:
+                  name: "Troca de Óleo Premium"
+                  description: "Troca de óleo com produtos premium e garantia estendida"
+      responses:
+        '200':
+          description: Serviço atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ServiceResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      summary: Desativar serviço
+      description: |
+        Desativa um serviço (soft delete).
+        O serviço não será mais exibido nas listagens, mas permanece no banco de dados.
+      tags:
+        - Serviços
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          description: ID único do serviço
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Serviço desativado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: "Serviço desativado com sucesso"
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtido através do login
+
+  schemas:
+    CreateServiceRequest:
+      type: object
+      required:
+        - name
+        - price
+        - description
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome do serviço
+          example: "Troca de Óleo"
+        price:
+          type: number
+          minimum: 0.01
+          maximum: 999999.99
+          description: Preço do serviço em reais
+          example: 89.90
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Descrição detalhada do serviço
+          example: "Troca completa de óleo do motor com filtro"
+
+    UpdateServiceRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Nome do serviço
+          example: "Troca de Óleo Premium"
+        price:
+          type: number
+          minimum: 0.01
+          maximum: 999999.99
+          description: Preço do serviço em reais
+          example: 99.90
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Descrição detalhada do serviço
+          example: "Troca de óleo com produtos premium"
+
+    ServiceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID único do serviço
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        partnerId:
+          type: string
+          format: uuid
+          description: ID do parceiro proprietário
+          example: "456e7890-e89b-12d3-a456-426614174001"
+        name:
+          type: string
+          description: Nome do serviço
+          example: "Troca de Óleo"
+        price:
+          type: number
+          description: Preço do serviço
+          example: 89.90
+        description:
+          type: string
+          description: Descrição do serviço
+          example: "Troca completa de óleo do motor com filtro"
+        isActive:
+          type: boolean
+          description: Status do serviço
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Data de criação
+          example: "2024-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data da última atualização
+          example: "2024-01-15T14:20:00Z"
+
+    PaginatedServicesResponse:
+      type: object
+      properties:
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceResponse'
+        total:
+          type: integer
+          description: Total de serviços encontrados
+          example: 25
+        page:
+          type: integer
+          description: Página atual
+          example: 1
+        limit:
+          type: integer
+          description: Itens por página
+          example: 20
+        totalPages:
+          type: integer
+          description: Total de páginas
+          example: 2
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: Código do erro
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: Mensagem descritiva do erro
+              example: "Dados de entrada inválidos"
+            details:
+              description: Detalhes adicionais do erro (opcional)
+              example: { "name": "Nome é obrigatório" }
+
+  responses:
+    ValidationError:
+      description: Erro de validação dos dados de entrada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "Dados de entrada inválidos"
+              details:
+                name: "Nome é obrigatório"
+                price: "Preço deve ser maior que zero"
+
+    UnauthorizedError:
+      description: Token de autenticação ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "UNAUTHORIZED_ERROR"
+              message: "Token de autenticação obrigatório"
+
+    ForbiddenError:
+      description: Acesso negado ao recurso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "FORBIDDEN_ERROR"
+              message: "Acesso negado ao serviço"
+
+    NotFoundError:
+      description: Recurso não encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "NOT_FOUND_ERROR"
+              message: "Serviço não encontrado"
+
+    ConflictError:
+      description: Conflito com dados existentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "CONFLICT_ERROR"
+              message: "Já existe um serviço com este nome"
+
+    InternalError:
+      description: Erro interno do servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_ERROR"
+              message: "Erro interno do servidor"
+
+tags:
+  - name: Serviços
+    description: |
+      Endpoints para gerenciamento de serviços de parceiros.
+
+      **Características:**
+      - Autenticação obrigatória
+      - Validação rigorosa de entrada
+      - Paginação e filtros
+      - Tratamento padronizado de erros
+      - Soft delete para desativação

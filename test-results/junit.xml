@@ -1,76 +1,45 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="15" failures="3" errors="0" time="0.066806995">
-    <testsuite name="test/unit/set-vehicles-collection.test.ts" timestamp="2025-09-11T03:47:23.887Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0">
-        <testcase classname="test/unit/set-vehicles-collection.test.ts" name="test/unit/set-vehicles-collection.test.ts" time="0">
-            <failure message="No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts" type="Error">
-Error: No test suite found in file /home/rafael/workspace/proline-homolog/test/unit/set-vehicles-collection.test.ts
-            </failure>
+<testsuites name="vitest tests" tests="20" failures="0" errors="0" time="0.010778971">
+    <testsuite name="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" timestamp="2025-09-15T16:49:43.211Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.010778971">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve criar serviço com sucesso" time="0.003700937">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/api/accept-client-proposed-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.006714779">
-        <testcase classname="tests/admin/api/accept-client-proposed-date.test.ts" name="admin accept-client-proposed-date (integrated with orchestrator) &gt; creates requested if missing, links vehicles, sets status, approves collection" time="0.005713383">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar ao tentar criar serviço com nome duplicado" time="0.000617598">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/api/propose-collection-date.test.ts" timestamp="2025-09-11T03:47:23.889Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.007258229">
-        <testcase classname="tests/admin/api/propose-collection-date.test.ts" name="admin propose-collection-date (integrated with orchestrator) &gt; upserts requested, syncs dates, links vehicles, and removes old requested orphans" time="0.006300145">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar quando validação do serviço falha" time="0.000528514">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/history/enrich.test.ts" timestamp="2025-09-11T03:47:23.890Z" hostname="pop-os" tests="3" failures="0" errors="0" skipped="0" time="0.010877937">
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; keeps plate under same collection when vehicles.collection_id is set" time="0.002193877">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve atualizar serviço com sucesso" time="0.000618829">
         </testcase>
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; demonstrates jumping: when vehicles.collection_id is missing and date moved, enrichment assigns plate to the new date row" time="0.000527365">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando serviço não existe" time="0.000191995">
         </testcase>
-        <testcase classname="tests/admin/history/enrich.test.ts" name="enrichHistoryWithVehicleStatus &gt; one-plate-per-line formatting: single vehicle produces a single-plate row; multiple can be grouped" time="0.006624491">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando nome já existe para outro serviço do mesmo parceiro" time="0.000175518">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/summary/history-no-fallback.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="0" errors="0" skipped="0" time="0.002674456">
-        <testcase classname="tests/admin/summary/history-no-fallback.mocked.test.ts" name="clientCollectionsSummary - no fallback for history &gt; keeps collectionHistory empty when no detailed snapshot exists" time="0.001365989">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve desativar serviço com sucesso" time="0.000286656">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/admin/summary/history-source.mocked.test.ts" timestamp="2025-09-11T03:47:23.891Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.007893318">
-        <testcase classname="tests/admin/summary/history-source.mocked.test.ts" name="clientCollectionsSummary - uses detailed immutable history &gt; preserves vehicles/plates from detailed snapshot without enrich()" time="0.006956569">
-            <failure message="expected [] to have a length of 1 but got +0" type="AssertionError">
-AssertionError: expected [] to have a length of 1 but got +0
-
-- Expected
-+ Received
-
-- 1
-+ 0
-
- ❯ tests/admin/summary/history-source.mocked.test.ts:103:35
-            </failure>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve falhar quando serviço já está desativado" time="0.000142012">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/client/api/accept-proposal.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="2" failures="0" errors="0" skipped="0" time="0.008841181">
-        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; links vehicles to collection_id and approves collection on final acceptance" time="0.006614045">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve reativar serviço com sucesso" time="0.000324396">
         </testcase>
-        <testcase classname="tests/client/api/accept-proposal.test.ts" name="client accept proposal API &gt; finalizes in one click when starting from SOLICITAÇÃO DE MUDANÇA DE DATA" time="0.001211902">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve falhar quando serviço já está ativo" time="0.000217222">
         </testcase>
-    </testsuite>
-    <testsuite name="tests/common/services/collection-orchestrator.test.ts" timestamp="2025-09-11T03:47:23.893Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.005922482">
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; upserts a requested collection and prevents overwriting approved" time="0.002720747">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar serviço quando encontrado" time="0.000165152">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; syncs vehicle dates only for allowed statuses" time="0.000831691">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar null quando serviço não encontrado" time="0.000121974">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; links vehicles to a collection by address/date and allowed statuses" time="0.00064337">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServicesByPartner &gt; deve retornar serviços paginados do parceiro" time="0.000378311">
         </testcase>
-        <testcase classname="tests/common/services/collection-orchestrator.test.ts" name="CollectionOrchestrator &gt; approves a requested collection" time="0.000463794">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome sem filtro de parceiro" time="0.000383631">
         </testcase>
-    </testsuite>
-    <testsuite name="app/api/admin/create-vehicle/route.test.ts" timestamp="2025-09-11T03:47:23.894Z" hostname="pop-os" tests="1" failures="1" errors="0" skipped="0" time="0.016624613">
-        <testcase classname="app/api/admin/create-vehicle/route.test.ts" name="POST /api/admin/create-vehicle &gt; adiciona veículo para cliente com sucesso (admin)" time="0.015144266">
-            <failure message="expected 403 to be 200 // Object.is equality" type="AssertionError">
-AssertionError: expected 403 to be 200 // Object.is equality
-
-- Expected
-+ Received
-
-- 200
-+ 403
-
- ❯ app/api/admin/create-vehicle/route.test.ts:82:24
-            </failure>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome com filtro de parceiro" time="0.000490102">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar true quando nome é único" time="0.000204311">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar false quando nome já existe" time="0.00012285">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve excluir serviço específico da validação quando informado" time="0.000184953">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateAllServices &gt; deve desativar todos os serviços do parceiro" time="0.00020932">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; countActiveServices &gt; deve contar serviços ativos do parceiro" time="0.000251917">
         </testcase>
     </testsuite>
 </testsuites>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDate } from '@/modules/common/utils/format';
 
 interface ContractAcceptanceViewProps {
   contractContent: string;
@@ -84,7 +85,7 @@ const ContractAcceptanceView: React.FC<ContractAcceptanceViewProps> = ({
         </button>
         {contractSignedAt && (
           <p style={{ textAlign: 'center', marginTop: 20, fontSize: '0.9rem', color: '#777' }}>
-            Contrato aceito em: {new Date(contractSignedAt).toLocaleString()}
+            Contrato aceito em: {formatDate(contractSignedAt)}
           </p>
         )}
       </div>

@@ -1,0 +1,148 @@
+/* SpecialistInspectionGroups.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.categoryCard {
+  background: #ffffff;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.categoryTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #e1e5e9;
+  padding-bottom: 8px;
+}
+
+.itemsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.itemCard {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.itemInfo {
+  flex: 1;
+}
+
+.itemTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.itemDescription {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  font-style: italic;
+}
+
+.statusBadge {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  margin-left: 12px;
+}
+
+.statusOk {
+  background-color: #10b981;
+}
+
+.statusAttention {
+  background-color: #f59e0b;
+}
+
+.statusCritical {
+  background-color: #ef4444;
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-color: transparent;
+}
+
+.radioLabelOk {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.radioLabelNok {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.radioInput {
+  margin: 0;
+}
+
+.radioText {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.notesSection {
+  /* Container for notes - intentionally empty for future use */
+}
+
+.notesLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.notesTextarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  resize: vertical;
+}

@@ -1,49 +1,34 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "outDir": "./dist",
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
     "noEmit": true,
     "incremental": true,
+    "module": "esnext",
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "types": ["node"],
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@collections": ["modules/collections/index.ts"],
-      "@collections/*": ["modules/collections/*"],
       "@/*": ["./*"],
-      "@/app/*": ["./app/*"],
-      "@/modules/*": ["./modules/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/components/*": ["modules/partner/components/*"]
+      "@collections": ["./modules/collections"],
+      "@collections/*": ["./modules/collections/*"]
     }
   },
   "include": [
-    "utils/**/*.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "lib/**/*.ts",
-    "modules/**/*.ts",
-    "modules/**/*.tsx",
+    "next-env.d.ts",
     ".next/types/**/*.ts",
-    "modules/client/components/Dashboard/VehicleCounter.tsx"
+    "app/**/*.{ts,tsx}",
+    "src/**/*.{ts,tsx}",
+    "modules/**/*.{ts,tsx}",
+    "lib/**/*.ts",
+    "utils/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

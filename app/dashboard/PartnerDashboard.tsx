@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
-import DataTable from '@/modules/partner/components/dashboard/DataTable';
+import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
 import ServiceModal from '@/modules/partner/components/services/ServiceModal';
@@ -14,12 +14,19 @@ import {
   type InProgressService,
 } from '@/modules/partner/hooks/usePartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import {
+  formatDate,
+  formatCurrency,
+  formatQuoteStatus,
+  formatVehicleInfo,
+} from '@/modules/common/utils/format';
 
 // Tipo derivado para exibição na tabela
 type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'> & {
   status: string;
   total_value: string;
   date: string;
+  vehicle: string;
 };
 
 const PartnerDashboard = () => {
@@ -66,33 +73,9 @@ const PartnerDashboard = () => {
     setIsAcceptingContract(false);
   }
 
-  const formatQuoteStatus = (status: string) => {
-    const statusMap = {
-      pending_admin_approval: 'Aguardando Admin',
-      pending_client_approval: 'Aguardando Cliente',
-      approved: 'Aprovado',
-      rejected: 'Rejeitado',
-    };
-    return statusMap[status as keyof typeof statusMap] || status;
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR');
-    } catch {
-      return 'N/A';
-    }
-  };
-
-  const formatCurrency = (value?: number) => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
-
-  const handleEditQuote = () => {
-    // Implementar lógica para editar orçamento
+  const handleEditQuote = (quote: PendingQuoteDisplay) => {
+    // Navegar para a página de orçamento com o ID da cotação
+    router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
   const handleDeleteQuote = () => {
@@ -112,10 +95,8 @@ const PartnerDashboard = () => {
     // Implementar lógica para excluir serviço
   };
 
-  const pendingQuotesColumns: { key: keyof PendingQuote; header: string }[] = [
-    { key: 'id', header: 'ID' },
-    { key: 'client_name', header: 'Cliente' },
-    { key: 'service_description', header: 'Serviço' },
+  const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
+    { key: 'vehicle', header: 'Veículo' },
     { key: 'status', header: 'Status' },
     { key: 'total_value', header: 'Valor' },
     { key: 'date', header: 'Data' },
@@ -123,8 +104,6 @@ const PartnerDashboard = () => {
 
   const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
     { key: 'id', header: 'ID' },
-    { key: 'client_name', header: 'Cliente' },
-    { key: 'service_description', header: 'Serviço' },
     { key: 'status', header: 'Status' },
   ];
 
@@ -238,6 +217,7 @@ const PartnerDashboard = () => {
             title="Solicitações de Orçamentos Pendentes"
             data={pendingQuotes.map(quote => ({
               ...quote,
+              vehicle: formatVehicleInfo(quote),
               status: formatQuoteStatus(quote.status),
               total_value: formatCurrency(quote.total_value),
               date: formatDate(quote.date),

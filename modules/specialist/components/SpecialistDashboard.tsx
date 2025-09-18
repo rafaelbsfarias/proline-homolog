@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/modules/common/services/AuthProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import styles from './SpecialistDashboard.module.css';
@@ -129,6 +130,7 @@ const StatsCard: React.FC<{ title: string; count: number; icon: string }> = ({
 const SpecialistDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const { get } = useAuthenticatedFetch();
+  const router = useRouter();
   const [state, setState] = useState<DashboardState>(DashboardStateManager.getInitialState());
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -256,6 +258,17 @@ const SpecialistDashboard: React.FC = () => {
             setShowDetails(false);
             setSelectedVehicle(null);
           }}
+          onNavigateToDetails={id => router.push(`/dashboard/specialist/vehicle/${id}`)}
+          specialistsLoader={async () => {
+            if (!selectedVehicle?.client_id) return {} as any;
+            try {
+              const resp = await get<{ success: boolean; names?: string }>(
+                `/api/specialist/client-specialists?clientId=${selectedVehicle.client_id}`
+              );
+              if (resp.ok && resp.data?.success) return { names: resp.data.names };
+            } catch {}
+            return {} as any;
+          }}
           vehicle={
             selectedVehicle
               ? {
@@ -279,17 +292,6 @@ const SpecialistDashboard: React.FC = () => {
                 }
               : null
           }
-          specialistsLoader={async () => {
-            if (!selectedVehicle?.client_id) return { names: '' };
-            const resp = await get<{ success: boolean; names?: string; error?: string }>(
-              `/api/specialist/client-specialists?clientId=${encodeURIComponent(selectedVehicle.client_id)}`
-            );
-            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
-            return { names: '' };
-          }}
-          onNavigateToDetails={vehicleId => {
-            window.location.href = `/dashboard/vehicle/${vehicleId}`;
-          }}
         />
       )}
     </div>
