@@ -44,12 +44,14 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
     removeFile,
     uploadFiles,
     reset: resetImages,
+    setPreviews,
   } = useImageUploader();
   const { form, setField, setServiceFlag, setServiceNotes, resetForm } = useChecklistForm();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isFinalized, setIsFinalized] = useState(false);
+  const [existingImages, setExistingImages] = useState<{ path: string; url: string }[]>([]);
 
   const title = useMemo(() => {
     if (!vehicle) return 'Checklist do Veículo';
@@ -62,7 +64,12 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
     setError(null);
     setSuccess(null);
     resetImages();
+    setExistingImages([]);
     onClose();
+  };
+
+  const handleRemoveExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
   };
 
   // form state handled by useChecklistForm
@@ -105,6 +112,28 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             }
           });
           setIsFinalized(!!data.inspection.finalized);
+
+          const media = data.inspection?.mediaPaths || [];
+          if (Array.isArray(media) && media.length > 0) {
+            const signedUrlPromises = media.map((path: string) =>
+              supabase.storage.from('vehicle-media').createSignedUrl(path, 60)
+            );
+            const signedUrlResults = await Promise.all(signedUrlPromises);
+
+            const imageObjects = media
+              .map((path: string, index: number) => {
+                const { data, error } = signedUrlResults[index];
+                if (error) {
+                  return null;
+                }
+                return { path, url: data.signedUrl };
+              })
+              .filter(Boolean) as { path: string; url: string }[];
+
+            setExistingImages(imageObjects);
+          } else {
+            setExistingImages([]);
+          }
         }
       } catch (e) {
         // ignore prefill errors
@@ -115,7 +144,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   // cleanup moved to hook
 
   const handleFiles = (list: FileList | null) =>
-    handleFilesHook(list, msg => showToast('warning', msg));
+    handleFilesHook(list, msg => showToast('warning', msg), existingImages.length);
 
   // upload moved to hook; removeFile provided by hook
 
@@ -175,6 +204,8 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
         uploadedPaths = await uploadFiles(userId, vehicle.id);
       }
 
+      const existingPaths = existingImages.map(img => img.path);
+
       // Persist in backend (inspections + services + media)
       const payload = {
         vehicleId: vehicle.id,
@@ -208,7 +239,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             notes: sanitizeString(form.services.patioAtacado.notes),
           },
         },
-        mediaPaths: uploadedPaths,
+        mediaPaths: [...existingPaths, ...uploadedPaths],
       };
 
       const resp = await fetch('/api/specialist/save-checklist', {
@@ -226,6 +257,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
 
       setSuccess('Checklist salvo com sucesso.');
       showToast('success', 'Checklist salvo com sucesso.');
+      resetImages();
       try {
         onSaved && onSaved();
       } catch {}
@@ -370,8 +402,26 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             <small>
               Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
             </small>
-            {!!previews.length && (
+            {(existingImages.length > 0 || previews.length > 0) && (
               <div className={styles.previews}>
+                {existingImages.map((image, i) => (
+                  <div key={image.path} className={styles.previewItem}>
+                    <img
+                      src={image.url}
+                      alt={`Imagem existente ${i + 1}`}
+                      className={styles.previewImage}
+                    />
+                    {!isFinalized && (
+                      <button
+                        type="button"
+                        className={styles.removeBtn}
+                        onClick={() => handleRemoveExistingImage(i)}
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
                 {previews.map((src, i) => (
                   <div key={src} className={styles.previewItem}>
                     <img

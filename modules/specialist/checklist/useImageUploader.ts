@@ -11,10 +11,14 @@ export const useImageUploader = () => {
 
   useEffect(() => () => previews.forEach(url => URL.revokeObjectURL(url)), [previews]);
 
-  const handleFiles = (list: FileList | null, onInvalid?: (msg: string) => void) => {
+  const handleFiles = (
+    list: FileList | null,
+    onInvalid?: (msg: string) => void,
+    existingCount = 0
+  ) => {
     if (!list) return;
     const incoming = Array.from(list);
-    const remaining = Math.max(0, MAX_FILES - files.length);
+    const remaining = Math.max(0, MAX_FILES - (files.length + existingCount));
     const selected = incoming.slice(0, remaining);
     const valid: File[] = [];
     for (const f of selected) {
@@ -85,5 +89,5 @@ export const useImageUploader = () => {
     });
   };
 
-  return { files, previews, handleFiles, removeFile, uploadFiles, reset };
+  return { files, previews, handleFiles, removeFile, uploadFiles, reset, setPreviews };
 };

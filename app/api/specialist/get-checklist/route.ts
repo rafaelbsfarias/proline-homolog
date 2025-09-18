@@ -38,7 +38,20 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       .select('category, required, notes')
       .eq('inspection_id', inspection.id);
 
-    return NextResponse.json({ success: true, inspection, services: services || [] });
+    const { data: media } = await supabase
+      .from('inspection_media')
+      .select('storage_path')
+      .eq('inspection_id', inspection.id);
+
+    const mediaPaths = media ? media.map(item => item.storage_path) : [];
+
+    const inspectionWithMedia = { ...inspection, mediaPaths };
+
+    return NextResponse.json({
+      success: true,
+      inspection: inspectionWithMedia,
+      services: services || [],
+    });
   } catch {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
