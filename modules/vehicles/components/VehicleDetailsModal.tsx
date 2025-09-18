@@ -159,7 +159,7 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({ isOpen, onClo
     >
       {loadingSpecialist ? (
         <div className="flex justify-center my-10">
-          <Spinner size={60} />
+          <Spinner size={30} />
         </div>
       ) : (
         <>
