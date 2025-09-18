@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 import { formatDateBR, makeLocalIsoDate } from '@/modules/client/utils/date';
 import { formatTotalCurrencyBR } from '@/modules/common/utils/format';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
@@ -11,6 +11,7 @@ import CalendarMonth from '../Calendar/CalendarMonth';
 import styles from './VehicleCollectionSection.module.css';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import Modal from '@/modules/common/components/Modal/Modal';
 
 interface VehicleCollectionSectionProps {
   onLoadingChange?: (loading: boolean) => void;
@@ -196,53 +197,57 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       </div>
 
       {rescheduleOpenFor && (
-        <div className={styles.rescheduleSection}>
-          <DatePickerBR
-            valueIso={newDateIso}
-            minIso={minIso}
-            disabledDatesIso={(() => {
-              const g = groups.find(x => x.addressId === rescheduleOpenFor);
-              const arr: string[] = [];
-              if (g?.collection_date) arr.push(g.collection_date);
-              if (g?.original_date) arr.push(g.original_date);
-              return arr.filter(Boolean) as string[];
-            })()}
-            onChangeIso={setNewDateIso}
-            ariaLabel="Selecionar nova data"
-          />
-          <OutlineButton
-            onClick={handleRescheduleSubmit}
-            aria-busy={!!busyReschedule[rescheduleOpenFor]}
-            disabled={!!busyReschedule[rescheduleOpenFor]}
-          >
-            {busyReschedule[rescheduleOpenFor] ? 'Enviando…' : 'Enviar sugestão'}
-          </OutlineButton>
-        </div>
+        <Modal
+          isOpen={!!rescheduleOpenFor}
+          onClose={() => setRescheduleOpenFor(null)}
+          title="Sugerir Nova Data"
+          size="sm"
+          showCloseButton
+        >
+          <div className={styles.rescheduleSection}>
+            <DatePickerBR
+              valueIso={newDateIso}
+              minIso={minIso}
+              disabledDatesIso={(() => {
+                const g = groups.find(x => x.addressId === rescheduleOpenFor);
+                const arr: string[] = [];
+                if (g?.collection_date) arr.push(g.collection_date);
+                if (g?.original_date) arr.push(g.original_date);
+                return arr.filter(Boolean) as string[];
+              })()}
+              onChangeIso={setNewDateIso}
+              ariaLabel="Selecionar nova data"
+            />
+            <SolidButton
+              onClick={handleRescheduleSubmit}
+              aria-busy={!!busyReschedule[rescheduleOpenFor]}
+              disabled={!!busyReschedule[rescheduleOpenFor]}
+            >
+              {busyReschedule[rescheduleOpenFor] ? 'Enviando…' : 'Enviar sugestão'}
+            </SolidButton>
+          </div>
+        </Modal>
       )}
 
       <div className={styles.totalSection}>
-        {loading
-          ? 'Carregando valor...'
-          : (() => {
-              const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
-              const approvableTotal = approvableGroups.reduce((sum, g) => {
-                if (typeof g.collection_fee === 'number') {
-                  return sum + g.collection_fee * g.vehicle_count;
-                }
-                return sum;
-              }, 0);
-              const approvableCount = approvableGroups.reduce((sum, g) => sum + g.vehicle_count, 0);
+        {!loading &&
+          (() => {
+            const approvableGroups = groups.filter(g => g.proposed_by === 'admin');
+            if (approvableGroups.length === 0) return null; // nada a exibir
 
-              return approvableGroups.length > 0
-                ? `Total a pagar (${approvableCount} veículo(s)): ${approvableTotal.toLocaleString(
-                    'pt-BR',
-                    {
-                      style: 'currency',
-                      currency: 'BRL',
-                    }
-                  )}`
-                : 'Nenhum item pendente de aprovação';
-            })()}
+            const approvableTotal = approvableGroups.reduce((sum, g) => {
+              if (typeof g.collection_fee === 'number') {
+                return sum + g.collection_fee * g.vehicle_count;
+              }
+              return sum;
+            }, 0);
+            const approvableCount = approvableGroups.reduce((sum, g) => sum + g.vehicle_count, 0);
+
+            return `Total a pagar (${approvableCount} veículo(s)): ${approvableTotal.toLocaleString(
+              'pt-BR',
+              { style: 'currency', currency: 'BRL' }
+            )}`;
+          })()}
       </div>
 
       {(() => {

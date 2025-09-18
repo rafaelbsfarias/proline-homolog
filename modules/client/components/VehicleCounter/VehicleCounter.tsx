@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
-import RowCollectionModal from '../RowCollectionModal';
-import StatusChips from '../StatusChips';
+import RowCollectionModal from '../Modals/RowCollectionModal/RowCollectionModal';
+import StatusChips from '../StatusChips/StatusChips';
 import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
@@ -15,7 +15,7 @@ import type { Vehicle } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
-import Pagination from '@/modules/common/components/Pagination';
+import Pagination from '@/modules/common/components/Pagination/Pagination';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
@@ -109,33 +109,35 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           <p>{totalCount === 1 ? 'Veículo cadastrado' : 'Veículos cadastrados'}</p>
           <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
         </div>
-        <VehicleFilters
-          filterPlate={filterPlate}
-          setFilterPlate={setFilterPlate}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          statusOptions={statusOptions}
-        />
-        <div className="counter-actions">
-          <button
-            onClick={refetch}
-            className="refresh-button"
-            title="Atualizar contagem"
-            aria-label="Atualizar contagem de veículos"
-          >
-            <LuRefreshCw />
-          </button>
-          {totalCount > 0 && (
+        <div className="counter-actions-wrapper">
+          <VehicleFilters
+            filterPlate={filterPlate}
+            setFilterPlate={setFilterPlate}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            statusOptions={statusOptions}
+          />
+          <div className="counter-actions">
             <button
-              onClick={() => setShowDetails(v => !v)}
-              className="details-button"
-              title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
-              aria-expanded={showDetails}
-              aria-controls="vehicles-details"
+              onClick={refetch}
+              className="refresh-button"
+              title="Atualizar contagem"
+              aria-label="Atualizar contagem de veículos"
             >
-              {showDetails ? <LuMinus /> : <LuPlus />}
+              <LuRefreshCw />
             </button>
-          )}
+            {totalCount > 0 && (
+              <button
+                onClick={() => setShowDetails(v => !v)}
+                className="details-button"
+                title={showDetails ? 'Ocultar detalhes' : 'Mostrar detalhes'}
+                aria-expanded={showDetails}
+                aria-controls="vehicles-details"
+              >
+                {showDetails ? <LuMinus /> : <LuPlus />}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -154,14 +156,14 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
               vehicles.map(vehicle => (
                 <VehicleItemRow
                   key={vehicle.id}
-                  vehicle={vehicle as Vehicle}
-                  addresses={addresses as any}
+                  vehicle={vehicle}
+                  addresses={addresses}
                   collectionFee={vehicle.collection_fee ?? undefined}
                   onOpenDetails={v => {
-                    setSelectedVehicle(v as Vehicle);
+                    setSelectedVehicle(v);
                     setShowModal(true);
                   }}
-                  onOpenRowModal={v => setRowModalVehicle(v as Vehicle)}
+                  onOpenRowModal={v => setRowModalVehicle(v)}
                 />
               ))
             )}
@@ -199,7 +201,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
                   analyst: undefined,
                   arrival_forecast: undefined,
                   current_km: undefined,
-                  params: undefined,
                   notes: undefined,
                   estimated_arrival_date: selectedVehicle.estimated_arrival_date,
                   current_odometer: selectedVehicle.current_odometer,
@@ -215,7 +216,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           isOpen={!!rowModalVehicle}
           onClose={() => setRowModalVehicle(null)}
           vehicle={{ id: rowModalVehicle.id, pickup_address_id: rowModalVehicle.pickup_address_id }}
-          addresses={addresses as any}
+          addresses={addresses}
           minDate={minDateIsoLocal}
           onApply={async payload => {
             const resp = await post('/api/client/set-vehicles-collection', payload);

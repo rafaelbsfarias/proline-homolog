@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
-import { CollectionSummary, RescheduleFlow, CollectionCalendar } from './collection';
+import { CollectionSummary, RescheduleFlow, CollectionCalendar } from './Collection';
 import {
   useCollectionSummary,
   useCollectionApproval,

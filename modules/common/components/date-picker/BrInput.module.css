@@ -1,0 +1,17 @@
+.brInput {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid #ccc;
+  color: #757575;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.brInput:focus {
+  outline: none;
+  border-color: #0044a0;
+  box-shadow: 0 0 5px rgba(0, 68, 160, 0.3);
+}

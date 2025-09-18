@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
 import BaseModal from './BaseModal';
 

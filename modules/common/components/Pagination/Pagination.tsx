@@ -20,7 +20,11 @@ const Pagination: React.FC<PaginationProps> = ({
     return null; // Oculta paginacao se só uma página
   }
 
-  const disableNavigation = currentItemsCount < ITEMS_PER_PAGE;
+  const disableNavigation = currentItemsCount <= ITEMS_PER_PAGE;
+
+  console.log('disableNavigation', disableNavigation);
+  console.log('currentItemsCount', currentItemsCount);
+  console.log('totalPages', totalPages);
 
   const handlePrevious = () => {
     if (currentPage > 1) {

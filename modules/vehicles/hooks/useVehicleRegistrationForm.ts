@@ -106,7 +106,9 @@ export function useVehicleRegistrationForm({
     if (errors.clientId) setErrors(prev => ({ ...prev, clientId: undefined }));
   };
 
-  const validate = () => {
+  const validate = (
+    dataToValidate: VehicleFormData
+  ): Partial<Record<keyof VehicleFormData, string>> | null => {
     const finalSchema = vehicleSchema.superRefine((data, ctx) => {
       if (userRole === 'admin' && !data.clientId.trim()) {
         ctx.addIssue({
@@ -117,10 +119,9 @@ export function useVehicleRegistrationForm({
       }
     });
 
-    const result = finalSchema.safeParse(formData);
+    const result = finalSchema.safeParse(dataToValidate);
     if (result.success) {
-      setErrors({});
-      return true;
+      return null;
     }
 
     const newErrors: Partial<Record<keyof VehicleFormData, string>> = {};
@@ -130,23 +131,35 @@ export function useVehicleRegistrationForm({
         newErrors[field] = err.message;
       }
     });
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, vehicleData?: VehicleFormData) => {
     e.preventDefault();
-    if (!validate()) return;
+    const dataToSubmit = vehicleData || formData;
+    const validationErrors = validate(dataToSubmit);
 
+    if (validationErrors) {
+      if (vehicleData) {
+        const errorMessages = Object.values(validationErrors).filter(Boolean).join(', ');
+        throw new Error(errorMessages || 'Dados inválidos.');
+      } else {
+        setErrors(validationErrors);
+        return;
+      }
+    }
+
+    setErrors({});
     setLoading(true);
     setError(null);
     try {
-      await registerVehicle(post, userRole, formData);
+      await registerVehicle(post, userRole, dataToSubmit);
       setSuccess(true);
       onSuccess?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg || 'Erro ao cadastrar veículo.');
+      throw err;
     } finally {
       setLoading(false);
     }

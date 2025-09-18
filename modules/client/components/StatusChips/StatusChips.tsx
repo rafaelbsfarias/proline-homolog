@@ -9,7 +9,9 @@ interface Props {
 }
 
 export default function StatusChips({ counts, sorter, onSelect }: Props) {
-  const entries = Object.entries(counts).filter(([, c]) => c > 0).sort(sorter);
+  const entries = Object.entries(counts)
+    .filter(([, c]) => c > 0)
+    .sort(sorter);
   if (!entries.length) return null;
   return (
     <div className="status-chips" aria-label="Contadores por status">

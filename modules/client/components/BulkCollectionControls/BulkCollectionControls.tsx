@@ -47,7 +47,7 @@ export default function BulkCollectionControls({ onSuccess }: Props) {
     <>
       <div className="collection-controls" aria-label="Opções de coleta em lote">
         <h4 className={styles.header}>Opções de coleta em lote</h4>
-        <div className="row">
+        <div className={styles.row}>
           <Radio
             name="bulkMethod"
             label="Ponto de Coleta"

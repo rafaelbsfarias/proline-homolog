@@ -5,12 +5,13 @@ import ClientCollectPointModal from '@/modules/client/components/ClientCollectPo
 import VehicleCounter from '@/modules/client/components/VehicleCounter/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
-import '@/modules/client/components/ClientDashboard.css';
-import VehicleCollectionSection from '@/modules/client/components/collection/VehicleCollectionSection/VehicleCollectionSection';
+import './ClientDashboard.css';
+import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
-import ContractAcceptanceScreen from '@/modules/client/components/dashboard/ContractAcceptanceScreen';
+import ContractAcceptanceScreen from '@/modules/client/components/Dashboard/ContractAcceptanceScreen';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 interface ProfileData {
   full_name: string;
@@ -93,12 +94,18 @@ const ClientDashboard: React.FC = () => {
             <p className="dashboard-welcome">Bem-vindo, {userName}!</p>
 
             <div className="dashboard-actions">
-              <button onClick={() => setShowCadastrarVeiculoModal(true)} className="dashboard-btn">
+              <SolidButton
+                onClick={() => setShowCadastrarVeiculoModal(true)}
+                className="solidButtonLarge"
+              >
                 Cadastrar Novo Veículo
-              </button>
-              <button onClick={() => setShowAddCollectPointModal(true)} className="dashboard-btn">
+              </SolidButton>
+              <SolidButton
+                onClick={() => setShowAddCollectPointModal(true)}
+                className="solidButtonLarge"
+              >
                 Adicionar Ponto de Coleta
-              </button>
+              </SolidButton>
             </div>
 
             <div className="dashboard-counter">

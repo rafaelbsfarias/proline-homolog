@@ -82,8 +82,8 @@
 }
 
 .actionButton {
-  background: #d9e0e7;
-  color: #333;
+  background: #3d3b3c;
+  color: #fff;
   border: none;
   border-radius: 6px;
   padding: 7px 14px;
@@ -92,7 +92,7 @@
 }
 
 .actionButton:hover:not(:disabled) {
-  background: #bdc6d0;
+  background: #3d3b3c;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -103,8 +103,8 @@
 }
 
 .acceptButton {
-  background: #10b981;
-  color: #333;
+  background: #194d00;
+  color: #ffff;
   border: none;
   border-radius: 6px;
   padding: 7px 14px;
@@ -112,12 +112,12 @@
   transition: all 0.2s ease;
 }
 .acceptButton:hover:not(:disabled) {
-  background: #059669;
+  background: #194d00;
 }
 
 .rejectButton {
-  background: #ef4444;
-  color: #333;
+  background: #990300;
+  color: #ffff;
   border: none;
   border-radius: 6px;
   padding: 7px 14px;
@@ -126,14 +126,17 @@
 }
 
 .rejectButton:hover:not(:disabled) {
-  background: #dc2626;
+  background: #990300;
 }
 
 .rescheduleSection {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rescheduleSection .datePickerWrapper {
+  width: 100%;
 }
 
 .totalSection {

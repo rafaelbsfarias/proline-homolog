@@ -43,7 +43,7 @@
     "modules/**/*.ts",
     "modules/**/*.tsx",
     ".next/types/**/*.ts",
-    "modules/client/components/dashboard/VehicleCounter.tsx"
+    "modules/client/components/Dashboard/VehicleCounter.tsx"
   ],
   "exclude": ["node_modules"]
 }

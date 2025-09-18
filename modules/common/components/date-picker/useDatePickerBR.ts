@@ -41,8 +41,20 @@ export const useDatePickerBR = ({
   });
   const [viewMonth, setViewMonth] = useState<number>(() => {
     const d = valueIso || todayLocalIso();
-    return Number(d.slice(5, 7)) - 1; // 0..11
+    return Number(d.slice(5, 7)) - 1;
   });
+
+  const calculateFallbackPos = () => {
+    const btn = buttonRef.current;
+    if (!btn) return null;
+    const rect = btn.getBoundingClientRect();
+    const popoverWidth = 280; // ajuste conforme o popover real
+    let left = rect.left + window.scrollX;
+    if (left + popoverWidth > window.innerWidth) {
+      left = Math.max(8, window.innerWidth - popoverWidth - 8); // margem mínima de 8px
+    }
+    return { top: rect.bottom + window.scrollY + 6, left };
+  };
 
   const openPicker = () => {
     const el = nativeRef.current as any;
@@ -65,15 +77,11 @@ export const useDatePickerBR = ({
           usedNative = true;
         }
       } catch {
-        // ignore and fallback
+        // ignore
       }
     }
     if (!usedNative) {
-      const btn = buttonRef.current;
-      if (btn) {
-        const rect = btn.getBoundingClientRect();
-        setFallbackPos({ top: rect.bottom + window.scrollY + 6, left: rect.left + window.scrollX });
-      }
+      setFallbackPos(calculateFallbackPos());
       setFallbackOpen(true);
     }
   };
@@ -83,15 +91,25 @@ export const useDatePickerBR = ({
   const gotoMonth = (delta: number) => {
     const next = new Date(viewYear, viewMonth + delta, 1);
     const nextIso = `${next.getFullYear()}-${pad2(next.getMonth() + 1)}-01`;
-    if (nextIso < min.slice(0, 8) + '01') return; // não navegar antes do min mês
+    if (nextIso < min.slice(0, 8) + '01') return;
     setViewYear(next.getFullYear());
     setViewMonth(next.getMonth());
   };
 
   const days = buildMonthDays(viewYear, viewMonth, min, disabledSet);
 
+  // Ajusta posição do popover quando a tela muda
+  useEffect(() => {
+    const handleResize = () => {
+      if (fallbackOpen) {
+        setFallbackPos(calculateFallbackPos());
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [fallbackOpen]);
+
   return {
-    // props/state
     nativeRef,
     buttonRef,
     min,

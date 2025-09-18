@@ -3,8 +3,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './RowCollectionModal.css';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
-import CollectPointSelect from '../collection/CollectPointSelect';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
+import CollectPointSelect from '../../CollectPointSelect';
+import Modal from '@/modules/common/components/Modal/Modal';
+import Radio from '@/modules/common/components/Radio/Radio';
+import Select from '@/modules/common/components/Select/Select';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 type Method = 'collect_point' | 'bring_to_yard';
 
@@ -81,50 +86,51 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
     return a.localeCompare(b);
   };
 
+  const addressOptions = addresses.map(addr => ({
+    value: addr.id,
+    label: `${addr.street || '-'}${addr.number ? ', ' + addr.number : ''} - ${addr.city || '-'}`,
+  }));
+
   if (!isOpen) return null;
 
   const node = (
-    <div className="rcm-overlay" role="dialog" aria-modal="true" aria-labelledby="rcm-title">
-      <div className="rcm-modal">
-        <div className="rcm-header">
-          <h3 id="rcm-title" className="rcm-title">
-            Editar ponto de coleta
-          </h3>
-          <button type="button" onClick={onClose} className="rcm-close" aria-label="Fechar">
-            ×
-          </button>
-        </div>
-
+    <div role="dialog" aria-modal="true" aria-labelledby="rcm-title">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Editar ponto de coleta"
+        size="md"
+        showCloseButton
+      >
         <div className="rcm-method-row">
-          <label>
-            <input
-              type="radio"
-              name="method"
-              checked={method === 'collect_point'}
-              onChange={() => setMethod('collect_point')}
-            />{' '}
-            Ponto de Coleta
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="method"
-              checked={method === 'bring_to_yard'}
-              onChange={() => setMethod('bring_to_yard')}
-            />{' '}
-            Vou levar ao pátio
-          </label>
+          <Radio
+            name="method"
+            value="collect_point"
+            checked={method === 'collect_point'}
+            onChange={v => setMethod(v as Method)}
+            label="Ponto de coleta"
+          />
+          <Radio
+            name="method"
+            value="bring_to_yard"
+            checked={method === 'bring_to_yard'}
+            onChange={v => setMethod(v as Method)}
+            label="Vou levar ao pátio"
+          />
         </div>
 
         {method === 'collect_point' ? (
           <>
             <div className="rcm-form-group">
               <label className="rcm-label">Ponto de coleta</label>
-              <CollectPointSelect
-                className="rcm-select"
-                addresses={addresses as any}
+              <Select
+                id="collect-point"
+                name="collect-point"
                 value={addressId}
-                onChange={setAddressId}
+                onChange={e => setAddressId(e.target.value)}
+                options={addressOptions}
+                placeholder="Selecione um ponto"
+                className="rcm-select"
               />
             </div>
             <div className="rcm-form-group">
@@ -143,10 +149,6 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                   }
                 }}
                 ariaLabel="Data preferencial de coleta (dd/mm/aaaa)"
-                containerClass="rcm-date-field"
-                inputClass="rcm-date-input"
-                buttonClass="rcm-calendar-btn"
-                hiddenInputClass="rcm-hidden-date"
               />
             </div>
           </>
@@ -167,10 +169,6 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                 }
               }}
               ariaLabel="Data prevista de chegada ao pátio (dd/mm/aaaa)"
-              containerClass="rcm-date-field"
-              inputClass="rcm-date-input"
-              buttonClass="rcm-calendar-btn"
-              hiddenInputClass="rcm-hidden-date"
             />
           </div>
         )}
@@ -178,12 +176,8 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
         {error && <div className="rcm-error">{error}</div>}
 
         <div className="rcm-actions">
-          <button type="button" onClick={onClose} className="rcm-btn rcm-btn-secondary">
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit || submitting}
+          <OutlineButton onClick={onClose}>Cancelar</OutlineButton>
+          <SolidButton
             onClick={async () => {
               try {
                 setSubmitting(true);
@@ -194,6 +188,7 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                   addressId?: string;
                   estimated_arrival_date?: string;
                 } = { method, vehicleIds: [vehicle.id] };
+
                 if (method === 'collect_point') {
                   if (!addressId) throw new Error('Selecione um ponto de coleta');
                   if (!etaIso) throw new Error('Informe a data preferencial de coleta');
@@ -214,6 +209,7 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                   }
                   payload.estimated_arrival_date = etaIso;
                 }
+
                 await onApply(payload);
                 onClose();
               } catch (e: any) {
@@ -222,12 +218,12 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                 setSubmitting(false);
               }
             }}
-            className="rcm-btn rcm-btn-primary"
+            disabled={!canSubmit || submitting}
           >
             Salvar
-          </button>
+          </SolidButton>
         </div>
-      </div>
+      </Modal>
     </div>
   );
 
