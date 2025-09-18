@@ -26,13 +26,13 @@ export class UserInvitationService {
 
     // Check if user already exists (Supabase will also check, but this provides a cleaner error)
     logger.info('Checking for existing user with this email.');
-    const { data: existingUsers, error: existingUserError } = 
+    const { data: existingUsers, error: existingUserError } =
       await this.supabase.auth.admin.listUsers();
     if (existingUserError) {
       logger.error('Error checking existing users:', existingUserError);
       throw new DatabaseError('Erro ao verificar usuários existentes.');
     }
-    const emailExists = existingUsers?.users?.some(u => u.email === email);
+    const emailExists = existingUsers?.users?.some((u: { email?: string }) => u.email === email);
     if (emailExists) {
       logger.warn(`User invitation failed: Email ${email} already in use.`);
       throw new ConflictError('Este e-mail já está em uso.');

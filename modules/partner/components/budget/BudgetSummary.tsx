@@ -1,39 +1,37 @@
 'use client';
 
 import React from 'react';
-import { BudgetItem } from '@/modules/partner/hooks/useBudget';
+import { Budget, BudgetItem } from '@/modules/partner/hooks/useBudget';
 
 interface BudgetSummaryProps {
-  budgetName: string;
-  vehiclePlate: string;
-  vehicleModel: string;
-  vehicleBrand: string;
-  vehicleYear?: number;
-  selectedServices: BudgetItem[];
-  totalValue: number;
-  onBudgetNameChange: (name: string) => void;
+  budget: Budget;
+  onBudgetInfoChange: (
+    name: string,
+    vehiclePlate: string,
+    vehicleModel: string,
+    vehicleBrand: string,
+    vehicleYear?: number
+  ) => void;
   onQuantityChange: (serviceId: string, quantity: number) => void;
   onRemoveService: (serviceId: string) => void;
-  onSave: () => void;
-  onClear: () => void;
-  isLoading?: boolean;
 }
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({
-  budgetName,
-  vehiclePlate,
-  vehicleModel,
-  vehicleBrand,
-  vehicleYear,
-  selectedServices,
-  totalValue,
-  onBudgetNameChange,
+  budget,
+  onBudgetInfoChange,
   onQuantityChange,
   onRemoveService,
-  onSave,
-  onClear,
-  isLoading = false,
 }) => {
+  const handleBudgetNameChange = (name: string) => {
+    onBudgetInfoChange(
+      name,
+      budget.vehiclePlate,
+      budget.vehicleModel,
+      budget.vehicleBrand,
+      budget.vehicleYear
+    );
+  };
+
   return (
     <div
       style={{
@@ -72,8 +70,8 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
           </label>
           <input
             type="text"
-            value={budgetName}
-            onChange={e => onBudgetNameChange(e.target.value)}
+            value={budget.name}
+            onChange={e => handleBudgetNameChange(e.target.value)}
             placeholder="Ex: Orçamento Lavagem Completa"
             style={{
               width: '100%',
@@ -110,9 +108,12 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
             🚗 Informações do Veículo
           </div>
 
-          {vehiclePlate || vehicleModel || vehicleBrand || vehicleYear ? (
+          {budget.vehiclePlate ||
+          budget.vehicleModel ||
+          budget.vehicleBrand ||
+          budget.vehicleYear ? (
             <div style={{ fontSize: '14px', color: '#666' }}>
-              {vehiclePlate && (
+              {budget.vehiclePlate && (
                 <div style={{ marginBottom: '8px' }}>
                   <strong>Placa:</strong>{' '}
                   <span
@@ -123,23 +124,23 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
                       borderRadius: '4px',
                     }}
                   >
-                    {vehiclePlate}
+                    {budget.vehiclePlate}
                   </span>
                 </div>
               )}
-              {vehicleModel && (
+              {budget.vehicleModel && (
                 <div style={{ marginBottom: '8px' }}>
-                  <strong>Modelo:</strong> {vehicleModel}
+                  <strong>Modelo:</strong> {budget.vehicleModel}
                 </div>
               )}
-              {vehicleBrand && (
+              {budget.vehicleBrand && (
                 <div style={{ marginBottom: '8px' }}>
-                  <strong>Marca:</strong> {vehicleBrand}
+                  <strong>Marca:</strong> {budget.vehicleBrand}
                 </div>
               )}
-              {vehicleYear && (
+              {budget.vehicleYear && (
                 <div style={{ marginBottom: '8px' }}>
-                  <strong>Ano:</strong> {vehicleYear}
+                  <strong>Ano:</strong> {budget.vehicleYear}
                 </div>
               )}
             </div>
@@ -161,10 +162,10 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
             marginBottom: '16px',
           }}
         >
-          Serviços Selecionados ({selectedServices.length})
+          Serviços Selecionados ({budget.items.length})
         </h4>
 
-        {selectedServices.length === 0 ? (
+        {budget.items.length === 0 ? (
           <div
             style={{
               textAlign: 'center',
@@ -179,7 +180,7 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {selectedServices.map(item => (
+            {budget.items.map((item: BudgetItem) => (
               <div
                 key={item.service.id}
                 style={{
@@ -340,59 +341,23 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
               color: '#28a745',
             }}
           >
-            R$ {totalValue.toFixed(2)}
+            R$ {budget.totalValue.toFixed(2)}
           </span>
         </div>
       </div>
 
-      {/* Botões de Ação */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button
-          onClick={onSave}
-          disabled={
-            selectedServices.length === 0 || !budgetName.trim() || !vehiclePlate.trim() || isLoading
-          }
-          style={{
-            width: '100%',
-            padding: '12px',
-            background:
-              selectedServices.length > 0 && budgetName.trim() && vehiclePlate.trim() && !isLoading
-                ? '#28a745'
-                : '#ccc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor:
-              selectedServices.length > 0 && budgetName.trim() && vehiclePlate.trim() && !isLoading
-                ? 'pointer'
-                : 'not-allowed',
-            transition: 'background-color 0.2s',
-          }}
-        >
-          {isLoading ? 'Salvando...' : 'Salvar Orçamento'}
-        </button>
-
-        <button
-          onClick={onClear}
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: '#6c757d',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s',
-          }}
-          onMouseOver={e => ((e.target as HTMLElement).style.background = '#5a6268')}
-          onMouseOut={e => ((e.target as HTMLElement).style.background = '#6c757d')}
-        >
-          Limpar Orçamento
-        </button>
+      {/* Informação sobre ações */}
+      <div
+        style={{
+          background: '#f8f9fa',
+          padding: '12px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          color: '#6c757d',
+          textAlign: 'center',
+        }}
+      >
+        Use os botões de ação no final da página para salvar ou limpar o orçamento
       </div>
     </div>
   );

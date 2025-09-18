@@ -73,8 +73,9 @@ function handleServiceResult<T>(result: Result<T>, successStatus: number = 200):
     return NextResponse.json({ success: true, data: result.data }, { status: successStatus });
   }
 
-  // Determinar código e status baseado no nome do erro
-  const errorName = result.error?.name || 'Error';
+  // Type narrowing: aqui sabemos que result tem success: false
+  const failureResult = result as { readonly success: false; readonly error: Error };
+  const errorName = failureResult.error?.name || 'Error';
   const errorMapping: Record<string, { code: string; status: number }> = {
     ValidationError: { code: 'VALIDATION_ERROR', status: 400 },
     NotFoundError: { code: 'NOT_FOUND_ERROR', status: 404 },
@@ -90,7 +91,7 @@ function handleServiceResult<T>(result: Result<T>, successStatus: number = 200):
     success: false,
     error: {
       code: mapping.code,
-      message: result.error?.message || 'Erro interno do servidor',
+      message: failureResult.error?.message || 'Erro interno do servidor',
     },
   };
 

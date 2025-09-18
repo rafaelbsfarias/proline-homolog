@@ -34,9 +34,10 @@ export class ClientService {
       throw new DatabaseError('Erro ao verificar usuários existentes.');
     }
 
-    const emailExists = existingUsersData?.users?.some(
-      u => u.email !== undefined && u.email === clientData.email
-    );
+    const emailExists =
+      existingUsersData?.users?.some(
+        (u: { email?: string }) => u.email !== undefined && u.email === clientData.email
+      ) ?? false;
 
     if (emailExists) {
       logger.warn(`Client creation failed: Email ${clientData.email} already in use.`);

@@ -86,7 +86,7 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
     };
 
     const { data: budget, error: budgetError } = await supabase
-      .from('partner_budgets')
+      .from('quotes')
       .insert(budgetData)
       .select()
       .single();
@@ -107,13 +107,13 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
       created_at: new Date().toISOString(),
     }));
 
-    const { error: itemsError } = await supabase.from('partner_budget_items').insert(budgetItems);
+    const { error: itemsError } = await supabase.from('quote_items').insert(budgetItems);
 
     if (itemsError) {
       logger.error('Erro ao salvar itens do orçamento', { error: itemsError, budgetId: budget.id });
 
       // Tentar remover o orçamento se os itens falharam
-      await supabase.from('partner_budgets').delete().eq('id', budget.id);
+      await supabase.from('quotes').delete().eq('id', budget.id);
 
       return NextResponse.json({ error: 'Erro ao salvar itens do orçamento' }, { status: 500 });
     }

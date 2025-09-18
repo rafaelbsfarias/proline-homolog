@@ -15,6 +15,13 @@ import {
   PaginatedPartnerServices,
 } from './PartnerServiceApplicationService';
 import { getCacheService, CACHE_KEYS } from '@/modules/common/services/cache/CacheService';
+import {
+  DuplicateServiceNameError,
+  ServiceNotFoundError,
+  ServiceAlreadyActiveError,
+  ServiceAlreadyInactiveError,
+  ServicePersistenceError,
+} from '../../errors/PartnerServiceErrors';
 
 /**
  * Implementação do Application Service para PartnerService
@@ -47,9 +54,7 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
           partnerId: command.partnerId,
           name: command.name,
         });
-        return createError(
-          new Error(`Já existe um serviço com o nome "${command.name}" para este parceiro`)
-        );
+        return createError(new DuplicateServiceNameError(command.name));
       }
 
       // Criar nova entidade PartnerService
@@ -62,11 +67,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       );
 
       if (!createResult.success) {
+        const failureResult = createResult as { readonly success: false; readonly error: Error };
         this.logger.error('Falha na validação do serviço', {
-          error: createResult.error.message,
+          error: failureResult.error.message,
           partnerId: command.partnerId,
         });
-        return createError(createResult.error);
+        return createError(failureResult.error);
       }
 
       // Salvar no repositório
@@ -91,7 +97,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
         name: command.name,
       });
       return createError(
-        error instanceof Error ? error : new Error('Erro desconhecido ao criar serviço')
+        new ServicePersistenceError(
+          'criação de serviço',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -107,7 +116,7 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       const existingService = await this.repository.findById(command.id);
       if (!existingService) {
         this.logger.warn('Tentativa de atualizar serviço inexistente', { serviceId: command.id });
-        return createError(new Error('Serviço não encontrado'));
+        return createError(new ServiceNotFoundError(command.id));
       }
 
       // Se nome está sendo alterado, verificar unicidade
@@ -124,9 +133,7 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
             partnerId: existingService.partnerId,
             name: command.name,
           });
-          return createError(
-            new Error(`Já existe um serviço com o nome "${command.name}" para este parceiro`)
-          );
+          return createError(new DuplicateServiceNameError(command.name));
         }
       }
 
@@ -144,11 +151,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       const updateResult = existingService.updateMultiple(updateData);
 
       if (!updateResult.success) {
+        const failureResult = updateResult as { readonly success: false; readonly error: Error };
         this.logger.error('Falha na validação da atualização', {
-          error: updateResult.error.message,
+          error: failureResult.error.message,
           serviceId: command.id,
         });
-        return createError(updateResult.error);
+        return createError(failureResult.error);
       }
 
       let updatedService = updateResult.data;
@@ -183,7 +191,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
         serviceId: command.id,
       });
       return createError(
-        error instanceof Error ? error : new Error('Erro desconhecido ao atualizar serviço')
+        new ServicePersistenceError(
+          'atualização de serviço',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -199,13 +210,13 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       const existingService = await this.repository.findById(serviceId);
       if (!existingService) {
         this.logger.warn('Tentativa de desativar serviço inexistente', { serviceId });
-        return createError(new Error('Serviço não encontrado'));
+        return createError(new ServiceNotFoundError(serviceId));
       }
 
       // Verificar se já está desativado
       if (!existingService.isActive) {
         this.logger.warn('Tentativa de desativar serviço já desativado', { serviceId });
-        return createError(new Error('Serviço já está desativado'));
+        return createError(new ServiceAlreadyInactiveError(serviceId));
       }
 
       // Desativar serviço
@@ -229,7 +240,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro inesperado ao desativar serviço', { error, serviceId });
       return createError(
-        error instanceof Error ? error : new Error('Erro desconhecido ao desativar serviço')
+        new ServicePersistenceError(
+          'desativação de serviço',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -245,13 +259,13 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       const existingService = await this.repository.findById(serviceId);
       if (!existingService) {
         this.logger.warn('Tentativa de reativar serviço inexistente', { serviceId });
-        return createError(new Error('Serviço não encontrado'));
+        return createError(new ServiceNotFoundError(serviceId));
       }
 
       // Verificar se já está ativo
       if (existingService.isActive) {
         this.logger.warn('Tentativa de reativar serviço já ativo', { serviceId });
-        return createError(new Error('Serviço já está ativo'));
+        return createError(new ServiceAlreadyActiveError(serviceId));
       }
 
       // Reativar serviço
@@ -275,7 +289,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro inesperado ao reativar serviço', { error, serviceId });
       return createError(
-        error instanceof Error ? error : new Error('Erro desconhecido ao reativar serviço')
+        new ServicePersistenceError(
+          'reativação de serviço',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -285,15 +302,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
    */
   async getServiceById(serviceId: string): Promise<Result<PartnerService | null>> {
     try {
-      this.logger.debug('Buscando serviço por ID', { serviceId });
-
       // Criar chave de cache
       const cacheKey = CACHE_KEYS.service(serviceId);
 
       // Verificar cache primeiro
       const cachedService = this.cache.get<PartnerService | null>(cacheKey);
       if (cachedService !== null) {
-        this.logger.debug('Serviço retornado do cache', { serviceId });
         return createSuccess(cachedService);
       }
 
@@ -302,17 +316,14 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       // Armazenar no cache (TTL de 10 minutos para itens individuais)
       this.cache.set(cacheKey, service, 600000);
 
-      this.logger.debug('Serviço encontrado', {
-        serviceId,
-        found: service !== null,
-        cached: false,
-      });
-
       return createSuccess(service);
     } catch (error) {
       this.logger.error('Erro ao buscar serviço por ID', { error, serviceId });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao buscar serviço por ID')
+        new ServicePersistenceError(
+          'busca de serviço por ID',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -327,15 +338,12 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     limit: number = 10
   ): Promise<Result<PaginatedPartnerServices>> {
     try {
-      this.logger.debug('Listando serviços do parceiro', { partnerId, page, limit, filters });
-
       // Criar chave de cache
       const cacheKey = CACHE_KEYS.partnerServices(partnerId, page, limit, filters?.nameFilter);
 
       // Verificar cache primeiro
       const cachedResult = this.cache.get<PaginatedPartnerServices>(cacheKey);
       if (cachedResult) {
-        this.logger.debug('Resultado retornado do cache', { partnerId, cacheKey });
         return createSuccess(cachedResult);
       }
 
@@ -351,20 +359,14 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
       // Armazenar no cache (TTL de 5 minutos para listagens)
       this.cache.set(cacheKey, result, 300000);
 
-      this.logger.debug('Serviços do parceiro listados', {
-        partnerId,
-        count: result.services.length,
-        total: result.total,
-        page,
-        limit,
-        cached: false,
-      });
-
       return createSuccess(result);
     } catch (error) {
       this.logger.error('Erro ao listar serviços do parceiro', { error, partnerId });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao listar serviços do parceiro')
+        new ServicePersistenceError(
+          'listagem de serviços do parceiro',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -378,8 +380,6 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     limit: number = 10
   ): Promise<Result<PaginatedPartnerServices>> {
     try {
-      this.logger.debug('Listando todos os serviços', { page, limit, filters });
-
       const paginationOptions = {
         page,
         limit,
@@ -388,18 +388,14 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
 
       const result = await this.repository.findWithPagination(paginationOptions);
 
-      this.logger.debug('Todos os serviços listados', {
-        count: result.services.length,
-        total: result.total,
-        page,
-        limit,
-      });
-
       return createSuccess(result);
     } catch (error) {
       this.logger.error('Erro ao listar todos os serviços', { error });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao listar todos os serviços')
+        new ServicePersistenceError(
+          'listagem de todos os serviços',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -448,7 +444,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro ao pesquisar serviços por nome', { error, name, partnerId });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao pesquisar serviços por nome')
+        new ServicePersistenceError(
+          'pesquisa de serviços por nome',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -506,7 +505,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
         partnerId,
       });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao buscar serviços por faixa de preço')
+        new ServicePersistenceError(
+          'busca de serviços por faixa de preço',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -544,7 +546,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro ao contar serviços ativos', { error, partnerId });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao contar serviços ativos')
+        new ServicePersistenceError(
+          'contagem de serviços ativos',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -569,7 +574,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro ao desativar todos os serviços', { error, partnerId });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao desativar todos os serviços')
+        new ServicePersistenceError(
+          'desativação de todos os serviços',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }
@@ -607,7 +615,10 @@ export class PartnerServiceApplicationServiceImpl implements PartnerServiceAppli
     } catch (error) {
       this.logger.error('Erro ao validar unicidade do nome', { error, partnerId, name });
       return createError(
-        error instanceof Error ? error : new Error('Erro ao validar unicidade do nome')
+        new ServicePersistenceError(
+          'validação de unicidade do nome',
+          error instanceof Error ? error : undefined
+        )
       );
     }
   }

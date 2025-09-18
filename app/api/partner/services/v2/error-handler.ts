@@ -10,7 +10,7 @@ export interface ApiErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }
 
@@ -33,15 +33,16 @@ export function handleServiceResult<T>(
     return NextResponse.json({ success: true, data: result.data }, { status: successStatus });
   }
 
-  // Determinar código e status baseado no nome do erro
-  const errorName = result.error?.name || 'Error';
+  // Type narrowing: aqui sabemos que result tem success: false
+  const failureResult = result as { readonly success: false; readonly error: Error };
+  const errorName = failureResult.error?.name || 'Error';
   const errorMapping = ERROR_NAME_MAP[errorName] || { code: 'UNKNOWN_ERROR', status: 500 };
 
   const errorResponse: ApiErrorResponse = {
     success: false,
     error: {
       code: errorMapping.code,
-      message: result.error?.message || 'Erro interno do servidor',
+      message: failureResult.error?.message || 'Erro interno do servidor',
     },
   };
 

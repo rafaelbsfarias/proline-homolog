@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
   },
   // Adiciona a configuração do Webpack para PostCSS e PurgeCSS
   webpack: (config, { isServer, dev }) => {
+    // Exclude temp directories from being processed
+    config.module.rules.push({
+      test: /\.(ts|tsx|js|jsx)$/,
+      include: [/temp-scripts/, /scripts\/temp/],
+      use: 'ignore-loader',
+    });
+
     if (!dev && !isServer) {
       // Apenas em produção (client-side)
       const originalPostcssLoader = config.module.rules.find(

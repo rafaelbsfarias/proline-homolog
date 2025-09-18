@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import DataTable from '@/modules/partner/components/DataTable';
+import DataTable from '@/modules/common/components/shared/DataTable';
+import { formatCurrency } from '@/modules/common/utils/format';
 import { PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 
 interface ServicesContentProps {
@@ -29,10 +30,7 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
   // Formata os dados antes de passá-los para a tabela
   const formattedServices = services.map(service => ({
     ...service,
-    formatted_price: new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(service.price),
+    formatted_price: formatCurrency(service.price),
   }));
 
   return (
@@ -53,6 +51,7 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           showActions={true}
+          useConfirmDialog={false}
         />
       )}
     </>

@@ -53,17 +53,20 @@ export class PartnerService {
     // Criação dos Value Objects
     const nameResult = ServiceName.create(name);
     if (!nameResult.success) {
-      return createError(nameResult.error);
+      const failureResult = nameResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     const priceResult = ServicePrice.create(price);
     if (!priceResult.success) {
-      return createError(priceResult.error);
+      const failureResult = priceResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     const descriptionResult = ServiceDescription.create(description);
     if (!descriptionResult.success) {
-      return createError(descriptionResult.error);
+      const failureResult = descriptionResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     const now = new Date();
@@ -98,17 +101,20 @@ export class PartnerService {
   }): Result<PartnerService> {
     const nameResult = ServiceName.create(data.name);
     if (!nameResult.success) {
-      return createError(nameResult.error);
+      const failureResult = nameResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     const priceResult = ServicePrice.create(data.price);
     if (!priceResult.success) {
-      return createError(priceResult.error);
+      const failureResult = priceResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     const descriptionResult = ServiceDescription.create(data.description);
     if (!descriptionResult.success) {
-      return createError(descriptionResult.error);
+      const failureResult = descriptionResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     return createSuccess(
@@ -167,7 +173,8 @@ export class PartnerService {
   updateName(newName: string): Result<PartnerService> {
     const nameResult = ServiceName.create(newName);
     if (!nameResult.success) {
-      return createError(nameResult.error);
+      const failureResult = nameResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     // Garante que updatedAt seja sempre maior que o atual
@@ -195,7 +202,8 @@ export class PartnerService {
   updatePrice(newPrice: number | string): Result<PartnerService> {
     const priceResult = ServicePrice.create(newPrice);
     if (!priceResult.success) {
-      return createError(priceResult.error);
+      const failureResult = priceResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     // Garante que updatedAt seja sempre maior que o atual
@@ -223,7 +231,8 @@ export class PartnerService {
   updateDescription(newDescription: string): Result<PartnerService> {
     const descriptionResult = ServiceDescription.create(newDescription);
     if (!descriptionResult.success) {
-      return createError(descriptionResult.error);
+      const failureResult = descriptionResult as { readonly success: false; readonly error: Error };
+      return createError(failureResult.error);
     }
 
     // Garante que updatedAt seja sempre maior que o atual
@@ -261,7 +270,8 @@ export class PartnerService {
     if (updates.name !== undefined) {
       const nameResult = ServiceName.create(updates.name);
       if (!nameResult.success) {
-        return createError(nameResult.error);
+        const failureResult = nameResult as { readonly success: false; readonly error: Error };
+        return createError(failureResult.error);
       }
       currentName = nameResult.data;
     }
@@ -270,7 +280,8 @@ export class PartnerService {
     if (updates.price !== undefined) {
       const priceResult = ServicePrice.create(updates.price);
       if (!priceResult.success) {
-        return createError(priceResult.error);
+        const failureResult = priceResult as { readonly success: false; readonly error: Error };
+        return createError(failureResult.error);
       }
       currentPrice = priceResult.data;
     }
@@ -279,7 +290,11 @@ export class PartnerService {
     if (updates.description !== undefined) {
       const descriptionResult = ServiceDescription.create(updates.description);
       if (!descriptionResult.success) {
-        return createError(descriptionResult.error);
+        const failureResult = descriptionResult as {
+          readonly success: false;
+          readonly error: Error;
+        };
+        return createError(failureResult.error);
       }
       currentDescription = descriptionResult.data;
     }

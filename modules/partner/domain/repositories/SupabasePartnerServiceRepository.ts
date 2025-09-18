@@ -533,7 +533,8 @@ export class SupabasePartnerServiceRepository implements PartnerServiceRepositor
     });
 
     if (!reconstructResult.success) {
-      throw new Error(`Falha ao reconstruir PartnerService: ${reconstructResult.error.message}`);
+      const failureResult = reconstructResult as { readonly success: false; readonly error: Error };
+      throw new Error(`Falha ao reconstruir PartnerService: ${failureResult.error.message}`);
     }
 
     return reconstructResult.data;

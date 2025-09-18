@@ -11,7 +11,7 @@ O menu lateral da página `/dashboard/services` foi completamente redesenhado se
 ## Componentes Criados
 
 ### 1. `ServicesSidebar` (Componente Principal)
-- **Localização**: `/modules/partner/components/ServicesSidebar.tsx`
+- **Localização**: `/modules/partner/components/services/ServicesSidebar.tsx`
 - **Responsabilidades**:
   - Gerenciar estado de pesquisa
   - Organizar serviços por categoria
@@ -50,7 +50,7 @@ O menu lateral da página `/dashboard/services` foi completamente redesenhado se
 ### Integração Básica
 
 ```tsx
-import ServicesSidebar from '@/modules/partner/components/ServicesSidebar';
+import ServicesSidebar from '@/modules/partner/components/services/ServicesSidebar';
 
 function MyPage() {
   const services = usePartnerServices();

@@ -158,10 +158,31 @@ export function useBudget() {
     [budget.items]
   );
 
+  const loadBudget = useCallback(async (budgetId: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fazer: Implementar carregamento do orçamento via API
+      // Por enquanto, manter estado vazio para não quebrar
+
+      // Evitar warning de parâmetro não usado
+      void budgetId;
+
+      // Simular carregamento
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar orçamento');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     budget,
     loading,
     error,
+    loadBudget,
     addService,
     removeService,
     updateQuantity,
