@@ -156,14 +156,14 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
               vehicles.map(vehicle => (
                 <VehicleItemRow
                   key={vehicle.id}
-                  vehicle={vehicle as Vehicle}
-                  addresses={addresses as any}
+                  vehicle={vehicle}
+                  addresses={addresses}
                   collectionFee={vehicle.collection_fee ?? undefined}
                   onOpenDetails={v => {
-                    setSelectedVehicle(v as Vehicle);
+                    setSelectedVehicle(v);
                     setShowModal(true);
                   }}
-                  onOpenRowModal={v => setRowModalVehicle(v as Vehicle)}
+                  onOpenRowModal={v => setRowModalVehicle(v)}
                 />
               ))
             )}
@@ -201,7 +201,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
                   analyst: undefined,
                   arrival_forecast: undefined,
                   current_km: undefined,
-                  params: undefined,
                   notes: undefined,
                   estimated_arrival_date: selectedVehicle.estimated_arrival_date,
                   current_odometer: selectedVehicle.current_odometer,
@@ -217,7 +216,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           isOpen={!!rowModalVehicle}
           onClose={() => setRowModalVehicle(null)}
           vehicle={{ id: rowModalVehicle.id, pickup_address_id: rowModalVehicle.pickup_address_id }}
-          addresses={addresses as any}
+          addresses={addresses}
           minDate={minDateIsoLocal}
           onApply={async payload => {
             const resp = await post('/api/client/set-vehicles-collection', payload);
