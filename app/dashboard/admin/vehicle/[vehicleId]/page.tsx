@@ -7,7 +7,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import { getLogger } from '@/modules/logger';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { translateFuelLevel, VEHICLE_CONSTANTS } from '@/app/constants/messages';
-import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
+import ImageViewerModal from '@/modules/client/components/ImageViewerModal/ImageViewerModal';
 
 interface VehicleDetails {
   id: string;

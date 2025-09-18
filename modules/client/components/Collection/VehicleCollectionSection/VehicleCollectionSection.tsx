@@ -7,7 +7,7 @@ import { formatTotalCurrencyBR } from '@/modules/common/utils/format';
 import { useClientCollectionSummary } from '@/modules/client/hooks/useClientCollectionSummary';
 import { useIndividualApproval } from '@/modules/client/hooks/collection/useIndividualApproval';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
-import CalendarMonth from '../Calendar/CalendarMonth';
+import CalendarMonth from '../../Calendar/CalendarMonth';
 import styles from './VehicleCollectionSection.module.css';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';

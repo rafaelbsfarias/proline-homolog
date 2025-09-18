@@ -12,7 +12,7 @@ import {
   translateServiceCategory,
 } from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
-import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
+import ImageViewerModal from '@/modules/client/components/ImageViewerModal/ImageViewerModal';
 
 interface VehicleDetails {
   id: string;

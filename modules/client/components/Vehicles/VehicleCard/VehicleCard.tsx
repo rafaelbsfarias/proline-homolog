@@ -18,7 +18,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   year,
   color,
   status,
-  onClick
+  onClick,
 }) => {
   return (
     <div className={styles.vehicleCard} onClick={onClick}>

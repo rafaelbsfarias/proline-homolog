@@ -3,8 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import './VehicleCollectionControls.css';
-import CollectPointSelect from './CollectPointSelect';
 import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
+import CollectPointSelect from '../CollectPointSelect';
 
 type Vehicle = { id: string; plate: string; status?: string };
 type Address = {

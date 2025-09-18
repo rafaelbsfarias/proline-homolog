@@ -4,10 +4,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import './VehicleCounter.css';
-import RowCollectionModal from '../Modals/RowCollectionModal/RowCollectionModal';
-import StatusChips from '../StatusChips/StatusChips';
-import VehicleFilters from '../VehicleFilters';
-import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
+import RowCollectionModal from '../../Modals/RowCollectionModal/RowCollectionModal';
+import StatusChips from '../../StatusChips/StatusChips';
+import VehicleFilters from '../../VehicleFilters';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
@@ -16,6 +15,7 @@ import VehicleItemRow from './VehicleItemRow';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
 import Pagination from '@/modules/common/components/Pagination/Pagination';
+import BulkCollectionControls from '../../Collection/BulkCollectionControls/BulkCollectionControls';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;

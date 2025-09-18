@@ -12,7 +12,7 @@ export const VehicleCounterHeader: React.FC<VehicleCounterHeaderProps> = ({
   userName,
   vehicleCount,
   onRefresh,
-  loading
+  loading,
 }) => {
   return (
     <div className={styles.header}>
