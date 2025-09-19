@@ -1,11 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import Header from '@/modules/admin/components/Header';
+import { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
-import VehicleDetails from '@/modules/vehicles/components/VehicleDetails';
 
 interface VehicleDetailsData {
   id: string;
@@ -49,10 +46,8 @@ interface InspectionResponse {
   error?: string;
 }
 
-const SpecialistVehicleDetailsPage = () => {
-  const params = useParams();
-  const vehicleId = params.vehicleId as string;
-  const logger = getLogger('specialist:VehicleDetailsPage');
+export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: string) => {
+  const logger = getLogger(`${role}:useVehicleDetails`);
   const { get } = useAuthenticatedFetch();
 
   const [vehicle, setVehicle] = useState<VehicleDetailsData | null>(null);
@@ -69,7 +64,7 @@ const SpecialistVehicleDetailsPage = () => {
     for (const mediaItem of media) {
       try {
         const urlResp = await get<{ success: boolean; signedUrl?: string; error?: string }>(
-          `/api/specialist/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
+          `/api/${role}/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
         );
 
         if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
@@ -93,6 +88,12 @@ const SpecialistVehicleDetailsPage = () => {
 
   useEffect(() => {
     const fetchVehicleDetails = async () => {
+      if (!role) {
+        setError('User role is not defined.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
 
@@ -100,7 +101,7 @@ const SpecialistVehicleDetailsPage = () => {
           success: boolean;
           vehicle?: VehicleDetailsData;
           error?: string;
-        }>(`/api/specialist/vehicles/${vehicleId}`);
+        }>(`/api/${role}/vehicles/${vehicleId}`);
 
         if (!vehicleResp.ok || !vehicleResp.data?.success) {
           throw new Error(vehicleResp.data?.error || 'Erro ao carregar veículo');
@@ -109,7 +110,7 @@ const SpecialistVehicleDetailsPage = () => {
         setVehicle(vehicleResp.data.vehicle || null);
 
         const inspectionResp = await get<InspectionResponse>(
-          `/api/specialist/vehicle-inspection?vehicleId=${vehicleId}`
+          `/api/${role}/vehicle-inspection?vehicleId=${vehicleId}`
         );
 
         if (inspectionResp.ok && inspectionResp.data?.success) {
@@ -128,23 +129,10 @@ const SpecialistVehicleDetailsPage = () => {
       }
     };
 
-    if (vehicleId) {
+    if (vehicleId && role) {
       fetchVehicleDetails();
     }
-  }, [vehicleId, get]);
+  }, [vehicleId, get, role]);
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header />
-      <VehicleDetails
-        vehicle={vehicle}
-        inspection={inspection}
-        mediaUrls={mediaUrls}
-        loading={loading}
-        error={error}
-      />
-    </div>
-  );
+  return { vehicle, inspection, mediaUrls, loading, error };
 };
-
-export default SpecialistVehicleDetailsPage;

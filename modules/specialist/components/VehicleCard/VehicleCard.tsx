@@ -34,7 +34,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   const handleNavigateToDetails = () => {
     if (v && v.id) {
       if (onNavigateToDetails) onNavigateToDetails(v.id);
-      else router.push(`/dashboard/specialist/vehicle/${v.id}`);
+      else router.push(`/dashboard/vehicle/${v.id}`);
     }
   };
 
