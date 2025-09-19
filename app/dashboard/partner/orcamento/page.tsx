@@ -18,11 +18,22 @@ const OrcamentoPage = () => {
 
   // Hooks para gerenciar estado e dados
   const { services, loading: servicesLoading, error: servicesError } = usePartnerServices();
-  const { budget, addService, removeService, updateQuantity, updateBudgetInfo, clearBudget } =
-    useBudget();
+  const {
+    budget,
+    addService,
+    removeService,
+    updateQuantity,
+    updateBudgetInfo,
+    clearBudget,
+    loadBudgetFromData,
+  } = useBudget();
 
   // Hook customizado para carregamento de quote
-  const { isEditing, loadingQuote, error: quoteError } = useQuoteLoader(quoteId, updateBudgetInfo);
+  const {
+    isEditing,
+    loadingQuote,
+    error: quoteError,
+  } = useQuoteLoader(quoteId, updateBudgetInfo, loadBudgetFromData);
 
   // Hook customizado para salvamento
   const { savingBudget, saveMessage, saveBudget, clearSaveMessage } = useBudgetSaver();

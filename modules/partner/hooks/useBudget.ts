@@ -21,6 +21,28 @@ export interface Budget {
   updatedAt?: Date;
 }
 
+interface QuoteDataItem {
+  id: string;
+  serviceId?: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+interface QuoteData {
+  id?: string;
+  name?: string;
+  vehiclePlate?: string;
+  vehicleModel?: string;
+  vehicleBrand?: string;
+  vehicleYear?: number;
+  items?: QuoteDataItem[];
+  totalValue?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export function useBudget() {
   const [budget, setBudget] = useState<Budget>({
     name: '',
@@ -158,6 +180,55 @@ export function useBudget() {
     [budget.items]
   );
 
+  const loadBudgetFromData = useCallback((budgetData: QuoteData) => {
+    if (!budgetData) return;
+
+    // Primeiro, limpa o budget atual
+    setBudget({
+      name: '',
+      vehiclePlate: '',
+      vehicleModel: '',
+      vehicleBrand: '',
+      vehicleYear: undefined,
+      items: [],
+      totalValue: 0,
+    });
+
+    // Depois, atualiza com os dados carregados
+    setBudget(prev => {
+      const items: BudgetItem[] = (budgetData.items || []).map((item: QuoteDataItem) => ({
+        service: {
+          id: item.serviceId || `service-${item.id}`,
+          name: item.description,
+          description: item.description,
+          price: item.unitPrice,
+          category: 'Geral',
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+      }));
+
+      return {
+        ...prev,
+        id: budgetData.id,
+        name: budgetData.name || `Orçamento #${budgetData.id?.slice(0, 8)}`,
+        vehiclePlate: budgetData.vehiclePlate || '',
+        vehicleModel: budgetData.vehicleModel || '',
+        vehicleBrand: budgetData.vehicleBrand || '',
+        vehicleYear: budgetData.vehicleYear,
+        items,
+        totalValue:
+          budgetData.totalValue || items.reduce((total, item) => total + item.totalPrice, 0),
+        createdAt: budgetData.createdAt ? new Date(budgetData.createdAt) : undefined,
+        updatedAt: budgetData.updatedAt ? new Date(budgetData.updatedAt) : undefined,
+      };
+    });
+  }, []);
+
   const loadBudget = useCallback(async (budgetId: string) => {
     setLoading(true);
     setError(null);
@@ -189,6 +260,7 @@ export function useBudget() {
     updateBudgetInfo,
     clearBudget,
     isServiceSelected,
+    loadBudgetFromData,
     getServiceQuantity,
   };
 }
