@@ -1,0 +1,55 @@
+.card {
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  border-color: #ccc;
+  background: #f5f5f5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.cardTitle {
+  font-weight: 600;
+  color: #333;
+}
+
+.cardInfo {
+  color: #555;
+}
+
+.cardActions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.checklistButton {
+  background: #fff;
+}
+
+.checklistButton:disabled {
+  background: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.confirmArrivalButton {
+  background: #e8f5e9;
+}
+
+.confirmArrivalButton:disabled {
+  background: #f0f0f0;
+  cursor: not-allowed;
+}
