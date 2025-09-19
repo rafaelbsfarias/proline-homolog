@@ -49,10 +49,10 @@ interface InspectionResponse {
   error?: string;
 }
 
-const VehicleDetailsPage = () => {
+const SpecialistVehicleDetailsPage = () => {
   const params = useParams();
   const vehicleId = params.vehicleId as string;
-  const logger = getLogger('client:VehicleDetailsPage');
+  const logger = getLogger('specialist:VehicleDetailsPage');
   const { get } = useAuthenticatedFetch();
 
   const [vehicle, setVehicle] = useState<VehicleDetailsData | null>(null);
@@ -69,7 +69,7 @@ const VehicleDetailsPage = () => {
     for (const mediaItem of media) {
       try {
         const urlResp = await get<{ success: boolean; signedUrl?: string; error?: string }>(
-          `/api/client/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
+          `/api/specialist/get-media-url?path=${encodeURIComponent(mediaItem.storage_path)}&vehicleId=${vehicleId}`
         );
 
         if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
@@ -100,7 +100,7 @@ const VehicleDetailsPage = () => {
           success: boolean;
           vehicle?: VehicleDetailsData;
           error?: string;
-        }>(`/api/client/vehicles/${vehicleId}`);
+        }>(`/api/specialist/vehicles/${vehicleId}`);
 
         if (!vehicleResp.ok || !vehicleResp.data?.success) {
           throw new Error(vehicleResp.data?.error || 'Erro ao carregar veículo');
@@ -109,7 +109,7 @@ const VehicleDetailsPage = () => {
         setVehicle(vehicleResp.data.vehicle || null);
 
         const inspectionResp = await get<InspectionResponse>(
-          `/api/client/vehicle-inspection?vehicleId=${vehicleId}`
+          `/api/specialist/vehicle-inspection?vehicleId=${vehicleId}`
         );
 
         if (inspectionResp.ok && inspectionResp.data?.success) {
@@ -147,4 +147,4 @@ const VehicleDetailsPage = () => {
   );
 };
 
-export default VehicleDetailsPage;
+export default SpecialistVehicleDetailsPage;
