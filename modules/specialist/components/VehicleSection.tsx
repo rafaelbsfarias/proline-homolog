@@ -72,10 +72,11 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
 
   return (
     <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 16 }}>
-      {/* Filtros */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      {/* Linha do título e botões */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#333' }}>Veículos de {clientName}</h3>
         <button
+          type="button"
           onClick={onRefetch}
           disabled={loading}
           style={{
@@ -89,12 +90,13 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
           Atualizar
         </button>
         <button
+          type="button"
           onClick={onClearFilters}
           disabled={loading}
           style={{
             padding: '4px 10px',
-            borderRadius: 6,
             border: '1px solid #ccc',
+            borderRadius: 6,
             background: '#fff',
             cursor: 'pointer',
           }}
@@ -103,11 +105,63 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         </button>
       </div>
 
+      {/* Input e select de filtro, ocupando toda a largura */}
+      <div style={{ marginTop: 12, marginBottom: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <label
+            htmlFor="filter-plate"
+            style={{ display: 'block', color: '#333', marginBottom: 4 }}
+          >
+            Filtrar por placa
+          </label>
+          <input
+            id="filter-plate"
+            type="text"
+            placeholder="Ex: ABC1234"
+            value={filterPlate}
+            onChange={e => onFilterPlateChange(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              minWidth: 150,
+            }}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="filter-status"
+            style={{ display: 'block', color: '#333', marginBottom: 4 }}
+          >
+            Status
+          </label>
+          <select
+            id="filter-status"
+            value={filterStatus}
+            onChange={e => onFilterStatusChange(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              minWidth: 150,
+            }}
+          >
+            <option value="">Todos</option>
+            {availableStatuses.map(s => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Erro, loading e listagem */}
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
       {loading ? (
         <Spinner size={30} />
       ) : filteredVehicles.length === 0 ? (
-        <p>Nenhum veículo cadastrado para este cliente.</p>
+        <p style={{ marginTop: 8 }}>Nenhum veículo cadastrado para este cliente.</p>
       ) : (
         <div
           style={{
@@ -130,6 +184,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         </div>
       )}
 
+      {/* Paginação */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
