@@ -50,25 +50,44 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       onClick={handleNavigateToDetails}
       onKeyDown={e => e.key === 'Enter' && handleNavigateToDetails()}
     >
-      <div className={styles.cardTitle}>
-        {v.brand} {v.model}
+      {/* Header */}
+      <div className={styles.cardHeader}>
+        <h4 className={styles.cardTitle}>
+          {v.brand} {v.model}
+        </h4>
       </div>
-      <div className={styles.cardInfo}>Placa: {v.plate}</div>
-      <div className={styles.cardInfo}>Ano: {v.year}</div>
-      <div className={styles.cardInfo}>Cor: {v.color}</div>
-      {v.status && <div className={styles.cardInfo}>Status: {v.status}</div>}
 
-      <div className={styles.cardActions}>
+      {/* Body */}
+      <div className={styles.cardBody}>
+        <div className={styles.cardDetail}>
+          <span className={styles.label}>Placa:</span>
+          <span>{v.plate}</span>
+        </div>
+        <div className={styles.cardDetail}>
+          <span className={styles.label}>Ano:</span>
+          <span>{v.year}</span>
+        </div>
+        <div className={styles.cardDetail}>
+          <span className={styles.label}>Cor:</span>
+          <span>{v.color}</span>
+        </div>
+        {v.status && (
+          <div className={styles.cardDetail}>
+            <span className={styles.label}>Status:</span>
+            <span className={styles.statusBadge}>{v.status}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className={styles.cardActions} onClick={e => e.stopPropagation()}>
         {renderActions ? (
           renderActions(v)
         ) : (
           <>
             <button
               type="button"
-              onClick={e => {
-                stopPropagation(e);
-                onOpenChecklist(v);
-              }}
+              onClick={() => onOpenChecklist(v)}
               disabled={!isChecklistEnabled}
               className={`${styles.button} ${styles.checklistButton}`}
             >
@@ -77,10 +96,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
 
             <button
               type="button"
-              onClick={e => {
-                stopPropagation(e);
-                onConfirmArrival(v);
-              }}
+              onClick={() => onConfirmArrival(v)}
               disabled={!!confirming[v.id] || !isConfirmArrivalEnabled}
               className={`${styles.button} ${styles.confirmArrivalButton}`}
             >
