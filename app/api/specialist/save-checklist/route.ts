@@ -118,6 +118,16 @@ export const POST = withSpecialistAuth(async (req: AuthenticatedRequest) => {
         logger.error('db_error_delete_services', { requestId, error: delSvcErr.message });
         return NextResponse.json({ error: 'Erro ao salvar serviços' }, { status: 500 });
       }
+
+      // Clear media to re-insert snapshot
+      const { error: delMediaErr } = await supabase
+        .from('inspection_media')
+        .delete()
+        .eq('inspection_id', inspectionId);
+      if (delMediaErr) {
+        logger.error('db_error_delete_media', { requestId, error: delMediaErr.message });
+        return NextResponse.json({ error: 'Erro ao registrar mídias' }, { status: 500 });
+      }
     } else {
       // Insert new inspection
       const { data: ins, error: insErr } = await supabase

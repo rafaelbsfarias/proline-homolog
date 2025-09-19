@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
 import type { VehicleData } from '../hooks/useClientVehicles';
-import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
+import VehicleCard from './VehicleCard/VehicleCard';
 import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 
@@ -19,11 +21,9 @@ interface VehicleSectionProps {
   onOpenChecklist: (vehicle: VehicleData) => void;
   onConfirmArrival: (vehicle: VehicleData) => void;
   confirming: Record<string, boolean>;
-  // Pagination props
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  // Optional render actions override (composition-friendly)
   renderActions?: (vehicle: VehicleData) => React.ReactNode;
 }
 
@@ -47,8 +47,32 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   onPageChange,
   renderActions,
 }) => {
+  const [maxStatusWidth, setMaxStatusWidth] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!filteredVehicles.length) return;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.visibility = 'hidden';
+    tempDiv.style.fontSize = '0.8rem';
+    tempDiv.style.fontWeight = '500';
+    tempDiv.style.padding = '2px 8px';
+    document.body.appendChild(tempDiv);
+
+    let maxWidth = 0;
+    filteredVehicles.forEach(v => {
+      tempDiv.innerText = v.status || '';
+      if (tempDiv.offsetWidth > maxWidth) maxWidth = tempDiv.offsetWidth;
+    });
+
+    document.body.removeChild(tempDiv);
+    setMaxStatusWidth(maxWidth + 40); // Ajuste de padding e label
+  }, [filteredVehicles]);
+
   return (
     <div style={{ marginTop: 24, borderTop: '1px solid #eee', paddingTop: 16 }}>
+      {/* Linha do título e botões */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#333' }}>Veículos de {clientName}</h3>
         <button
@@ -71,8 +95,8 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
           disabled={loading}
           style={{
             padding: '4px 10px',
-            borderRadius: 6,
             border: '1px solid #ccc',
+            borderRadius: 6,
             background: '#fff',
             cursor: 'pointer',
           }}
@@ -81,6 +105,58 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         </button>
       </div>
 
+      {/* Input e select de filtro, ocupando toda a largura */}
+      <div style={{ marginTop: 12, marginBottom: 12, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <label
+            htmlFor="filter-plate"
+            style={{ display: 'block', color: '#333', marginBottom: 4 }}
+          >
+            Filtrar por placa
+          </label>
+          <input
+            id="filter-plate"
+            type="text"
+            placeholder="Ex: ABC1234"
+            value={filterPlate}
+            onChange={e => onFilterPlateChange(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              minWidth: 150,
+            }}
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="filter-status"
+            style={{ display: 'block', color: '#333', marginBottom: 4 }}
+          >
+            Status
+          </label>
+          <select
+            id="filter-status"
+            value={filterStatus}
+            onChange={e => onFilterStatusChange(e.target.value)}
+            style={{
+              padding: '6px 8px',
+              border: '1px solid #ccc',
+              borderRadius: 6,
+              minWidth: 150,
+            }}
+          >
+            <option value="">Todos</option>
+            {availableStatuses.map(s => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Erro, loading e listagem */}
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
       {loading ? (
         <Spinner size={30} />
@@ -90,192 +166,25 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gridTemplateColumns: `repeat(auto-fill, minmax(${maxStatusWidth}px, 1fr))`,
             gap: 12,
             marginTop: 12,
           }}
         >
-          <div style={{ gridColumn: '1 / -1' }}>
-            <div
-              style={{
-                display: 'flex',
-                gap: 12,
-                flexWrap: 'wrap',
-                alignItems: 'flex-end',
-              }}
-            >
-              <div>
-                <label htmlFor="filter-plate" style={{ display: 'block', color: '#333' }}>
-                  Filtrar por placa
-                </label>
-                <input
-                  id="filter-plate"
-                  type="text"
-                  placeholder="Ex: ABC1234"
-                  value={filterPlate}
-                  onChange={e => onFilterPlateChange(e.target.value)}
-                  style={{
-                    padding: '6px 8px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                  }}
-                />
-              </div>
-              <div>
-                <label htmlFor="filter-status" style={{ display: 'block', color: '#333' }}>
-                  Status
-                </label>
-                <select
-                  id="filter-status"
-                  value={filterStatus}
-                  onChange={e => onFilterStatusChange(e.target.value)}
-                  style={{
-                    padding: '6px 8px',
-                    border: '1px solid #ccc',
-                    borderRadius: 6,
-                  }}
-                >
-                  <option value="">Todos</option>
-                  {availableStatuses.map(s => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {(filterPlate || filterStatus) && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={onClearFilters}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 6,
-                      border: '1px solid #ccc',
-                      background: '#fff',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
           {filteredVehicles.map(v => (
-            <div
+            <VehicleCard
               key={v.id}
-              style={{
-                border: '1px solid #eee',
-                borderRadius: 8,
-                padding: 12,
-                background: '#fafafa',
-              }}
-            >
-              <div style={{ fontWeight: 600, color: '#333' }}>
-                {v.brand} {v.model}
-              </div>
-              <div style={{ color: '#555' }}>Placa: {v.plate}</div>
-              <div style={{ color: '#555' }}>Ano: {v.year}</div>
-              <div style={{ color: '#555' }}>Cor: {v.color}</div>
-              {v.status && <div style={{ color: '#555' }}>Status: {v.status}</div>}
-              <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                {renderActions ? (
-                  renderActions(v)
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onOpenChecklist(v)}
-                      disabled={
-                        !(() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return (
-                            s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE
-                          );
-                        })()
-                      }
-                      style={{
-                        padding: '6px 10px',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        background: (() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return s === VehicleStatus.CHEGADA_CONFIRMADA ||
-                            s === VehicleStatus.EM_ANALISE
-                            ? '#fff'
-                            : '#f0f0f0';
-                        })(),
-                        cursor: (() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return s === VehicleStatus.CHEGADA_CONFIRMADA ||
-                            s === VehicleStatus.EM_ANALISE
-                            ? 'pointer'
-                            : 'not-allowed';
-                        })(),
-                      }}
-                      aria-label={`Abrir checklist para o veículo ${v.plate}`}
-                      title={(s =>
-                        s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE
-                          ? 'Abrir checklist'
-                          : 'Disponível após confirmar chegada')(
-                        String(v.status || '').toUpperCase()
-                      )}
-                    >
-                      Checklist
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => onConfirmArrival(v)}
-                      disabled={
-                        !!confirming[v.id] ||
-                        !(() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return (
-                            s === VehicleStatus.AGUARDANDO_COLETA ||
-                            s === VehicleStatus.AGUARDANDO_CHEGADA
-                          );
-                        })()
-                      }
-                      style={{
-                        padding: '6px 10px',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        background: (() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return s === VehicleStatus.AGUARDANDO_COLETA ||
-                            s === VehicleStatus.AGUARDANDO_CHEGADA
-                            ? '#e8f5e9'
-                            : '#f0f0f0';
-                        })(),
-                        cursor: (() => {
-                          const s = String(v.status || '').toUpperCase();
-                          return s === VehicleStatus.AGUARDANDO_COLETA ||
-                            s === VehicleStatus.AGUARDANDO_CHEGADA
-                            ? 'pointer'
-                            : 'not-allowed';
-                        })(),
-                      }}
-                      aria-label={`Confirmar chegada do veículo ${v.plate}`}
-                      title={(s =>
-                        s === VehicleStatus.AGUARDANDO_COLETA ||
-                        s === VehicleStatus.AGUARDANDO_CHEGADA
-                          ? 'Confirmar chegada'
-                          : `Disponível quando status for ${VehicleStatus.AGUARDANDO_COLETA} ou ${VehicleStatus.AGUARDANDO_CHEGADA}`)(
-                        String(v.status || '').toUpperCase()
-                      )}
-                    >
-                      {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+              vehicle={v}
+              onOpenChecklist={onOpenChecklist}
+              onConfirmArrival={onConfirmArrival}
+              confirming={confirming}
+              renderActions={renderActions}
+            />
           ))}
         </div>
       )}
+
+      {/* Paginação */}
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
