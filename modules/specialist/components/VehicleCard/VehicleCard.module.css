@@ -21,6 +21,32 @@
   transform: translateY(-2px);
 }
 
+.card.overdue {
+  border: 2px solid #d40000;
+}
+
+.card.nearExpiry {
+  border: 2px solid #ff5e00;
+}
+
+.card.nearExpiry:hover {
+  border: 2px solid #ff5e00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card.nearExpiry:hover {
+  border: 2px solid #ff5e00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card.overdue:hover {
+  border: 2px solid #d40000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 /* Header */
 .cardHeader {
   margin-bottom: 5px;

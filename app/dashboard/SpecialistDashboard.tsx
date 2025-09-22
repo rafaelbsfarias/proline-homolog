@@ -3,13 +3,13 @@ import Header from '../../modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
-import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import ClientTable from '@/modules/specialist/components/ClientTable';
-import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
@@ -67,13 +67,20 @@ const SpecialistDashboard = () => {
     [clients, selectedClientId]
   );
 
-  const filters = useMemo(
-    () => ({
-      plate: filterPlate,
-      status: filterStatus,
-    }),
-    [filterPlate, filterStatus]
-  );
+  // const filters = useMemo(
+  //   () => ({
+  //     plate: filterPlate,
+  //     status: filterStatus,
+  //   }),
+  //   [filterPlate, filterStatus]
+  // );
+
+  const filters = useMemo(() => {
+    const f: { plate?: string; status?: string } = {};
+    if (filterPlate) f.plate = filterPlate;
+    if (filterStatus) f.status = filterStatus;
+    return f;
+  }, [filterPlate, filterStatus]);
 
   const {
     vehicles,
