@@ -14,6 +14,11 @@ interface BudgetSummaryProps {
   ) => void;
   onQuantityChange: (serviceId: string, quantity: number) => void;
   onRemoveService: (serviceId: string) => void;
+  onSave: () => void;
+  onClear: () => void;
+  canSave: boolean;
+  isSaving: boolean;
+  mode: 'create' | 'edit';
 }
 
 const BudgetSummary: React.FC<BudgetSummaryProps> = ({
@@ -21,6 +26,11 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
   onBudgetInfoChange,
   onQuantityChange,
   onRemoveService,
+  onSave,
+  onClear,
+  canSave,
+  isSaving,
+  mode,
 }) => {
   const handleBudgetNameChange = (name: string) => {
     onBudgetInfoChange(
@@ -355,9 +365,52 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
           fontSize: '12px',
           color: '#6c757d',
           textAlign: 'center',
+          marginBottom: '20px',
         }}
       >
-        Use os botões de ação no final da página para salvar ou limpar o orçamento
+        Complete as informações e selecione os serviços para habilitar o salvamento
+      </div>
+
+      {/* Botões de Ação - Agora integrados e fixos */}
+      <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+        <button
+          onClick={onSave}
+          disabled={!canSave || isSaving}
+          style={{
+            width: '100%',
+            padding: '12px 24px',
+            backgroundColor: canSave && !isSaving ? '#4caf50' : '#ccc',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: canSave && !isSaving ? 'pointer' : 'not-allowed',
+            transition: 'background-color 0.2s',
+          }}
+        >
+          {isSaving ? 'Salvando...' : mode === 'edit' ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
+        </button>
+
+        <button
+          onClick={onClear}
+          disabled={isSaving}
+          style={{
+            width: '100%',
+            padding: '12px 24px',
+            backgroundColor: 'transparent',
+            color: '#666',
+            border: '2px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: isSaving ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s',
+            opacity: isSaving ? 0.6 : 1,
+          }}
+        >
+          Limpar Orçamento
+        </button>
       </div>
     </div>
   );

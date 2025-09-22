@@ -10,7 +10,6 @@ import BudgetServiceSelector from '../../../../modules/partner/components/budget
 import BudgetSummary from '../../../../modules/partner/components/budget/BudgetSummary';
 import BudgetLayout from '../../../../modules/partner/components/budget/BudgetLayout';
 import BudgetHeader from '../../../../modules/partner/components/budget/BudgetHeader';
-import BudgetActions from '../../../../modules/partner/components/budget/BudgetActions';
 
 const OrcamentoPage = () => {
   const searchParams = useSearchParams();
@@ -119,10 +118,6 @@ const OrcamentoPage = () => {
               onBudgetInfoChange={handleBudgetInfoChange}
               onQuantityChange={handleQuantityChange}
               onRemoveService={handleRemoveService}
-            />
-
-            {/* Botões de Ação */}
-            <BudgetActions
               onSave={handleSaveBudget}
               onClear={handleClearBudget}
               canSave={canSave}
