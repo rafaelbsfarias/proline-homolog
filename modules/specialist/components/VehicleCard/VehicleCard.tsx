@@ -25,6 +25,31 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
 }) => {
   const router = useRouter();
 
+  console.log('vehicle.estimated_arrival_date', v.estimated_arrival_date);
+
+  const getBorderColorClass = (estimatedArrivalDate?: string) => {
+    console.log('ESTIMATED ARRIVAL DATE', estimatedArrivalDate);
+
+    if (!estimatedArrivalDate) return '';
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to start of day
+
+    const arrivalDate = new Date(estimatedArrivalDate);
+    arrivalDate.setHours(0, 0, 0, 0); // Normalize arrivalDate to start of day
+
+    const diffTime = arrivalDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return styles.overdue; // Overdue or today
+    } else if (diffDays <= 5) {
+      return styles.nearExpiry; // Within 5 days
+    }
+    return '';
+  };
+
+  const borderColorClass = getBorderColorClass(v.estimated_arrival_date);
   const s = String(v.status || '').toUpperCase();
   const isChecklistEnabled =
     s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
@@ -44,7 +69,7 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
 
   return (
     <div
-      className={styles.card}
+      className={`${styles.card} ${borderColorClass}`}
       role="button"
       tabIndex={0}
       onClick={handleNavigateToDetails}

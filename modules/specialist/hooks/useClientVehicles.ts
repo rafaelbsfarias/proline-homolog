@@ -10,6 +10,7 @@ export interface VehicleData {
   color: string;
   year: number;
   status?: string;
+  estimated_arrival_date?: string;
 }
 
 const PAGE_SIZE = 10;
