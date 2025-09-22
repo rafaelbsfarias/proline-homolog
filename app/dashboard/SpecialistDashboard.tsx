@@ -67,13 +67,20 @@ const SpecialistDashboard = () => {
     [clients, selectedClientId]
   );
 
-  const filters = useMemo(
-    () => ({
-      plate: filterPlate,
-      status: filterStatus,
-    }),
-    [filterPlate, filterStatus]
-  );
+  // const filters = useMemo(
+  //   () => ({
+  //     plate: filterPlate,
+  //     status: filterStatus,
+  //   }),
+  //   [filterPlate, filterStatus]
+  // );
+
+  const filters = useMemo(() => {
+    const f: { plate?: string; status?: string } = {};
+    if (filterPlate) f.plate = filterPlate;
+    if (filterStatus) f.status = filterStatus;
+    return f;
+  }, [filterPlate, filterStatus]);
 
   const {
     vehicles,

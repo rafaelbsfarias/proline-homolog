@@ -49,6 +49,8 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
 }) => {
   const [maxStatusWidth, setMaxStatusWidth] = React.useState(0);
 
+  console.log('filteredVehicles', filteredVehicles);
+
   React.useEffect(() => {
     if (!filteredVehicles.length) return;
 
