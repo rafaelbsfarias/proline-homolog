@@ -13,8 +13,8 @@ import {
   MAX_FILES,
   MAX_SIZE_MB,
 } from '@/modules/specialist/checklist/useImageUploader';
-import InspectionGroups from './Checklist/InspectionGroups';
-import ServiceCategoryField from './Checklist/ServiceCategoryField';
+import ServiceCategoryField from '../Checklist/ServiceCategoryField';
+
 // duplicate imports removed below
 
 interface VehicleChecklistModalProps {

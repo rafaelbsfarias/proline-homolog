@@ -3,13 +3,13 @@ import Header from '../../modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
-import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import ClientTable from '@/modules/specialist/components/ClientTable';
-import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
