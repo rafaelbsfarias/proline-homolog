@@ -37,3 +37,39 @@
 .submitButton:hover {
   background: #14345c;
 }
+
+.modalText {
+  color: #222;
+  font-size: 1.08rem;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.modalButton {
+  width: 180px;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+  .modalText {
+    font-size: 1rem; /* texto menor em telas pequenas */
+    margin-bottom: 16px;
+  }
+
+  .modalButton {
+    width: 140px; /* botão menor */
+  }
+}
+
+@media (max-width: 360px) {
+  .modalText {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+  }
+
+  .modalButton {
+    width: 120px;
+  }
+}
