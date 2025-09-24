@@ -33,7 +33,7 @@ interface UseClientVehiclesResult {
 
 export const useClientVehicles = (
   clientId?: string,
-  filters?: { plate?: string; status?: string[] }
+  filters?: { plate?: string; status?: string[]; dateFilter?: string[] }
 ): UseClientVehiclesResult => {
   const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
@@ -108,11 +108,17 @@ export const useClientVehicles = (
         queryParams.append('page', String(currentPage));
         queryParams.append('pageSize', String(PAGE_SIZE));
 
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        queryParams.append('today', today);
+
         if (filters?.plate) {
           queryParams.append('plate', filters.plate);
         }
         if (filters?.status && filters.status.length > 0) {
           filters.status.forEach(s => queryParams.append('status', s));
+        }
+        if (filters?.dateFilter && filters.dateFilter.length > 0) {
+          filters.dateFilter.forEach(df => queryParams.append('dateFilter', df));
         }
 
         const response = await get<{

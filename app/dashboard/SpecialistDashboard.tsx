@@ -21,6 +21,7 @@ const SpecialistDashboard = () => {
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string[]>([]);
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
@@ -31,6 +32,15 @@ const SpecialistDashboard = () => {
         return prev.filter(s => s !== status);
       }
       return [...prev, status];
+    });
+  };
+
+  const handleDateFilterChange = (dFilter: string) => {
+    setDateFilter(prev => {
+      if (prev.includes(dFilter)) {
+        return prev.filter(d => d !== dFilter);
+      }
+      return [...prev, dFilter];
     });
   };
 
@@ -77,11 +87,12 @@ const SpecialistDashboard = () => {
   );
 
   const filters = useMemo(() => {
-    const f: { plate?: string; status?: string[] } = {};
+    const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
     if (filterPlate) f.plate = filterPlate;
     if (filterStatus.length > 0) f.status = filterStatus;
+    if (dateFilter.length > 0) f.dateFilter = dateFilter;
     return f;
-  }, [filterPlate, filterStatus]);
+  }, [filterPlate, filterStatus, dateFilter]);
 
   const {
     vehicles,
@@ -178,9 +189,12 @@ const SpecialistDashboard = () => {
                     filterStatus={filterStatus}
                     onFilterStatusChange={handleFilterStatusChange}
                     availableStatuses={availableStatuses}
+                    dateFilter={dateFilter}
+                    onDateFilterChange={handleDateFilterChange}
                     onClearFilters={() => {
                       setFilterPlate('');
                       setFilterStatus([]);
+                      setDateFilter([]);
                     }}
                     filteredVehicles={vehicles}
                     onOpenChecklist={handleOpenChecklist}

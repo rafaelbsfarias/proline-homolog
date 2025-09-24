@@ -17,6 +17,8 @@ interface VehicleSectionProps {
   filterStatus: string[];
   onFilterStatusChange: (value: string) => void;
   availableStatuses: string[];
+  dateFilter: string[];
+  onDateFilterChange: (value: string) => void;
   onClearFilters: () => void;
   filteredVehicles: VehicleData[];
   onOpenChecklist: (vehicle: VehicleData) => void;
@@ -28,6 +30,8 @@ interface VehicleSectionProps {
   renderActions?: (vehicle: VehicleData) => React.ReactNode;
 }
 
+const AVAILABLE_DATE_FILTERS = ['Atrasado', 'Próximo (5 dias)', 'No Prazo'];
+
 const VehicleSection: React.FC<VehicleSectionProps> = ({
   clientName,
   loading,
@@ -38,6 +42,8 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   filterStatus,
   onFilterStatusChange,
   availableStatuses,
+  dateFilter,
+  onDateFilterChange,
   onClearFilters,
   filteredVehicles,
   onOpenChecklist,
@@ -98,6 +104,24 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
                   onChange={() => onFilterStatusChange(status)}
                 />
                 <label htmlFor={`status-${status}`}>{status}</label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <label className={styles.filterLabel}>Status da Data</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            {AVAILABLE_DATE_FILTERS.map(dFilter => (
+              <div key={dFilter} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <input
+                  type="checkbox"
+                  id={`date-filter-${dFilter}`}
+                  value={dFilter}
+                  checked={dateFilter.includes(dFilter)}
+                  onChange={() => onDateFilterChange(dFilter)}
+                />
+                <label htmlFor={`date-filter-${dFilter}`}>{dFilter}</label>
               </div>
             ))}
           </div>

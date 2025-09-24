@@ -17,6 +17,8 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const pageSize = parseInt(url.searchParams.get('pageSize') || `${PAGE_SIZE}`, 10);
     const plateFilter = url.searchParams.get('plate') || null;
     const statusFilter = url.searchParams.getAll('status'); // Returns an array
+    const dateFilter = url.searchParams.getAll('dateFilter'); // Returns an array
+    const today = url.searchParams.get('today'); // YYYY-MM-DD
 
     if (!clientId || !validateUUID(clientId)) {
       return NextResponse.json({ error: 'clientId inválido' }, { status: 400 });
@@ -36,6 +38,8 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       p_page_size: pageSize,
       p_plate_filter: plateFilter,
       p_status_filter: statusFilter && statusFilter.length > 0 ? statusFilter : null,
+      p_date_filter: dateFilter && dateFilter.length > 0 ? dateFilter : null,
+      p_today_date: today,
     };
 
     const { data, error } = await supabase.rpc('get_client_vehicles_paginated', rpcParams);
