@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from '../../modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
@@ -26,22 +26,12 @@ const SpecialistDashboard = () => {
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
 
-  const handleFilterStatusChange = (status: string) => {
-    setFilterStatus(prev => {
-      if (prev.includes(status)) {
-        return prev.filter(s => s !== status);
-      }
-      return [...prev, status];
-    });
+  const handleFilterStatusChange = (newStatus: string[]) => {
+    setFilterStatus(newStatus);
   };
 
-  const handleDateFilterChange = (dFilter: string) => {
-    setDateFilter(prev => {
-      if (prev.includes(dFilter)) {
-        return prev.filter(d => d !== dFilter);
-      }
-      return [...prev, dFilter];
-    });
+  const handleDateFilterChange = (newDateFilter: string[]) => {
+    setDateFilter(newDateFilter);
   };
 
   const handleSelectClient = (clientId: string) => {
@@ -85,6 +75,11 @@ const SpecialistDashboard = () => {
     () => clients.find(c => c.client_id === selectedClientId) || null,
     [clients, selectedClientId]
   );
+
+  const handleClearCheckboxFilters = useCallback(() => {
+    setFilterStatus([]);
+    setDateFilter([]);
+  }, []);
 
   const filters = useMemo(() => {
     const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
@@ -196,6 +191,7 @@ const SpecialistDashboard = () => {
                       setFilterStatus([]);
                       setDateFilter([]);
                     }}
+                    onClearCheckboxFilters={handleClearCheckboxFilters}
                     filteredVehicles={vehicles}
                     onOpenChecklist={handleOpenChecklist}
                     onConfirmArrival={handleConfirmArrival}

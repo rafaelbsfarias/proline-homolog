@@ -1,0 +1,6 @@
+.filterButtonThin {
+  /* reduzir a altura do botão quero um botão esticado horizontalmente */
+  border-radius: 6px; /* Reduced border radius */
+  font-size: 0.875rem; /* Reduced font size */
+  min-width: 120px; /* Reduced minimum width */
+}

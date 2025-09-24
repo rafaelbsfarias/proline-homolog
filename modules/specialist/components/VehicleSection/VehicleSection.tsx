@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { VehicleData } from '../../hooks/useClientVehicles';
 import VehicleCard from '../VehicleCard/VehicleCard';
 import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import styles from './VehicleSection.module.css'; // importando CSS
+import VehicleCheckboxFiltersModal from '../../../common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import FilterButton from '../../../common/components/FilterButton/FilterButton';
 
 interface VehicleSectionProps {
   clientName: string;
@@ -15,11 +19,12 @@ interface VehicleSectionProps {
   filterPlate: string;
   onFilterPlateChange: (value: string) => void;
   filterStatus: string[];
-  onFilterStatusChange: (value: string) => void;
+  onFilterStatusChange: (newStatus: string[]) => void;
   availableStatuses: string[];
   dateFilter: string[];
-  onDateFilterChange: (value: string) => void;
+  onDateFilterChange: (newDateFilter: string[]) => void;
   onClearFilters: () => void;
+  onClearCheckboxFilters: () => void;
   filteredVehicles: VehicleData[];
   onOpenChecklist: (vehicle: VehicleData) => void;
   onConfirmArrival: (vehicle: VehicleData) => void;
@@ -45,6 +50,7 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   dateFilter,
   onDateFilterChange,
   onClearFilters,
+  onClearCheckboxFilters,
   filteredVehicles,
   onOpenChecklist,
   onConfirmArrival,
@@ -54,6 +60,10 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   onPageChange,
   renderActions,
 }) => {
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+  const activeFilterCount = filterStatus.length + dateFilter.length + (filterPlate ? 1 : 0);
+
   return (
     <div className={styles.container}>
       {/* Cabeçalho */}
@@ -91,42 +101,23 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
           />
         </div>
 
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Status</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-            {availableStatuses.map(status => (
-              <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <input
-                  type="checkbox"
-                  id={`status-${status}`}
-                  value={status}
-                  checked={filterStatus.includes(status)}
-                  onChange={() => onFilterStatusChange(status)}
-                />
-                <label htmlFor={`status-${status}`}>{status}</label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel}>Status da Data</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-            {AVAILABLE_DATE_FILTERS.map(dFilter => (
-              <div key={dFilter} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <input
-                  type="checkbox"
-                  id={`date-filter-${dFilter}`}
-                  value={dFilter}
-                  checked={dateFilter.includes(dFilter)}
-                  onChange={() => onDateFilterChange(dFilter)}
-                />
-                <label htmlFor={`date-filter-${dFilter}`}>{dFilter}</label>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FilterButton
+          activeFilterCount={activeFilterCount}
+          onClick={() => setIsFilterModalOpen(true)}
+        />
       </div>
+
+      <VehicleCheckboxFiltersModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filterStatus={filterStatus}
+        onFilterStatusChange={onFilterStatusChange}
+        availableStatuses={availableStatuses}
+        dateFilter={dateFilter}
+        onDateFilterChange={onDateFilterChange}
+        onClearCheckboxFilters={onClearCheckboxFilters}
+        onApplyFilters={() => setIsFilterModalOpen(false)}
+      />
 
       {/* Erro, loading e listagem */}
       {error && <p style={{ color: 'red', marginTop: 8 }}>Erro: {error}</p>}
