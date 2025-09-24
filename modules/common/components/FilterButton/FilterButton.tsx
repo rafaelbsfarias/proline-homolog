@@ -13,7 +13,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({ activeFilterCount, onClick,
   const filterButtonText =
     activeFilterCount > 0 ? `Filtros Aplicados(${activeFilterCount})` : 'Aplicar Filtros';
 
-  const ButtonComponent = activeFilterCount > 0 ? OutlineButton : SolidButton;
+  const ButtonComponent = activeFilterCount > 0 ? SolidButton : OutlineButton;
 
   return (
     <ButtonComponent
