@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useAdminClientVehicles } from '@/modules/admin/hooks/useAdminClientVehicles';
 import { useAdminClientVehicleStatuses } from '@/modules/admin/hooks/useAdminClientVehicleStatuses';
@@ -15,15 +15,32 @@ interface Props {
 
 const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' }) => {
   const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]); // Changed to string[]
+  const [dateFilter, setDateFilter] = useState<string[]>([]); // New state
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<AdminVehicleData | null>(null);
   const { get } = useAuthenticatedFetch();
 
-  const filters = useMemo(
-    () => ({ plate: filterPlate, status: filterStatus }),
-    [filterPlate, filterStatus]
-  );
+  const handleFilterStatusChange = (newStatus: string[]) => {
+    setFilterStatus(newStatus);
+  };
+
+  const handleDateFilterChange = (newDateFilter: string[]) => {
+    setDateFilter(newDateFilter);
+  };
+
+  const handleClearCheckboxFilters = useCallback(() => {
+    setFilterStatus([]);
+    setDateFilter([]);
+  }, []);
+
+  const filters = useMemo(() => {
+    const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
+    if (filterPlate) f.plate = filterPlate;
+    if (filterStatus.length > 0) f.status = filterStatus;
+    if (dateFilter.length > 0) f.dateFilter = dateFilter;
+    return f;
+  }, [filterPlate, filterStatus, dateFilter]);
 
   const { name: fetchedName } = useAdminClientName(clientId);
   const { counts } = useAdminClientVehicleStatusCounts(clientId);
@@ -77,12 +94,16 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
         filterPlate={filterPlate}
         onFilterPlateChange={setFilterPlate}
         filterStatus={filterStatus}
-        onFilterStatusChange={setFilterStatus}
+        onFilterStatusChange={handleFilterStatusChange}
         availableStatuses={availableStatuses}
+        dateFilter={dateFilter}
+        onDateFilterChange={handleDateFilterChange}
         onClearFilters={() => {
           setFilterPlate('');
-          setFilterStatus('');
+          setFilterStatus([]);
+          setDateFilter([]);
         }}
+        onClearCheckboxFilters={handleClearCheckboxFilters}
         filteredVehicles={vehicles}
         onOpenChecklist={() => {}}
         onConfirmArrival={() => {}}
