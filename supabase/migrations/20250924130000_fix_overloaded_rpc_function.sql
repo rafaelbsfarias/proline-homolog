@@ -1,3 +1,7 @@
+-- Step 1: Drop the old function with the incorrect 'text' parameter for status
+DROP FUNCTION IF EXISTS get_client_vehicles_paginated(uuid, integer, integer, text, text);
+
+-- Step 2: Recreate the function with the correct 'text[]' parameter
 CREATE OR REPLACE FUNCTION get_client_vehicles_paginated(
     p_client_id uuid,
     p_page_size integer,
@@ -8,8 +12,8 @@ CREATE OR REPLACE FUNCTION get_client_vehicles_paginated(
 RETURNS json AS $$
 DECLARE
     v_offset integer;
-    v_total_count bigint; -- This will be the global count
-    v_filtered_total_count bigint; -- This is the new one
+    v_total_count bigint;
+    v_filtered_total_count bigint;
     v_vehicles json;
     v_status_counts json;
 BEGIN
@@ -43,7 +47,7 @@ BEGIN
         (SELECT count(*) FROM filtered_vehicles),
         COALESCE(json_agg(v.*), '[]'::json)
     INTO
-        v_filtered_total_count, -- New variable for the filtered count
+        v_filtered_total_count,
         v_vehicles
     FROM (
         SELECT
@@ -58,9 +62,9 @@ BEGIN
     -- 4. Return consolidated JSON with the new field
     RETURN json_build_object(
         'vehicles', v_vehicles,
-        'total_count', v_total_count, -- Keep original name for global count
-        'filtered_total_count', v_filtered_total_count, -- Add new field
-        'status_counts', v_status_counts -- Keep original
+        'total_count', v_total_count,
+        'filtered_total_count', v_filtered_total_count,
+        'status_counts', v_status_counts
     );
 END;
 $$ LANGUAGE plpgsql;

@@ -36,7 +36,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || `${DEFAULT_PAGE_SIZE}`, 10);
     const plateFilter = searchParams.get('plate') || '';
-    const statusFilter = searchParams.get('status') || '';
+    const statusFilter = searchParams.getAll('status'); // Changed to getAll
 
     log.info('vehicles-count:start', {
       userId: String(userId).slice(0, 8),
@@ -53,23 +53,27 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       p_page_num: page,
       p_page_size: limit,
       p_plate_filter: plateFilter,
-      p_status_filter: statusFilter,
+      // Pass array or null to match new RPC signature
+      p_status_filter: statusFilter && statusFilter.length > 0 ? statusFilter : null,
     });
 
     if (error) {
       log.error('vehicles-count:rpc-error', { error: error.message, code: error.code });
       return new Response(
-        JSON.stringify({ success: false, message: 'Erro ao buscar veículos via RPC.' }),
+        JSON.stringify({
+          success: false,
+          message: `Erro ao buscar veículos via RPC: ${error.message}`,
+        }),
         { status: 500 }
       );
     }
 
-    // The RPC returns { vehicles, total_count, status_counts }
-    // The old API returned { vehicles, totalCount }, so we align the new response.
+    // The new RPC returns { vehicles, total_count, filtered_total_count, status_counts }
     const responsePayload = {
       success: true,
       vehicles: data.vehicles || [],
-      totalCount: data.total_count || 0,
+      totalCount: data.total_count || 0, // This is the global count
+      filteredTotalCount: data.filtered_total_count || 0, // This is the filtered count
       statusCounts: data.status_counts || {},
       message: 'ok',
       requestId,
@@ -79,6 +83,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     log.info('vehicles-count:success', {
       count: responsePayload.vehicles.length,
       totalCount: responsePayload.totalCount,
+      filteredTotalCount: responsePayload.filteredTotalCount,
       durationMs,
     });
 

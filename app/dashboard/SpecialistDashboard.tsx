@@ -20,10 +20,19 @@ const SpecialistDashboard = () => {
 
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
+
+  const handleFilterStatusChange = (status: string) => {
+    setFilterStatus(prev => {
+      if (prev.includes(status)) {
+        return prev.filter(s => s !== status);
+      }
+      return [...prev, status];
+    });
+  };
 
   const handleSelectClient = (clientId: string) => {
     setSelectedClientId(prev => (prev === clientId ? null : clientId));
@@ -67,18 +76,10 @@ const SpecialistDashboard = () => {
     [clients, selectedClientId]
   );
 
-  // const filters = useMemo(
-  //   () => ({
-  //     plate: filterPlate,
-  //     status: filterStatus,
-  //   }),
-  //   [filterPlate, filterStatus]
-  // );
-
   const filters = useMemo(() => {
-    const f: { plate?: string; status?: string } = {};
+    const f: { plate?: string; status?: string[] } = {};
     if (filterPlate) f.plate = filterPlate;
-    if (filterStatus) f.status = filterStatus;
+    if (filterStatus.length > 0) f.status = filterStatus;
     return f;
   }, [filterPlate, filterStatus]);
 
@@ -175,11 +176,11 @@ const SpecialistDashboard = () => {
                     filterPlate={filterPlate}
                     onFilterPlateChange={setFilterPlate}
                     filterStatus={filterStatus}
-                    onFilterStatusChange={setFilterStatus}
+                    onFilterStatusChange={handleFilterStatusChange}
                     availableStatuses={availableStatuses}
                     onClearFilters={() => {
                       setFilterPlate('');
-                      setFilterStatus('');
+                      setFilterStatus([]);
                     }}
                     filteredVehicles={vehicles}
                     onOpenChecklist={handleOpenChecklist}

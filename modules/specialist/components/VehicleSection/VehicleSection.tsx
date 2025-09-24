@@ -14,7 +14,7 @@ interface VehicleSectionProps {
   onRefetch: () => void;
   filterPlate: string;
   onFilterPlateChange: (value: string) => void;
-  filterStatus: string;
+  filterStatus: string[];
   onFilterStatusChange: (value: string) => void;
   availableStatuses: string[];
   onClearFilters: () => void;
@@ -86,22 +86,21 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         </div>
 
         <div className={styles.filterGroup}>
-          <label className={styles.filterLabel} htmlFor="filter-status">
-            Status
-          </label>
-          <select
-            id="filter-status"
-            value={filterStatus}
-            onChange={e => onFilterStatusChange(e.target.value)}
-            className={styles.filterSelect}
-          >
-            <option value="">Todos</option>
-            {availableStatuses.map(s => (
-              <option key={s} value={s}>
-                {s}
-              </option>
+          <label className={styles.filterLabel}>Status</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+            {availableStatuses.map(status => (
+              <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <input
+                  type="checkbox"
+                  id={`status-${status}`}
+                  value={status}
+                  checked={filterStatus.includes(status)}
+                  onChange={() => onFilterStatusChange(status)}
+                />
+                <label htmlFor={`status-${status}`}>{status}</label>
+              </div>
             ))}
-          </select>
+          </div>
         </div>
       </div>
 
