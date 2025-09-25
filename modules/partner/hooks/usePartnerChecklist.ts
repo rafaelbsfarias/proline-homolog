@@ -1,243 +1,235 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/modules/common/services/supabaseClient';
-import { getLogger } from '@/modules/logger';
+import { useState, useCallback } from 'react';
+import type { ChecklistFormWithInspections, InspectionStatus } from '../../common/types/checklist';
+import { useVehicleData } from '../../common/hooks/useVehicleData';
+import { useAuthenticatedFetch } from '../../common/hooks/useAuthenticatedFetch';
+import { useErrorHandler, ErrorType } from '../../common/services/ErrorHandlerService';
 
-interface Vehicle {
-  id: string;
-  brand: string;
-  model: string;
-  year: number;
-  plate: string;
-  color?: string;
+interface PartnerChecklistState {
+  form: ChecklistFormWithInspections | null;
+  loading: boolean;
+  saving: boolean;
+  error: string | null;
 }
 
-interface Inspection {
-  id: string;
-  vehicle_id: string;
-  inspection_date: string;
-  odometer: number;
-  fuel_level: string;
-  observations?: string;
-  finalized: boolean;
-  created_at: string;
+interface UsePartnerChecklistResult extends PartnerChecklistState {
+  // Dados do veículo
+  vehicle: ReturnType<typeof useVehicleData>['vehicle'];
+  inspection: ReturnType<typeof useVehicleData>['inspection'];
+  vehicleLoading: ReturnType<typeof useVehicleData>['loading'];
+  vehicleError: ReturnType<typeof useVehicleData>['error'];
+
+  // Ações
+  loadChecklist: () => Promise<void>;
+  updateChecklistItem: (
+    field: keyof ChecklistFormWithInspections,
+    value: string | InspectionStatus
+  ) => void;
+  saveChecklist: () => Promise<void>;
+  submitChecklist: () => Promise<void>;
+
+  // Estados derivados
+  canSubmit: boolean;
+  hasUnsavedChanges: boolean;
 }
 
-interface PartnerChecklistForm {
-  date: string;
-  odometer: string;
-  fuelLevel: string;
-  observations: string;
-}
+export function usePartnerChecklist(): UsePartnerChecklistResult {
+  // Hooks de dependências
+  const { vehicle, inspection, loading: vehicleLoading, error: vehicleError } = useVehicleData();
+  const { post, put } = useAuthenticatedFetch();
+  const { handleError } = useErrorHandler();
 
-const logger = getLogger('partner:usePartnerChecklist');
-
-export const usePartnerChecklist = () => {
-  const searchParams = useSearchParams();
-  const quoteId = searchParams.get('quoteId');
-  const vehicleId = searchParams.get('vehicleId');
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [inspection, setInspection] = useState<Inspection | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  const [form, setForm] = useState<PartnerChecklistForm>({
-    date: new Date().toISOString().split('T')[0],
-    odometer: '',
-    fuelLevel: 'half',
-    observations: '',
+  // Estado do checklist
+  const [state, setState] = useState<PartnerChecklistState>({
+    form: null,
+    loading: false,
+    saving: false,
+    error: null,
   });
 
-  const setField = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-    if (error) setError(null);
-    if (success) setSuccess(null);
-  };
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const loadData = async () => {
-    // Aceitar tanto quoteId quanto vehicleId
-    let finalVehicleId = vehicleId;
-
-    if (!vehicleId && quoteId) {
-      // Se só temos quoteId, buscar vehicleId através do service_order
-      try {
-        const { data: quoteData } = await supabase
-          .from('quotes')
-          .select('service_order_id')
-          .eq('id', quoteId)
-          .single();
-
-        if (quoteData?.service_order_id) {
-          const { data: serviceOrderData } = await supabase
-            .from('service_orders')
-            .select('vehicle_id')
-            .eq('id', quoteData.service_order_id)
-            .single();
-
-          finalVehicleId = serviceOrderData?.vehicle_id;
-        }
-      } catch (error) {
-        logger.error('Erro ao buscar vehicle_id através da quote', { quoteId, error });
-      }
-    }
-
-    if (!finalVehicleId) {
-      setError('ID do veículo não fornecido');
-      setLoading(false);
+  /**
+   * Carrega dados do checklist
+   */
+  const loadChecklist = useCallback(async () => {
+    if (!inspection?.id) {
+      setState(prev => ({ ...prev, error: 'Inspeção não encontrada' }));
       return;
     }
 
     try {
-      setError(null);
-      logger.info('Carregando dados do checklist', { finalVehicleId });
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
-      // Buscar dados do veículo
-      const { data: vehicleData, error: vehicleError } = await supabase
-        .from('vehicles')
-        .select('*')
-        .eq('id', finalVehicleId)
-        .single();
+      const response = await post<ChecklistFormWithInspections>(`/api/partner/checklist/load`, {
+        inspectionId: inspection.id,
+      });
 
-      if (vehicleError) {
-        logger.error('Erro ao buscar veículo', { finalVehicleId, error: vehicleError });
-        setError('Erro ao carregar dados do veículo');
-        return;
+      if (!response.ok || !response.data) {
+        throw new Error(response.error || 'Erro ao carregar checklist');
       }
 
-      if (!vehicleData) {
-        setError('Veículo não encontrado');
-        return;
-      }
+      setState(prev => ({
+        ...prev,
+        form: response.data!,
+        loading: false,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao carregar checklist';
 
-      setVehicle(vehicleData);
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'loadChecklist' },
+      });
 
-      // Buscar inspeção existente para este veículo e parceiro
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        setError('Usuário não autenticado');
-        return;
-      }
-
-      const { data: inspectionData, error: inspectionError } = await supabase
-        .from('inspections')
-        .select('*')
-        .eq('vehicle_id', finalVehicleId)
-        .eq('partner_id', userData.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (inspectionError) {
-        logger.error('Erro ao buscar inspeção', {
-          finalVehicleId,
-          partnerId: userData.user.id,
-          error: inspectionError,
-        });
-        // Não é erro fatal - pode não ter inspeção ainda
-      }
-
-      if (inspectionData) {
-        logger.info('Inspeção existente encontrada', { inspectionId: inspectionData.id });
-        setInspection(inspectionData);
-        // Preencher formulário com dados da inspeção existente
-        setForm({
-          date: inspectionData.inspection_date,
-          odometer: inspectionData.odometer.toString(),
-          fuelLevel: inspectionData.fuel_level,
-          observations: inspectionData.observations || '',
-        });
-      } else {
-        logger.info('Nenhuma inspeção encontrada - modo criação', { finalVehicleId });
-      }
-    } catch (err) {
-      logger.error('Erro inesperado ao carregar dados', { error: err });
-      setError('Erro inesperado ao carregar dados');
-    } finally {
-      setLoading(false);
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message,
+      }));
     }
-  };
+  }, [inspection?.id, post, handleError]);
 
-  const saveChecklist = async () => {
-    if (!vehicle) {
-      setError('Dados do veículo não disponíveis');
+  /**
+   * Atualiza item do checklist
+   */
+  const updateChecklistItem = useCallback(
+    (field: keyof ChecklistFormWithInspections, value: string | InspectionStatus) => {
+      setState(prev => {
+        if (!prev.form) return prev;
+
+        return {
+          ...prev,
+          form: {
+            ...prev.form,
+            [field]: value,
+          },
+        };
+      });
+
+      setHasUnsavedChanges(true);
+    },
+    []
+  );
+
+  /**
+   * Salva o checklist como rascunho
+   */
+  const saveChecklist = useCallback(async () => {
+    if (!state.form || !inspection?.id) {
       return;
     }
-
-    if (inspection) {
-      setSuccess('Esta inspeção já foi salva e não pode ser modificada.');
-      return;
-    }
-
-    if (!form.date || !form.odometer) {
-      setError('Por favor, preencha todos os campos obrigatórios');
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        throw new Error('Usuário não autenticado');
-      }
+      setState(prev => ({ ...prev, saving: true, error: null }));
 
-      logger.info('Salvando checklist', { vehicleId: vehicle.id, partnerId: userData.user.id });
-
-      const inspectionData = {
-        vehicle_id: vehicle.id,
-        partner_id: userData.user.id,
-        inspection_date: form.date,
-        odometer: parseInt(form.odometer),
-        fuel_level: form.fuelLevel,
-        observations: form.observations.trim() || null,
-        finalized: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+      const payload = {
+        ...state.form,
+        inspection_id: inspection.id,
+        status: 'draft',
       };
 
-      const { data, error: insertError } = await supabase
-        .from('inspections')
-        .insert([inspectionData])
-        .select()
-        .single();
+      const response = await put<{ success: boolean }>(`/api/partner/checklist/save`, payload);
 
-      if (insertError) {
-        logger.error('Erro ao salvar inspeção', { error: insertError });
-        throw new Error(`Erro ao salvar inspeção: ${insertError.message}`);
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro ao salvar checklist');
       }
 
-      logger.info('Checklist salvo com sucesso', { inspectionId: data.id });
-      setInspection(data);
-      setSuccess('Checklist salvo com sucesso!');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar checklist';
-      logger.error('Erro ao salvar checklist', { error: err });
-      setError(message);
-    } finally {
-      setSaving(false);
-    }
-  };
+      setHasUnsavedChanges(false);
+      setState(prev => ({ ...prev, saving: false }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao salvar checklist';
 
-  useEffect(() => {
-    loadData();
-  }, [vehicleId, quoteId]);
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'saveChecklist' },
+      });
+
+      setState(prev => ({
+        ...prev,
+        saving: false,
+        error: message,
+      }));
+    }
+  }, [state.form, inspection?.id, put, handleError]);
+
+  /**
+   * Submete o checklist para revisão
+   */
+  const submitChecklist = useCallback(async () => {
+    if (!state.form || !inspection?.id) {
+      return;
+    }
+
+    try {
+      setState(prev => ({ ...prev, saving: true, error: null }));
+
+      const payload = {
+        ...state.form,
+        inspection_id: inspection.id,
+        status: 'submitted',
+      };
+
+      const response = await put<{ success: boolean }>(`/api/partner/checklist/submit`, payload);
+
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro ao enviar checklist');
+      }
+
+      // Atualizar status local
+      setState(prev => ({
+        ...prev,
+        form: prev.form ? { ...prev.form, status: 'submitted' } : null,
+        saving: false,
+      }));
+
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao enviar checklist';
+
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'submitChecklist' },
+      });
+
+      setState(prev => ({
+        ...prev,
+        saving: false,
+        error: message,
+      }));
+    }
+  }, [state.form, inspection?.id, put, handleError]);
+
+  /**
+   * Verifica se pode submeter o checklist
+   */
+  const canSubmit = Boolean(
+    state.form && state.form.status === 'draft' && !state.saving
+    // a fazer: Implementar validação de campos obrigatórios do checklist
+  );
 
   return {
-    form,
+    // Estado do checklist
+    form: state.form,
+    loading: state.loading,
+    saving: state.saving,
+    error: state.error,
+
+    // Dados do veículo
     vehicle,
     inspection,
-    loading,
-    saving,
-    error,
-    success,
-    setField,
+    vehicleLoading,
+    vehicleError,
+
+    // Ações
+    loadChecklist,
+    updateChecklistItem,
     saveChecklist,
+    submitChecklist,
+
+    // Estados derivados
+    canSubmit,
+    hasUnsavedChanges,
   };
-};
+}

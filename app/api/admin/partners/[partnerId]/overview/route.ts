@@ -6,9 +6,9 @@ import { getLogger } from '@/modules/logger';
 const logger = getLogger('api:admin:partner:overview');
 
 export const GET = withAdminAuth(
-  async (_req: AuthenticatedRequest, ctx: { params: { partnerId: string } }) => {
+  async (_req: AuthenticatedRequest, ctx: { params: Promise<{ partnerId: string }> }) => {
     try {
-      const partnerId = ctx.params.partnerId;
+      const { partnerId } = await ctx.params;
       const admin = SupabaseService.getInstance().getAdminClient();
 
       // Partner basic info
@@ -98,6 +98,51 @@ export const GET = withAdminAuth(
         executing = distinctSo.size;
       }
 
+      // Load quotes list for this partner and group by status
+      const { data: partnerQuotes, error: quotesErr } = await admin
+        .from('quotes')
+        .select('id, created_at, status, total_value, service_order_id')
+        .eq('partner_id', partnerId)
+        .order('created_at', { ascending: false });
+      if (quotesErr) {
+        logger.error('failed_fetch_partner_quotes', { error: quotesErr, partnerId });
+        return NextResponse.json(
+          { error: 'Erro ao buscar orçamentos do parceiro' },
+          { status: 500 }
+        );
+      }
+
+      const byStatus = {
+        pending_admin_approval: [] as any[],
+        pending_client_approval: [] as any[],
+        approved: [] as any[],
+        rejected: [] as any[],
+        executing: [] as any[],
+      };
+      (partnerQuotes || []).forEach(q => {
+        const item = {
+          id: q.id,
+          created_at: q.created_at,
+          status: q.status,
+          total_value: q.total_value,
+          service_order_id: q.service_order_id,
+        };
+        const arr = (byStatus as any)[q.status] as any[] | undefined;
+        if (arr) arr.push(item);
+      });
+      if (soInProgress && soInProgress.length) {
+        const soSet = new Set((soInProgress || []).map(r => r.id as string));
+        byStatus.executing = (partnerQuotes || [])
+          .filter(q => soSet.has(q.service_order_id as string))
+          .map(q => ({
+            id: q.id,
+            created_at: q.created_at,
+            status: q.status,
+            total_value: q.total_value,
+            service_order_id: q.service_order_id,
+          }));
+      }
+
       const result = {
         id: partner.profile_id as string,
         company_name: (partner.company_name as string) || '',
@@ -106,6 +151,7 @@ export const GET = withAdminAuth(
         executing_budgets: executing,
         approval_budgets: pendingClient || 0,
         is_active: !!partner.is_active,
+        quotes: byStatus,
       };
 
       return NextResponse.json({ partner: result });
