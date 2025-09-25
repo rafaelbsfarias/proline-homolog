@@ -42,10 +42,6 @@ export const useAdminClientVehicles = (
       try {
         const queryParams = new URLSearchParams();
         queryParams.append('clientId', clientId);
-        queryParams.append('page', String(currentPage));
-        queryParams.append('pageSize', String(PAGE_SIZE));
-        if (filters?.plate) queryParams.append('plate', filters.plate);
-        if (filters?.status) queryParams.append('status', filters.status);
         const response = await get<{
           success: boolean;
           vehicles: AdminVehicleData[];
@@ -53,8 +49,25 @@ export const useAdminClientVehicles = (
           error?: string;
         }>(`/api/admin/client-vehicles?${queryParams.toString()}`);
         if (response.ok && response.data?.success) {
-          setVehicles(response.data.vehicles || []);
-          setTotalCount(response.data.totalCount || 0);
+          let allVehicles = response.data.vehicles || [];
+
+          if (filters?.plate) {
+            allVehicles = allVehicles.filter(v =>
+              v.plate.toLowerCase().includes(filters.plate.toLowerCase())
+            );
+          }
+
+          if (filters?.status) {
+            allVehicles = allVehicles.filter(v => v.status === filters.status);
+          }
+
+          setTotalCount(allVehicles.length);
+
+          const paginatedVehicles = allVehicles.slice(
+            (currentPage - 1) * PAGE_SIZE,
+            currentPage * PAGE_SIZE
+          );
+          setVehicles(paginatedVehicles);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }

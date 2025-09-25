@@ -191,7 +191,7 @@
 }
 
 .vehicle-item.status-near-expiry {
-  border: 2px solid #ff5e00;
+  border: 2px solid hsl(22, 100%, 50%);
 }
 
 .vehicle-item.status-near-expiry:hover {
@@ -223,7 +223,8 @@
 .vehicle-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-color: #002e4c;
+  /* border-color: #002e4c; */
+  border-color: #ccc;
 }
 
 .vehicle-info {

@@ -1,0 +1,152 @@
+.card {
+  border-radius: 10px;
+  padding: 10px;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  flex-direction: column;
+
+  min-width: 200px; /* tamanho mínimo do card */
+  max-width: 100%; /* nunca ultrapassa o container */
+  box-sizing: border-box;
+  flex: 1 1 auto; /* flexível para crescer horizontalmente */
+}
+
+.card:hover {
+  border-color: #ccc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.card.overdue {
+  border: 2px solid #d40000;
+}
+
+.card.nearExpiry {
+  border: 2px solid #ff5e00;
+}
+
+.card.nearExpiry:hover {
+  border: 2px solid #ff5e00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card.nearExpiry:hover {
+  border: 2px solid #ff5e00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.card.overdue:hover {
+  border: 2px solid #d40000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Header */
+.cardHeader {
+  margin-bottom: 5px;
+}
+
+.cardTitle {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+  margin: 4px 0;
+}
+
+/* Body */
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cardDetail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #444;
+  flex-wrap: wrap; /* permite quebra de elementos longos */
+}
+
+.label {
+  margin: 2px;
+  font-weight: 550;
+  color: #333;
+}
+
+.statusBadge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #cce7f0;
+  color: #002e4c;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  display: inline-block;
+}
+
+/* Footer */
+.cardActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap; /* para botões quebrarem se necessário */
+}
+
+.button {
+  flex: 1 1 auto; /* botões flexíveis */
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  min-width: 100px; /* evita botão muito pequeno */
+}
+
+.checklistButton {
+  background: #fff;
+}
+
+.checklistButton:disabled {
+  background: #f0f0f0;
+  cursor: not-allowed;
+}
+
+.confirmArrivalButton {
+  background: #e8f5e9;
+}
+
+.confirmArrivalButton:disabled {
+  background: #f0f0f0;
+  cursor: not-allowed;
+}
+
+/* Container dos cards */
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+/* Responsividade para telas pequenas */
+@media (max-width: 600px) {
+  .card {
+    min-width: 100%;
+  }
+  .cardDetail {
+    gap: 4px;
+  }
+  .cardActions {
+    flex-direction: column;
+  }
+}

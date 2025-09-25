@@ -1,0 +1,84 @@
+/* Container geral da seção */
+.container {
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+/* Cabeçalho com título e botões */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.updateButton {
+  background: #fafafa;
+}
+
+.clearButton {
+  background: #fff;
+}
+
+/* Área de filtros */
+.filters {
+  margin: 12px 0;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.filterLabel {
+  margin-bottom: 4px;
+  color: #333;
+  font-weight: 500;
+}
+
+.filterInput,
+.filterSelect {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  min-width: 150px;
+}
+
+/* Container dos cards */
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(290px, 1fr)
+  ); /* tamanho fixo baseado no status mais longo */
+  gap: 12px;
+  margin-top: 12px;
+  align-items: start;
+}
+
+/* Responsividade para telas pequenas */
+@media (max-width: 600px) {
+  .filterInput,
+  .filterSelect {
+    min-width: 100%;
+  }
+  .cardsContainer {
+    grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+  }
+}

@@ -30,30 +30,14 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
       return NextResponse.json({ error: authResult.error }, { status: authResult.status });
     }
 
-    // Debug: log received filters before calling RPC
-    console.info('client-vehicles: fetching', {
-      clientId,
-      page,
-      pageSize,
-      plateFilter,
-      statusFilter,
-    });
-
-    // Fetch paginated vehicles using the RPC function, passing filters
-    const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
-      p_client_id: clientId,
-      p_page_size: pageSize,
-      p_page_num: page,
-      p_plate_filter: plateFilter,
-      p_status_filter: statusFilter,
-    });
+    const { data, error } = await supabase.from('vehicles').select('*').eq('client_id', clientId);
 
     if (error) {
-      console.error('RPC Error fetching vehicles:', error);
+      console.error('Error fetching vehicles:', error);
       return NextResponse.json({ error: 'Erro ao buscar veículos' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, ...data });
+    return NextResponse.json({ success: true, vehicles: data });
   } catch (e) {
     console.error('GET client-vehicles error:', e);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useAdminClientVehicles } from '@/modules/admin/hooks/useAdminClientVehicles';
 import { useAdminClientVehicleStatuses } from '@/modules/admin/hooks/useAdminClientVehicleStatuses';
 import { useAdminClientName } from '@/modules/admin/hooks/useAdminClientName';

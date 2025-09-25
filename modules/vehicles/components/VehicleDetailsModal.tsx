@@ -142,11 +142,8 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
 
   const handleNavigateToDetails = () => {
     if (vehicle && vehicle.id) {
-      if (onNavigateToDetails) {
-        onNavigateToDetails(vehicle.id);
-      } else {
-        router.push(`/dashboard/client/vehicle/${vehicle.id}`);
-      }
+      if (onNavigateToDetails) onNavigateToDetails(vehicle.id);
+      else router.push(`/dashboard/vehicle/${vehicle.id}`);
     }
   };
 

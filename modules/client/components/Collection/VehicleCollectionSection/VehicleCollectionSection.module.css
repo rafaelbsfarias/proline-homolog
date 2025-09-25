@@ -81,7 +81,7 @@
   margin-top: 8px;
 }
 
-.actionButton {
+.actions .actionButton {
   background: #3d3b3c;
   color: #fff;
   border: none;
@@ -91,18 +91,18 @@
   transition: all 0.2s ease;
 }
 
-.actionButton:hover:not(:disabled) {
+.actions .actionButton:hover:not(:disabled) {
   background: #3d3b3c;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.actionButton:disabled {
+.actions .actionButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.acceptButton {
+.actions .acceptButton {
   background: #194d00;
   color: #ffff;
   border: none;
@@ -111,11 +111,11 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.acceptButton:hover:not(:disabled) {
+.actions .acceptButton:hover:not(:disabled) {
   background: #194d00;
 }
 
-.rejectButton {
+.actions .rejectButton {
   background: #990300;
   color: #ffff;
   border: none;
@@ -125,7 +125,7 @@
   transition: all 0.2s ease;
 }
 
-.rejectButton:hover:not(:disabled) {
+.actions .rejectButton:hover:not(:disabled) {
   background: #990300;
 }
 
