@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Header from '../../modules/admin/components/Header';
+import Header from '../../../modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
@@ -10,6 +10,7 @@ import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
+import styles from './SpecialistDashboard.module.css';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
@@ -124,45 +125,23 @@ const SpecialistDashboard = () => {
   }, []);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div className={styles.container}>
       <Header />
 
       {loadingUser || loadingClients ? (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '80vh',
-          }}
-        >
+        <div className={styles.loadingContainer}>
           <Loading />
         </div>
       ) : (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
-            Painel do Especialista
-          </h1>
-          <p style={{ color: '#666', fontSize: '1.15rem', marginBottom: 24 }}>
-            Bem-vindo, {userName}!
-          </p>
+        <main className={styles.main}>
+          <h1 className={styles.title}>Painel do Especialista</h1>
+          <p className={styles.welcomeMessage}>Bem-vindo, {userName}!</p>
 
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 10,
-              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-              padding: '36px 22px',
-              maxWidth: '90vw',
-              margin: '0 auto',
-            }}
-          >
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-              Meus Clientes Associados
-            </h2>
+          <div className={styles.contentWrapper}>
+            <h2 className={styles.clientsTitle}>Meus Clientes Associados</h2>
 
             {clientsError ? (
-              <p style={{ color: 'red' }}>Erro ao carregar clientes: {clientsError}</p>
+              <p className={styles.errorText}>Erro ao carregar clientes: {clientsError}</p>
             ) : clients.length === 0 ? (
               <p>Nenhum cliente associado a você ainda.</p>
             ) : (

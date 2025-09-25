@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/modules/common/services/SupabaseAuthService';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import AdminDashboard from './AdminDashboard';
+import AdminDashboard from './AdminDashboard/AdminDashboard';
 import ClientDashboard from './ClientDashboard/ClientDashboard';
-import SpecialistDashboard from './SpecialistDashboard';
+import SpecialistDashboard from './SpecialistDashboard/SpecialistDashboard';
 import PartnerDashboard from './PartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 
