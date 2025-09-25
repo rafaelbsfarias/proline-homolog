@@ -4,7 +4,7 @@ import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
-import ClientTable from '@/modules/specialist/components/ClientTable';
+import ClientTable from '@/modules/specialist/components/ClientTable/ClientTable';
 import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
