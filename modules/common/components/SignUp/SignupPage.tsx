@@ -7,6 +7,7 @@ import styles from './SignupPage.module.css';
 import ErrorMessage from '../ErroMessage/ErrorMessage';
 import Input from '../Input/Input';
 import Modal from '../Modal/Modal';
+import { SolidButton } from '../SolidButton/SolidButton';
 
 const SignupPage: React.FC = () => {
   const router = useRouter();
@@ -30,31 +31,32 @@ const SignupPage: React.FC = () => {
   return (
     <div className={styles.signupContainer}>
       {/* Modal de Erro */}
-      <Modal isOpen={!!globalError} onClose={() => setGlobalError(null)}>
-        <h3 style={{ marginBottom: 18, color: '#e53935' }}>Erro ao cadastrar</h3>
-        <div style={{ color: '#222', fontSize: '1.08rem', marginBottom: 24 }}>{globalError}</div>
-        <button
-          className={styles.submitButton}
-          style={{ width: 280, margin: '0 auto', display: 'block' }}
-          onClick={() => setGlobalError(null)}
-        >
+      <Modal
+        isOpen={!!globalError}
+        onClose={() => setGlobalError(null)}
+        title="Erro ao cadastrar"
+        size="md"
+        showCloseButton={false}
+      >
+        <div className={styles.modalText}>{globalError}</div>
+        <SolidButton className={styles.modalButton} onClick={() => setGlobalError(null)}>
           OK
-        </button>
+        </SolidButton>
       </Modal>
 
-      {/* Modal de Sucesso */}
-      <Modal isOpen={success} onClose={() => setSuccess(false)}>
-        <h3 style={{ marginBottom: 18 }}>Cadastro realizado com sucesso!</h3>
-        <div style={{ color: '#222', fontSize: '1.08rem', marginBottom: 24 }}>
+      <Modal
+        isOpen={success}
+        onClose={() => setSuccess(false)}
+        title="Cadastro realizado com sucesso!"
+        size="md"
+        showCloseButton={false}
+      >
+        <div className={styles.modalText}>
           Sua solicitação será analisada e aprovada pela equipe ProLine.
         </div>
-        <button
-          className={styles.submitButton}
-          style={{ width: 180, margin: '0 auto', display: 'block' }}
-          onClick={() => router.push('/login')}
-        >
+        <SolidButton className={styles.modalButton} onClick={() => router.push('/login')}>
           OK
-        </button>
+        </SolidButton>
       </Modal>
 
       <div

@@ -11,11 +11,11 @@ export interface AdminVehicleData {
   status?: string;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12; // Consistent with specialist dashboard
 
 export const useAdminClientVehicles = (
   clientId?: string,
-  filters?: { plate: string; status: string }
+  filters?: { plate?: string; status?: string[]; dateFilter?: string[] }
 ) => {
   const { get } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<AdminVehicleData[]>([]);
@@ -42,32 +42,34 @@ export const useAdminClientVehicles = (
       try {
         const queryParams = new URLSearchParams();
         queryParams.append('clientId', clientId);
+        queryParams.append('page', String(currentPage));
+        queryParams.append('pageSize', String(PAGE_SIZE));
+
+        if (filters?.plate) {
+          queryParams.append('plate', filters.plate);
+        }
+        if (filters?.status && filters.status.length > 0) {
+          filters.status.forEach(s => queryParams.append('status', s));
+        }
+        if (filters?.dateFilter && filters.dateFilter.length > 0) {
+          filters.dateFilter.forEach(df => queryParams.append('dateFilter', df));
+        }
+
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        queryParams.append('today', today);
+
         const response = await get<{
           success: boolean;
           vehicles: AdminVehicleData[];
-          totalCount: number;
+          total_count: number;
+          filtered_total_count: number;
+          status_counts: Record<string, number>;
           error?: string;
         }>(`/api/admin/client-vehicles?${queryParams.toString()}`);
+
         if (response.ok && response.data?.success) {
-          let allVehicles = response.data.vehicles || [];
-
-          if (filters?.plate) {
-            allVehicles = allVehicles.filter(v =>
-              v.plate.toLowerCase().includes(filters.plate.toLowerCase())
-            );
-          }
-
-          if (filters?.status) {
-            allVehicles = allVehicles.filter(v => v.status === filters.status);
-          }
-
-          setTotalCount(allVehicles.length);
-
-          const paginatedVehicles = allVehicles.slice(
-            (currentPage - 1) * PAGE_SIZE,
-            currentPage * PAGE_SIZE
-          );
-          setVehicles(paginatedVehicles);
+          setVehicles(response.data.vehicles || []);
+          setTotalCount(response.data.filtered_total_count || 0);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }
