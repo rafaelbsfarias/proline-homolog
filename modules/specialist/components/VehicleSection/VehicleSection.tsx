@@ -7,9 +7,10 @@ import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import styles from './VehicleSection.module.css'; // importando CSS
 import VehicleCheckboxFiltersModal from '../../../common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
-import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import FilterButton from '../../../common/components/FilterButton/FilterButton';
+import { FiRefreshCw, FiTrash2 } from 'react-icons/fi';
+import Input from '@/modules/common/components/Input/Input';
 
 interface VehicleSectionProps {
   clientName: string;
@@ -69,44 +70,31 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
       {/* Cabeçalho */}
       <div className={styles.header}>
         <h3 className={styles.title}>Veículos de {clientName}</h3>
-        <button
-          className={`${styles.button} ${styles.updateButton}`}
-          onClick={onRefetch}
-          disabled={loading}
-        >
-          Atualizar
-        </button>
-        <button
-          className={`${styles.button} ${styles.clearButton}`}
-          onClick={onClearFilters}
-          disabled={loading}
-        >
-          Limpar filtros
-        </button>
-      </div>
 
-      {/* Filtros */}
-      <div className={styles.filters}>
-        <div className={styles.filterGroup}>
-          <label className={styles.filterLabel} htmlFor="filter-plate">
-            Filtrar por placa
-          </label>
-          <input
+        <div className={styles.filtersWrapper}>
+          <Input
             id="filter-plate"
-            type="text"
-            placeholder="Ex: ABC1234"
+            className={styles.filterPlate}
+            name="filter-plate"
+            placeholder="Filtrar por placa"
             value={filterPlate}
             onChange={e => onFilterPlateChange(e.target.value)}
-            className={styles.filterInput}
           />
+
+          <div className={styles.filterButtonWrapper}>
+            <FilterButton
+              activeFilterCount={activeFilterCount}
+              onClick={() => setIsFilterModalOpen(true)}
+            />
+          </div>
+
+          <div className={styles.updateButtonWrapper}>
+            <OutlineButton onClick={onRefetch} disabled={loading}>
+              Atualizar
+            </OutlineButton>
+          </div>
         </div>
-
-        <FilterButton
-          activeFilterCount={activeFilterCount}
-          onClick={() => setIsFilterModalOpen(true)}
-        />
       </div>
-
       <VehicleCheckboxFiltersModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}

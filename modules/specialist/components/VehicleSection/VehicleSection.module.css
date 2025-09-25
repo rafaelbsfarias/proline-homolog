@@ -1,44 +1,65 @@
 /* Container geral da seção */
+/* Container geral da seção */
 .container {
   margin-top: 24px;
   border-top: 1px solid #eee;
   padding-top: 16px;
 }
 
-/* Cabeçalho com título e botões */
+/* Cabeçalho com título e área de controles */
 .header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   color: #333;
+  flex-shrink: 0;
 }
 
-.button {
-  padding: 4px 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  cursor: pointer;
-}
-
-.updateButton {
-  background: #fafafa;
-}
-
-.clearButton {
-  background: #fff;
-}
-
-/* Área de filtros */
-.filters {
-  margin: 12px 0;
+/* Área de controles (filtros + botão atualizar) */
+.filtersWrapper {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-grow: 0;
+}
+
+.filterPlate {
+  height: 40px; /* Mesma altura dos botões */
+  display: flex;
+  align-items: center;
+  padding: 0 12px; /* Padding horizontal consistente */
+  margin: 0; /* Remove qualquer margem */
+}
+
+/* Container do botão de filtro */
+.filterButtonWrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Botão de filtro */
+.filterButtonWrapper button {
+  height: 40px; /* Mesma altura do input */
+  padding: 0 16px;
+}
+
+/* Container do botão atualizar */
+.updateButtonWrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Botão atualizar */
+.updateButtonWrapper button {
+  height: 40px; /* Mesma altura do input */
+  padding: 0 16px;
+  white-space: nowrap;
 }
 
 .filterGroup {
@@ -63,10 +84,7 @@
 /* Container dos cards */
 .cardsContainer {
   display: grid;
-  grid-template-columns: repeat(
-    auto-fill,
-    minmax(290px, 1fr)
-  ); /* tamanho fixo baseado no status mais longo */
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
   gap: 12px;
   margin-top: 12px;
   align-items: start;
