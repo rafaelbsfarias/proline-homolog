@@ -68,6 +68,7 @@ export async function GET(request: Request) {
           service_orders (
             id,
             vehicle_id,
+            source_inspection_id,
             vehicles (
               id,
               brand,
@@ -75,6 +76,15 @@ export async function GET(request: Request) {
               year,
               plate,
               color
+            ),
+            inspections!source_inspection_id (
+              id,
+              inspection_date,
+              odometer,
+              fuel_level,
+              observations,
+              finalized,
+              created_at
             )
           )
         `
@@ -92,11 +102,15 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Orçamento ou veículo não encontrado' }, { status: 404 });
       }
 
+      const inspection = quote.service_orders.inspections;
+
       return NextResponse.json({
         vehicle: quote.service_orders.vehicles,
+        inspection: inspection || null,
         quoteId,
         serviceOrderId: quote.service_orders.id,
         vehicleId: quote.service_orders.vehicle_id,
+        inspectionId: quote.service_orders.source_inspection_id,
         source: 'quote_lookup',
       });
     }

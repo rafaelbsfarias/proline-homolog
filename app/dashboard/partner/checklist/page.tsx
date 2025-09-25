@@ -9,7 +9,7 @@ import InspectionData from '@/modules/partner/components/InspectionData';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, inspection, loading, saving, error, success, setField, saveChecklist } =
+  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
     useSpecialistChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,7 +171,6 @@ const ChecklistPage = () => {
             odometer={form.odometer}
             fuelLevel={form.fuelLevel}
             observations={form.observations}
-            inspectionStatus={inspection?.finalized ? 'finalized' : 'in_progress'}
           />
           <div
             style={{

@@ -7,7 +7,6 @@ interface InspectionDataProps {
   odometer?: number | string;
   fuelLevel?: string;
   observations?: string;
-  inspectionStatus?: 'finalized' | 'in_progress' | null;
 }
 
 const InspectionData: React.FC<InspectionDataProps> = ({
@@ -15,7 +14,6 @@ const InspectionData: React.FC<InspectionDataProps> = ({
   odometer,
   fuelLevel,
   observations,
-  inspectionStatus,
 }) => {
   const getFuelLevelLabel = (level?: string): string => {
     switch (level) {
@@ -44,9 +42,9 @@ const InspectionData: React.FC<InspectionDataProps> = ({
   };
 
   const formatOdometer = (km?: number | string): string => {
-    if (!km) return 'Não informado';
-    const numKm = typeof km === 'string' ? parseInt(km, 10) : km;
-    return isNaN(numKm) ? 'Não informado' : `${numKm.toLocaleString('pt-BR')} km`;
+    if (km === null || km === undefined || km === '') return 'Não informado';
+    const numKm = typeof km === 'string' ? parseFloat(km) : km;
+    return isNaN(numKm) || numKm === 0 ? 'Não informado' : `${numKm.toLocaleString('pt-BR')} km`;
   };
 
   return (
@@ -61,9 +59,6 @@ const InspectionData: React.FC<InspectionDataProps> = ({
     >
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           marginBottom: '20px',
         }}
       >
@@ -77,20 +72,6 @@ const InspectionData: React.FC<InspectionDataProps> = ({
         >
           Dados da Inspeção
         </h2>
-        {inspectionStatus && (
-          <div
-            style={{
-              padding: '6px 12px',
-              backgroundColor: inspectionStatus === 'finalized' ? '#dcfce7' : '#fef3c7',
-              color: inspectionStatus === 'finalized' ? '#166534' : '#92400e',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}
-          >
-            {inspectionStatus === 'finalized' ? 'Finalizada' : 'Em andamento'}
-          </div>
-        )}
       </div>
 
       <div
