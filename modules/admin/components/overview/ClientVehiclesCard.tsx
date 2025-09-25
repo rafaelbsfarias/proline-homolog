@@ -1,12 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import { useRouter } from 'next/navigation';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import React, { useCallback, useMemo, useState } from 'react';
+import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useAdminClientVehicles } from '@/modules/admin/hooks/useAdminClientVehicles';
 import { useAdminClientVehicleStatuses } from '@/modules/admin/hooks/useAdminClientVehicleStatuses';
 import { useAdminClientName } from '@/modules/admin/hooks/useAdminClientName';
 import { useAdminClientVehicleStatusCounts } from '@/modules/admin/hooks/useAdminClientVehicleStatusCounts';
 import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsModal';
 import type { AdminVehicleData } from '@/modules/admin/hooks/useAdminClientVehicles';
-import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 interface Props {
   clientId: string;
@@ -14,16 +15,34 @@ interface Props {
 }
 
 const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' }) => {
+  const router = useRouter();
+  const { get } = useAuthenticatedFetch();
   const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]); // Changed to string[]
+  const [dateFilter, setDateFilter] = useState<string[]>([]); // New state
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<AdminVehicleData | null>(null);
-  const { get } = useAuthenticatedFetch();
 
-  const filters = useMemo(
-    () => ({ plate: filterPlate, status: filterStatus }),
-    [filterPlate, filterStatus]
-  );
+  const handleFilterStatusChange = (newStatus: string[]) => {
+    setFilterStatus(newStatus);
+  };
+
+  const handleDateFilterChange = (newDateFilter: string[]) => {
+    setDateFilter(newDateFilter);
+  };
+
+  const handleClearCheckboxFilters = useCallback(() => {
+    setFilterStatus([]);
+    setDateFilter([]);
+  }, []);
+
+  const filters = useMemo(() => {
+    const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
+    if (filterPlate) f.plate = filterPlate;
+    if (filterStatus.length > 0) f.status = filterStatus;
+    if (dateFilter.length > 0) f.dateFilter = dateFilter;
+    return f;
+  }, [filterPlate, filterStatus, dateFilter]);
 
   const { name: fetchedName } = useAdminClientName(clientId);
   const { counts } = useAdminClientVehicleStatusCounts(clientId);
@@ -77,12 +96,16 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
         filterPlate={filterPlate}
         onFilterPlateChange={setFilterPlate}
         filterStatus={filterStatus}
-        onFilterStatusChange={setFilterStatus}
+        onFilterStatusChange={handleFilterStatusChange}
         availableStatuses={availableStatuses}
+        dateFilter={dateFilter}
+        onDateFilterChange={handleDateFilterChange}
         onClearFilters={() => {
           setFilterPlate('');
-          setFilterStatus('');
+          setFilterStatus([]);
+          setDateFilter([]);
         }}
+        onClearCheckboxFilters={handleClearCheckboxFilters}
         filteredVehicles={vehicles}
         onOpenChecklist={() => {}}
         onConfirmArrival={() => {}}
@@ -94,7 +117,7 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
           <button
             type="button"
             onClick={() => {
-              setSelectedVehicle(v as any);
+              setSelectedVehicle(v as AdminVehicleData);
               setShowDetails(true);
             }}
             style={{
@@ -117,6 +140,16 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
             setShowDetails(false);
             setSelectedVehicle(null);
           }}
+          onNavigateToDetails={id => router.push(`/dashboard/admin/vehicle/${id}`)}
+          specialistsLoader={async () => {
+            try {
+              const resp = await get<{ success: boolean; names?: string }>(
+                `/api/admin/client-specialists?clientId=${clientId}`
+              );
+              if (resp.ok && resp.data?.success) return { names: resp.data.names };
+            } catch {}
+            return {} as any;
+          }}
           vehicle={
             selectedVehicle
               ? {
@@ -133,7 +166,6 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
                   analyst: undefined,
                   arrival_forecast: undefined,
                   current_km: undefined,
-                  params: undefined,
                   notes: undefined,
                   estimated_arrival_date: undefined,
                   current_odometer: undefined,
@@ -141,16 +173,6 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
                 }
               : null
           }
-          specialistsLoader={async () => {
-            const resp = await get<{ success: boolean; names?: string; error?: string }>(
-              `/api/admin/client-specialists?clientId=${encodeURIComponent(clientId)}`
-            );
-            if (resp.ok && resp.data?.success) return { names: resp.data.names || '' };
-            return { names: '' };
-          }}
-          onNavigateToDetails={vehicleId => {
-            window.location.href = `/dashboard/vehicle/${vehicleId}`;
-          }}
         />
       )}
     </section>

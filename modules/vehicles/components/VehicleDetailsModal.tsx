@@ -3,9 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import './VehicleDetailsModal.css';
 import { getLogger } from '@/modules/logger';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import DetailTable, { DetailItem } from '@/modules/common/components/DetailTable/DetailTable';
+import Modal from '@/modules/common/components/Modal/Modal';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import './VehicleDetailsModal.css';
+import Spinner from '@/modules/common/components/Spinner/Spinner';
 
 export type VehicleDetails = {
   id: string;
@@ -21,7 +25,6 @@ export type VehicleDetails = {
   analyst?: string;
   arrival_forecast?: string;
   current_km?: number;
-  params?: string;
   notes?: string;
   estimated_arrival_date?: string | null;
   current_odometer?: number | null;
@@ -32,9 +35,9 @@ interface VehicleDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   vehicle: VehicleDetails | null;
-  // Optional: override specialists fetch for non-client contexts
-  specialistsLoader?: () => Promise<{ names?: string } | { success?: boolean; names?: string }>;
-  // Optional: override navigation to full vehicle page
+  // Optional override: fetch specialists names for non-client contexts
+  specialistsLoader?: () => Promise<{ names?: string } | void>;
+  // Optional override: navigation target when clicking full details
   onNavigateToDetails?: (vehicleId: string) => void;
 }
 
@@ -48,9 +51,9 @@ const statusLabels: Record<string, string> = {
 function sanitizeStatus(status?: string) {
   return (status ?? '').toString().trim().toLowerCase().replace(/\s+/g, '_');
 }
+
 function fmtDate(d?: string | null) {
   if (!d) return 'N/A';
-  // Evitar shift de timezone quando recebemos apenas AAAA-MM-DD
   const onlyDate = /^\d{4}-\d{2}-\d{2}$/;
   if (onlyDate.test(d)) {
     const [y, m, dd] = d.split('-');
@@ -59,6 +62,7 @@ function fmtDate(d?: string | null) {
   const dt = new Date(d);
   return isNaN(dt.getTime()) ? 'N/A' : dt.toLocaleDateString('pt-BR');
 }
+
 function fmtBRL(n?: number | null) {
   if (n === undefined || n === null) return 'N/A';
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n);
@@ -77,7 +81,9 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
   const logger = getLogger('vehicles:VehicleDetailsModal');
   const { get } = useAuthenticatedFetch();
   const router = useRouter();
+
   useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!mounted) return;
     if (isOpen) {
@@ -89,15 +95,15 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
     }
   }, [isOpen, mounted]);
 
-  // Buscar especialistas associados ao cliente (suportando contexts via loader)
+  // Buscar especialistas associados ao cliente (customizable per role)
   useEffect(() => {
     let active = true;
     async function fetchSpecialistsForClient() {
       try {
         setLoadingSpecialist(true);
         if (specialistsLoader) {
-          const res = await specialistsLoader();
-          const names = (res as any)?.names || '';
+          const data = (await specialistsLoader()) || {};
+          const names = (data as any).names || '';
           if (active) setSpecialistNames(names);
         } else {
           const resp = await get<{
@@ -119,7 +125,9 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
         if (active) setLoadingSpecialist(false);
       }
     }
+
     if (isOpen) fetchSpecialistsForClient();
+
     return () => {
       active = false;
     };
@@ -135,83 +143,51 @@ const VehicleDetailsModal: React.FC<VehicleDetailsModalProps> = ({
   const handleNavigateToDetails = () => {
     if (vehicle && vehicle.id) {
       if (onNavigateToDetails) onNavigateToDetails(vehicle.id);
-      else router.push(`/dashboard/client/vehicle/${vehicle.id}`);
+      else router.push(`/dashboard/vehicle/${vehicle.id}`);
     }
   };
 
+  const vehicleItems: DetailItem[] = [
+    { label: 'Placa', value: <span className="mono">{vehicle.plate}</span> },
+    { label: 'Marca', value: vehicle.brand },
+    { label: 'Modelo', value: `${vehicle.model} (${vehicle.year})` },
+    { label: 'Cor', value: vehicle.color || 'N/A' },
+    { label: 'KM Atual', value: km ?? 'N/A' },
+    { label: 'Valor FIPE', value: fmtBRL(vehicle.fipe_value) },
+    {
+      label: 'Status',
+      value: (
+        <span className={`vehicle-status-badge ${statusClass}`}>
+          {statusLabels[sanitizeStatus(vAny.status)] || vAny.status}
+        </span>
+      ),
+    },
+    { label: 'Previsão de Chegada', value: fmtDate(arrival) },
+    { label: 'Especialista Responsável', value: specialistNames || vAny.analyst || 'N/A' },
+    { label: 'Cadastrado em', value: fmtDate(vehicle.created_at) },
+  ];
+
   const content = (
-    <div
-      className="modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="vehicle-modal-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Detalhes do Veículo: ${vehicle.plate}`}
+      size="md"
+      showCloseButton
     >
-      <div className="modal-content" role="document">
-        <button className="modal-close" onClick={onClose} aria-label="Fechar">
-          ×
-        </button>
-
-        <h2 id="vehicle-modal-title" className="modal-title">
-          Detalhes do Veículo: <span className="mono">{vehicle.plate}</span>
-        </h2>
-        <div className="details-grid">
-          <div className="detail">
-            <span className="label">Placa</span>
-            <span className="value mono">{vehicle.plate}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Marca</span>
-            <span className="value">{vehicle.brand}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Modelo</span>
-            <span className="value">
-              {vehicle.model} ({vehicle.year})
-            </span>
-          </div>
-          <div className="detail">
-            <span className="label">Cor</span>
-            <span className="value">{vehicle.color || 'N/A'}</span>
-          </div>
-          <div className="detail">
-            <span className="label">KM Atual</span>
-            <span className="value">{km ?? 'N/A'}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Valor FIPE</span>
-            <span className="value">{fmtBRL(vehicle.fipe_value)}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Status</span>
-            <span className={`vehicle-status-badge ${statusClass}`}>
-              {statusLabels[sanitizeStatus(vAny.status)] || vAny.status}
-            </span>
-          </div>
-          <div className="detail">
-            <span className="label">Previsão de Chegada</span>
-            <span className="value">{fmtDate(arrival)}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Especialista Responsável</span>
-            <span className="value">{specialistNames || vAny.analyst || 'N/A'}</span>
-          </div>
-          <div className="detail">
-            <span className="label">Cadastrado em</span>
-            <span className="value">{fmtDate(vehicle.created_at)}</span>
-          </div>
+      {loadingSpecialist ? (
+        <div className="flex justify-center my-10">
+          <Spinner size={30} />
         </div>
-
-        <div className="modal-actions">
-          <button
-            className="view-full-details-button"
-            onClick={handleNavigateToDetails}
-            aria-label="Ver detalhes completos do veículo"
-          >
-            Ver Detalhes Completos
-          </button>
-        </div>
-      </div>
-    </div>
+      ) : (
+        <>
+          <DetailTable items={vehicleItems} />
+          <div className="modal-actions-button">
+            <SolidButton onClick={handleNavigateToDetails}>Ver Detalhes Completos</SolidButton>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 
   return createPortal(content, document.body);

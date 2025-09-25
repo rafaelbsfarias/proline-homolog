@@ -1,0 +1,170 @@
+.section {
+  background-color: #ffff;
+  padding: 24px;
+  border-radius: 8px;
+  color: #333;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+.header {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  margin-bottom: 16px;
+}
+
+.details {
+  margin-top: 16px;
+}
+
+.subheading {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: default;
+}
+
+.cardInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.address {
+  font-weight: 600;
+  color: #333;
+}
+
+.meta {
+  font-size: 0.875rem;
+  color: #6b7280;
+  display: flex;
+  gap: 16px;
+}
+
+.vehicleCount {
+  font-weight: 500;
+  color: #333;
+}
+
+.extraLine {
+  font-size: 0.9rem;
+  color: #4b5563;
+  background-color: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.actions .actionButton {
+  background: #3d3b3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actions .actionButton:hover:not(:disabled) {
+  background: #3d3b3c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.actions .actionButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actions .acceptButton {
+  background: #194d00;
+  color: #ffff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.actions .acceptButton:hover:not(:disabled) {
+  background: #194d00;
+}
+
+.actions .rejectButton {
+  background: #990300;
+  color: #ffff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actions .rejectButton:hover:not(:disabled) {
+  background: #990300;
+}
+
+.rescheduleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rescheduleSection .datePickerWrapper {
+  width: 100%;
+}
+
+.totalSection {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.confirmSection {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.confirmButton {
+  margin-left: 8px;
+  background-color: #002e4c;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.confirmButton:disabled {
+  background-color: #9da7b0;
+  cursor: not-allowed;
+}

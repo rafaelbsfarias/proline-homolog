@@ -1,5 +1,5 @@
 import React from 'react';
-import DatePickerBR from '@/modules/common/components/DatePickerBR';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
 
 type Props = {
   addressLabel: string;

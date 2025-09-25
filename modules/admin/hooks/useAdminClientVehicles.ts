@@ -11,11 +11,11 @@ export interface AdminVehicleData {
   status?: string;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12; // Consistent with specialist dashboard
 
 export const useAdminClientVehicles = (
   clientId?: string,
-  filters?: { plate: string; status: string }
+  filters?: { plate?: string; status?: string[]; dateFilter?: string[] }
 ) => {
   const { get } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<AdminVehicleData[]>([]);
@@ -44,17 +44,32 @@ export const useAdminClientVehicles = (
         queryParams.append('clientId', clientId);
         queryParams.append('page', String(currentPage));
         queryParams.append('pageSize', String(PAGE_SIZE));
-        if (filters?.plate) queryParams.append('plate', filters.plate);
-        if (filters?.status) queryParams.append('status', filters.status);
+
+        if (filters?.plate) {
+          queryParams.append('plate', filters.plate);
+        }
+        if (filters?.status && filters.status.length > 0) {
+          filters.status.forEach(s => queryParams.append('status', s));
+        }
+        if (filters?.dateFilter && filters.dateFilter.length > 0) {
+          filters.dateFilter.forEach(df => queryParams.append('dateFilter', df));
+        }
+
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        queryParams.append('today', today);
+
         const response = await get<{
           success: boolean;
           vehicles: AdminVehicleData[];
-          totalCount: number;
+          total_count: number;
+          filtered_total_count: number;
+          status_counts: Record<string, number>;
           error?: string;
         }>(`/api/admin/client-vehicles?${queryParams.toString()}`);
+
         if (response.ok && response.data?.success) {
           setVehicles(response.data.vehicles || []);
-          setTotalCount(response.data.totalCount || 0);
+          setTotalCount(response.data.filtered_total_count || 0);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }

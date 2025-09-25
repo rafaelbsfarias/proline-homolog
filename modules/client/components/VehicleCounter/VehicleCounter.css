@@ -25,6 +25,7 @@
   align-items: center;
   gap: 16px;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .counter-filters {
@@ -72,13 +73,16 @@
 
 .counter-actions-wrapper {
   display: flex;
-  align-items: center; /* alinha verticalmente */
-  gap: 12px; /* espaço entre filtros e botões */
+  align-items: baseline;
+  gap: 12px;
 }
 
 .counter-actions {
   display: flex;
   gap: 8px;
+  /* Fine-tuning alignment */
+  position: relative;
+  top: 4px;
 }
 
 .refresh-button,
@@ -187,7 +191,7 @@
 }
 
 .vehicle-item.status-near-expiry {
-  border: 2px solid #ff5e00;
+  border: 2px solid hsl(22, 100%, 50%);
 }
 
 .vehicle-item.status-near-expiry:hover {
@@ -219,7 +223,8 @@
 .vehicle-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-color: #002e4c;
+  /* border-color: #002e4c; */
+  border-color: #ccc;
 }
 
 .vehicle-info {
@@ -282,6 +287,34 @@
 
   .counter-header {
     gap: 12px;
+  }
+
+  .counter-actions-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 16px;
+  }
+
+  .counter-filters {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-left: 0;
+    gap: 12px;
+  }
+
+  .counter-filters input[type='text'],
+  .counter-filters select {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .counter-actions {
+    justify-content: center;
+    width: 100%;
+    position: static;
+    top: auto;
   }
 
   .counter-icon {

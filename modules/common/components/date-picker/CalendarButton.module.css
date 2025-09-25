@@ -1,0 +1,19 @@
+.calendarButton {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #888;
+}
+
+.calendarButton:hover {
+  color: #002e4c;
+}
+
+.calendarIcon {
+  font-size: 1.4rem;
+}

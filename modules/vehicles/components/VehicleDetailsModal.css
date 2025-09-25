@@ -49,26 +49,11 @@
   padding-top: 20px;
   border-top: 1px solid #e5e7eb;
 }
-.view-full-details-button {
-  background: #002e4c;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  min-width: 180px;
-}
-.view-full-details-button:hover {
-  background: #004a7a;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-.view-full-details-button:active {
-  transform: translateY(0);
+
+.modal-actions-button {
+  display: flex;
+  justify-content: flex-end; /* Alinha o botão à direita */
+  margin-top: 16px;
 }
 
 /* Grid de detalhes */

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { authService } from '@/modules/common/services/SupabaseAuthService';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import AdminDashboard from './AdminDashboard';
-import ClientDashboard from './ClientDashboard';
+import ClientDashboard from './ClientDashboard/ClientDashboard';
 import SpecialistDashboard from './SpecialistDashboard';
 import PartnerDashboard from './PartnerDashboard';
 import { Loading } from '@/modules/common/components/Loading/Loading';

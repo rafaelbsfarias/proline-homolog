@@ -103,7 +103,8 @@ export const useAddressForm = (
       };
       const res = await onSubmit(sanitized);
       if (!res || res.success) {
-        setSuccess(res?.message || 'Endereço salvo com sucesso!');
+        const message = res && 'message' in res ? res.message : undefined;
+        setSuccess(message || 'Endereço salvo com sucesso!');
       } else {
         setError(res.message || 'Falha ao salvar endereço');
       }

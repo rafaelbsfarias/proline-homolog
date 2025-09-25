@@ -1,1 +1,1 @@
-export { labelOf } from '@collections/admin/helpers/helpers';
+export { labelOf } from '@collections/admin/helpers';

@@ -1,243 +1,235 @@
 'use client';
 
-import { useState } from 'react';
-import { useToast } from '@/modules/common/components/ToastProvider';
+import { useState, useCallback } from 'react';
+import type { ChecklistFormWithInspections, InspectionStatus } from '../../common/types/checklist';
+import { useVehicleData } from '../../common/hooks/useVehicleData';
+import { useAuthenticatedFetch } from '../../common/hooks/useAuthenticatedFetch';
+import { useErrorHandler, ErrorType } from '../../common/services/ErrorHandlerService';
 
-export interface PartnerChecklistForm {
-  date: string;
-  odometer: string;
-  fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
-  // Grupos de Inspeção baseados no CHECK LIST.xlsx
-  clutch: 'ok' | 'attention' | 'critical'; // Embreagem - Conjunto
-  clutchNotes: string;
-  sparkPlugs: 'ok' | 'attention' | 'critical'; // Vela de Ignição
-  sparkPlugsNotes: string;
-  belts: 'ok' | 'attention' | 'critical'; // Correia Dentada/Auxiliar
-  beltsNotes: string;
-  radiator: 'ok' | 'attention' | 'critical'; // Radiador (Arrefecimento) - Verificar vazamentos inferiores
-  radiatorNotes: string;
-  frontShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Dianteiro
-  frontShocksNotes: string;
-  rearShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Traseiro
-  rearShocksNotes: string;
-  suspension: 'ok' | 'attention' | 'critical'; // Suspensão
-  suspensionNotes: string;
-  tires: 'ok' | 'attention' | 'critical'; // Pneus
-  tiresNotes: string;
-  brakePads: 'ok' | 'attention' | 'critical'; // Pastilha de Freio
-  brakePadsNotes: string;
-  brakeDiscs: 'ok' | 'attention' | 'critical'; // Disco de Freio
-  brakeDiscsNotes: string;
-  engine: 'ok' | 'attention' | 'critical'; // Motor
-  engineNotes: string;
-  steeringBox: 'ok' | 'attention' | 'critical'; // Caixa de Direção
-  steeringBoxNotes: string;
-  electricSteeringBox: 'ok' | 'attention' | 'critical'; // Caixa Direção Elétrica - Verificar folga
-  electricSteeringBoxNotes: string;
-  exhaust: 'ok' | 'attention' | 'critical'; // Sistema de Escape - Checar vazamento/sinistros/alinhamento
-  exhaustNotes: string;
-  fluids: 'ok' | 'attention' | 'critical'; // Fluidos - Checar níveis
-  fluidsNotes: string;
-  airConditioning: 'ok' | 'attention' | 'critical'; // Ar Condicionado - Checar se está congelando
-  airConditioningNotes: string;
-  airConditioningCompressor: 'ok' | 'attention' | 'critical'; // Compressor Ar Condicionado - Checar se está atracando
-  airConditioningCompressorNotes: string;
-  airConditioningCleaning: 'ok' | 'attention' | 'critical'; // Limpeza Ar Condicionado - Checar fluxo de ar (filtro de cabine)
-  airConditioningCleaningNotes: string;
-  // Itens individuais do Acionamento Elétrico
-  electricalActuationGlass: 'ok' | 'attention' | 'critical'; // VIDRO
-  electricalActuationGlassNotes: string;
-  electricalActuationMirror: 'ok' | 'attention' | 'critical'; // RETROVISOR
-  electricalActuationMirrorNotes: string;
-  electricalActuationSocket: 'ok' | 'attention' | 'critical'; // TOMADA 12V
-  electricalActuationSocketNotes: string;
-  electricalActuationLock: 'ok' | 'attention' | 'critical'; // TRAVA
-  electricalActuationLockNotes: string;
-  electricalActuationTrunk: 'ok' | 'attention' | 'critical'; // PORTA MALA
-  electricalActuationTrunkNotes: string;
-  electricalActuationWiper: 'ok' | 'attention' | 'critical'; // LIMPADOR
-  electricalActuationWiperNotes: string;
-  electricalActuationKey: 'ok' | 'attention' | 'critical'; // CHAVE
-  electricalActuationKeyNotes: string;
-  electricalActuationAlarm: 'ok' | 'attention' | 'critical'; // ALARME
-  electricalActuationAlarmNotes: string;
-  electricalActuationInteriorLight: 'ok' | 'attention' | 'critical'; // LUZ INTERNA
-  electricalActuationInteriorLightNotes: string;
-  dashboardPanel: 'ok' | 'attention' | 'critical'; // Painel de Instrumentos - Checar luzes do painel
-  dashboardPanelNotes: string;
-  lights: 'ok' | 'attention' | 'critical'; // Lâmpadas - Checar funcionamento
-  lightsNotes: string;
-  battery: 'ok' | 'attention' | 'critical'; // Bateria
-  batteryNotes: string;
-  observations: string;
+interface PartnerChecklistState {
+  form: ChecklistFormWithInspections | null;
+  loading: boolean;
+  saving: boolean;
+  error: string | null;
 }
 
-export interface VehicleInfo {
-  id: string;
-  brand: string;
-  model: string;
-  year?: number;
-  plate: string;
-  color?: string;
+interface UsePartnerChecklistResult extends PartnerChecklistState {
+  // Dados do veículo
+  vehicle: ReturnType<typeof useVehicleData>['vehicle'];
+  inspection: ReturnType<typeof useVehicleData>['inspection'];
+  vehicleLoading: ReturnType<typeof useVehicleData>['loading'];
+  vehicleError: ReturnType<typeof useVehicleData>['error'];
+
+  // Ações
+  loadChecklist: () => Promise<void>;
+  updateChecklistItem: (
+    field: keyof ChecklistFormWithInspections,
+    value: string | InspectionStatus
+  ) => void;
+  saveChecklist: () => Promise<void>;
+  submitChecklist: () => Promise<void>;
+
+  // Estados derivados
+  canSubmit: boolean;
+  hasUnsavedChanges: boolean;
 }
 
-const initialForm: PartnerChecklistForm = {
-  date: new Date().toISOString().split('T')[0],
-  odometer: '',
-  fuelLevel: 'half',
-  // Grupos de Inspeção baseados no CHECK LIST.xlsx
-  clutch: 'ok',
-  clutchNotes: '',
-  sparkPlugs: 'ok',
-  sparkPlugsNotes: '',
-  belts: 'ok',
-  beltsNotes: '',
-  radiator: 'ok',
-  radiatorNotes: '',
-  frontShocks: 'ok',
-  frontShocksNotes: '',
-  rearShocks: 'ok',
-  rearShocksNotes: '',
-  suspension: 'ok',
-  suspensionNotes: '',
-  tires: 'ok',
-  tiresNotes: '',
-  brakePads: 'ok',
-  brakePadsNotes: '',
-  brakeDiscs: 'ok',
-  brakeDiscsNotes: '',
-  engine: 'ok',
-  engineNotes: '',
-  steeringBox: 'ok',
-  steeringBoxNotes: '',
-  electricSteeringBox: 'ok',
-  electricSteeringBoxNotes: '',
-  exhaust: 'ok',
-  exhaustNotes: '',
-  fluids: 'ok',
-  fluidsNotes: '',
-  airConditioning: 'ok',
-  airConditioningNotes: '',
-  airConditioningCompressor: 'ok',
-  airConditioningCompressorNotes: '',
-  airConditioningCleaning: 'ok',
-  airConditioningCleaningNotes: '',
-  // Itens individuais do Acionamento Elétrico
-  electricalActuationGlass: 'ok',
-  electricalActuationGlassNotes: '',
-  electricalActuationMirror: 'ok',
-  electricalActuationMirrorNotes: '',
-  electricalActuationSocket: 'ok',
-  electricalActuationSocketNotes: '',
-  electricalActuationLock: 'ok',
-  electricalActuationLockNotes: '',
-  electricalActuationTrunk: 'ok',
-  electricalActuationTrunkNotes: '',
-  electricalActuationWiper: 'ok',
-  electricalActuationWiperNotes: '',
-  electricalActuationKey: 'ok',
-  electricalActuationKeyNotes: '',
-  electricalActuationAlarm: 'ok',
-  electricalActuationAlarmNotes: '',
-  electricalActuationInteriorLight: 'ok',
-  electricalActuationInteriorLightNotes: '',
-  dashboardPanel: 'ok',
-  dashboardPanelNotes: '',
-  lights: 'ok',
-  lightsNotes: '',
-  battery: 'ok',
-  batteryNotes: '',
-  observations: '',
-};
+export function usePartnerChecklist(): UsePartnerChecklistResult {
+  // Hooks de dependências
+  const { vehicle, inspection, loading: vehicleLoading, error: vehicleError } = useVehicleData();
+  const { post, put } = useAuthenticatedFetch();
+  const { handleError } = useErrorHandler();
 
-export function usePartnerChecklist() {
-  const { showToast } = useToast();
+  // Estado do checklist
+  const [state, setState] = useState<PartnerChecklistState>({
+    form: null,
+    loading: false,
+    saving: false,
+    error: null,
+  });
 
-  // Dados mockados para desenvolvimento
-  const mockVehicle: VehicleInfo = {
-    id: 'mock-vehicle-id',
-    brand: 'Toyota',
-    model: 'Corolla',
-    year: 2020,
-    plate: 'ABC-1234',
-    color: 'Prata',
-  };
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const [form, setForm] = useState<PartnerChecklistForm>(initialForm);
-  const [vehicle] = useState<VehicleInfo | null>(mockVehicle);
-  const [loading] = useState(false); // Começar com false para evitar loading
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
-  // Remover busca automática por enquanto
-  // useEffect(() => {
-  //   const fetchVehicleData = async () => {
-  //     if (!quoteId) {
-  //       setLoading(false);
-  //       return;
-  //     }
-  //     // ... código removido temporariamente
-  //   };
-  //   fetchVehicleData();
-  // }, [quoteId, showToast]);
-
-  const setField = (
-    field: keyof PartnerChecklistForm,
-    value: string | 'ok' | 'attention' | 'critical'
-  ) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const saveChecklist = async () => {
-    if (!vehicle) {
-      throw new Error('Veículo não encontrado');
+  /**
+   * Carrega dados do checklist
+   */
+  const loadChecklist = useCallback(async () => {
+    if (!inspection?.id) {
+      setState(prev => ({ ...prev, error: 'Inspeção não encontrada' }));
+      return;
     }
-
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
 
     try {
-      // Simulação de salvamento - apenas delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setState(prev => ({ ...prev, loading: true, error: null }));
 
-      // Validações básicas
-      if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) {
-        throw new Error('Data da inspeção inválida.');
-      }
-      if (!form.odometer || Number(form.odometer) < 0) {
-        throw new Error('Informe a quilometragem atual válida.');
+      const response = await post<ChecklistFormWithInspections>(`/api/partner/checklist/load`, {
+        inspectionId: inspection.id,
+      });
+
+      if (!response.ok || !response.data) {
+        throw new Error(response.error || 'Erro ao carregar checklist');
       }
 
-      // Simular sucesso
-      setSuccess('Checklist salvo com sucesso (simulado).');
-      showToast('success', 'Checklist salvo com sucesso (simulado).');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
-      setError(message);
-      showToast('error', message);
-      throw err;
-    } finally {
-      setSaving(false);
+      setState(prev => ({
+        ...prev,
+        form: response.data!,
+        loading: false,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao carregar checklist';
+
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'loadChecklist' },
+      });
+
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: message,
+      }));
     }
-  };
+  }, [inspection?.id, post, handleError]);
 
-  const resetForm = () => {
-    setForm(initialForm);
-    setError(null);
-    setSuccess(null);
-  };
+  /**
+   * Atualiza item do checklist
+   */
+  const updateChecklistItem = useCallback(
+    (field: keyof ChecklistFormWithInspections, value: string | InspectionStatus) => {
+      setState(prev => {
+        if (!prev.form) return prev;
+
+        return {
+          ...prev,
+          form: {
+            ...prev.form,
+            [field]: value,
+          },
+        };
+      });
+
+      setHasUnsavedChanges(true);
+    },
+    []
+  );
+
+  /**
+   * Salva o checklist como rascunho
+   */
+  const saveChecklist = useCallback(async () => {
+    if (!state.form || !inspection?.id) {
+      return;
+    }
+
+    try {
+      setState(prev => ({ ...prev, saving: true, error: null }));
+
+      const payload = {
+        ...state.form,
+        inspection_id: inspection.id,
+        status: 'draft',
+      };
+
+      const response = await put<{ success: boolean }>(`/api/partner/checklist/save`, payload);
+
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro ao salvar checklist');
+      }
+
+      setHasUnsavedChanges(false);
+      setState(prev => ({ ...prev, saving: false }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao salvar checklist';
+
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'saveChecklist' },
+      });
+
+      setState(prev => ({
+        ...prev,
+        saving: false,
+        error: message,
+      }));
+    }
+  }, [state.form, inspection?.id, put, handleError]);
+
+  /**
+   * Submete o checklist para revisão
+   */
+  const submitChecklist = useCallback(async () => {
+    if (!state.form || !inspection?.id) {
+      return;
+    }
+
+    try {
+      setState(prev => ({ ...prev, saving: true, error: null }));
+
+      const payload = {
+        ...state.form,
+        inspection_id: inspection.id,
+        status: 'submitted',
+      };
+
+      const response = await put<{ success: boolean }>(`/api/partner/checklist/submit`, payload);
+
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro ao enviar checklist');
+      }
+
+      // Atualizar status local
+      setState(prev => ({
+        ...prev,
+        form: prev.form ? { ...prev.form, status: 'submitted' } : null,
+        saving: false,
+      }));
+
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro ao enviar checklist';
+
+      handleError(error as Error, ErrorType.SERVER, {
+        showToUser: true,
+        context: { inspectionId: inspection.id, action: 'submitChecklist' },
+      });
+
+      setState(prev => ({
+        ...prev,
+        saving: false,
+        error: message,
+      }));
+    }
+  }, [state.form, inspection?.id, put, handleError]);
+
+  /**
+   * Verifica se pode submeter o checklist
+   */
+  const canSubmit = Boolean(
+    state.form && state.form.status === 'draft' && !state.saving
+    // a fazer: Implementar validação de campos obrigatórios do checklist
+  );
 
   return {
-    form,
+    // Estado do checklist
+    form: state.form,
+    loading: state.loading,
+    saving: state.saving,
+    error: state.error,
+
+    // Dados do veículo
     vehicle,
-    loading,
-    saving,
-    error,
-    success,
-    setField,
+    inspection,
+    vehicleLoading,
+    vehicleError,
+
+    // Ações
+    loadChecklist,
+    updateChecklistItem,
     saveChecklist,
-    resetForm,
+    submitChecklist,
+
+    // Estados derivados
+    canSubmit,
+    hasUnsavedChanges,
   };
 }

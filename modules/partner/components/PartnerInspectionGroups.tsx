@@ -1,656 +1,399 @@
+'use client';
+
 import React from 'react';
-import type { PartnerChecklistForm } from '../hooks/usePartnerChecklist';
+import type { ChecklistFormWithInspections, InspectionStatus } from '../../common/types/checklist';
 
-type InspectionStatus = 'ok' | 'attention' | 'critical';
-
-interface InspectionItem {
-  key: keyof Pick<
-    PartnerChecklistForm,
-    | 'clutch'
-    | 'sparkPlugs'
-    | 'belts'
-    | 'radiator'
-    | 'frontShocks'
-    | 'rearShocks'
-    | 'suspension'
-    | 'tires'
-    | 'brakePads'
-    | 'brakeDiscs'
-    | 'engine'
-    | 'steeringBox'
-    | 'electricSteeringBox'
-    | 'exhaust'
-    | 'fluids'
-    | 'airConditioning'
-    | 'airConditioningCompressor'
-    | 'airConditioningCleaning'
-    | 'electricalActuationGlass'
-    | 'electricalActuationMirror'
-    | 'electricalActuationSocket'
-    | 'electricalActuationLock'
-    | 'electricalActuationTrunk'
-    | 'electricalActuationWiper'
-    | 'electricalActuationKey'
-    | 'electricalActuationAlarm'
-    | 'electricalActuationInteriorLight'
-    | 'dashboardPanel'
-    | 'lights'
-    | 'battery'
-  >;
-  notesKey: keyof Pick<
-    PartnerChecklistForm,
-    | 'clutchNotes'
-    | 'sparkPlugsNotes'
-    | 'beltsNotes'
-    | 'radiatorNotes'
-    | 'frontShocksNotes'
-    | 'rearShocksNotes'
-    | 'suspensionNotes'
-    | 'tiresNotes'
-    | 'brakePadsNotes'
-    | 'brakeDiscsNotes'
-    | 'engineNotes'
-    | 'steeringBoxNotes'
-    | 'electricSteeringBoxNotes'
-    | 'exhaustNotes'
-    | 'fluidsNotes'
-    | 'airConditioningNotes'
-    | 'airConditioningCompressorNotes'
-    | 'airConditioningCleaningNotes'
-    | 'electricalActuationGlassNotes'
-    | 'electricalActuationMirrorNotes'
-    | 'electricalActuationSocketNotes'
-    | 'electricalActuationLockNotes'
-    | 'electricalActuationTrunkNotes'
-    | 'electricalActuationWiperNotes'
-    | 'electricalActuationKeyNotes'
-    | 'electricalActuationAlarmNotes'
-    | 'electricalActuationInteriorLightNotes'
-    | 'dashboardPanelNotes'
-    | 'lightsNotes'
-    | 'batteryNotes'
-  >;
-  label: string;
-  category: string;
-  description?: string;
+interface InspectionGroup {
+  title: string;
+  items: InspectionGroupItem[];
 }
 
-interface Props {
-  values: Pick<
-    PartnerChecklistForm,
-    | 'clutch'
-    | 'sparkPlugs'
-    | 'belts'
-    | 'radiator'
-    | 'frontShocks'
-    | 'rearShocks'
-    | 'suspension'
-    | 'tires'
-    | 'brakePads'
-    | 'brakeDiscs'
-    | 'engine'
-    | 'steeringBox'
-    | 'electricSteeringBox'
-    | 'exhaust'
-    | 'fluids'
-    | 'airConditioning'
-    | 'airConditioningCompressor'
-    | 'airConditioningCleaning'
-    | 'electricalActuationGlass'
-    | 'electricalActuationMirror'
-    | 'electricalActuationSocket'
-    | 'electricalActuationLock'
-    | 'electricalActuationTrunk'
-    | 'electricalActuationWiper'
-    | 'electricalActuationKey'
-    | 'electricalActuationAlarm'
-    | 'electricalActuationInteriorLight'
-    | 'dashboardPanel'
-    | 'lights'
-    | 'battery'
-    | 'clutchNotes'
-    | 'sparkPlugsNotes'
-    | 'beltsNotes'
-    | 'radiatorNotes'
-    | 'frontShocksNotes'
-    | 'rearShocksNotes'
-    | 'suspensionNotes'
-    | 'tiresNotes'
-    | 'brakePadsNotes'
-    | 'brakeDiscsNotes'
-    | 'engineNotes'
-    | 'steeringBoxNotes'
-    | 'electricSteeringBoxNotes'
-    | 'exhaustNotes'
-    | 'fluidsNotes'
-    | 'airConditioningNotes'
-    | 'airConditioningCompressorNotes'
-    | 'airConditioningCleaningNotes'
-    | 'electricalActuationGlassNotes'
-    | 'electricalActuationMirrorNotes'
-    | 'electricalActuationSocketNotes'
-    | 'electricalActuationLockNotes'
-    | 'electricalActuationTrunkNotes'
-    | 'electricalActuationWiperNotes'
-    | 'electricalActuationKeyNotes'
-    | 'electricalActuationAlarmNotes'
-    | 'electricalActuationInteriorLightNotes'
-    | 'dashboardPanelNotes'
-    | 'lightsNotes'
-    | 'batteryNotes'
-  >;
-  onChange: (
-    name: keyof Pick<
-      PartnerChecklistForm,
-      | 'clutch'
-      | 'sparkPlugs'
-      | 'belts'
-      | 'radiator'
-      | 'frontShocks'
-      | 'rearShocks'
-      | 'suspension'
-      | 'tires'
-      | 'brakePads'
-      | 'brakeDiscs'
-      | 'engine'
-      | 'steeringBox'
-      | 'electricSteeringBox'
-      | 'exhaust'
-      | 'fluids'
-      | 'airConditioning'
-      | 'airConditioningCompressor'
-      | 'airConditioningCleaning'
-      | 'electricalActuationGlass'
-      | 'electricalActuationMirror'
-      | 'electricalActuationSocket'
-      | 'electricalActuationLock'
-      | 'electricalActuationTrunk'
-      | 'electricalActuationWiper'
-      | 'electricalActuationKey'
-      | 'electricalActuationAlarm'
-      | 'electricalActuationInteriorLight'
-      | 'dashboardPanel'
-      | 'lights'
-      | 'battery'
-      | 'clutchNotes'
-      | 'sparkPlugsNotes'
-      | 'beltsNotes'
-      | 'radiatorNotes'
-      | 'frontShocksNotes'
-      | 'rearShocksNotes'
-      | 'suspensionNotes'
-      | 'tiresNotes'
-      | 'brakePadsNotes'
-      | 'brakeDiscsNotes'
-      | 'engineNotes'
-      | 'steeringBoxNotes'
-      | 'electricSteeringBoxNotes'
-      | 'exhaustNotes'
-      | 'fluidsNotes'
-      | 'airConditioningNotes'
-      | 'airConditioningCompressorNotes'
-      | 'airConditioningCleaningNotes'
-      | 'electricalActuationGlassNotes'
-      | 'electricalActuationMirrorNotes'
-      | 'electricalActuationSocketNotes'
-      | 'electricalActuationLockNotes'
-      | 'electricalActuationTrunkNotes'
-      | 'electricalActuationWiperNotes'
-      | 'electricalActuationKeyNotes'
-      | 'electricalActuationAlarmNotes'
-      | 'electricalActuationInteriorLightNotes'
-      | 'dashboardPanelNotes'
-      | 'lightsNotes'
-      | 'batteryNotes'
-    >,
+interface InspectionGroupItem {
+  key: keyof ChecklistFormWithInspections;
+  label: string;
+  statusKey: keyof ChecklistFormWithInspections;
+  notesKey: keyof ChecklistFormWithInspections;
+  evidenceKey: keyof ChecklistFormWithInspections;
+}
+
+interface PartnerInspectionGroupsProps {
+  form: ChecklistFormWithInspections;
+  onUpdateItem: (
+    field: keyof ChecklistFormWithInspections,
     value: string | InspectionStatus
   ) => void;
+  disabled?: boolean;
 }
 
-const inspectionItems: InspectionItem[] = [
-  // MECÂNICA
+const INSPECTION_GROUPS: InspectionGroup[] = [
   {
-    key: 'clutch',
-    notesKey: 'clutchNotes',
-    label: 'Embreagem - Conjunto',
-    category: 'MECÂNICA',
-    description: 'Acionamento',
+    title: 'Motor e Transmissão',
+    items: [
+      {
+        key: 'clutch',
+        label: 'Embreagem',
+        statusKey: 'clutch',
+        notesKey: 'clutchNotes',
+        evidenceKey: 'clutchEvidence',
+      },
+      {
+        key: 'sparkPlugs',
+        label: 'Velas de Ignição',
+        statusKey: 'sparkPlugs',
+        notesKey: 'sparkPlugsNotes',
+        evidenceKey: 'sparkPlugsEvidence',
+      },
+      {
+        key: 'belts',
+        label: 'Correias',
+        statusKey: 'belts',
+        notesKey: 'beltsNotes',
+        evidenceKey: 'beltsEvidence',
+      },
+      {
+        key: 'engine',
+        label: 'Motor',
+        statusKey: 'engine',
+        notesKey: 'engineNotes',
+        evidenceKey: 'engineEvidence',
+      },
+    ],
   },
   {
-    key: 'sparkPlugs',
-    notesKey: 'sparkPlugsNotes',
-    label: 'Vela de Ignição',
-    category: 'MECÂNICA',
-    description: 'Conferir com 40.000 km (ajustar 0,7mm)',
+    title: 'Sistema de Arrefecimento',
+    items: [
+      {
+        key: 'radiator',
+        label: 'Radiador',
+        statusKey: 'radiator',
+        notesKey: 'radiatorNotes',
+        evidenceKey: 'radiatorEvidence',
+      },
+      {
+        key: 'fluids',
+        label: 'Fluidos',
+        statusKey: 'fluids',
+        notesKey: 'fluidsNotes',
+        evidenceKey: 'fluidsEvidence',
+      },
+    ],
   },
   {
-    key: 'belts',
-    notesKey: 'beltsNotes',
-    label: 'Correia Dentada/Auxiliar',
-    category: 'MECÂNICA',
-    description: 'Conferir com 60.000 km (contaminação)',
+    title: 'Suspensão',
+    items: [
+      {
+        key: 'frontShocks',
+        label: 'Amortecedores Dianteiros',
+        statusKey: 'frontShocks',
+        notesKey: 'frontShocksNotes',
+        evidenceKey: 'frontShocksEvidence',
+      },
+      {
+        key: 'rearShocks',
+        label: 'Amortecedores Traseiros',
+        statusKey: 'rearShocks',
+        notesKey: 'rearShocksNotes',
+        evidenceKey: 'rearShocksEvidence',
+      },
+      {
+        key: 'suspension',
+        label: 'Sistema de Suspensão',
+        statusKey: 'suspension',
+        notesKey: 'suspensionNotes',
+        evidenceKey: 'suspensionEvidence',
+      },
+    ],
   },
   {
-    key: 'frontShocks',
-    notesKey: 'frontShocksNotes',
-    label: 'Amortecedor Dianteiro',
-    category: 'MECÂNICA',
-    description: 'Checar se há vazamento',
+    title: 'Freios',
+    items: [
+      {
+        key: 'brakePads',
+        label: 'Pastilhas de Freio',
+        statusKey: 'brakePads',
+        notesKey: 'brakePadsNotes',
+        evidenceKey: 'brakePadsEvidence',
+      },
+      {
+        key: 'brakeDiscs',
+        label: 'Discos de Freio',
+        statusKey: 'brakeDiscs',
+        notesKey: 'brakeDiscsNotes',
+        evidenceKey: 'brakeDiscsEvidence',
+      },
+    ],
   },
   {
-    key: 'rearShocks',
-    notesKey: 'rearShocksNotes',
-    label: 'Amortecedor Traseiro',
-    category: 'MECÂNICA',
-    description: 'Checar se há vazamento',
+    title: 'Direção',
+    items: [
+      {
+        key: 'steeringBox',
+        label: 'Caixa de Direção',
+        statusKey: 'steeringBox',
+        notesKey: 'steeringBoxNotes',
+        evidenceKey: 'steeringBoxEvidence',
+      },
+      {
+        key: 'electricSteeringBox',
+        label: 'Direção Elétrica',
+        statusKey: 'electricSteeringBox',
+        notesKey: 'electricSteeringBoxNotes',
+        evidenceKey: 'electricSteeringBoxEvidence',
+      },
+    ],
   },
   {
-    key: 'suspension',
-    notesKey: 'suspensionNotes',
-    label: 'Suspensão',
-    category: 'MECÂNICA',
-    description: 'Checar terminal/articulação/bucha/rolamento',
-  },
-
-  // FLUIDOS
-  {
-    key: 'fluids',
-    notesKey: 'fluidsNotes',
-    label: 'Fluidos',
-    category: 'FLUIDOS',
-    description: 'Verificar níveis',
-  },
-
-  // PNEU/FREIOS
-  {
-    key: 'tires',
-    notesKey: 'tiresNotes',
-    label: 'Pneus',
-    category: 'PNEU/FREIOS',
-    description: 'Calibragem',
-  },
-  {
-    key: 'brakePads',
-    notesKey: 'brakePadsNotes',
-    label: 'Pastilha de Freio',
-    category: 'PNEU/FREIOS',
-    description: 'Medir com calabre de inspeção (4mm)',
+    title: 'Ar Condicionado',
+    items: [
+      {
+        key: 'airConditioning',
+        label: 'Sistema de Ar Condicionado',
+        statusKey: 'airConditioning',
+        notesKey: 'airConditioningNotes',
+        evidenceKey: 'airConditioningEvidence',
+      },
+      {
+        key: 'airConditioningCompressor',
+        label: 'Compressor do Ar Condicionado',
+        statusKey: 'airConditioningCompressor',
+        notesKey: 'airConditioningCompressorNotes',
+        evidenceKey: 'airConditioningCompressorEvidence',
+      },
+      {
+        key: 'airConditioningCleaning',
+        label: 'Limpeza do Ar Condicionado',
+        statusKey: 'airConditioningCleaning',
+        notesKey: 'airConditioningCleaningNotes',
+        evidenceKey: 'airConditioningCleaningEvidence',
+      },
+    ],
   },
   {
-    key: 'brakeDiscs',
-    notesKey: 'brakeDiscsNotes',
-    label: 'Disco de Freio',
-    category: 'PNEU/FREIOS',
-    description: 'Medir com paquímetro o desgaste',
-  },
-
-  // MOTOR
-  {
-    key: 'engine',
-    notesKey: 'engineNotes',
-    label: 'Motor',
-    category: 'MOTOR',
-    description: 'Checar funcionamento/vazamento (carter)',
-  },
-  {
-    key: 'radiator',
-    notesKey: 'radiatorNotes',
-    label: 'Radiador (Arrefecimento)',
-    category: 'MOTOR',
-    description: 'Verificar vazamentos inferiores',
-  },
-  {
-    key: 'steeringBox',
-    notesKey: 'steeringBoxNotes',
-    label: 'Caixa de Direção',
-    category: 'MOTOR',
-    description: 'Verificar folga e vazamento',
-  },
-  {
-    key: 'electricSteeringBox',
-    notesKey: 'electricSteeringBoxNotes',
-    label: 'Caixa Direção Elétrica',
-    category: 'MOTOR',
-    description: 'Verificar folga',
-  },
-  {
-    key: 'exhaust',
-    notesKey: 'exhaustNotes',
-    label: 'Sistema de Escape',
-    category: 'MOTOR',
-    description: 'Checar vazamento/sinistros/alinhamento',
-  },
-
-  // AR CONDICIONADO
-  {
-    key: 'airConditioning',
-    notesKey: 'airConditioningNotes',
-    label: 'Ar Condicionado',
-    category: 'AR CONDICIONADO',
-    description: 'Checar se está congelando',
-  },
-  {
-    key: 'airConditioningCompressor',
-    notesKey: 'airConditioningCompressorNotes',
-    label: 'Compressor Ar Condicionado',
-    category: 'AR CONDICIONADO',
-    description: 'Checar se está atracando',
-  },
-  {
-    key: 'airConditioningCleaning',
-    notesKey: 'airConditioningCleaningNotes',
-    label: 'Limpeza Ar Condicionado',
-    category: 'AR CONDICIONADO',
-    description: 'Checar fluxo de ar (filtro de cabine)',
-  },
-
-  // ELÉTRICA
-  {
-    key: 'electricalActuationGlass',
-    notesKey: 'electricalActuationGlassNotes',
-    label: 'VIDRO',
-    category: 'ELÉTRICA',
-    description: 'Acionamento elétrico dos vidros',
+    title: 'Acionamento Elétrico',
+    items: [
+      {
+        key: 'electricalActuationGlass',
+        label: 'Vidros Elétricos',
+        statusKey: 'electricalActuationGlass',
+        notesKey: 'electricalActuationGlassNotes',
+        evidenceKey: 'electricalActuationGlassEvidence',
+      },
+      {
+        key: 'electricalActuationMirror',
+        label: 'Retrovisores Elétricos',
+        statusKey: 'electricalActuationMirror',
+        notesKey: 'electricalActuationMirrorNotes',
+        evidenceKey: 'electricalActuationMirrorEvidence',
+      },
+      {
+        key: 'electricalActuationSocket',
+        label: 'Tomada Elétrica',
+        statusKey: 'electricalActuationSocket',
+        notesKey: 'electricalActuationSocketNotes',
+        evidenceKey: 'electricalActuationSocketEvidence',
+      },
+      {
+        key: 'electricalActuationLock',
+        label: 'Trava Elétrica',
+        statusKey: 'electricalActuationLock',
+        notesKey: 'electricalActuationLockNotes',
+        evidenceKey: 'electricalActuationLockEvidence',
+      },
+      {
+        key: 'electricalActuationTrunk',
+        label: 'Porta-malas Elétrico',
+        statusKey: 'electricalActuationTrunk',
+        notesKey: 'electricalActuationTrunkNotes',
+        evidenceKey: 'electricalActuationTrunkEvidence',
+      },
+      {
+        key: 'electricalActuationWiper',
+        label: 'Limpador de Para-brisa',
+        statusKey: 'electricalActuationWiper',
+        notesKey: 'electricalActuationWiperNotes',
+        evidenceKey: 'electricalActuationWiperEvidence',
+      },
+      {
+        key: 'electricalActuationKey',
+        label: 'Chave Elétrica',
+        statusKey: 'electricalActuationKey',
+        notesKey: 'electricalActuationKeyNotes',
+        evidenceKey: 'electricalActuationKeyEvidence',
+      },
+      {
+        key: 'electricalActuationAlarm',
+        label: 'Alarme',
+        statusKey: 'electricalActuationAlarm',
+        notesKey: 'electricalActuationAlarmNotes',
+        evidenceKey: 'electricalActuationAlarmEvidence',
+      },
+      {
+        key: 'electricalActuationInteriorLight',
+        label: 'Luz Interna',
+        statusKey: 'electricalActuationInteriorLight',
+        notesKey: 'electricalActuationInteriorLightNotes',
+        evidenceKey: 'electricalActuationInteriorLightEvidence',
+      },
+    ],
   },
   {
-    key: 'electricalActuationMirror',
-    notesKey: 'electricalActuationMirrorNotes',
-    label: 'RETROVISOR',
-    category: 'ELÉTRICA',
-    description: 'Acionamento elétrico dos retrovisores',
-  },
-  {
-    key: 'electricalActuationSocket',
-    notesKey: 'electricalActuationSocketNotes',
-    label: 'TOMADA 12V',
-    category: 'ELÉTRICA',
-    description: 'Funcionamento da tomada 12V',
-  },
-  {
-    key: 'electricalActuationLock',
-    notesKey: 'electricalActuationLockNotes',
-    label: 'TRAVA',
-    category: 'ELÉTRICA',
-    description: 'Sistema de travamento elétrico',
-  },
-  {
-    key: 'electricalActuationTrunk',
-    notesKey: 'electricalActuationTrunkNotes',
-    label: 'PORTA MALA',
-    category: 'ELÉTRICA',
-    description: 'Acionamento elétrico do porta malas',
-  },
-  {
-    key: 'electricalActuationWiper',
-    notesKey: 'electricalActuationWiperNotes',
-    label: 'LIMPADOR',
-    category: 'ELÉTRICA',
-    description: 'Sistema de limpadores de para-brisa',
-  },
-  {
-    key: 'electricalActuationKey',
-    notesKey: 'electricalActuationKeyNotes',
-    label: 'CHAVE',
-    category: 'ELÉTRICA',
-    description: 'Funcionamento da chave/canivete',
-  },
-  {
-    key: 'electricalActuationAlarm',
-    notesKey: 'electricalActuationAlarmNotes',
-    label: 'ALARME',
-    category: 'ELÉTRICA',
-    description: 'Sistema de alarme',
-  },
-  {
-    key: 'electricalActuationInteriorLight',
-    notesKey: 'electricalActuationInteriorLightNotes',
-    label: 'LUZ INTERNA',
-    category: 'ELÉTRICA',
-    description: 'Iluminação interna do veículo',
-  },
-  {
-    key: 'dashboardPanel',
-    notesKey: 'dashboardPanelNotes',
-    label: 'Painel de Instrumentos',
-    category: 'ELÉTRICA',
-    description: 'Checar luzes do painel',
-  },
-  {
-    key: 'lights',
-    notesKey: 'lightsNotes',
-    label: 'Lâmpadas',
-    category: 'ELÉTRICA',
-    description: 'Checar funcionamento',
-  },
-
-  // BATERIA
-  {
-    key: 'battery',
-    notesKey: 'batteryNotes',
-    label: 'Bateria',
-    category: 'BATERIA',
-    description: 'Verificar carga e estado',
+    title: 'Diversos',
+    items: [
+      {
+        key: 'tires',
+        label: 'Pneus',
+        statusKey: 'tires',
+        notesKey: 'tiresNotes',
+        evidenceKey: 'tiresEvidence',
+      },
+      {
+        key: 'exhaust',
+        label: 'Sistema de Escapamento',
+        statusKey: 'exhaust',
+        notesKey: 'exhaustNotes',
+        evidenceKey: 'exhaustEvidence',
+      },
+      {
+        key: 'dashboardPanel',
+        label: 'Painel',
+        statusKey: 'dashboardPanel',
+        notesKey: 'dashboardPanelNotes',
+        evidenceKey: 'dashboardPanelEvidence',
+      },
+      {
+        key: 'lights',
+        label: 'Luzes',
+        statusKey: 'lights',
+        notesKey: 'lightsNotes',
+        evidenceKey: 'lightsEvidence',
+      },
+      {
+        key: 'battery',
+        label: 'Bateria',
+        statusKey: 'battery',
+        notesKey: 'batteryNotes',
+        evidenceKey: 'batteryEvidence',
+      },
+    ],
   },
 ];
 
-const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
-  const getStatusColor = (status: InspectionStatus) => {
-    switch (status) {
-      case 'ok':
-        return '#10b981';
-      case 'attention':
-        return '#f59e0b';
-      case 'critical':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
+const STATUS_OPTIONS: Array<{ value: InspectionStatus; label: string; color: string }> = [
+  { value: 'ok', label: '✓ OK', color: 'text-green-600' },
+  { value: 'attention', label: '⚠ Atenção', color: 'text-yellow-600' },
+  { value: 'critical', label: '✗ Crítico', color: 'text-red-600' },
+];
 
-  const getStatusLabel = (status: InspectionStatus) => {
-    switch (status) {
-      case 'ok':
-        return 'OK';
-      case 'attention':
-        return 'NOK';
-      case 'critical':
-        return 'NOK';
-      default:
-        return '';
-    }
+export function PartnerInspectionGroups({
+  form,
+  onUpdateItem,
+  disabled = false,
+}: PartnerInspectionGroupsProps) {
+  const handleImageUpload = async (evidenceKey: keyof ChecklistFormWithInspections, file: File) => {
+    // a fazer: Implementar upload de imagem para S3 ou Supabase Storage
+    // Por enquanto, simular URL da imagem
+    const fakeImageUrl = URL.createObjectURL(file);
+    onUpdateItem(evidenceKey, fakeImageUrl);
   };
-
-  // Agrupar itens por categoria
-  const groupedItems = inspectionItems.reduce(
-    (acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = [];
-      }
-      acc[item.category].push(item);
-      return acc;
-    },
-    {} as Record<string, InspectionItem[]>
-  );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {Object.entries(groupedItems).map(([category, items]) => (
-        <div
-          key={category}
-          style={{
-            background: '#ffffff',
-            border: '1px solid #e1e5e9',
-            borderRadius: '12px',
-            padding: '20px',
-          }}
-        >
-          <h3
-            style={{
-              fontSize: '18px',
-              fontWeight: '700',
-              color: '#111827',
-              marginBottom: '16px',
-              borderBottom: '2px solid #e1e5e9',
-              paddingBottom: '8px',
-            }}
-          >
-            {category}
-          </h3>
+    <div className="space-y-8">
+      {INSPECTION_GROUPS.map(group => (
+        <div key={group.title} className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">{group.title}</h3>
+          </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-              gap: '20px',
-            }}
-          >
-            {items.map(item => (
+          <div className="p-6 space-y-6">
+            {group.items.map(item => (
               <div
                 key={item.key}
-                style={{
-                  background: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  padding: '16px',
-                }}
+                className="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0"
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <h4
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#111827',
-                        marginBottom: '4px',
-                      }}
-                    >
+                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+                  {/* Nome do item */}
+                  <div className="lg:w-1/4">
+                    <label className="block text-sm font-medium text-gray-900 mb-2">
                       {item.label}
-                    </h4>
-                    {item.description && (
-                      <p
-                        style={{
-                          fontSize: '12px',
-                          color: '#6b7280',
-                          margin: 0,
-                          fontStyle: 'italic',
-                        }}
-                      >
-                        {item.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      padding: '4px 8px',
-                      borderRadius: '12px',
-                      backgroundColor: getStatusColor(values[item.key]),
-                      color: 'white',
-                      fontWeight: '600',
-                      marginLeft: '12px',
-                    }}
-                  >
-                    {getStatusLabel(values[item.key])}
-                  </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border:
-                          values[item.key] === 'ok' ? '2px solid #10b981' : '2px solid transparent',
-                        backgroundColor: values[item.key] === 'ok' ? '#f0fdf4' : 'transparent',
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name={item.key}
-                        value="ok"
-                        checked={values[item.key] === 'ok'}
-                        onChange={() => onChange(item.key, 'ok')}
-                        style={{ margin: 0 }}
-                      />
-                      <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-                        OK
-                      </span>
-                    </label>
-
-                    <label
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        border:
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                            ? '2px solid #ef4444'
-                            : '2px solid transparent',
-                        backgroundColor:
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                            ? '#fef2f2'
-                            : 'transparent',
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name={`${item.key}_nok`}
-                        value="nok"
-                        checked={
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                        }
-                        onChange={() => onChange(item.key, 'attention')}
-                        style={{ margin: 0 }}
-                      />
-                      <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>
-                        NOK
-                      </span>
                     </label>
                   </div>
 
-                  <div>
-                    <label
-                      style={{
-                        display: 'block',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '4px',
-                      }}
+                  {/* Status */}
+                  <div className="lg:w-1/4">
+                    <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
+                    <select
+                      value={(form[item.statusKey] as string) || ''}
+                      onChange={e =>
+                        onUpdateItem(item.statusKey, e.target.value as InspectionStatus)
+                      }
+                      disabled={disabled}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
                     >
+                      <option value="">Selecione...</option>
+                      {STATUS_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Observações */}
+                  <div className="lg:w-1/4">
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
                       Observações
                     </label>
                     <textarea
-                      value={values[item.notesKey]}
-                      onChange={e => onChange(item.notesKey, e.target.value)}
-                      placeholder="Digite observações (opcional)"
-                      style={{
-                        width: '100%',
-                        minHeight: '60px',
-                        padding: '8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                      }}
+                      value={(form[item.notesKey] as string) || ''}
+                      onChange={e => onUpdateItem(item.notesKey, e.target.value)}
+                      disabled={disabled}
+                      placeholder="Observações adicionais..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm resize-none"
                     />
+                  </div>
+
+                  {/* Upload de Evidência */}
+                  <div className="lg:w-1/4">
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                      Evidência (Foto)
+                    </label>
+
+                    {/* Preview da imagem existente */}
+                    {form[item.evidenceKey] && (
+                      <div className="mb-3">
+                        <img
+                          src={form[item.evidenceKey] as string}
+                          alt={`Evidência - ${item.label}`}
+                          className="w-full h-24 object-cover rounded-md shadow-sm"
+                        />
+                      </div>
+                    )}
+
+                    {/* Input de upload */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(item.evidenceKey, file);
+                        }
+                      }}
+                      disabled={disabled}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+
+                    {/* Botão para remover evidência */}
+                    {form[item.evidenceKey] && !disabled && (
+                      <button
+                        type="button"
+                        onClick={() => onUpdateItem(item.evidenceKey, '')}
+                        className="mt-2 text-xs text-red-600 hover:text-red-800 font-medium"
+                      >
+                        Remover evidência
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -660,6 +403,4 @@ const PartnerInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
       ))}
     </div>
   );
-};
-
-export default PartnerInspectionGroups;
+}

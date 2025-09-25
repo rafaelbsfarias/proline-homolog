@@ -1,1 +1,1 @@
-export { default } from './collection/CollectPointSelect';
+export { default } from './Collection/CollectPointSelect';

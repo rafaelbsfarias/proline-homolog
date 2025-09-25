@@ -33,7 +33,7 @@ export class UserCreationService {
       logger.error('Error checking existing users:', existingUserError);
       throw new DatabaseError('Erro ao verificar usuários existentes.');
     }
-    const emailExists = existingUsers?.users?.some(u => u.email === email);
+    const emailExists = existingUsers?.users?.some((u: { email?: string }) => u.email === email);
     if (emailExists) {
       logger.warn(`User creation failed: Email ${email} already in use.`);
       throw new ConflictError('Este e-mail já foi cadastrado.');

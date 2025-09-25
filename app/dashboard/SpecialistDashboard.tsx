@@ -1,15 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from '../../modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
-import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 import ClientTable from '@/modules/specialist/components/ClientTable';
-import VehicleSection from '@/modules/specialist/components/VehicleSection';
+import VehicleSection from '@/modules/specialist/components/VehicleSection/VehicleSection';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
@@ -20,10 +20,19 @@ const SpecialistDashboard = () => {
 
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string[]>([]);
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
+
+  const handleFilterStatusChange = (newStatus: string[]) => {
+    setFilterStatus(newStatus);
+  };
+
+  const handleDateFilterChange = (newDateFilter: string[]) => {
+    setDateFilter(newDateFilter);
+  };
 
   const handleSelectClient = (clientId: string) => {
     setSelectedClientId(prev => (prev === clientId ? null : clientId));
@@ -67,13 +76,18 @@ const SpecialistDashboard = () => {
     [clients, selectedClientId]
   );
 
-  const filters = useMemo(
-    () => ({
-      plate: filterPlate,
-      status: filterStatus,
-    }),
-    [filterPlate, filterStatus]
-  );
+  const handleClearCheckboxFilters = useCallback(() => {
+    setFilterStatus([]);
+    setDateFilter([]);
+  }, []);
+
+  const filters = useMemo(() => {
+    const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
+    if (filterPlate) f.plate = filterPlate;
+    if (filterStatus.length > 0) f.status = filterStatus;
+    if (dateFilter.length > 0) f.dateFilter = dateFilter;
+    return f;
+  }, [filterPlate, filterStatus, dateFilter]);
 
   const {
     vehicles,
@@ -168,12 +182,16 @@ const SpecialistDashboard = () => {
                     filterPlate={filterPlate}
                     onFilterPlateChange={setFilterPlate}
                     filterStatus={filterStatus}
-                    onFilterStatusChange={setFilterStatus}
+                    onFilterStatusChange={handleFilterStatusChange}
                     availableStatuses={availableStatuses}
+                    dateFilter={dateFilter}
+                    onDateFilterChange={handleDateFilterChange}
                     onClearFilters={() => {
                       setFilterPlate('');
-                      setFilterStatus('');
+                      setFilterStatus([]);
+                      setDateFilter([]);
                     }}
+                    onClearCheckboxFilters={handleClearCheckboxFilters}
                     filteredVehicles={vehicles}
                     onOpenChecklist={handleOpenChecklist}
                     onConfirmArrival={handleConfirmArrival}

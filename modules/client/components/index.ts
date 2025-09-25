@@ -1,5 +1,5 @@
 // Re-exports principais dos componentes do módulo cliente
-export * from './dashboard';
+export * from './Dashboard';
 export * from './Modals';
 export * from './Vehicles';
-export * from './collection';
+export * from './Collection';

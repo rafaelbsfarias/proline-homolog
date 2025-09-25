@@ -10,9 +10,10 @@ export interface VehicleData {
   color: string;
   year: number;
   status?: string;
+  estimated_arrival_date?: string;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
 
 interface UseClientVehiclesResult {
   vehicles: VehicleData[];
@@ -32,7 +33,7 @@ interface UseClientVehiclesResult {
 
 export const useClientVehicles = (
   clientId?: string,
-  filters?: { plate: string; status: string }
+  filters?: { plate?: string; status?: string[]; dateFilter?: string[] }
 ): UseClientVehiclesResult => {
   const { get, post } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
@@ -97,7 +98,6 @@ export const useClientVehicles = (
       if (!clientId) {
         setVehicles([]);
         setTotalCount(0);
-        /* setStatusCounts({}); */
         return;
       }
       setLoading(true);
@@ -107,25 +107,33 @@ export const useClientVehicles = (
         queryParams.append('clientId', clientId);
         queryParams.append('page', String(currentPage));
         queryParams.append('pageSize', String(PAGE_SIZE));
+
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        queryParams.append('today', today);
+
         if (filters?.plate) {
           queryParams.append('plate', filters.plate);
         }
-        if (filters?.status) {
-          queryParams.append('status', filters.status);
+        if (filters?.status && filters.status.length > 0) {
+          filters.status.forEach(s => queryParams.append('status', s));
+        }
+        if (filters?.dateFilter && filters.dateFilter.length > 0) {
+          filters.dateFilter.forEach(df => queryParams.append('dateFilter', df));
         }
 
         const response = await get<{
           success: boolean;
           vehicles: VehicleData[];
-          totalCount: number;
-          /*  statusCounts: Record<string, number>; */
+          total_count: number;
+          filtered_total_count: number;
+          status_counts: Record<string, number>;
           error?: string;
         }>(`/api/specialist/client-vehicles?${queryParams.toString()}`);
 
         if (response.ok && response.data?.success) {
           setVehicles(response.data.vehicles || []);
-          setTotalCount(response.data.totalCount || 0);
-          /* setStatusCounts(response.data.statusCounts || {}); */
+          // Use the new filtered_total_count for pagination!
+          setTotalCount(response.data.filtered_total_count || 0);
         } else {
           setError(response.data?.error || response.error || 'Erro ao buscar veículos.');
         }

@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../VehicleChecklistModal.module.css';
+import styles from '../VehicleChecklistModal/VehicleChecklistModal.module.css';
 
 interface Props {
   label: string;
