@@ -48,10 +48,12 @@ interface UpdateBudgetRequest {
   totalValue: number;
 }
 
-async function getBudgetHandler(req: AuthenticatedRequest): Promise<NextResponse> {
+async function getBudgetHandler(
+  req: AuthenticatedRequest,
+  context: { params: Promise<{ budgetId: string }> }
+): Promise<NextResponse> {
   try {
-    const url = new URL(req.url);
-    const budgetId = url.pathname.split('/').pop();
+    const { budgetId } = await context.params;
 
     if (!budgetId) {
       logger.error('ID do orçamento não fornecido');
@@ -243,22 +245,20 @@ async function getBudgetHandler(req: AuthenticatedRequest): Promise<NextResponse
 
     return NextResponse.json(response);
   } catch (error) {
-    const url = new URL(req.url);
-    const budgetId = url.pathname.split('/').pop();
-
     logger.error('💥 Erro interno ao buscar orçamento', {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      budgetId,
     });
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
 
-async function updateBudgetHandler(req: AuthenticatedRequest): Promise<NextResponse> {
+async function updateBudgetHandler(
+  req: AuthenticatedRequest,
+  context: { params: Promise<{ budgetId: string }> }
+): Promise<NextResponse> {
   try {
-    const url = new URL(req.url);
-    const budgetId = url.pathname.split('/').pop();
+    const { budgetId } = await context.params;
 
     if (!budgetId) {
       return NextResponse.json({ error: 'ID do orçamento é obrigatório' }, { status: 400 });
@@ -413,5 +413,11 @@ async function updateBudgetHandler(req: AuthenticatedRequest): Promise<NextRespo
   }
 }
 
-export const GET = withPartnerAuth(getBudgetHandler);
-export const PUT = withPartnerAuth(updateBudgetHandler);
+export const GET = withPartnerAuth(
+  async (req: AuthenticatedRequest, context: { params: Promise<{ budgetId: string }> }) =>
+    getBudgetHandler(req, context)
+);
+export const PUT = withPartnerAuth(
+  async (req: AuthenticatedRequest, context: { params: Promise<{ budgetId: string }> }) =>
+    updateBudgetHandler(req, context)
+);
