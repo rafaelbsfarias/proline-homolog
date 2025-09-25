@@ -1,6 +1,3 @@
--- Drop existing function if it exists to avoid return type conflicts
-DROP FUNCTION IF EXISTS get_clients_with_vehicle_count();
-
 CREATE OR REPLACE FUNCTION get_clients_with_vehicle_count()
 RETURNS TABLE (id uuid, full_name text, vehicle_count bigint)
 LANGUAGE plpgsql
