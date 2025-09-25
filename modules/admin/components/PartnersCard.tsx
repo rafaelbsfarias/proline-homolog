@@ -3,6 +3,7 @@
 import React from 'react';
 import styles from './PartnersCard.module.css';
 import containerStyles from './PartnersCardContainer.module.css';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 interface PartnerData {
   id: string;
@@ -13,59 +14,47 @@ interface PartnerData {
   approval_budgets: number;
 }
 
-const mockPartnersData: PartnerData[] = [
-  {
-    id: '1',
-    company_name: 'Auto Peças Silva Ltda',
-    services_count: 15,
-    pending_budgets: 3,
-    executing_budgets: 7,
-    approval_budgets: 2,
-  },
-  {
-    id: '2',
-    company_name: 'Centro Automotivo Santos',
-    services_count: 22,
-    pending_budgets: 5,
-    executing_budgets: 12,
-    approval_budgets: 1,
-  },
-  {
-    id: '3',
-    company_name: 'Oficina Mecânica Oliveira',
-    services_count: 8,
-    pending_budgets: 2,
-    executing_budgets: 4,
-    approval_budgets: 3,
-  },
-  {
-    id: '4',
-    company_name: 'Auto Elétrica Rodrigues',
-    services_count: 12,
-    pending_budgets: 1,
-    executing_budgets: 8,
-    approval_budgets: 0,
-  },
-  {
-    id: '5',
-    company_name: 'Centro de Revisão Carvalho',
-    services_count: 18,
-    pending_budgets: 4,
-    executing_budgets: 9,
-    approval_budgets: 2,
-  },
-];
-
 interface PartnersCardProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
 const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
-  // Simular loading state
+  const [partners, setPartners] = React.useState<PartnerData[]>([]);
+
   React.useEffect(() => {
-    if (onLoadingChange) {
-      onLoadingChange(false);
-    }
+    let isMounted = true;
+    const load = async () => {
+      try {
+        onLoadingChange?.(true);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const resp = await fetch('/api/admin/partners/overview', {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+        if (!resp.ok) {
+          // Fallback: mantém lista vazia
+          setPartners([]);
+          return;
+        }
+        const data = (await resp.json()) as { partners?: PartnerData[] };
+        if (!isMounted) return;
+        setPartners(Array.isArray(data.partners) ? data.partners : []);
+      } catch {
+        if (!isMounted) return;
+        setPartners([]);
+      } finally {
+        onLoadingChange?.(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, [onLoadingChange]);
 
   return (
@@ -73,7 +62,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
       <div className={styles.partnersCard}>
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>Parceiros</h3>
-          <div className={styles.totalPartners}>{mockPartnersData.length} parceiros ativos</div>
+          <div className={styles.totalPartners}>{partners.length} parceiros ativos</div>
         </div>
 
         <div className={styles.tableContainer}>
@@ -88,7 +77,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
               </tr>
             </thead>
             <tbody>
-              {mockPartnersData.map(partner => (
+              {partners.map(partner => (
                 <tr key={partner.id} className={styles.tableRow}>
                   <td className={styles.companyCell}>
                     <div className={styles.companyName}>{partner.company_name}</div>
@@ -122,13 +111,13 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
             <div className={styles.statItem}>
               <span className={styles.statLabel}>Total Serviços:</span>
               <span className={styles.statValue}>
-                {mockPartnersData.reduce((sum, partner) => sum + partner.services_count, 0)}
+                {partners.reduce((sum, p) => sum + p.services_count, 0)}
               </span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statLabel}>Orçamentos Ativos:</span>
               <span className={styles.statValue}>
-                {mockPartnersData.reduce((sum, partner) => sum + partner.executing_budgets, 0)}
+                {partners.reduce((sum, p) => sum + p.executing_budgets, 0)}
               </span>
             </div>
           </div>
