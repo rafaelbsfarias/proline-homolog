@@ -10,7 +10,6 @@ import BudgetServiceSelector from '../../../../modules/partner/components/budget
 import BudgetSummary from '../../../../modules/partner/components/budget/BudgetSummary';
 import BudgetLayout from '../../../../modules/partner/components/budget/BudgetLayout';
 import BudgetHeader from '../../../../modules/partner/components/budget/BudgetHeader';
-import BudgetActions from '../../../../modules/partner/components/budget/BudgetActions';
 
 const OrcamentoPage = () => {
   const searchParams = useSearchParams();
@@ -18,11 +17,22 @@ const OrcamentoPage = () => {
 
   // Hooks para gerenciar estado e dados
   const { services, loading: servicesLoading, error: servicesError } = usePartnerServices();
-  const { budget, addService, removeService, updateQuantity, updateBudgetInfo, clearBudget } =
-    useBudget();
+  const {
+    budget,
+    addService,
+    removeService,
+    updateQuantity,
+    updateBudgetInfo,
+    clearBudget,
+    loadBudgetFromData,
+  } = useBudget();
 
   // Hook customizado para carregamento de quote
-  const { isEditing, loadingQuote, error: quoteError } = useQuoteLoader(quoteId, updateBudgetInfo);
+  const {
+    isEditing,
+    loadingQuote,
+    error: quoteError,
+  } = useQuoteLoader(quoteId, updateBudgetInfo, loadBudgetFromData);
 
   // Hook customizado para salvamento
   const { savingBudget, saveMessage, saveBudget, clearSaveMessage } = useBudgetSaver();
@@ -108,10 +118,6 @@ const OrcamentoPage = () => {
               onBudgetInfoChange={handleBudgetInfoChange}
               onQuantityChange={handleQuantityChange}
               onRemoveService={handleRemoveService}
-            />
-
-            {/* Botões de Ação */}
-            <BudgetActions
               onSave={handleSaveBudget}
               onClear={handleClearBudget}
               canSave={canSave}

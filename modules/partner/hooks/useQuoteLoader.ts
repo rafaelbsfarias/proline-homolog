@@ -15,10 +15,13 @@ interface QuoteData {
   id: string;
   name: string;
   vehiclePlate: string;
-  vehicleModel: string;
-  vehicleBrand: string;
+  vehicleModel: string | null;
+  vehicleBrand: string | null;
   vehicleYear?: number;
   items: QuoteItem[];
+  totalValue: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UseQuoteLoaderReturn {
@@ -30,7 +33,14 @@ interface UseQuoteLoaderReturn {
 
 export const useQuoteLoader = (
   quoteId: string | null,
-  updateBudgetInfo: Function
+  updateBudgetInfo: (
+    name: string,
+    vehiclePlate: string,
+    vehicleModel: string,
+    vehicleBrand: string,
+    vehicleYear?: number
+  ) => void,
+  loadBudgetFromData?: (budgetData: QuoteData) => void
 ): UseQuoteLoaderReturn => {
   const [isEditing, setIsEditing] = useState(false);
   const [loadingQuote, setLoadingQuote] = useState(false);
@@ -122,6 +132,13 @@ export const useQuoteLoader = (
           quoteData.vehicleBrand || '',
           quoteData.vehicleYear
         );
+
+        // Se há uma função loadBudgetFromData fornecida, carregar o orçamento completo
+        if (loadBudgetFromData) {
+          logger.info('🔧 Carregando orçamento completo no estado do budget');
+          loadBudgetFromData(quoteData);
+          logger.info('✅ Orçamento carregado no estado do budget');
+        }
 
         logger.info('Informações do orçamento atualizadas');
       } catch (error) {

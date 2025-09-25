@@ -82,9 +82,28 @@ const PartnerDashboard = () => {
     // Implementar lógica para excluir orçamento
   };
 
-  const handleChecklist = (quote: PendingQuoteDisplay) => {
-    // Navegar para a página de checklist do veículo
-    router.push(`/dashboard/partner/checklist?quoteId=${quote.id}`);
+  const handleChecklist = async (quote: PendingQuoteDisplay) => {
+    // Obter a categoria do parceiro para determinar a rota correta
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('service_categories')
+        .eq('id', user.id)
+        .single();
+
+      // Se o parceiro tem categoria "Mecânica", vai para checklist completo
+      // Senão, vai para checklist dinâmico (com evidências)
+      const isMechanical = partner?.service_categories?.includes('Mecânica');
+      const route = isMechanical
+        ? `/dashboard/partner/checklist?quoteId=${quote.id}`
+        : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
+
+      router.push(route);
+    }
   };
 
   const handleEditService = () => {

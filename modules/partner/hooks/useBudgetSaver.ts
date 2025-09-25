@@ -124,7 +124,16 @@ export const useBudgetSaver = (): UseBudgetSaverReturn => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error('Falha ao salvar orçamento via API', { status: response.status, errorText });
+        logger.error('Falha ao salvar orçamento via API', {
+          status: response.status,
+          errorText,
+          url: `/api/partner/budgets/${quoteId}`,
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData.session.access_token.substring(0, 20)}...`,
+          },
+        });
         throw new Error(
           `Erro ao salvar orçamento (HTTP ${response.status}). ${errorText || 'Tente novamente.'}`
         );
