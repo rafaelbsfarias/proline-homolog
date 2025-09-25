@@ -158,6 +158,10 @@
   font-weight: 600;
 }
 
+.companyName {
+  color: #002e4c;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .cardHeader {
