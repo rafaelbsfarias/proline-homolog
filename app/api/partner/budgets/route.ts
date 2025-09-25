@@ -98,7 +98,7 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
 
     // Salvar os itens do orçamento
     const budgetItems = body.items.map(item => ({
-      budget_id: budget.id,
+      quote_id: budget.id,
       service_id: item.serviceId,
       description: item.description,
       quantity: item.quantity,

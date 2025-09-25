@@ -176,7 +176,7 @@ async function getBudgetHandler(
         quantity,
         unit_price,
         total_price,
-        notes,
+        description,
         created_at
       `
       )
@@ -199,11 +199,11 @@ async function getBudgetHandler(
         quantity: number;
         unit_price: number;
         total_price: number;
-        notes: string | null;
+        description: string | null;
       }) => ({
         id: item.id,
         serviceId: item.service_id,
-        description: item.notes || `Serviço ${item.service_id.slice(0, 8)}`,
+        description: item.description || `Serviço ${item.service_id.slice(0, 8)}`,
         quantity: item.quantity,
         unitPrice: parseFloat(item.unit_price.toString()),
         totalPrice: parseFloat(item.total_price.toString()),
@@ -316,11 +316,22 @@ async function updateBudgetHandler(
     }
 
     // Remover itens existentes
-    const { error: deleteItemsError } = await supabase
-      .from('quote_items')
-      .delete()
-      .eq('quote_id', budgetId);
-
+    // Remover itens existentes (com fallback para variações de esquema)
+    let deleteItemsError: any = null;
+    try {
+      const del1 = await supabase.from('quote_items').delete().eq('quote_id', budgetId);
+      deleteItemsError = del1.error;
+      if (deleteItemsError && deleteItemsError.code === '42703') {
+        // coluna quote_id não existe – tentar budget_id (compat legado)
+        const del2 = await supabase
+          .from('quote_items')
+          .delete()
+          .eq('budget_id', budgetId as any);
+        deleteItemsError = del2.error;
+      }
+    } catch (e) {
+      deleteItemsError = e;
+    }
     if (deleteItemsError) {
       logger.error('Erro ao remover itens existentes', { error: deleteItemsError, budgetId });
       return NextResponse.json({ error: 'Erro ao atualizar itens do orçamento' }, { status: 500 });
@@ -378,7 +389,7 @@ async function updateBudgetHandler(
         quantity: item.quantity,
         unit_price: item.unitPrice,
         total_price: item.totalPrice,
-        notes: item.description || null,
+        description: item.description || null,
         created_at: new Date().toISOString(),
       };
 
