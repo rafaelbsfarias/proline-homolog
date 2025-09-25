@@ -172,6 +172,8 @@ const ChecklistPage = () => {
             fuelLevel={form.fuelLevel}
             observations={form.observations}
           />
+
+          {/* Mechanical Inspection Groups */}
           <div
             style={{
               background: '#ffffff',
