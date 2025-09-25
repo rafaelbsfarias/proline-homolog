@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/modules/common/components/ToastProvider';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 export interface SpecialistChecklistForm {
   date: string;
@@ -81,6 +83,16 @@ export interface VehicleInfo {
   color?: string;
 }
 
+export interface InspectionInfo {
+  id: string;
+  inspection_date: string;
+  odometer: number;
+  fuel_level: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
+  observations?: string;
+  finalized: boolean;
+  created_at: string;
+}
+
 const initialForm: SpecialistChecklistForm = {
   date: new Date().toISOString().split('T')[0],
   odometer: '',
@@ -152,35 +164,90 @@ const initialForm: SpecialistChecklistForm = {
 
 export function useSpecialistChecklist() {
   const { showToast } = useToast();
-
-  // Dados mockados para desenvolvimento
-  const mockVehicle: VehicleInfo = {
-    id: 'mock-vehicle-id',
-    brand: 'Toyota',
-    model: 'Corolla',
-    year: 2020,
-    plate: 'ABC-1234',
-    color: 'Prata',
-  };
+  const { get } = useAuthenticatedFetch();
+  const searchParams = useSearchParams();
 
   const [form, setForm] = useState<SpecialistChecklistForm>(initialForm);
-  const [vehicle] = useState<VehicleInfo | null>(mockVehicle);
-  const [loading] = useState(false); // Começar com false para evitar loading
+  const [vehicle, setVehicle] = useState<VehicleInfo | null>(null);
+  const [inspection, setInspection] = useState<InspectionInfo | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Remover busca automática por enquanto
-  // useEffect(() => {
-  //   const fetchVehicleData = async () => {
-  //     if (!quoteId) {
-  //       setLoading(false);
-  //       return;
-  //     }
-  //     // ... código removido temporariamente
-  //   };
-  //   fetchVehicleData();
-  // }, [quoteId, showToast]);
+  // Buscar dados reais do veículo
+  useEffect(() => {
+    const fetchVehicleData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Obter parâmetros da URL
+        const quoteId = searchParams.get('quoteId');
+        const vehicleId = searchParams.get('vehicleId');
+        const inspectionId = searchParams.get('inspectionId');
+
+        // Determinar qual parâmetro usar
+        const targetId = inspectionId || vehicleId || quoteId;
+        const isVehicleId = !!vehicleId;
+
+        if (!targetId) {
+          throw new Error('Nenhum ID válido fornecido na URL');
+        }
+
+        // Construir URL da API
+        let apiUrl = '/api/partner/get-vehicle-from-inspection';
+        if (isVehicleId) {
+          apiUrl += `?vehicleId=${targetId}`;
+        } else if (inspectionId) {
+          apiUrl += `?inspectionId=${targetId}`;
+        } else {
+          // Para quoteId, pode ser necessário uma API diferente
+          apiUrl += `?quoteId=${targetId}`;
+        }
+
+        const response = await get<{
+          vehicle: VehicleInfo;
+          inspection?: InspectionInfo;
+          vehicleId?: string;
+          inspectionId?: string;
+          source?: string;
+        }>(apiUrl);
+
+        if (!response.ok || !response.data) {
+          throw new Error('Erro ao buscar dados do veículo');
+        }
+
+        const { vehicle: vehicleData, inspection: inspectionData } = response.data;
+
+        if (!vehicleData) {
+          throw new Error('Veículo não encontrado');
+        }
+
+        setVehicle(vehicleData);
+
+        // Se temos dados da inspeção, preencher o formulário
+        if (inspectionData) {
+          setInspection(inspectionData);
+          setForm(prev => ({
+            ...prev,
+            date: inspectionData.inspection_date,
+            odometer: inspectionData.odometer.toString(),
+            fuelLevel: inspectionData.fuel_level,
+            observations: inspectionData.observations || '',
+          }));
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao carregar dados do veículo';
+        setError(message);
+        showToast('error', message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicleData();
+  }, [searchParams, get, showToast]);
 
   const setField = (
     field: keyof SpecialistChecklistForm,
@@ -232,6 +299,7 @@ export function useSpecialistChecklist() {
   return {
     form,
     vehicle,
+    inspection,
     loading,
     saving,
     error,

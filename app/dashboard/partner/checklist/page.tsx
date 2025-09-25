@@ -8,7 +8,7 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
+  const { form, vehicle, inspection, loading, saving, error, success, setField, saveChecklist } =
     useSpecialistChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,16 +174,39 @@ const ChecklistPage = () => {
               boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           >
-            <h2
+            <div
               style={{
-                fontSize: '1.5rem',
-                fontWeight: '600',
-                color: '#111827',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 marginBottom: '20px',
               }}
             >
-              Dados da Inspeção
-            </h2>
+              <h2
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: '600',
+                  color: '#111827',
+                  margin: 0,
+                }}
+              >
+                Dados da Inspeção
+              </h2>
+              {inspection && (
+                <div
+                  style={{
+                    padding: '6px 12px',
+                    backgroundColor: inspection.finalized ? '#dcfce7' : '#fef3c7',
+                    color: inspection.finalized ? '#166534' : '#92400e',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                  }}
+                >
+                  {inspection.finalized ? 'Finalizada' : 'Em andamento'}
+                </div>
+              )}
+            </div>
 
             <div
               style={{
@@ -204,19 +227,34 @@ const ChecklistPage = () => {
                 >
                   Data da Inspeção *
                 </label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={e => setField('date', e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                  }}
-                />
+                {inspection ? (
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      color: '#374151',
+                    }}
+                  >
+                    {new Date(form.date).toLocaleDateString('pt-BR')}
+                  </div>
+                ) : (
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={e => setField('date', e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                    }}
+                  />
+                )}
               </div>
 
               <div>
@@ -230,20 +268,35 @@ const ChecklistPage = () => {
                 >
                   Quilometragem Atual (km) *
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.odometer}
-                  onChange={e => setField('odometer', e.target.value)}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                  }}
-                />
+                {inspection ? (
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      color: '#374151',
+                    }}
+                  >
+                    {Number(form.odometer).toLocaleString('pt-BR')} km
+                  </div>
+                ) : (
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.odometer}
+                    onChange={e => setField('odometer', e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                    }}
+                  />
+                )}
               </div>
 
               <div>
@@ -257,24 +310,43 @@ const ChecklistPage = () => {
                 >
                   Nível de Combustível
                 </label>
-                <select
-                  value={form.fuelLevel}
-                  onChange={e => setField('fuelLevel', e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px',
-                    backgroundColor: '#ffffff',
-                  }}
-                >
-                  <option value="empty">Vazio</option>
-                  <option value="quarter">1/4</option>
-                  <option value="half">1/2</option>
-                  <option value="three_quarters">3/4</option>
-                  <option value="full">Cheio</option>
-                </select>
+                {inspection ? (
+                  <div
+                    style={{
+                      padding: '12px',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      color: '#374151',
+                    }}
+                  >
+                    {form.fuelLevel === 'empty' && 'Vazio'}
+                    {form.fuelLevel === 'quarter' && '1/4'}
+                    {form.fuelLevel === 'half' && '1/2'}
+                    {form.fuelLevel === 'three_quarters' && '3/4'}
+                    {form.fuelLevel === 'full' && 'Cheio'}
+                  </div>
+                ) : (
+                  <select
+                    value={form.fuelLevel}
+                    onChange={e => setField('fuelLevel', e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      fontSize: '16px',
+                      backgroundColor: '#ffffff',
+                    }}
+                  >
+                    <option value="empty">Vazio</option>
+                    <option value="quarter">1/4</option>
+                    <option value="half">1/2</option>
+                    <option value="three_quarters">3/4</option>
+                    <option value="full">Cheio</option>
+                  </select>
+                )}
               </div>
             </div>
 
@@ -289,21 +361,38 @@ const ChecklistPage = () => {
               >
                 Observações Gerais
               </label>
-              <textarea
-                value={form.observations}
-                onChange={e => setField('observations', e.target.value)}
-                placeholder="Digite observações gerais sobre o veículo..."
-                style={{
-                  width: '100%',
-                  minHeight: '100px',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  resize: 'vertical',
-                  fontFamily: 'inherit',
-                }}
-              />
+              {inspection ? (
+                <div
+                  style={{
+                    padding: '12px',
+                    backgroundColor: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    color: '#374151',
+                    minHeight: '100px',
+                    whiteSpace: 'pre-wrap',
+                  }}
+                >
+                  {form.observations || 'Nenhuma observação registrada.'}
+                </div>
+              ) : (
+                <textarea
+                  value={form.observations}
+                  onChange={e => setField('observations', e.target.value)}
+                  placeholder="Digite observações gerais sobre o veículo..."
+                  style={{
+                    width: '100%',
+                    minHeight: '100px',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              )}
             </div>
           </div>
           <div
