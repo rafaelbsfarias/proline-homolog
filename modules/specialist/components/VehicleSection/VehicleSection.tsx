@@ -9,8 +9,9 @@ import styles from './VehicleSection.module.css'; // importando CSS
 import VehicleCheckboxFiltersModal from '../../../common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import FilterButton from '../../../common/components/FilterButton/FilterButton';
-import { FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import Input from '@/modules/common/components/Input/Input';
+import IconButton from '@/modules/common/components/IconButton/IconButton';
+import { LuRefreshCw } from 'react-icons/lu';
 
 interface VehicleSectionProps {
   clientName: string;
@@ -36,8 +37,6 @@ interface VehicleSectionProps {
   renderActions?: (vehicle: VehicleData) => React.ReactNode;
 }
 
-const AVAILABLE_DATE_FILTERS = ['Atrasado', 'Próximo (5 dias)', 'No Prazo'];
-
 const VehicleSection: React.FC<VehicleSectionProps> = ({
   clientName,
   loading,
@@ -50,7 +49,6 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
   availableStatuses,
   dateFilter,
   onDateFilterChange,
-  onClearFilters,
   onClearCheckboxFilters,
   filteredVehicles,
   onOpenChecklist,
@@ -74,24 +72,28 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         <div className={styles.filtersWrapper}>
           <Input
             id="filter-plate"
-            className={styles.filterPlate}
+            className={`${styles.filterPlate} ${styles.filterInputNoMargin}`}
             name="filter-plate"
             placeholder="Filtrar por placa"
             value={filterPlate}
             onChange={e => onFilterPlateChange(e.target.value)}
           />
-
           <div className={styles.filterButtonWrapper}>
             <FilterButton
               activeFilterCount={activeFilterCount}
               onClick={() => setIsFilterModalOpen(true)}
             />
           </div>
-
           <div className={styles.updateButtonWrapper}>
-            <OutlineButton onClick={onRefetch} disabled={loading}>
-              Atualizar
-            </OutlineButton>
+            {/*  <OutlineButton onClick={onRefetch} disabled={loading}>
+            Atualizar
+          </OutlineButton> */}
+            <IconButton
+              onClick={onRefetch}
+              icon={<LuRefreshCw />}
+              title="Atualizar contagem"
+              ariaLabel="Atualizar contagem de veículos"
+            />
           </div>
         </div>
       </div>

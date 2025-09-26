@@ -318,6 +318,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                 disabledDatesIso={[]}
                 ariaLabel="Data da inspeção"
                 containerClass={styles.datePickerContainer}
+                inputClass={styles.datePickerInput} /* Add this back */
                 placeholder="dd/mm/aaaa"
               />
             </div>

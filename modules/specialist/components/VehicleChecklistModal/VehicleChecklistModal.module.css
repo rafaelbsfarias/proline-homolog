@@ -52,7 +52,7 @@
 }
 
 .fuelLevel {
-  height: 50px;
+  height: 49px;
 }
 
 .group {
@@ -82,10 +82,21 @@
   margin-top: 8px;
 }
 
+@media (max-width: 600px) {
+  .actions {
+    flex-direction: column; /* Stack buttons vertically */
+    gap: 8px; /* Add a small gap between stacked buttons */
+  }
+
+  .actions button {
+    width: 100%; /* Ensure buttons take full width */
+  }
+}
+
 .actions .saveButton {
   background: #194d00;
   color: #fff;
-  padding: 8px 14px;
+  padding: 10px 14px;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -97,7 +108,7 @@
 }
 
 .finalizeButton {
-  padding: 8px 14px;
+  padding: 12px 14px;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -150,4 +161,36 @@
 
 .datePickerContainer {
   margin-bottom: 16px;
+}
+
+@media (max-width: 700px) {
+  .vehicleHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicleHeader > div {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid > .field {
+    width: 100%;
+  }
+
+  /* Adjust DatePickerBR specific styles */
+  .datePickerContainer {
+    width: 100%; /* Ensure the container takes full width */
+  }
+
+  .datePickerContainer .datePickerWrapper {
+    display: block; /* Change from inline-block */
+    width: 100%; /* Ensure it takes full width */
+  }
+
+  .datePickerInput {
+    width: 100%;
+  }
 }
