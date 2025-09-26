@@ -1,13 +1,6 @@
 .formGroup {
-  margin-bottom: 16px;
   position: relative;
-}
-
-.formGroup label {
-  display: block;
-  margin-bottom: 6px;
-  color: #002e4c;
-  font-weight: 500;
+  margin-bottom: 16px;
 }
 
 .inputWrapper {
@@ -16,10 +9,11 @@
 }
 
 .inputWrapper input {
-  width: 90%;
+  width: 100%;
   padding: 0.9rem 1rem;
   border: 1px solid #ccc;
   border-radius: 8px;
+  box-sizing: border-box;
   font-size: 1rem;
   transition:
     border-color 0.2s,

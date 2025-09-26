@@ -12,13 +12,15 @@
   overflow-y: auto;
   padding: 4px; /* Pequeno padding para a barra de rolagem não colar no conteúdo */
   margin: -4px; /* Compensa o padding */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .actionsFooter {
   /* Garante que o rodapé seja fixo na parte inferior */
   flex-shrink: 0;
   padding-top: 16px; /* Espaçamento para separar do conteúdo */
-  border-top: 1px solid #e5e7eb; /* Linha divisória */
 }
 
 .vehicleHeader {
@@ -27,6 +29,14 @@
   border-radius: 8px;
   padding: 12px;
   color: #333;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  justify-items: center;
+}
+
+.detailLabel {
+  font-weight: 600;
 }
 
 .grid {
@@ -41,6 +51,10 @@
   gap: 6px;
 }
 
+.fuelLevel {
+  height: 50px;
+}
+
 .group {
   border: 1px solid #eee;
   border-radius: 8px;
@@ -50,7 +64,7 @@
 
 .groupTitle {
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0 0 16px 0;
   color: #333;
 }
 
@@ -68,19 +82,21 @@
   margin-top: 8px;
 }
 
-.primary {
-  background: #2563eb;
-  border: 1px solid #1d4ed8;
+.actions .saveButton {
+  background: #194d00;
   color: #fff;
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
 }
 
-.secondary {
-  background: #fff;
-  border: 1px solid #d1d5db;
-  color: #111827;
+.actions .saveButton:hover:not(:disabled) {
+  background: #194d00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.finalizeButton {
   padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
@@ -91,7 +107,7 @@
 }
 
 .success {
-  color: #065f46;
+  color: #194d00;
 }
 
 .upload {
@@ -130,4 +146,8 @@
   border-radius: 999px;
   padding: 2px 6px;
   cursor: pointer;
+}
+
+.datePickerContainer {
+  margin-bottom: 16px;
 }
