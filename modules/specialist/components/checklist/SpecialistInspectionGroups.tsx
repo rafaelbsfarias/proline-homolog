@@ -1,6 +1,8 @@
 import React from 'react';
 import type { SpecialistChecklistForm } from '../../hooks/useSpecialistChecklist';
 import styles from './SpecialistInspectionGroups.module.css';
+import ImageCaptureInput from '@/modules/common/components/ImageCaptureInput';
+import { EVIDENCE_KEYS, EvidenceKey } from '../../hooks/useSpecialistChecklist';
 
 type InspectionStatus = 'ok' | 'attention' | 'critical';
 
@@ -206,6 +208,9 @@ interface Props {
     >,
     value: string | InspectionStatus
   ) => void;
+  evidences: Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
+  setEvidence: (key: EvidenceKey, file: File) => void;
+  removeEvidence: (key: EvidenceKey) => void;
 }
 
 const inspectionItems: InspectionItem[] = [
@@ -434,7 +439,13 @@ const inspectionItems: InspectionItem[] = [
   },
 ];
 
-const SpecialistInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
+const SpecialistInspectionGroups: React.FC<Props> = ({
+  values,
+  onChange,
+  evidences,
+  setEvidence,
+  removeEvidence,
+}) => {
   const getStatusLabel = (status: InspectionStatus) => {
     switch (status) {
       case 'ok':
@@ -465,70 +476,79 @@ const SpecialistInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className={styles.categoryCard}>
           <h3 className={styles.categoryTitle}>{category}</h3>
-
           <div className={styles.itemsGrid}>
-            {items.map(item => (
-              <div key={item.key} className={styles.itemCard}>
-                <div className={styles.itemHeader}>
-                  <div className={styles.itemInfo}>
-                    <h4 className={styles.itemTitle}>{item.label}</h4>
-                    {item.description && (
-                      <p className={styles.itemDescription}>{item.description}</p>
-                    )}
-                  </div>
-
-                  <span
-                    className={`${styles.statusBadge} ${styles[`status${values[item.key].charAt(0).toUpperCase() + values[item.key].slice(1)}`]}`}
-                  >
-                    {getStatusLabel(values[item.key])}
-                  </span>
-                </div>
-
-                <div className={styles.itemContent}>
-                  <div className={styles.radioGroup}>
-                    <label
-                      className={`${styles.radioLabel} ${values[item.key] === 'ok' ? styles.radioLabelOk : ''}`}
+            {items.map(item => {
+              const evidenceKey = item.key as EvidenceKey;
+              return (
+                <div key={item.key} className={styles.itemCard}>
+                  <div className={styles.itemHeader}>
+                    <div className={styles.itemInfo}>
+                      <h4 className={styles.itemTitle}>{item.label}</h4>
+                      {item.description && (
+                        <p className={styles.itemDescription}>{item.description}</p>
+                      )}
+                    </div>
+                    <span
+                      className={`${styles.statusBadge} ${styles[`status${values[item.key].charAt(0).toUpperCase() + values[item.key].slice(1)}`]}`}
                     >
-                      <input
-                        type="radio"
-                        name={item.key}
-                        value="ok"
-                        checked={values[item.key] === 'ok'}
-                        onChange={() => onChange(item.key, 'ok')}
-                        className={styles.radioInput}
-                      />
-                      <span className={styles.radioText}>OK</span>
-                    </label>
-
-                    <label
-                      className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`${item.key}_nok`}
-                        value="nok"
-                        checked={
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                        }
-                        onChange={() => onChange(item.key, 'attention')}
-                        className={styles.radioInput}
-                      />
-                      <span className={styles.radioText}>NOK</span>
-                    </label>
+                      {getStatusLabel(values[item.key])}
+                    </span>
                   </div>
-
-                  <div className={styles.notesSection}>
-                    <label className={styles.notesLabel}>Observações</label>
-                    <textarea
-                      value={values[item.notesKey]}
-                      onChange={e => onChange(item.notesKey, e.target.value)}
-                      placeholder="Digite observações (opcional)"
-                      className={styles.notesTextarea}
-                    />
+                  <div className={styles.itemContent}>
+                    <div className={styles.radioGroup}>
+                      <label
+                        className={`${styles.radioLabel} ${values[item.key] === 'ok' ? styles.radioLabelOk : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={item.key}
+                          value="ok"
+                          checked={values[item.key] === 'ok'}
+                          onChange={() => onChange(item.key, 'ok')}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioText}>OK</span>
+                      </label>
+                      <label
+                        className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`${item.key}_nok`}
+                          value="nok"
+                          checked={
+                            values[item.key] === 'attention' || values[item.key] === 'critical'
+                          }
+                          onChange={() => onChange(item.key, 'attention')}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioText}>NOK</span>
+                      </label>
+                    </div>
+                    <div className={styles.notesSection}>
+                      <label className={styles.notesLabel}>Observações</label>
+                      <textarea
+                        value={values[item.notesKey]}
+                        onChange={e => onChange(item.notesKey, e.target.value)}
+                        placeholder="Digite observações (opcional)"
+                        className={styles.notesTextarea}
+                      />
+                    </div>
+                    {/* Campo de evidência (imagem) */}
+                    <div className={styles.evidenceSection} style={{ marginTop: 12 }}>
+                      <ImageCaptureInput
+                        id={`evidence-${item.key}`}
+                        label="Evidência (imagem)"
+                        currentUrl={evidences[evidenceKey]?.url || undefined}
+                        disabled={false}
+                        onChange={file => setEvidence(evidenceKey, file)}
+                        onRemove={() => removeEvidence(evidenceKey)}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}

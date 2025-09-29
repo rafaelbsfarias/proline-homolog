@@ -1,6 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+// @ts-ignore
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+// Chave dos itens do checklist que aceitam evidência
+export const EVIDENCE_KEYS = [
+  'clutch',
+  'sparkPlugs',
+  'belts',
+  'radiator',
+  'frontShocks',
+  'rearShocks',
+  'suspension',
+  'tires',
+  'brakePads',
+  'brakeDiscs',
+  'engine',
+  'steeringBox',
+  'electricSteeringBox',
+  'exhaust',
+  'fluids',
+  'airConditioning',
+  'airConditioningCompressor',
+  'airConditioningCleaning',
+  'electricalActuationGlass',
+  'electricalActuationMirror',
+  'electricalActuationSocket',
+  'electricalActuationLock',
+  'electricalActuationTrunk',
+  'electricalActuationWiper',
+  'electricalActuationKey',
+  'electricalActuationAlarm',
+  'electricalActuationInteriorLight',
+  'dashboardPanel',
+  'lights',
+  'battery',
+] as const;
+export type EvidenceKey = (typeof EVIDENCE_KEYS)[number];
+// Estado para evidências: { [itemKey]: { file?: File, url?: string|null } }
+type EvidenceState = Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
 import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -164,16 +202,38 @@ const initialForm: SpecialistChecklistForm = {
 
 export function useSpecialistChecklist() {
   const { showToast } = useToast();
-  const { get } = useAuthenticatedFetch();
+  const { get, put, post } = useAuthenticatedFetch();
   const searchParams = useSearchParams();
 
   const [form, setForm] = useState<SpecialistChecklistForm>(initialForm);
+  // Evidências por item
+  const emptyEvidenceState = Object.fromEntries(
+    EVIDENCE_KEYS.map(k => [k, undefined])
+  ) as EvidenceState;
+  const [evidences, setEvidences] = useState<EvidenceState>(emptyEvidenceState);
+  // Supabase client para upload
+  const supabase = createClientComponentClient();
+  // Setar evidência (imagem) para um item
+  const setEvidence = (key: EvidenceKey, file: File) => {
+    setEvidences(prev => ({ ...prev, [key]: { file, url: undefined } }));
+  };
+
+  // Remover evidência de um item
+  const removeEvidence = (key: EvidenceKey) => {
+    setEvidences(prev => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  };
   const [vehicle, setVehicle] = useState<VehicleInfo | null>(null);
   const [inspection, setInspection] = useState<InspectionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Variável para fallback do inspectionId retornado da API
+  const inspectionIdRef = useRef<string | undefined>(undefined);
 
   // Buscar dados reais do veículo
   useEffect(() => {
@@ -218,7 +278,12 @@ export function useSpecialistChecklist() {
           throw new Error('Erro ao buscar dados do veículo');
         }
 
-        const { vehicle: vehicleData, inspection: inspectionData } = response.data;
+        const {
+          vehicle: vehicleData,
+          inspection: inspectionData,
+          inspectionId: inspectionIdApi,
+        } = response.data;
+        inspectionIdRef.current = inspectionIdApi || inspectionData?.id || undefined;
 
         if (!vehicleData) {
           throw new Error('Veículo não encontrado');
@@ -236,6 +301,37 @@ export function useSpecialistChecklist() {
             fuelLevel: inspectionData.fuel_level,
             observations: inspectionData.observations || '',
           }));
+          // Carregar checklist salvo (valores e evidências)
+          try {
+            const loadResp = await post<{
+              ok: boolean;
+              data?: {
+                form: Partial<SpecialistChecklistForm> | null;
+                evidences?: Record<string, { url: string }>;
+              };
+            }>(
+              '/api/partner/checklist/load',
+              { inspectionId: inspectionData.id },
+              { requireAuth: true }
+            );
+            if (loadResp.ok && loadResp.data) {
+              const loadedForm = loadResp.data.data?.form;
+              const loadedEvidences = loadResp.data.data?.evidences || {};
+              if (loadedForm) {
+                setForm(prev => ({ ...prev, ...loadedForm }));
+              }
+              // Mapear evidences para o estado com url
+              const newEvidenceState = { ...emptyEvidenceState };
+              for (const key of Object.keys(loadedEvidences)) {
+                if ((EVIDENCE_KEYS as readonly string[]).includes(key)) {
+                  // @ts-ignore - assign url only
+                  newEvidenceState[key as EvidenceKey] = { url: loadedEvidences[key]!.url };
+                }
+              }
+              setEvidences(prev => ({ ...prev, ...newEvidenceState }));
+            }
+          } catch (e) {}
+        } else {
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao carregar dados do veículo';
@@ -247,7 +343,7 @@ export function useSpecialistChecklist() {
     };
 
     fetchVehicleData();
-  }, [searchParams, get, showToast]);
+  }, [searchParams, get, post, showToast]);
 
   const setField = (
     field: keyof SpecialistChecklistForm,
@@ -266,9 +362,6 @@ export function useSpecialistChecklist() {
     setSuccess(null);
 
     try {
-      // Simulação de salvamento - apenas delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       // Validações básicas
       if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) {
         throw new Error('Data da inspeção inválida.');
@@ -277,9 +370,58 @@ export function useSpecialistChecklist() {
         throw new Error('Informe a quilometragem atual válida.');
       }
 
-      // Simular sucesso
-      setSuccess('Checklist salvo com sucesso (simulado).');
-      showToast('success', 'Checklist salvo com sucesso (simulado).');
+      // Upload das evidências para o Supabase Storage
+      const uploadedEvidenceUrls = Object.fromEntries(EVIDENCE_KEYS.map(k => [k, ''])) as Record<
+        EvidenceKey,
+        string
+      >;
+      for (const key of EVIDENCE_KEYS) {
+        const ev = evidences[key];
+        if (ev?.file) {
+          // Nome do arquivo: checklist-<vehicleId>-<itemKey>-<timestamp>.ext
+          const ext = ev.file.name.split('.').pop() || 'jpg';
+          const fileName = `checklist-${vehicle.id}-${key}-${Date.now()}.${ext}`;
+          const { data, error: uploadError } = await supabase.storage
+            .from('vehicle-media')
+            .upload(fileName, ev.file, { upsert: true, contentType: ev.file.type });
+          if (uploadError) {
+            throw new Error(`Erro ao enviar evidência de ${key}: ${uploadError.message}`);
+          }
+          // Salvar o caminho do arquivo
+          uploadedEvidenceUrls[key] = data.path;
+        }
+      }
+
+      // Enviar checklist + evidências para a API/backend
+      // Garantir que inspection_id sempre seja enviado
+      let inspection_id = inspection?.id;
+      // Fallback: usar inspectionId retornado da API se não houver inspection?.id
+      if (!inspection_id && typeof inspectionIdRef.current === 'string') {
+        inspection_id = inspectionIdRef.current;
+      }
+      if (!inspection_id && typeof window !== 'undefined') {
+        // Tentar obter inspectionId do searchParams (caso a API não tenha retornado)
+        const url = new URL(window.location.href);
+        inspection_id = url.searchParams.get('inspectionId') || undefined;
+      }
+
+      const payload = {
+        ...form,
+        vehicle_id: vehicle.id,
+        evidences: uploadedEvidenceUrls,
+        inspection_id,
+      };
+
+      // PUT para submit (pode ser ajustado para save rascunho se necessário)
+      const response = await put('/api/partner/checklist/submit', payload, {
+        requireAuth: true,
+      });
+
+      if (!response.ok) {
+        throw new Error(response.error || 'Erro ao salvar checklist no backend');
+      }
+      setSuccess('Checklist salvo com sucesso!');
+      showToast('success', 'Checklist salvo com sucesso!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao salvar checklist.';
       setError(message);
@@ -307,5 +449,8 @@ export function useSpecialistChecklist() {
     setField,
     saveChecklist,
     resetForm,
+    evidences,
+    setEvidence,
+    removeEvidence,
   };
 }
