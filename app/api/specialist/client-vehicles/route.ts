@@ -7,7 +7,7 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
 import { checkSpecialistClientLink } from '@/modules/specialist/utils/authorization';
 
-const PAGE_SIZE = 12; // Default page size
+const PAGE_SIZE = 12;
 
 export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -16,9 +16,9 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const pageSize = parseInt(url.searchParams.get('pageSize') || `${PAGE_SIZE}`, 10);
     const plateFilter = url.searchParams.get('plate') || null;
-    const statusFilter = url.searchParams.getAll('status'); // Returns an array
-    const dateFilter = url.searchParams.getAll('dateFilter'); // Returns an array
-    const today = url.searchParams.get('today'); // YYYY-MM-DD
+    const statusFilter = url.searchParams.getAll('status');
+    const dateFilter = url.searchParams.getAll('dateFilter');
+    const today = url.searchParams.get('today');
 
     if (!clientId || !validateUUID(clientId)) {
       return NextResponse.json({ error: 'clientId inválido' }, { status: 400 });
@@ -34,8 +34,8 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
 
     const rpcParams = {
       p_client_id: clientId,
-      p_page_num: page,
       p_page_size: pageSize,
+      p_page_num: page,
       p_plate_filter: plateFilter,
       p_status_filter: statusFilter && statusFilter.length > 0 ? statusFilter : null,
       p_date_filter: dateFilter && dateFilter.length > 0 ? dateFilter : null,
@@ -45,14 +45,11 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     const { data, error } = await supabase.rpc('get_client_vehicles_paginated', rpcParams);
 
     if (error) {
-      console.error('Error calling get_client_vehicles_paginated RPC:', error);
       return NextResponse.json({ error: `Erro na RPC: ${error.message}` }, { status: 500 });
     }
 
-    // The RPC returns a single JSON object which is in 'data'
     return NextResponse.json({ success: true, ...data });
   } catch (e) {
-    console.error('GET client-vehicles error:', e);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 });
