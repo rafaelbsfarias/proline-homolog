@@ -89,18 +89,33 @@ const PartnerDashboard = () => {
     } = await supabase.auth.getUser();
 
     if (user) {
-      const { data: partner } = await supabase
-        .from('partners')
-        .select('service_categories')
-        .eq('id', user.id)
-        .single();
+      // Query alternativa: usar RPC para contornar possíveis problemas de RLS
+      const { data: partnerCategories, error } = await supabase.rpc('get_partner_categories', {
+        partner_id: user.id,
+      });
 
-      // Se o parceiro tem categoria "Mecânica", vai para checklist completo
+      console.log('Debug - Partner categories:', partnerCategories);
+      console.log('Debug - User ID:', user.id);
+
+      if (error) {
+        console.error('Error fetching partner categories:', error);
+        return;
+      }
+
+      // A função RPC retorna um array direto de nomes de categorias
+      const categories = partnerCategories || [];
+      const isMechanical = categories.includes('Mecânica');
+
+      console.log('Debug - Is mechanical?', isMechanical);
+
+      // Se o parceiro tem categoria "mechanics", vai para checklist estruturado
       // Senão, vai para checklist dinâmico (com evidências)
-      const isMechanical = partner?.service_categories?.includes('Mecânica');
       const route = isMechanical
         ? `/dashboard/partner/checklist?quoteId=${quote.id}`
         : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
+
+      console.log('Debug - Route selected:', route);
+      document.title = `Debug: Route = ${route}, IsMech = ${isMechanical}`;
 
       router.push(route);
     }

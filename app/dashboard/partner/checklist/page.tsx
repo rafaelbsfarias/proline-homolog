@@ -1,49 +1,21 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
-import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
-import { PartnerInspectionGroups } from '@/modules/partner/components/PartnerInspectionGroups';
+import { useSpecialistChecklist } from '@/modules/specialist/hooks/useSpecialistChecklist';
+import SpecialistInspectionGroups from '@/modules/specialist/components/checklist/SpecialistInspectionGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const {
-    form,
-    vehicle,
-    inspection,
-    loading,
-    saving,
-    error,
-    vehicleLoading,
-    vehicleError,
-    loadChecklist,
-    updateChecklistItem,
-    saveChecklist,
-    submitChecklist,
-    canSubmit,
-    hasUnsavedChanges,
-  } = usePartnerChecklist();
+  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
+    useSpecialistChecklist();
 
-  // Carregar checklist quando inspeção estiver disponível
-  useEffect(() => {
-    if (inspection?.id && !form) {
-      loadChecklist();
-    }
-  }, [inspection?.id, form, loadChecklist]);
-
-  const handleSave = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await saveChecklist();
-    } catch {
-      // Error já tratado no hook
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      await submitChecklist();
     } catch {
       // Error já tratado no hook
     }
@@ -53,7 +25,7 @@ const ChecklistPage = () => {
     router.push('/dashboard');
   };
 
-  if (loading || vehicleLoading) {
+  if (loading) {
     return (
       <div
         style={{
@@ -69,7 +41,7 @@ const ChecklistPage = () => {
     );
   }
 
-  if (vehicleError || !vehicle) {
+  if (!vehicle) {
     return (
       <div
         style={{
@@ -82,9 +54,7 @@ const ChecklistPage = () => {
           padding: '20px',
         }}
       >
-        <h1 style={{ color: '#ef4444', marginBottom: '16px' }}>
-          {vehicleError || 'Veículo não encontrado'}
-        </h1>
+        <h1 style={{ color: '#ef4444', marginBottom: '16px' }}>Veículo não encontrado</h1>
         <p style={{ color: '#6b7280', marginBottom: '24px' }}>
           Não foi possível encontrar o veículo para este orçamento.
         </p>
@@ -151,61 +121,57 @@ const ChecklistPage = () => {
 
       {/* Main Content */}
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
-        {/* Vehicle Information */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            padding: '24px',
-            marginBottom: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '1.5rem',
-              fontWeight: '600',
-              color: '#111827',
-              marginBottom: '16px',
-            }}
-          >
-            Informações do Veículo
-          </h2>
+        <form onSubmit={handleSubmit}>
+          {/* Vehicle Information */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '16px',
-              fontSize: '16px',
+              background: '#ffffff',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           >
-            <div>
-              <strong>Veículo:</strong> {vehicle.brand} {vehicle.model}{' '}
-              {vehicle.year ? `(${vehicle.year})` : ''}
-            </div>
-            <div>
-              <strong>Placa:</strong> {vehicle.plate}
-            </div>
-            {vehicle.color && (
+            <h2
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                color: '#111827',
+                marginBottom: '16px',
+              }}
+            >
+              Informações do Veículo
+            </h2>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                fontSize: '16px',
+              }}
+            >
               <div>
-                <strong>Cor:</strong> {vehicle.color}
+                <strong>Veículo:</strong> {vehicle.brand} {vehicle.model}{' '}
+                {vehicle.year ? `(${vehicle.year})` : ''}
               </div>
-            )}
+              <div>
+                <strong>Placa:</strong> {vehicle.plate}
+              </div>
+              {vehicle.color && (
+                <div>
+                  <strong>Cor:</strong> {vehicle.color}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Inspection Basic Data */}
-        {form && (
+          {/* Inspection Data */}
           <InspectionData
             inspectionDate={form.date}
             odometer={form.odometer}
             fuelLevel={form.fuelLevel}
             observations={form.observations}
           />
-        )}
-
-        {/* Checklist Form */}
-        {form && (
           <div
             style={{
               background: '#ffffff',
@@ -223,35 +189,108 @@ const ChecklistPage = () => {
                 marginBottom: '20px',
               }}
             >
-              Checklist de Inspeção
+              Grupos de Inspeção
             </h2>
 
-            <PartnerInspectionGroups
-              form={form}
-              onUpdateItem={updateChecklistItem}
-              disabled={saving || form.status === 'submitted' || form.status === 'completed'}
+            <SpecialistInspectionGroups
+              values={{
+                clutch: form.clutch,
+                sparkPlugs: form.sparkPlugs,
+                belts: form.belts,
+                radiator: form.radiator,
+                frontShocks: form.frontShocks,
+                rearShocks: form.rearShocks,
+                suspension: form.suspension,
+                tires: form.tires,
+                brakePads: form.brakePads,
+                brakeDiscs: form.brakeDiscs,
+                engine: form.engine,
+                steeringBox: form.steeringBox,
+                electricSteeringBox: form.electricSteeringBox,
+                exhaust: form.exhaust,
+                fluids: form.fluids,
+                airConditioning: form.airConditioning,
+                airConditioningCompressor: form.airConditioningCompressor,
+                airConditioningCleaning: form.airConditioningCleaning,
+                electricalActuationGlass: form.electricalActuationGlass,
+                electricalActuationGlassNotes: form.electricalActuationGlassNotes,
+                electricalActuationMirror: form.electricalActuationMirror,
+                electricalActuationMirrorNotes: form.electricalActuationMirrorNotes,
+                electricalActuationSocket: form.electricalActuationSocket,
+                electricalActuationSocketNotes: form.electricalActuationSocketNotes,
+                electricalActuationLock: form.electricalActuationLock,
+                electricalActuationLockNotes: form.electricalActuationLockNotes,
+                electricalActuationTrunk: form.electricalActuationTrunk,
+                electricalActuationTrunkNotes: form.electricalActuationTrunkNotes,
+                electricalActuationWiper: form.electricalActuationWiper,
+                electricalActuationWiperNotes: form.electricalActuationWiperNotes,
+                electricalActuationKey: form.electricalActuationKey,
+                electricalActuationKeyNotes: form.electricalActuationKeyNotes,
+                electricalActuationAlarm: form.electricalActuationAlarm,
+                electricalActuationAlarmNotes: form.electricalActuationAlarmNotes,
+                electricalActuationInteriorLight: form.electricalActuationInteriorLight,
+                electricalActuationInteriorLightNotes: form.electricalActuationInteriorLightNotes,
+                dashboardPanel: form.dashboardPanel,
+                lights: form.lights,
+                battery: form.battery,
+                clutchNotes: form.clutchNotes,
+                sparkPlugsNotes: form.sparkPlugsNotes,
+                beltsNotes: form.beltsNotes,
+                radiatorNotes: form.radiatorNotes,
+                frontShocksNotes: form.frontShocksNotes,
+                rearShocksNotes: form.rearShocksNotes,
+                suspensionNotes: form.suspensionNotes,
+                tiresNotes: form.tiresNotes,
+                brakePadsNotes: form.brakePadsNotes,
+                brakeDiscsNotes: form.brakeDiscsNotes,
+                engineNotes: form.engineNotes,
+                steeringBoxNotes: form.steeringBoxNotes,
+                electricSteeringBoxNotes: form.electricSteeringBoxNotes,
+                exhaustNotes: form.exhaustNotes,
+                fluidsNotes: form.fluidsNotes,
+                airConditioningNotes: form.airConditioningNotes,
+                airConditioningCompressorNotes: form.airConditioningCompressorNotes,
+                airConditioningCleaningNotes: form.airConditioningCleaningNotes,
+                dashboardPanelNotes: form.dashboardPanelNotes,
+                lightsNotes: form.lightsNotes,
+                batteryNotes: form.batteryNotes,
+              }}
+              onChange={(name, value) => setField(name, value)}
             />
           </div>
-        )}
 
-        {/* Messages */}
-        {error && (
-          <div
-            style={{
-              background: '#fef2f2',
-              border: '1px solid #fecaca',
-              borderRadius: '8px',
-              padding: '16px',
-              marginBottom: '24px',
-              color: '#dc2626',
-            }}
-          >
-            {error}
-          </div>
-        )}
+          {/* Messages */}
+          {error && (
+            <div
+              style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '24px',
+                color: '#dc2626',
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        {/* Actions */}
-        {form && (
+          {success && (
+            <div
+              style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '8px',
+                padding: '16px',
+                marginBottom: '24px',
+                color: '#16a34a',
+              }}
+            >
+              {success}
+            </div>
+          )}
+
+          {/* Actions */}
           <div
             style={{
               background: '#ffffff',
@@ -264,96 +303,48 @@ const ChecklistPage = () => {
               style={{
                 display: 'flex',
                 gap: '16px',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                justifyContent: 'flex-end',
               }}
             >
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                {hasUnsavedChanges && (
-                  <span style={{ color: '#f59e0b' }}>⚠️ Você tem alterações não salvas</span>
-                )}
-              </div>
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={saving}
+                style={{
+                  padding: '12px 24px',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                Cancelar
+              </button>
 
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <button
-                  type="button"
-                  onClick={handleBack}
-                  disabled={saving}
-                  style={{
-                    padding: '12px 24px',
-                    background: '#f3f4f6',
-                    color: '#374151',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    opacity: saving ? 0.6 : 1,
-                  }}
-                >
-                  Voltar
-                </button>
-
-                {form.status !== 'submitted' && form.status !== 'completed' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      disabled={saving || !hasUnsavedChanges}
-                      style={{
-                        padding: '12px 24px',
-                        background: hasUnsavedChanges ? '#3b82f6' : '#e5e7eb',
-                        color: hasUnsavedChanges ? 'white' : '#9ca3af',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: saving || !hasUnsavedChanges ? 'not-allowed' : 'pointer',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        opacity: saving ? 0.6 : 1,
-                      }}
-                    >
-                      {saving ? 'Salvando...' : 'Salvar Rascunho'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={saving || !canSubmit}
-                      style={{
-                        padding: '12px 24px',
-                        background: canSubmit ? '#10b981' : '#e5e7eb',
-                        color: canSubmit ? 'white' : '#9ca3af',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: saving || !canSubmit ? 'not-allowed' : 'pointer',
-                        fontSize: '16px',
-                        fontWeight: '600',
-                        opacity: saving ? 0.6 : 1,
-                      }}
-                    >
-                      {saving ? 'Enviando...' : 'Enviar Checklist'}
-                    </button>
-                  </>
-                )}
-
-                {(form.status === 'submitted' || form.status === 'completed') && (
-                  <div
-                    style={{
-                      padding: '12px 24px',
-                      color: '#10b981',
-                      fontSize: '16px',
-                      fontWeight: '600',
-                    }}
-                  >
-                    {form.status === 'submitted'
-                      ? '✓ Checklist enviado para revisão'
-                      : '✓ Checklist concluído'}
-                  </div>
-                )}
-              </div>
+              <button
+                type="submit"
+                disabled={saving}
+                style={{
+                  padding: '12px 24px',
+                  background: '#10b981',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  opacity: saving ? 0.6 : 1,
+                }}
+              >
+                {saving ? 'Salvando...' : 'Salvar Checklist'}
+              </button>
             </div>
           </div>
-        )}
+        </form>
       </div>
     </div>
   );
