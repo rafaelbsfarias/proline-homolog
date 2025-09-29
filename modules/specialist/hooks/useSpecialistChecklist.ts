@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-// @ts-ignore
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 // Chave dos itens do checklist que aceitam evidência
 export const EVIDENCE_KEYS = [
   'clutch',
@@ -42,6 +40,7 @@ type EvidenceState = Record<EvidenceKey, { file?: File; url?: string | null } | 
 import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 export interface SpecialistChecklistForm {
   date: string;
@@ -211,8 +210,6 @@ export function useSpecialistChecklist() {
     EVIDENCE_KEYS.map(k => [k, undefined])
   ) as EvidenceState;
   const [evidences, setEvidences] = useState<EvidenceState>(emptyEvidenceState);
-  // Supabase client para upload
-  const supabase = createClientComponentClient();
   // Setar evidência (imagem) para um item
   const setEvidence = (key: EvidenceKey, file: File) => {
     setEvidences(prev => ({ ...prev, [key]: { file, url: undefined } }));
@@ -370,25 +367,41 @@ export function useSpecialistChecklist() {
         throw new Error('Informe a quilometragem atual válida.');
       }
 
-      // Upload das evidências para o Supabase Storage
+      // Upload das evidências através do endpoint server-side (evita RLS no client)
       const uploadedEvidenceUrls = Object.fromEntries(EVIDENCE_KEYS.map(k => [k, ''])) as Record<
         EvidenceKey,
         string
       >;
-      for (const key of EVIDENCE_KEYS) {
-        const ev = evidences[key];
-        if (ev?.file) {
-          // Nome do arquivo: checklist-<vehicleId>-<itemKey>-<timestamp>.ext
-          const ext = ev.file.name.split('.').pop() || 'jpg';
-          const fileName = `checklist-${vehicle.id}-${key}-${Date.now()}.${ext}`;
-          const { data, error: uploadError } = await supabase.storage
-            .from('vehicle-media')
-            .upload(fileName, ev.file, { upsert: true, contentType: ev.file.type });
-          if (uploadError) {
-            throw new Error(`Erro ao enviar evidência de ${key}: ${uploadError.message}`);
+      const hasFiles = EVIDENCE_KEYS.some(k => !!evidences[k]?.file);
+      if (hasFiles) {
+        const { data: sessionRes } = await supabase.auth.getSession();
+        const accessToken = sessionRes.session?.access_token;
+        if (!accessToken) {
+          throw new Error('Usuário não autenticado para envio de evidências.');
+        }
+
+        for (const key of EVIDENCE_KEYS) {
+          const ev = evidences[key];
+          if (ev?.file) {
+            const form = new FormData();
+            form.append('vehicle_id', vehicle.id);
+            form.append('item_key', key);
+            form.append('file', ev.file);
+
+            const res = await fetch('/api/partner/checklist/upload-evidence', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: form,
+            });
+            if (!res.ok) {
+              const msg = await res.text();
+              throw new Error(`Erro ao enviar evidência de ${key}: ${msg || res.status}`);
+            }
+            const json = await res.json();
+            uploadedEvidenceUrls[key] = json.storage_path || '';
           }
-          // Salvar o caminho do arquivo
-          uploadedEvidenceUrls[key] = data.path;
         }
       }
 

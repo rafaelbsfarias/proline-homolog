@@ -49,9 +49,13 @@ export async function POST(request: Request) {
     const evidenceMap: Record<string, { url: string }> = {};
     if (Array.isArray(evidences) && evidences.length > 0) {
       for (const row of evidences) {
-        const { data: pub } = supabase.storage.from('vehicle-media').getPublicUrl(row.storage_path);
-        const url = pub?.publicUrl || '';
-        if (url) evidenceMap[row.item_key] = { url };
+        try {
+          const { data: signed } = await supabase.storage
+            .from('vehicle-media')
+            .createSignedUrl(row.storage_path, 60 * 60); // 1h
+          const url = signed?.signedUrl || '';
+          if (url) evidenceMap[row.item_key] = { url };
+        } catch {}
       }
     }
 

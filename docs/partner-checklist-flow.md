@@ -8,7 +8,7 @@ exibido em `app/dashboard/partner/checklist/page.tsx`.
 - Carregamento: `POST /api/partner/checklist/load` lê as tabelas:
   - `mechanics_checklist` (observações gerais, `fluidsNotes`),
   - `mechanics_checklist_items` (status/notas por item),
-  - `mechanics_checklist_evidences` (caminho de storage por item) e gera URLs públicas.
+  - `mechanics_checklist_evidences` (caminho de storage por item) e gera URLs assinadas (tempo padrão: 1h) via `createSignedUrl`.
   Modelo binário de status:
   - Front: apenas `ok` (OK) e `nok` (NOK). Internamente, na UI atual, `nok` aparece como `attention`.
   - Banco: também somente `ok` e `nok` (sem `good/poor/critical`).
