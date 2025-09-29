@@ -51,3 +51,22 @@
   font-size: 12px;
   color: #666;
 }
+
+@media (max-width: 768px) {
+  .dropzone {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .text {
+    font-size: 12px;
+  }
+
+  .icon {
+    font-size: 18px;
+  }
+
+  .hint {
+    font-size: 11px;
+  }
+}
