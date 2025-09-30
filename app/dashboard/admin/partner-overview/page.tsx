@@ -6,6 +6,7 @@ import { supabase } from '@/modules/common/services/supabaseClient';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { useSearchParams } from 'next/navigation';
 import Modal from '@/modules/common/components/Modal/Modal';
+import { formatQuoteStatus } from '@/modules/common/utils/format';
 
 type PartnerSummary = {
   id: string;
@@ -499,7 +500,7 @@ export default function PartnerOverviewPage() {
                           <tr key={item.id}>
                             <td style={{ padding: 8, borderTop: '1px solid #eee' }}>{item.id}</td>
                             <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {item._group || item.status}
+                              {formatQuoteStatus(item._group || item.status)}
                             </td>
                             <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
                               {typeof item.total_value === 'number'
@@ -533,7 +534,8 @@ export default function PartnerOverviewPage() {
                                 Detalhes
                               </button>
                               {(item._group === 'pending_admin_approval' ||
-                                item.status === 'pending_admin_approval') && (
+                                item.status === 'pending_admin_approval' ||
+                                item.status === 'admin_review') && (
                                 <button
                                   onClick={() => approveQuote(item.id)}
                                   style={{
@@ -692,7 +694,7 @@ export default function PartnerOverviewPage() {
                 <strong>ID:</strong> {quoteDetails.quote.id}
               </div>
               <div>
-                <strong>Status:</strong> {quoteDetails.quote.status}
+                <strong>Status:</strong> {formatQuoteStatus(quoteDetails.quote.status)}
               </div>
               <div>
                 <strong>Valor Total:</strong>{' '}
@@ -761,7 +763,7 @@ export default function PartnerOverviewPage() {
                 </tbody>
               </table>
             </div>
-            {quoteDetails.quote.status === 'pending_admin_approval' && (
+            {['pending_admin_approval', 'admin_review'].includes(quoteDetails.quote.status) && (
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => approveQuote(quoteDetails.quote.id)}

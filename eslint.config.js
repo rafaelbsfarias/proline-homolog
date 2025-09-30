@@ -139,6 +139,22 @@ export default [
       'security/detect-new-buffer': 'error',
     },
   },
+  // UI components guard: avoid usar literais de status em JSX
+  {
+    files: ['app/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}'],
+    ignores: ['**/*.test.*', 'modules/**/services/**', 'modules/**/hooks/**', 'app/api/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector:
+            "JSXAttribute[name.name='children'] Literal[value=/^(pending_admin_approval|pending_client_approval|approved|rejected|admin_review)$/]",
+          message:
+            'Não renderize status crus. Use formatQuoteStatus() ou <StatusLabel status=... />',
+        },
+      ],
+    },
+  },
   // Test files
   {
     files: ['**/*.test.{ts,tsx,js,jsx}', '**/__tests__/**/*.{ts,tsx,js,jsx}'],

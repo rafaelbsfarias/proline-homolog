@@ -4,7 +4,6 @@ import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { FaPaperPlane } from 'react-icons/fa';
-import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
@@ -56,8 +55,6 @@ const PartnerDashboard = () => {
     contractAccepted,
     contractContent,
     contractSignedAt,
-    pendingQuotesCount,
-    inProgressServicesCount,
     budgetCounters,
     pendingQuotes,
     inProgressServices,
@@ -214,9 +211,27 @@ const PartnerDashboard = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: 24 }}>
-            <CounterCard title="Solicitações Pendentes" count={pendingQuotesCount} />
-            <CounterCard title="Serviços em Andamento" count={inProgressServicesCount} />
+          {/* Contador de Serviços em Andamento */}
+          <div style={{ marginBottom: 24 }}>
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 8,
+                padding: '20px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                textAlign: 'center',
+                maxWidth: '200px',
+              }}
+            >
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
+                Serviços em Andamento
+              </h3>
+              <div
+                style={{ fontSize: '2.5rem', fontWeight: 700, color: '#3498db', marginBottom: 4 }}
+              >
+                {inProgressServices.length}
+              </div>
+            </div>
           </div>
 
           {/* Contadores de Orçamentos */}
@@ -245,7 +260,23 @@ const PartnerDashboard = () => {
                 >
                   {budgetCounters.pending}
                 </div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>Pendentes</div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Aguardando Cliente</div>
+              </div>
+              <div
+                style={{
+                  background: '#fff',
+                  borderRadius: 8,
+                  padding: '16px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                  textAlign: 'center',
+                }}
+              >
+                <div
+                  style={{ fontSize: '2rem', fontWeight: 700, color: '#9b59b6', marginBottom: 4 }}
+                >
+                  {budgetCounters.in_review || 0}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Em Análise</div>
               </div>
               <div
                 style={{

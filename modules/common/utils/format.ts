@@ -60,11 +60,12 @@ export const formatDate = (dateString: string | null | undefined): string => {
 export const formatQuoteStatus = (status: string): string => {
   const statusMap: Record<string, string> = {
     pending_admin_approval: 'Aguardando Admin',
+    admin_review: 'Aguardando Admin',
     pending_client_approval: 'Aguardando Cliente',
     approved: 'Aprovado',
     rejected: 'Rejeitado',
   };
-  return statusMap[status] || status;
+  return statusMap[status] || 'Desconhecido';
 };
 
 /**

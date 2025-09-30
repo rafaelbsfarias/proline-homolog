@@ -19,7 +19,8 @@ export interface PendingQuote {
 
 export interface BudgetCounters {
   total: number;
-  pending: number; // pending_admin + pending_client
+  pending: number; // pending_client_approval
+  in_review?: number; // pending_admin_approval (novo campo)
   approved: number;
   rejected: number;
 }
@@ -60,6 +61,7 @@ export function usePartnerDashboard() {
     budgetCounters: {
       total: 0,
       pending: 0,
+      in_review: 0,
       approved: 0,
       rejected: 0,
     },
@@ -131,6 +133,7 @@ export function usePartnerDashboard() {
         budgetCounters: apiData?.budget_counters || {
           total: 0,
           pending: 0,
+          in_review: 0,
           approved: 0,
           rejected: 0,
         },
