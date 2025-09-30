@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FaEdit } from 'react-icons/fa';
+import { FaEdit, FaPaperPlane } from 'react-icons/fa';
 import { TbTrashXFilled } from 'react-icons/tb';
-import { FaClipboardList, FaPaperPlane } from 'react-icons/fa';
+import { FaClipboardList } from 'react-icons/fa';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 
 interface DataTableProps<T> {
@@ -155,7 +155,7 @@ const DataTable = <T extends { id: React.Key }>({
                           onClick={() => onSendToAdmin(row)}
                           style={{
                             padding: '4px 8px',
-                            background: '#f59e0b',
+                            background: '#f39c12',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',

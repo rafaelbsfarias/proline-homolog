@@ -77,22 +77,22 @@ const Lightbox: React.FC<LightboxProps> = ({ urls, index, onClose, onPrev, onNex
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, onPrev, onNext]);
+  }, [onClose]);
 
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={contentStyle} onClick={e => e.stopPropagation()}>
-        <button type="button" aria-label="Fechar" style={closeBtnStyle} onClick={onClose}>
+        <button aria-label="Fechar" style={closeBtnStyle} onClick={onClose}>
           ×
         </button>
         {urls.length > 1 && (
-          <button type="button" aria-label="Anterior" style={prevBtnStyle} onClick={onPrev}>
+          <button aria-label="Anterior" style={prevBtnStyle} onClick={onPrev}>
             ‹
           </button>
         )}
         <img src={urls[index]} alt="Evidência" style={imageStyle} />
         {urls.length > 1 && (
-          <button type="button" aria-label="Próximo" style={nextBtnStyle} onClick={onNext}>
+          <button aria-label="Próximo" style={nextBtnStyle} onClick={onNext}>
             ›
           </button>
         )}

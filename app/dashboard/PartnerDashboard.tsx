@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { FaPaperPlane } from 'react-icons/fa';
 import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
@@ -31,9 +33,22 @@ type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'>
 
 const PartnerDashboard = () => {
   const router = useRouter();
+  const { post } = useAuthenticatedFetch();
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
+
+  // Sistema de toast interno
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({ show: false, message: '', type: 'success' });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+  };
 
   const {
     loading,
@@ -65,8 +80,9 @@ const PartnerDashboard = () => {
       });
 
       if (error) {
-        // A futura implementação de feedback ao usuário (ex: Toast) deve ser inserida aqui.
+        showToast('Erro ao aceitar contrato. Tente novamente.', 'error');
       } else {
+        showToast('Contrato aceito com sucesso!', 'success');
         reloadData(); // Recarrega os dados do dashboard
       }
     }
@@ -78,35 +94,26 @@ const PartnerDashboard = () => {
     router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
+  // Removido botão dedicado; status será atualizado junto com "Enviar para Admin"
+
   const handleSendToAdmin = async (quote: PendingQuoteDisplay) => {
-    // Implementar lógica para enviar orçamento para admin
-    // Isso deve travar a edição do checklist e orçamento
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        // Atualizar o status do orçamento para "sent_to_admin" ou similar
-        const { error } = await supabase
-          .from('quotes')
-          .update({
-            status: 'sent_to_admin',
-            sent_to_admin_at: new Date().toISOString(),
-            locked_for_editing: true,
-          })
-          .eq('id', quote.id);
-
-        if (error) {
-          // Implementar feedback de erro para o usuário na próxima iteração
-        } else {
-          // Recarregar dados após sucesso
-          reloadData();
-          // Implementar feedback de sucesso para o usuário na próxima iteração
-        }
+      const resp = await post<{ ok: boolean; error?: string }>(
+        '/api/partner/quotes/send-to-admin',
+        { quoteId: quote.id, vehicleStatus: 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO' },
+        { requireAuth: true }
+      );
+      if (!resp.ok || !resp.data?.ok) {
+        showToast(resp.error || 'Falha ao enviar orçamento.', 'error');
+        return;
       }
-    } catch {
-      // Implementar feedback de erro para o usuário na próxima iteração
+      showToast(
+        'Orçamento enviado ao admin e veículo marcado como aguardando aprovação!',
+        'success'
+      );
+      reloadData();
+    } catch (err) {
+      showToast('Erro inesperado. Tente novamente.', 'error');
     }
   };
 
@@ -122,7 +129,11 @@ const PartnerDashboard = () => {
         partner_id: user.id,
       });
 
+      console.log('Debug - Partner categories:', partnerCategories);
+      console.log('Debug - User ID:', user.id);
+
       if (error) {
+        console.error('Error fetching partner categories:', error);
         return;
       }
 
@@ -130,11 +141,16 @@ const PartnerDashboard = () => {
       const categories = partnerCategories || [];
       const isMechanical = categories.includes('Mecânica');
 
+      console.log('Debug - Is mechanical?', isMechanical);
+
       // Se o parceiro tem categoria "mechanics", vai para checklist estruturado
       // Senão, vai para checklist dinâmico (com evidências)
       const route = isMechanical
         ? `/dashboard/partner/checklist?quoteId=${quote.id}`
         : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
+
+      console.log('Debug - Route selected:', route);
+      document.title = `Debug: Route = ${route}, IsMech = ${isMechanical}`;
 
       router.push(route);
     }
@@ -298,6 +314,28 @@ const PartnerDashboard = () => {
             onServiceAdded={reloadData} // Usa a função de recarregamento do hook
           />
         </main>
+      )}
+
+      {/* Toast Component */}
+      {toast.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            color: 'white',
+            background:
+              toast.type === 'success' ? '#10b981' : toast.type === 'error' ? '#ef4444' : '#3b82f6',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            maxWidth: '400px',
+            fontSize: '14px',
+          }}
+        >
+          {toast.message}
+        </div>
       )}
     </div>
   );
