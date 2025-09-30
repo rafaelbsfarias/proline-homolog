@@ -1,74 +1,64 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import Toast, { ToastProps } from './Toast';
-import styles from './ToastContainer.module.css';
-
-interface ToastData {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  message: string;
-  duration?: number;
-}
+import React, { createContext, useContext, useState } from 'react';
 
 interface ToastContextType {
-  showToast: (type: ToastData['type'], message: string, duration?: number) => void;
-  removeToast: (id: string) => void;
-  clearAllToasts: () => void;
+  showToast: (type: string, message: string) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+const ToastContext = createContext<ToastContextType | null>(null);
 
-export const useToast = (): ToastContextType => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast deve ser usado dentro de um ToastProvider');
-  }
-  return context;
-};
+export function ToastProvider({ children }: { children: React.ReactNode }) {
+  const [toasts, setToasts] = useState<{ id: string; type: string; message: string }[]>([]);
 
-interface ToastProviderProps {
-  children: ReactNode;
-}
+  const showToast = (type: string, message: string) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { id, type, message }]);
 
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
-  const [toasts, setToasts] = useState<ToastData[]>([]);
-  const [idCounter, setIdCounter] = useState(0);
-
-  const showToast = useCallback(
-    (type: ToastData['type'], message: string, duration = 5000) => {
-      const id = `toast-${idCounter}`;
-      setIdCounter(prev => prev + 1);
-      const newToast: ToastData = { id, type, message, duration };
-
-      setToasts(prev => [...prev, newToast]);
-    },
-    [idCounter]
-  );
-
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
-
-  const clearAllToasts = useCallback(() => {
-    setToasts([]);
-  }, []);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4000);
+  };
 
   return (
-    <ToastContext.Provider value={{ showToast, removeToast, clearAllToasts }}>
+    <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className={styles.toastContainer} aria-label="Notificações">
-        {toasts.map(toast => (
-          <Toast
-            key={toast.id}
-            id={toast.id}
-            type={toast.type}
-            message={toast.message}
-            duration={toast.duration}
-            onRemove={removeToast}
-          />
-        ))}
-      </div>
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            color: 'white',
+            background:
+              toast.type === 'success'
+                ? '#10b981'
+                : toast.type === 'error'
+                  ? '#ef4444'
+                  : toast.type === 'warning'
+                    ? '#f39c12'
+                    : '#3b82f6',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            maxWidth: '400px',
+            fontSize: '14px',
+            marginBottom: '8px',
+          }}
+        >
+          {toast.message}
+        </div>
+      ))}
     </ToastContext.Provider>
   );
-};
+}
+
+export function useToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast must be used within ToastProvider');
+  }
+  return context;
+}

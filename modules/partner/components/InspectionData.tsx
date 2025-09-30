@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import styles from './InspectionData.module.css';
 
 interface InspectionDataProps {
   inspectionDate?: string;
@@ -48,139 +49,31 @@ const InspectionData: React.FC<InspectionDataProps> = ({
   };
 
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-      }}
-    >
-      <div
-        style={{
-          marginBottom: '20px',
-        }}
-      >
-        <h2
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: '600',
-            color: '#111827',
-            margin: 0,
-          }}
-        >
-          Dados da Inspeção
-        </h2>
+    <div className={styles.inspectionDataCard}>
+      <div className={styles.cardHeader}>
+        <h2 className={styles.cardTitle}>Dados da Inspeção</h2>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          marginBottom: '20px',
-        }}
-      >
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
-            }}
-          >
-            Data da Inspeção *
-          </label>
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '16px',
-              color: '#374151',
-            }}
-          >
-            {formatDate(inspectionDate)}
-          </div>
+      <div className={styles.fieldsGrid}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Data da Inspeção *</label>
+          <div className={styles.fieldValue}>{formatDate(inspectionDate)}</div>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
-            }}
-          >
-            Quilometragem Atual (km) *
-          </label>
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '16px',
-              color: '#374151',
-            }}
-          >
-            {formatOdometer(odometer)}
-          </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Quilometragem Atual (km) *</label>
+          <div className={styles.fieldValue}>{formatOdometer(odometer)}</div>
         </div>
 
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px',
-            }}
-          >
-            Nível de Combustível
-          </label>
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              fontSize: '16px',
-              color: '#374151',
-            }}
-          >
-            {getFuelLevelLabel(fuelLevel)}
-          </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.fieldLabel}>Nível de Combustível</label>
+          <div className={styles.fieldValue}>{getFuelLevelLabel(fuelLevel)}</div>
         </div>
       </div>
 
-      <div>
-        <label
-          style={{
-            display: 'block',
-            fontWeight: '600',
-            color: '#374151',
-            marginBottom: '8px',
-          }}
-        >
-          Observações Gerais
-        </label>
-        <div
-          style={{
-            padding: '12px',
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
-            fontSize: '16px',
-            color: '#374151',
-            minHeight: '100px',
-            whiteSpace: 'pre-wrap',
-          }}
-        >
+      <div className={styles.observationsGroup}>
+        <label className={styles.fieldLabel}>Observações Gerais</label>
+        <div className={styles.observationsValue}>
           {observations || 'Nenhuma observação registrada.'}
         </div>
       </div>

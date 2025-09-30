@@ -8,8 +8,19 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
-    useSpecialistChecklist();
+  const {
+    form,
+    vehicle,
+    loading,
+    saving,
+    error,
+    success,
+    setField,
+    saveChecklist,
+    evidences,
+    setEvidence,
+    removeEvidence,
+  } = useSpecialistChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,6 +401,9 @@ const ChecklistPage = () => {
                 batteryNotes: form.batteryNotes,
               }}
               onChange={(name, value) => setField(name, value)}
+              evidences={evidences}
+              setEvidence={setEvidence}
+              removeEvidence={removeEvidence}
             />
           </div>
 

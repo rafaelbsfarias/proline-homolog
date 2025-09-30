@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import type { SpecialistChecklistForm } from '../../hooks/useSpecialistChecklist';
 import styles from './SpecialistInspectionGroups.module.css';
+import ImageCaptureInput from '@/modules/common/components/ImageCaptureInput';
+import { EVIDENCE_KEYS, EvidenceKey } from '../../hooks/useSpecialistChecklist';
+import Lightbox from '@/modules/common/components/Lightbox/Lightbox';
 
 type InspectionStatus = 'ok' | 'attention' | 'critical';
 
@@ -206,6 +209,9 @@ interface Props {
     >,
     value: string | InspectionStatus
   ) => void;
+  evidences: Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
+  setEvidence: (key: EvidenceKey, file: File) => void;
+  removeEvidence: (key: EvidenceKey) => void;
 }
 
 const inspectionItems: InspectionItem[] = [
@@ -434,7 +440,33 @@ const inspectionItems: InspectionItem[] = [
   },
 ];
 
-const SpecialistInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
+const SpecialistInspectionGroups: React.FC<Props> = ({
+  values,
+  onChange,
+  evidences,
+  setEvidence,
+  removeEvidence,
+}) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const evidenceUrls = useMemo(() => {
+    return EVIDENCE_KEYS.map(k => evidences[k]?.url).filter(Boolean) as string[];
+  }, [evidences]);
+
+  const openLightboxAt = (url?: string) => {
+    if (!evidenceUrls.length) return;
+    if (url) {
+      const idx = evidenceUrls.indexOf(url);
+      setLightboxIndex(idx >= 0 ? idx : 0);
+    } else {
+      setLightboxIndex(0);
+    }
+    setLightboxOpen(true);
+  };
+  const closeLightbox = () => setLightboxOpen(false);
+  const prevLightbox = () =>
+    setLightboxIndex(i => (i - 1 + evidenceUrls.length) % evidenceUrls.length);
+  const nextLightbox = () => setLightboxIndex(i => (i + 1) % evidenceUrls.length);
   const getStatusLabel = (status: InspectionStatus) => {
     switch (status) {
       case 'ok':
@@ -462,76 +494,154 @@ const SpecialistInspectionGroups: React.FC<Props> = ({ values, onChange }) => {
 
   return (
     <div className={styles.container}>
+      {/* Botão geral para visualizar evidências já salvas */}
+      {evidenceUrls.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <button
+            type="button"
+            onClick={() => openLightboxAt()}
+            style={{
+              padding: '10px 14px',
+              background: '#111827',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            Visualizar evidências ({evidenceUrls.length})
+          </button>
+        </div>
+      )}
+
       {Object.entries(groupedItems).map(([category, items]) => (
         <div key={category} className={styles.categoryCard}>
           <h3 className={styles.categoryTitle}>{category}</h3>
-
           <div className={styles.itemsGrid}>
-            {items.map(item => (
-              <div key={item.key} className={styles.itemCard}>
-                <div className={styles.itemHeader}>
-                  <div className={styles.itemInfo}>
-                    <h4 className={styles.itemTitle}>{item.label}</h4>
-                    {item.description && (
-                      <p className={styles.itemDescription}>{item.description}</p>
-                    )}
-                  </div>
-
-                  <span
-                    className={`${styles.statusBadge} ${styles[`status${values[item.key].charAt(0).toUpperCase() + values[item.key].slice(1)}`]}`}
-                  >
-                    {getStatusLabel(values[item.key])}
-                  </span>
-                </div>
-
-                <div className={styles.itemContent}>
-                  <div className={styles.radioGroup}>
-                    <label
-                      className={`${styles.radioLabel} ${values[item.key] === 'ok' ? styles.radioLabelOk : ''}`}
+            {items.map(item => {
+              const evidenceKey = item.key as EvidenceKey;
+              return (
+                <div key={item.key} className={styles.itemCard}>
+                  <div className={styles.itemHeader}>
+                    <div className={styles.itemInfo}>
+                      <h4 className={styles.itemTitle}>{item.label}</h4>
+                      {item.description && (
+                        <p className={styles.itemDescription}>{item.description}</p>
+                      )}
+                    </div>
+                    <span
+                      className={`${styles.statusBadge} ${styles[`status${values[item.key].charAt(0).toUpperCase() + values[item.key].slice(1)}`]}`}
                     >
-                      <input
-                        type="radio"
-                        name={item.key}
-                        value="ok"
-                        checked={values[item.key] === 'ok'}
-                        onChange={() => onChange(item.key, 'ok')}
-                        className={styles.radioInput}
-                      />
-                      <span className={styles.radioText}>OK</span>
-                    </label>
-
-                    <label
-                      className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`${item.key}_nok`}
-                        value="nok"
-                        checked={
-                          values[item.key] === 'attention' || values[item.key] === 'critical'
-                        }
-                        onChange={() => onChange(item.key, 'attention')}
-                        className={styles.radioInput}
-                      />
-                      <span className={styles.radioText}>NOK</span>
-                    </label>
+                      {getStatusLabel(values[item.key])}
+                    </span>
                   </div>
-
-                  <div className={styles.notesSection}>
-                    <label className={styles.notesLabel}>Observações</label>
-                    <textarea
-                      value={values[item.notesKey]}
-                      onChange={e => onChange(item.notesKey, e.target.value)}
-                      placeholder="Digite observações (opcional)"
-                      className={styles.notesTextarea}
-                    />
+                  <div className={styles.itemContent}>
+                    <div className={styles.radioGroup}>
+                      <label
+                        className={`${styles.radioLabel} ${values[item.key] === 'ok' ? styles.radioLabelOk : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={item.key}
+                          value="ok"
+                          checked={values[item.key] === 'ok'}
+                          onChange={() => onChange(item.key, 'ok')}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioText}>OK</span>
+                      </label>
+                      <label
+                        className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`${item.key}_nok`}
+                          value="nok"
+                          checked={
+                            values[item.key] === 'attention' || values[item.key] === 'critical'
+                          }
+                          onChange={() => onChange(item.key, 'attention')}
+                          className={styles.radioInput}
+                        />
+                        <span className={styles.radioText}>NOK</span>
+                      </label>
+                    </div>
+                    <div className={styles.notesSection}>
+                      <label className={styles.notesLabel}>Observações</label>
+                      <textarea
+                        value={values[item.notesKey]}
+                        onChange={e => onChange(item.notesKey, e.target.value)}
+                        placeholder="Digite observações (opcional)"
+                        className={styles.notesTextarea}
+                      />
+                    </div>
+                    {/* Campo de evidência (imagem) */}
+                    <div
+                      className={styles.evidenceSection}
+                      style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}
+                    >
+                      <ImageCaptureInput
+                        id={`evidence-${item.key}`}
+                        label="Evidência (imagem)"
+                        currentUrl={undefined}
+                        disabled={false}
+                        onChange={file => setEvidence(evidenceKey, file)}
+                        onRemove={() => removeEvidence(evidenceKey)}
+                      />
+                      {evidences[evidenceKey]?.url && (
+                        <button
+                          type="button"
+                          onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
+                          style={{
+                            padding: '8px 12px',
+                            background: '#002e4c',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 6,
+                            cursor: 'pointer',
+                            fontSize: 14,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Visualizar evidência
+                        </button>
+                      )}
+                      {/* Mostrar nome do arquivo, mas sem exibir a imagem inline */}
+                      <span style={{ fontSize: 12, color: '#374151' }}>
+                        {(() => {
+                          const ev = evidences[evidenceKey];
+                          if (ev?.file?.name) return ev.file.name;
+                          const url = ev?.url || '';
+                          try {
+                            const u = new URL(url);
+                            const dec = decodeURIComponent(u.pathname);
+                            const parts = dec.split('/');
+                            return parts[parts.length - 1] || 'evidencia.jpg';
+                          } catch {
+                            return 'evidencia.jpg';
+                          }
+                        })()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
+      {/* Lightbox com navegação */}
+      {lightboxOpen && (
+        <Lightbox
+          urls={evidenceUrls}
+          index={lightboxIndex}
+          onClose={closeLightbox}
+          onPrev={prevLightbox}
+          onNext={nextLightbox}
+        />
+      )}
     </div>
   );
 };

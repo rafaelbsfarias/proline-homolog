@@ -36,7 +36,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || `${DEFAULT_PAGE_SIZE}`, 10);
     const plateFilter = searchParams.get('plate') || '';
-    const statusFilter = searchParams.getAll('status'); // Changed to getAll
+    const statusFilter = searchParams.get('status') || '';
 
     log.info('vehicles-count:start', {
       userId: String(userId).slice(0, 8),
@@ -50,11 +50,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const { data, error } = await supabase.rpc('get_client_vehicles_paginated', {
       p_client_id: userId,
-      p_page_num: page,
       p_page_size: limit,
+      p_page_num: page,
       p_plate_filter: plateFilter,
-      // Pass array or null to match new RPC signature
-      p_status_filter: statusFilter && statusFilter.length > 0 ? statusFilter : null,
+      p_status_filter: statusFilter ? [statusFilter] : null,
+      p_date_filter: null,
+      p_today_date: new Date().toISOString().split('T')[0],
     });
 
     if (error) {
@@ -68,12 +69,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // The new RPC returns { vehicles, total_count, filtered_total_count, status_counts }
+    // The RPC returns { vehicles, total_count, filtered_total_count, status_counts }
     const responsePayload = {
       success: true,
       vehicles: data.vehicles || [],
-      totalCount: data.total_count || 0, // This is the global count
-      filteredTotalCount: data.filtered_total_count || 0, // This is the filtered count
+      totalCount: data.total_count || 0,
+      filteredTotalCount: data.filtered_total_count || 0,
       statusCounts: data.status_counts || {},
       message: 'ok',
       requestId,

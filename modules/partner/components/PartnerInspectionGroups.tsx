@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { ChecklistFormWithInspections, InspectionStatus } from '../../common/types/checklist';
+import styles from './PartnerInspectionGroups.module.css';
 
 interface InspectionGroup {
   title: string;
@@ -297,37 +298,32 @@ export function PartnerInspectionGroups({
   };
 
   return (
-    <div className="space-y-8">
+    <div className={styles.inspectionGroups}>
       {INSPECTION_GROUPS.map(group => (
-        <div key={group.title} className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">{group.title}</h3>
+        <div key={group.title} className={styles.inspectionGroup}>
+          <div className={styles.groupHeader}>
+            <h3 className={styles.groupTitle}>{group.title}</h3>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className={styles.groupContent}>
             {group.items.map(item => (
-              <div
-                key={item.key}
-                className="border-b border-gray-100 pb-6 last:border-b-0 last:pb-0"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+              <div key={item.key} className={styles.inspectionItem}>
+                <div className={styles.itemGrid}>
                   {/* Nome do item */}
-                  <div className="lg:w-1/4">
-                    <label className="block text-sm font-medium text-gray-900 mb-2">
-                      {item.label}
-                    </label>
+                  <div className={styles.itemName}>
+                    <label>{item.label}</label>
                   </div>
 
                   {/* Status */}
-                  <div className="lg:w-1/4">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
+                  <div className={styles.itemSection}>
+                    <label className={styles.sectionLabel}>Status</label>
                     <select
                       value={(form[item.statusKey] as string) || ''}
                       onChange={e =>
                         onUpdateItem(item.statusKey, e.target.value as InspectionStatus)
                       }
                       disabled={disabled}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                      className={styles.select}
                     >
                       <option value="">Selecione...</option>
                       {STATUS_OPTIONS.map(option => (
@@ -339,33 +335,28 @@ export function PartnerInspectionGroups({
                   </div>
 
                   {/* Observações */}
-                  <div className="lg:w-1/4">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">
-                      Observações
-                    </label>
+                  <div className={styles.itemSection}>
+                    <label className={styles.sectionLabel}>Observações</label>
                     <textarea
                       value={(form[item.notesKey] as string) || ''}
                       onChange={e => onUpdateItem(item.notesKey, e.target.value)}
                       disabled={disabled}
                       placeholder="Observações adicionais..."
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm resize-none"
+                      className={styles.textarea}
                     />
                   </div>
 
                   {/* Upload de Evidência */}
-                  <div className="lg:w-1/4">
-                    <label className="block text-xs font-medium text-gray-700 mb-2">
-                      Evidência (Foto)
-                    </label>
+                  <div className={styles.itemSection}>
+                    <label className={styles.sectionLabel}>Evidência (Foto)</label>
 
                     {/* Preview da imagem existente */}
                     {form[item.evidenceKey] && (
-                      <div className="mb-3">
+                      <div className={styles.evidencePreview}>
                         <img
                           src={form[item.evidenceKey] as string}
                           alt={`Evidência - ${item.label}`}
-                          className="w-full h-24 object-cover rounded-md shadow-sm"
+                          className={styles.evidenceImage}
                         />
                       </div>
                     )}
@@ -381,7 +372,7 @@ export function PartnerInspectionGroups({
                         }
                       }}
                       disabled={disabled}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className={styles.fileInput}
                     />
 
                     {/* Botão para remover evidência */}
@@ -389,7 +380,7 @@ export function PartnerInspectionGroups({
                       <button
                         type="button"
                         onClick={() => onUpdateItem(item.evidenceKey, '')}
-                        className="mt-2 text-xs text-red-600 hover:text-red-800 font-medium"
+                        className={styles.removeButton}
                       >
                         Remover evidência
                       </button>

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { FaPaperPlane } from 'react-icons/fa';
 import CounterCard from '@/modules/partner/components/dashboard/CounterCard';
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
@@ -31,9 +33,22 @@ type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'>
 
 const PartnerDashboard = () => {
   const router = useRouter();
+  const { post } = useAuthenticatedFetch();
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
+
+  // Sistema de toast interno
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  }>({ show: false, message: '', type: 'success' });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
+  };
 
   const {
     loading,
@@ -65,8 +80,9 @@ const PartnerDashboard = () => {
       });
 
       if (error) {
-        // A futura implementação de feedback ao usuário (ex: Toast) deve ser inserida aqui.
+        showToast('Erro ao aceitar contrato. Tente novamente.', 'error');
       } else {
+        showToast('Contrato aceito com sucesso!', 'success');
         reloadData(); // Recarrega os dados do dashboard
       }
     }
@@ -78,8 +94,27 @@ const PartnerDashboard = () => {
     router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
-  const handleDeleteQuote = () => {
-    // Implementar lógica para excluir orçamento
+  // Removido botão dedicado; status será atualizado junto com "Enviar para Admin"
+
+  const handleSendToAdmin = async (quote: PendingQuoteDisplay) => {
+    try {
+      const resp = await post<{ ok: boolean; error?: string }>(
+        '/api/partner/quotes/send-to-admin',
+        { quoteId: quote.id, vehicleStatus: 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO' },
+        { requireAuth: true }
+      );
+      if (!resp.ok || !resp.data?.ok) {
+        showToast(resp.error || 'Falha ao enviar orçamento.', 'error');
+        return;
+      }
+      showToast(
+        'Orçamento enviado ao admin e veículo marcado como aguardando aprovação!',
+        'success'
+      );
+      reloadData();
+    } catch (err) {
+      showToast('Erro inesperado. Tente novamente.', 'error');
+    }
   };
 
   const handleChecklist = async (quote: PendingQuoteDisplay) => {
@@ -89,18 +124,33 @@ const PartnerDashboard = () => {
     } = await supabase.auth.getUser();
 
     if (user) {
-      const { data: partner } = await supabase
-        .from('partners')
-        .select('service_categories')
-        .eq('id', user.id)
-        .single();
+      // Query alternativa: usar RPC para contornar possíveis problemas de RLS
+      const { data: partnerCategories, error } = await supabase.rpc('get_partner_categories', {
+        partner_id: user.id,
+      });
 
-      // Se o parceiro tem categoria "Mecânica", vai para checklist completo
+      console.log('Debug - Partner categories:', partnerCategories);
+      console.log('Debug - User ID:', user.id);
+
+      if (error) {
+        console.error('Error fetching partner categories:', error);
+        return;
+      }
+
+      // A função RPC retorna um array direto de nomes de categorias
+      const categories = partnerCategories || [];
+      const isMechanical = categories.includes('Mecânica');
+
+      console.log('Debug - Is mechanical?', isMechanical);
+
+      // Se o parceiro tem categoria "mechanics", vai para checklist estruturado
       // Senão, vai para checklist dinâmico (com evidências)
-      const isMechanical = partner?.service_categories?.includes('Mecânica');
       const route = isMechanical
         ? `/dashboard/partner/checklist?quoteId=${quote.id}`
         : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
+
+      console.log('Debug - Route selected:', route);
+      document.title = `Debug: Route = ${route}, IsMech = ${isMechanical}`;
 
       router.push(route);
     }
@@ -245,7 +295,7 @@ const PartnerDashboard = () => {
             emptyMessage="Nenhuma solicitação de orçamento pendente."
             showActions={true}
             onEdit={handleEditQuote}
-            onDelete={handleDeleteQuote}
+            onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
           />
 
@@ -264,6 +314,28 @@ const PartnerDashboard = () => {
             onServiceAdded={reloadData} // Usa a função de recarregamento do hook
           />
         </main>
+      )}
+
+      {/* Toast Component */}
+      {toast.show && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            color: 'white',
+            background:
+              toast.type === 'success' ? '#10b981' : toast.type === 'error' ? '#ef4444' : '#3b82f6',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            zIndex: 1000,
+            maxWidth: '400px',
+            fontSize: '14px',
+          }}
+        >
+          {toast.message}
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 -- Criação da tabela mechanics_checklist para armazenar dados do checklist de mecânica
 -- Cada item do checklist tem sua própria coluna para facilitar consultas e validações
 
-CREATE TABLE mechanics_checklist (
+CREATE TABLE IF NOT EXISTS mechanics_checklist (
   -- Identificadores
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
