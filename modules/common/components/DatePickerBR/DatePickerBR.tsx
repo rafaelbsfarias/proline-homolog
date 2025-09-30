@@ -8,10 +8,13 @@ import { isoToBr } from '../date-picker/utils';
 import brInputStyles from '../date-picker/BrInput.module.css';
 import calendarButtonStyles from '../date-picker/CalendarButton.module.css';
 import styles from './DatePickerBR.module.css';
+import Label from '../Label/Label';
 
 type Props = {
   valueIso: string;
   onChangeIso: (iso: string) => void;
+  label?: string;
+  id?: string;
   minIso?: string;
   disabledDatesIso?: string[];
   containerClass?: string;
@@ -25,6 +28,8 @@ type Props = {
 export default function DatePickerBR({
   valueIso,
   onChangeIso,
+  label,
+  id,
   minIso,
   disabledDatesIso,
   containerClass,
@@ -35,11 +40,14 @@ export default function DatePickerBR({
   ariaLabel,
 }: Props) {
   const state = useDatePickerBR({ valueIso, onChangeIso, minIso, disabledDatesIso });
+  const inputId = id || 'date-picker';
 
   return (
-    <>
-      <div className={`${styles.datePickerWrapper} ${containerClass || ''}`}>
+    <div className={containerClass || ''}>
+      {label && <Label htmlFor={inputId}>{label}</Label>}
+      <div className={`${styles.datePickerWrapper}`}>
         <BrInput
+          id={inputId}
           className={`${brInputStyles.brInput} ${inputClass || ''}`.trim()}
           placeholder={placeholder}
           ariaLabel={ariaLabel}
@@ -79,6 +87,6 @@ export default function DatePickerBR({
         }}
         onClose={state.closeFallback}
       />
-    </>
+    </div>
   );
 }

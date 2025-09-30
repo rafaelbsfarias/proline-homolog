@@ -1,0 +1,109 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 4px;
+  overflow: hidden; /* cantos arredondados na tabela inteira */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.headerRow {
+  background: #002e4c;
+  color: #fff;
+}
+
+.headerCell,
+.headerCellCenter {
+  padding: 14px 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.headerCell {
+  text-align: left;
+}
+
+.headerCellCenter {
+  text-align: center;
+}
+
+.bodyRow {
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s;
+}
+
+.bodyRow:hover {
+  background: #f9fafb; /* destaque ao passar o mouse */
+}
+
+.cell,
+.cellCenter {
+  padding: 12px;
+  color: #333;
+}
+
+.cell {
+  text-align: left;
+}
+
+.cellCenter {
+  text-align: center;
+}
+
+/* Botões dentro da tabela */
+.button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.button:active {
+  transform: translateY(0);
+  background: #f3f4f6;
+}
+
+.buttonSelected {
+  background: #e8f1ff;
+  border-color: #002e4c;
+  color: #002e4c;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.button,
+.buttonSelected {
+  min-width: 120px;
+  text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .headerCell,
+  .headerCellCenter,
+  .cell,
+  .cellCenter {
+    padding: 10px 8px;
+  }
+
+  .button {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,29 @@
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d9e0e7;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  color: #333;
+  cursor: pointer;
+  font-size: 1rem;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.iconButton:hover {
+  background: #bdc6d0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.iconButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

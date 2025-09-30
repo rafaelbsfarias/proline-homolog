@@ -1,4 +1,6 @@
 import React from 'react';
+import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
+import Textarea from '@/modules/common/components/Textarea/Textarea';
 import styles from '../VehicleChecklistModal/VehicleChecklistModal.module.css';
 
 interface Props {
@@ -19,17 +21,16 @@ const ServiceCategoryField: React.FC<Props> = ({
   disabled = false,
 }) => (
   <div className={styles.field}>
-    <label>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={e => onToggle(e.target.checked)}
-        disabled={disabled}
-      />
-      {label}
-    </label>
+    <Checkbox
+      id={`service-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+      name={`service-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+      label={label}
+      checked={checked}
+      onChange={onToggle}
+      disabled={disabled}
+    />
     {checked && (
-      <textarea
+      <Textarea
         placeholder="Observações (opcional)"
         rows={3}
         value={notes}

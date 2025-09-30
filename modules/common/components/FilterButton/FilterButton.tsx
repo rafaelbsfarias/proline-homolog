@@ -11,7 +11,9 @@ interface FilterButtonProps {
 
 const FilterButton: React.FC<FilterButtonProps> = ({ activeFilterCount, onClick, className }) => {
   const filterButtonText =
-    activeFilterCount > 0 ? `Filtros Aplicados(${activeFilterCount})` : 'Aplicar Filtros';
+    activeFilterCount > 0
+      ? `Filtros de status aplicados (${activeFilterCount})`
+      : 'Aplicar filtros de status';
 
   const ButtonComponent = activeFilterCount > 0 ? SolidButton : OutlineButton;
 
