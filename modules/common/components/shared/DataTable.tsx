@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaEdit } from 'react-icons/fa';
 import { TbTrashXFilled } from 'react-icons/tb';
-import { FaClipboardList } from 'react-icons/fa';
+import { FaClipboardList, FaPaperPlane } from 'react-icons/fa';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 
 interface DataTableProps<T> {
@@ -11,6 +11,7 @@ interface DataTableProps<T> {
   emptyMessage: string;
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void | Promise<void>;
+  onSendToAdmin?: (item: T) => void | Promise<void>;
   onChecklist?: (item: T) => void;
   showActions?: boolean;
   useConfirmDialog?: boolean; // Nova prop para controlar o dialog de confirmação
@@ -23,6 +24,7 @@ const DataTable = <T extends { id: React.Key }>({
   emptyMessage,
   onEdit,
   onDelete,
+  onSendToAdmin,
   onChecklist,
   showActions = false,
   useConfirmDialog = true, // Padrão é usar confirmação para compatibilidade com dashboard
@@ -146,6 +148,26 @@ const DataTable = <T extends { id: React.Key }>({
                           title="Editar"
                         >
                           <FaEdit size={14} />
+                        </button>
+                      )}
+                      {onSendToAdmin && (
+                        <button
+                          onClick={() => onSendToAdmin(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#f59e0b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Enviar para Admin"
+                        >
+                          <FaPaperPlane size={14} />
                         </button>
                       )}
                       {onDelete && (

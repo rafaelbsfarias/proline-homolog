@@ -78,8 +78,36 @@ const PartnerDashboard = () => {
     router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
-  const handleDeleteQuote = () => {
-    // Implementar lógica para excluir orçamento
+  const handleSendToAdmin = async (quote: PendingQuoteDisplay) => {
+    // Implementar lógica para enviar orçamento para admin
+    // Isso deve travar a edição do checklist e orçamento
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        // Atualizar o status do orçamento para "sent_to_admin" ou similar
+        const { error } = await supabase
+          .from('quotes')
+          .update({
+            status: 'sent_to_admin',
+            sent_to_admin_at: new Date().toISOString(),
+            locked_for_editing: true,
+          })
+          .eq('id', quote.id);
+
+        if (error) {
+          // Implementar feedback de erro para o usuário na próxima iteração
+        } else {
+          // Recarregar dados após sucesso
+          reloadData();
+          // Implementar feedback de sucesso para o usuário na próxima iteração
+        }
+      }
+    } catch {
+      // Implementar feedback de erro para o usuário na próxima iteração
+    }
   };
 
   const handleChecklist = async (quote: PendingQuoteDisplay) => {
@@ -94,11 +122,7 @@ const PartnerDashboard = () => {
         partner_id: user.id,
       });
 
-      console.log('Debug - Partner categories:', partnerCategories);
-      console.log('Debug - User ID:', user.id);
-
       if (error) {
-        console.error('Error fetching partner categories:', error);
         return;
       }
 
@@ -106,16 +130,11 @@ const PartnerDashboard = () => {
       const categories = partnerCategories || [];
       const isMechanical = categories.includes('Mecânica');
 
-      console.log('Debug - Is mechanical?', isMechanical);
-
       // Se o parceiro tem categoria "mechanics", vai para checklist estruturado
       // Senão, vai para checklist dinâmico (com evidências)
       const route = isMechanical
         ? `/dashboard/partner/checklist?quoteId=${quote.id}`
         : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
-
-      console.log('Debug - Route selected:', route);
-      document.title = `Debug: Route = ${route}, IsMech = ${isMechanical}`;
 
       router.push(route);
     }
@@ -260,7 +279,7 @@ const PartnerDashboard = () => {
             emptyMessage="Nenhuma solicitação de orçamento pendente."
             showActions={true}
             onEdit={handleEditQuote}
-            onDelete={handleDeleteQuote}
+            onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
           />
 
