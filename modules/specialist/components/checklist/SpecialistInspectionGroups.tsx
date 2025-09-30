@@ -608,22 +608,6 @@ const SpecialistInspectionGroups: React.FC<Props> = ({
                           Visualizar evidência
                         </button>
                       )}
-                      {/* Mostrar nome do arquivo, mas sem exibir a imagem inline */}
-                      <span style={{ fontSize: 12, color: '#374151' }}>
-                        {(() => {
-                          const ev = evidences[evidenceKey];
-                          if (ev?.file?.name) return ev.file.name;
-                          const url = ev?.url || '';
-                          try {
-                            const u = new URL(url);
-                            const dec = decodeURIComponent(u.pathname);
-                            const parts = dec.split('/');
-                            return parts[parts.length - 1] || 'evidencia.jpg';
-                          } catch {
-                            return 'evidencia.jpg';
-                          }
-                        })()}
-                      </span>
                     </div>
                   </div>
                 </div>
