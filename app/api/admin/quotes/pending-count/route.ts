@@ -8,7 +8,7 @@ async function handler(_req: AuthenticatedRequest) {
   const { count, error } = await supabase
     .from('quotes')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending_admin_approval');
+    .in('status', ['pending_admin_approval', 'admin_review']);
 
   if (error) {
     return NextResponse.json({ count: 0, error: error.message }, { status: 500 });

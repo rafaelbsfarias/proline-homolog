@@ -65,7 +65,7 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
     const { data: pendingAdminQuotes, error: pendingAdminErr } = await admin
       .from('quotes')
       .select('partner_id')
-      .eq('status', 'pending_admin_approval');
+      .in('status', ['pending_admin_approval', 'admin_review']);
 
     if (pendingAdminErr) {
       logger.error('failed_fetch_pending_admin_quotes', { error: pendingAdminErr });
@@ -195,18 +195,7 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
       );
     }
 
-    // 5.3) Count vehicles in target status per partner
-    const vehiclesPendingByPartner = new Map<string, number>();
-    partnerIds.forEach(pid => {
-      const set = vehiclesByPartner.get(pid) || new Set<string>();
-      let c = 0;
-      set.forEach(vid => {
-        if ((vehiclesStatusMap.get(vid) || '') === TARGET_VEHICLE_STATUS) c++;
-      });
-      vehiclesPendingByPartner.set(pid, c);
-    });
-
-    // 6) Merge result preserving expected shape
+    // 5.3) Merge result preserving expected shape
     const result = partnerRows
       .filter(p => partnerIds.includes(p.profile_id))
       .sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''))
@@ -217,8 +206,8 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
         // Orçamentos pendentes para ADMIN (aguardando aprovação do admin)
         pending_budgets: pendingAdminByPartner.get(p.profile_id) || 0,
         executing_budgets: executingByPartner.get(p.profile_id) || 0,
-        // Para Aprovação: veículos com status "AGUARDANDO APROVAÇÃO DO ORÇAMENTO" vinculados a este parceiro
-        approval_budgets: vehiclesPendingByPartner.get(p.profile_id) || 0,
+        // Para Aprovação (Cliente): orçamentos aguardando aprovação do cliente
+        approval_budgets: pendingClientByPartner.get(p.profile_id) || 0,
       }));
 
     // Debug: Log detalhado dos dados para diagnosticar

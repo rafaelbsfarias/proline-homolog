@@ -57,7 +57,7 @@ export default function PartnerOverviewPage() {
     | 'approved'
     | 'rejected'
     | 'executing'
-  >('all');
+  >('pending_admin_approval');
   const [serviceQuery, setServiceQuery] = useState('');
   const [serviceStatus, setServiceStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -91,7 +91,20 @@ export default function PartnerOverviewPage() {
           return;
         }
         setPartner(data.partner as PartnerSummary);
-        setQuotes(data.partner?.quotes || null);
+        // Normalizar estrutura de quotes para evitar chaves ausentes
+        const q = (data.partner?.quotes || {}) as any;
+        const normalized = {
+          pending_admin_approval: Array.isArray(q.pending_admin_approval)
+            ? q.pending_admin_approval
+            : [],
+          pending_client_approval: Array.isArray(q.pending_client_approval)
+            ? q.pending_client_approval
+            : [],
+          approved: Array.isArray(q.approved) ? q.approved : [],
+          rejected: Array.isArray(q.rejected) ? q.rejected : [],
+          executing: Array.isArray(q.executing) ? q.executing : [],
+        };
+        setQuotes(normalized);
 
         // Load services
         const respServices = await fetch(`/api/admin/partners/${partnerId}/services`, {
@@ -101,7 +114,9 @@ export default function PartnerOverviewPage() {
           },
         });
         const dataServices = await respServices.json();
-        if (respServices.ok) setServices(dataServices.services || []);
+        setServices(
+          respServices.ok && Array.isArray(dataServices.services) ? dataServices.services : []
+        );
       } catch (e) {
         if (!mounted) return;
         setError('Erro de rede ao carregar parceiro');
@@ -254,6 +269,86 @@ export default function PartnerOverviewPage() {
         </div>
       ) : (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 20px' }}>
+          {/* Destaque: Orçamentos pendentes para aprovação (admin) */}
+          {quotes?.pending_admin_approval && quotes.pending_admin_approval.length > 0 && (
+            <div
+              style={{
+                background: '#fff',
+                borderRadius: 10,
+                padding: 20,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                marginBottom: 20,
+                borderLeft: '4px solid #f59e0b',
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: '1.2rem', marginBottom: 12 }}>
+                Orçamentos pendentes para aprovação ({quotes.pending_admin_approval.length})
+              </h2>
+              <div style={{ display: 'grid', gap: 12 }}>
+                {quotes.pending_admin_approval.map((q: any) => (
+                  <div
+                    key={q.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
+                      gap: 8,
+                      alignItems: 'center',
+                      borderTop: '1px solid #eee',
+                      paddingTop: 8,
+                    }}
+                  >
+                    <div>
+                      <strong>ID:</strong> {q.id}
+                    </div>
+                    <div>
+                      <strong>Data:</strong>{' '}
+                      {q.created_at ? new Date(q.created_at).toLocaleDateString('pt-BR') : '-'}
+                    </div>
+                    <div>
+                      <strong>Valor:</strong>{' '}
+                      {typeof q.total_value === 'number'
+                        ? q.total_value.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          })
+                        : '-'}
+                    </div>
+                    <div>
+                      <strong>OS:</strong> {q.service_order_id || '-'}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => openQuoteDetails(q.id)}
+                        style={{
+                          background: '#072e4c',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Detalhes
+                      </button>
+                      <button
+                        onClick={() => approveQuote(q.id)}
+                        style={{
+                          background: '#10b981',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 10px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Aprovar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ marginBottom: 16 }}>
             <a href="/dashboard" style={{ color: '#072e4c', textDecoration: 'none' }}>
               &larr; Voltar

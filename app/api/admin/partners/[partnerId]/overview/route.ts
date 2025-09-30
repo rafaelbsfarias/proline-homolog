@@ -36,12 +36,12 @@ export const GET = withAdminAuth(
         return NextResponse.json({ error: 'Erro ao contar serviços do parceiro' }, { status: 500 });
       }
 
-      // Pending budgets (admin)
+      // Pending budgets (admin) — include legacy 'admin_review' for compatibility
       const { count: pendingAdmin, error: q1Err } = await admin
         .from('quotes')
         .select('*', { count: 'exact', head: true })
         .eq('partner_id', partnerId)
-        .eq('status', 'pending_admin_approval');
+        .in('status', ['pending_admin_approval', 'admin_review']);
       if (q1Err) {
         logger.error('failed_pending_admin', { error: q1Err, partnerId });
         return NextResponse.json(
@@ -120,14 +120,18 @@ export const GET = withAdminAuth(
         executing: [] as any[],
       };
       (partnerQuotes || []).forEach(q => {
+        // Map legacy 'admin_review' into 'pending_admin_approval'
+        const statusKey = (
+          q.status === 'admin_review' ? 'pending_admin_approval' : (q.status as any)
+        ) as keyof typeof byStatus;
         const item = {
           id: q.id,
           created_at: q.created_at,
-          status: q.status,
+          status: statusKey,
           total_value: q.total_value,
           service_order_id: q.service_order_id,
         };
-        const arr = (byStatus as any)[q.status] as any[] | undefined;
+        const arr = (byStatus as any)[statusKey] as any[] | undefined;
         if (arr) arr.push(item);
       });
       if (soInProgress && soInProgress.length) {

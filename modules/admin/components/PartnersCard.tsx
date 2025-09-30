@@ -126,7 +126,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
                 <th className={styles.servicesColumn}>Serviços Cadastrados</th>
                 <th className={styles.budgetColumn}>Orçamentos Pendentes</th>
                 <th className={styles.budgetColumn}>Em Execução</th>
-                <th className={styles.budgetColumn}>Para Aprovação</th>
+                <th className={styles.budgetColumn}>Para Aprovação (Cliente)</th>
               </tr>
             </thead>
             <tbody>

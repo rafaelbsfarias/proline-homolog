@@ -24,7 +24,7 @@ export const POST = withAdminAuth(
       if (!current)
         return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
 
-      if (current.status !== 'pending_admin_approval') {
+      if (!['pending_admin_approval', 'admin_review'].includes(current.status as any)) {
         return NextResponse.json(
           { error: 'Aprovação indisponível para o status atual' },
           { status: 400 }
