@@ -2,6 +2,8 @@ import {
   Header,
   Toolbar,
   PendingRegistrationsCounter,
+  PendingQuotesCounter,
+  VehiclesPendingApprovalCounter,
   UsersCounter,
   DataPanel,
   VehiclesCounter,
@@ -102,6 +104,8 @@ const AdminDashboard: React.FC = () => {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
           <div className={styles.countersRow}>
             <PendingRegistrationsCounter onLoadingChange={setPendingRegLoading} />
+            <PendingQuotesCounter onLoadingChange={setPendingRegLoading} />
+            <VehiclesPendingApprovalCounter onLoadingChange={setVehiclesCounterLoading} />
             <UsersCounter onLoadingChange={setUsersCounterLoading} />
             <VehiclesCounter onLoadingChange={setVehiclesCounterLoading} />
           </div>

@@ -13,6 +13,11 @@ type PartnerRow = {
 
 export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
   try {
+    logger.info('debug_environment', {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...',
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    });
+
     const admin = SupabaseService.getInstance().getAdminClient();
 
     // 1) Base partners list (active)
@@ -28,6 +33,12 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
 
     const partnerRows = (partners || []) as PartnerRow[];
     const partnerIds = partnerRows.map(p => p.profile_id);
+
+    logger.info('debug_active_partners', {
+      total: partnerRows.length,
+      partnerIds: partnerIds.slice(0, 5), // primeiros 5 IDs
+      sampleNames: partnerRows.slice(0, 3).map(p => p.company_name),
+    });
 
     // Early return if none
     if (partnerIds.length === 0) {
@@ -78,6 +89,11 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
     }
 
     const pendingAdminByPartner = new Map<string, number>();
+    logger.info('debug_pending_admin_quotes', {
+      total: pendingAdminQuotes?.length || 0,
+      partnerIds: (pendingAdminQuotes || []).map(q => q.partner_id),
+    });
+
     (pendingAdminQuotes || []).forEach(r => {
       const k = r.partner_id as string;
       pendingAdminByPartner.set(k, (pendingAdminByPartner.get(k) || 0) + 1);
@@ -134,7 +150,63 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
       );
     }
 
-    // 5) Merge result preserving expected shape
+    // 5) Vehicles awaiting budget approval per partner (status on vehicles)
+    const TARGET_VEHICLE_STATUS = 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO';
+
+    // 5.1) Fetch quotes for these partners with service_orders to resolve vehicle_id
+    const { data: quotesWithSO, error: quotesWithSOErr } = await admin
+      .from('quotes')
+      .select('partner_id, service_order_id, service_orders ( vehicle_id )')
+      .in('partner_id', partnerIds);
+
+    if (quotesWithSOErr) {
+      logger.error('failed_fetch_quotes_with_so', { error: quotesWithSOErr });
+      return NextResponse.json({ error: 'Erro ao buscar dados de orçamentos' }, { status: 500 });
+    }
+
+    const vehiclesByPartner = new Map<string, Set<string>>();
+    (quotesWithSO || []).forEach((r: any) => {
+      const pid = r.partner_id as string;
+      const so = Array.isArray(r.service_orders) ? r.service_orders[0] : r.service_orders;
+      const vid = so?.vehicle_id as string | undefined;
+      if (!pid || !vid) return;
+      if (!vehiclesByPartner.has(pid)) vehiclesByPartner.set(pid, new Set());
+      vehiclesByPartner.get(pid)!.add(vid);
+    });
+
+    // 5.2) Fetch statuses for unique vehicle ids
+    const uniqueVehicleIds = Array.from(
+      new Set(Array.from(vehiclesByPartner.values()).flatMap(set => Array.from(set)))
+    );
+
+    const vehiclesStatusMap = new Map<string, string>();
+    if (uniqueVehicleIds.length > 0) {
+      const { data: vehiclesRows, error: vehiclesErr } = await admin
+        .from('vehicles')
+        .select('id, status')
+        .in('id', uniqueVehicleIds);
+
+      if (vehiclesErr) {
+        logger.error('failed_fetch_vehicles_status', { error: vehiclesErr });
+        return NextResponse.json({ error: 'Erro ao buscar status dos veículos' }, { status: 500 });
+      }
+      (vehiclesRows || []).forEach(r =>
+        vehiclesStatusMap.set(r.id as string, (r.status as string) || '')
+      );
+    }
+
+    // 5.3) Count vehicles in target status per partner
+    const vehiclesPendingByPartner = new Map<string, number>();
+    partnerIds.forEach(pid => {
+      const set = vehiclesByPartner.get(pid) || new Set<string>();
+      let c = 0;
+      set.forEach(vid => {
+        if ((vehiclesStatusMap.get(vid) || '') === TARGET_VEHICLE_STATUS) c++;
+      });
+      vehiclesPendingByPartner.set(pid, c);
+    });
+
+    // 6) Merge result preserving expected shape
     const result = partnerRows
       .filter(p => partnerIds.includes(p.profile_id))
       .sort((a, b) => (a.company_name || '').localeCompare(b.company_name || ''))
@@ -142,10 +214,26 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
         id: p.profile_id,
         company_name: p.company_name || '',
         services_count: servicesCountByPartner.get(p.profile_id) || 0,
+        // Orçamentos pendentes para ADMIN (aguardando aprovação do admin)
         pending_budgets: pendingAdminByPartner.get(p.profile_id) || 0,
         executing_budgets: executingByPartner.get(p.profile_id) || 0,
-        approval_budgets: pendingClientByPartner.get(p.profile_id) || 0,
+        // Para Aprovação: veículos com status "AGUARDANDO APROVAÇÃO DO ORÇAMENTO" vinculados a este parceiro
+        approval_budgets: vehiclesPendingByPartner.get(p.profile_id) || 0,
       }));
+
+    // Debug: Log detalhado dos dados para diagnosticar
+    logger.info('partners_overview_debug', {
+      count: result.length,
+      pendingAdminQuotesTotal: pendingAdminQuotes?.length || 0,
+      pendingClientQuotesTotal: pendingClientQuotes?.length || 0,
+      pendingAdminByPartnerEntries: Array.from(pendingAdminByPartner.entries()),
+      pendingClientByPartnerEntries: Array.from(pendingClientByPartner.entries()),
+      sampleResults: result.slice(0, 3).map(r => ({
+        company: r.company_name,
+        pending_budgets: r.pending_budgets,
+        approval_budgets: r.approval_budgets,
+      })),
+    });
 
     logger.info('partners_overview_ok', { count: result.length });
     return NextResponse.json({ partners: result });
