@@ -35,7 +35,7 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
   const { get, post, put, delete: del } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>([]);
+  const [error, setError] = useState<string | null>();
   const [triggerRefetch, setTriggerRefetch] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
