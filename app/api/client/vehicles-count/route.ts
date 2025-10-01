@@ -37,6 +37,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const limit = parseInt(searchParams.get('limit') || `${DEFAULT_PAGE_SIZE}`, 10);
     const plateFilter = searchParams.get('plate') || '';
     const statusFilter = searchParams.get('status') || '';
+    const dateFilter = searchParams.get('dateFilter') || '';
 
     log.info('vehicles-count:start', {
       userId: String(userId).slice(0, 8),
@@ -44,6 +45,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       limit,
       plateFilter,
       statusFilter,
+      dateFilter,
     });
 
     const supabase = SupabaseService.getInstance().getAdminClient();
@@ -53,8 +55,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       p_page_size: limit,
       p_page_num: page,
       p_plate_filter: plateFilter,
-      p_status_filter: statusFilter ? [statusFilter] : null,
-      p_date_filter: null,
+      p_status_filter: statusFilter ? statusFilter.split(',') : null,
+      p_date_filter: dateFilter ? dateFilter.split(',') : null,
       p_today_date: new Date().toISOString().split('T')[0],
     });
 

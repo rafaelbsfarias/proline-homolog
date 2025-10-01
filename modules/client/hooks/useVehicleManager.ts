@@ -27,14 +27,15 @@ interface UseVehicleManagerResult {
 interface HookOptions {
   paginated?: boolean;
   filterPlate?: string;
-  filterStatus?: string;
+  filterStatus?: string[];
+  dateFilter?: string[];
 }
 
 export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResult => {
   const { get, post, put, delete: del } = useAuthenticatedFetch();
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>([]);
   const [triggerRefetch, setTriggerRefetch] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,15 +54,17 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
 
       try {
         const params = new URLSearchParams();
-        // Use page from state for pagination
         params.append('page', currentPage.toString());
         params.append('limit', ITEMS_PER_PAGE.toString());
 
         if (options?.filterPlate) {
           params.append('plate', options.filterPlate);
         }
-        if (options?.filterStatus) {
-          params.append('status', options.filterStatus);
+        if (options?.filterStatus && options.filterStatus.length > 0) {
+          params.append('status', options.filterStatus.join(','));
+        }
+        if (options?.dateFilter && options.dateFilter.length > 0) {
+          params.append('dateFilter', options.dateFilter.join(','));
         }
 
         const url = `/api/client/vehicles-count?${params.toString()}`;
@@ -89,7 +92,14 @@ export const useVehicleManager = (options?: HookOptions): UseVehicleManagerResul
     };
 
     fetchVehicles();
-  }, [get, triggerRefetch, currentPage, options?.filterPlate, options?.filterStatus]);
+  }, [
+    get,
+    triggerRefetch,
+    currentPage,
+    options?.filterPlate,
+    options?.filterStatus,
+    options?.dateFilter,
+  ]);
 
   const createVehicle = async (vehicleData: Omit<VehicleData, 'id' | 'created_at'>) => {
     try {

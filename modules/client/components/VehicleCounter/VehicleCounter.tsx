@@ -6,7 +6,6 @@ import VehicleDetailsModal from '@/modules/vehicles/components/VehicleDetailsMod
 import './VehicleCounter.css';
 import RowCollectionModal from '../Modals/RowCollectionModal/RowCollectionModal';
 import StatusChips from '../StatusChips/StatusChips';
-import VehicleFilters from '../VehicleFilters';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
@@ -16,6 +15,8 @@ import VehicleItemRow from './VehicleItemRow';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import { LuRefreshCw, LuMinus, LuPlus, LuTriangleAlert } from 'react-icons/lu';
 import Pagination from '@/modules/common/components/Pagination/Pagination';
+import VehicleCheckboxFiltersModal from '@/modules/common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
+import VehicleToolbar from '../VehicleToolbar/VehicleToolbar';
 
 interface VehicleCounterProps {
   onRefresh?: () => void;
@@ -24,32 +25,27 @@ interface VehicleCounterProps {
 
 export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
   const [filterPlate, setFilterPlate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string[]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const { addresses } = useAddresses();
   const { post } = useAuthenticatedFetch();
 
   const pageSize = 10;
 
-  const {
-    vehicles,
-    loading,
-    error,
-    refetch,
-    totalCount, // total do backend, já filtrado
-    currentPage,
-    onPageChange,
-    statusCounts,
-  } = useVehicleManager({
-    paginated: true,
-    filterPlate,
-    filterStatus,
-  });
+  const { vehicles, loading, error, refetch, totalCount, currentPage, onPageChange, statusCounts } =
+    useVehicleManager({
+      paginated: true,
+      filterPlate,
+      filterStatus,
+      dateFilter,
+    });
 
   const sorter = (a: [string, number], b: [string, number]) => a[0].localeCompare(b[0]);
   const statusOptions = Object.keys(statusCounts);
@@ -64,7 +60,7 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
     if (currentPage !== 1) {
       onPageChange(1);
     }
-  }, [filterPlate, filterStatus]);
+  }, [filterPlate, filterStatus, dateFilter]);
 
   useEffect(() => {
     if (currentPage > totalPagesAdjusted && totalPagesAdjusted > 0) {
@@ -80,6 +76,11 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
       setIsInitialLoading(false);
     }
   }, [loading, onLoadingChange, isInitialLoading]);
+
+  const handleClearFilters = () => {
+    setFilterStatus([]);
+    setDateFilter([]);
+  };
 
   if (error) {
     return (
@@ -107,15 +108,18 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
             {totalCount}
           </div>
           <p>{totalCount === 1 ? 'Veículo cadastrado' : 'Veículos cadastrados'}</p>
-          <StatusChips counts={statusCounts} sorter={sorter} onSelect={setFilterStatus} />
+          <StatusChips
+            counts={statusCounts}
+            sorter={sorter}
+            onSelect={status => setFilterStatus(status ? [status] : [])}
+          />
         </div>
         <div className="counter-actions-wrapper">
-          <VehicleFilters
+          <VehicleToolbar
             filterPlate={filterPlate}
             setFilterPlate={setFilterPlate}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-            statusOptions={statusOptions}
+            activeFilterCount={filterStatus.length + dateFilter.length}
+            onFilterButtonClick={() => setIsFilterModalOpen(true)}
           />
           <div className="counter-actions">
             <button
@@ -225,6 +229,18 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
           }}
         />
       )}
+
+      <VehicleCheckboxFiltersModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filterStatus={filterStatus}
+        onFilterStatusChange={setFilterStatus}
+        availableStatuses={statusOptions}
+        dateFilter={dateFilter}
+        onDateFilterChange={setDateFilter}
+        onClearCheckboxFilters={handleClearFilters}
+        onApplyFilters={refetch}
+      />
     </div>
   );
 }

@@ -7,7 +7,6 @@ import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import styles from './VehicleSection.module.css'; // importando CSS
 import VehicleCheckboxFiltersModal from '../../../common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
-import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import FilterButton from '../../../common/components/FilterButton/FilterButton';
 import Input from '@/modules/common/components/Input/Input';
 import IconButton from '@/modules/common/components/IconButton/IconButton';
