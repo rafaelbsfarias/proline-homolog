@@ -7,9 +7,8 @@ import Pagination from '@/modules/common/components/Pagination/Pagination';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
 import styles from './VehicleSection.module.css'; // importando CSS
 import VehicleCheckboxFiltersModal from '../../../common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
-import FilterButton from '../../../common/components/FilterButton/FilterButton';
-import Input from '@/modules/common/components/Input/Input';
 import IconButton from '@/modules/common/components/IconButton/IconButton';
+import VehicleToolbar from '../../../client/components/VehicleToolbar/VehicleToolbar';
 import { LuRefreshCw } from 'react-icons/lu';
 
 interface VehicleSectionProps {
@@ -69,20 +68,12 @@ const VehicleSection: React.FC<VehicleSectionProps> = ({
         <h3 className={styles.title}>Veículos de {clientName}</h3>
 
         <div className={styles.filtersWrapper}>
-          <Input
-            id="filter-plate"
-            className={`${styles.filterPlate} ${styles.filterInputNoMargin}`}
-            name="filter-plate"
-            placeholder="Filtrar por placa"
-            value={filterPlate}
-            onChange={e => onFilterPlateChange(e.target.value)}
+          <VehicleToolbar
+            filterPlate={filterPlate}
+            setFilterPlate={onFilterPlateChange}
+            activeFilterCount={activeFilterCount}
+            onFilterButtonClick={() => setIsFilterModalOpen(true)}
           />
-          <div className={styles.filterButtonWrapper}>
-            <FilterButton
-              activeFilterCount={activeFilterCount}
-              onClick={() => setIsFilterModalOpen(true)}
-            />
-          </div>
           <div className={styles.updateButtonWrapper}>
             {/*  <OutlineButton onClick={onRefetch} disabled={loading}>
             Atualizar
