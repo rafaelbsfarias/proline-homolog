@@ -16,6 +16,7 @@ interface DataTableProps<T> {
   showActions?: boolean;
   useConfirmDialog?: boolean; // Nova prop para controlar o dialog de confirmação
   canEdit?: (item: T) => boolean; // Nova prop para controlar se o botão deve estar habilitado
+  canSendToAdmin?: (item: T) => boolean;
 }
 
 const DataTable = <T extends { id: React.Key }>({
@@ -30,6 +31,7 @@ const DataTable = <T extends { id: React.Key }>({
   showActions = false,
   useConfirmDialog = true, // Padrão é usar confirmação para compatibilidade com dashboard
   canEdit, // Nova prop para controlar habilitação do botão
+  canSendToAdmin,
 }: DataTableProps<T>) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);
@@ -158,20 +160,29 @@ const DataTable = <T extends { id: React.Key }>({
                       )}
                       {onSendToAdmin && (
                         <button
-                          onClick={() => onSendToAdmin(row)}
+                          onClick={() =>
+                            canSendToAdmin && !canSendToAdmin(row) ? undefined : onSendToAdmin(row)
+                          }
+                          disabled={canSendToAdmin ? !canSendToAdmin(row) : false}
                           style={{
                             padding: '4px 8px',
-                            background: '#f39c12',
+                            background: canSendToAdmin && !canSendToAdmin(row) ? '#ccc' : '#f39c12',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor:
+                              canSendToAdmin && !canSendToAdmin(row) ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
+                            opacity: canSendToAdmin && !canSendToAdmin(row) ? 0.5 : 1,
                           }}
-                          title="Enviar para Admin"
+                          title={
+                            canSendToAdmin && !canSendToAdmin(row)
+                              ? 'Edite o orçamento primeiro'
+                              : 'Enviar para Admin'
+                          }
                         >
                           <FaPaperPlane size={14} />
                         </button>

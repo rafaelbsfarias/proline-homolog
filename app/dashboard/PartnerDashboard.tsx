@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -38,6 +38,7 @@ const PartnerDashboard = () => {
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
   const [quotesWithChecklist, setQuotesWithChecklist] = useState<Set<string>>(new Set());
+  const [editedQuotes, setEditedQuotes] = useState<Set<string>>(new Set());
 
   // Sistema de toast interno
   const [toast, setToast] = useState<{
@@ -430,9 +431,10 @@ const PartnerDashboard = () => {
             onEdit={handleEditQuote}
             onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
-            canEdit={quote =>
+            canSendToAdmin={quote =>
+              editedQuotes.has(quote.id) &&
               quotesWithChecklist.has(quote.id) &&
-              // quote.raw_status !== 'pending_admin_approval' &&
+              quote.raw_status !== 'pending_admin_approval' &&
               quote.raw_status !== 'admin_review'
             }
           />
