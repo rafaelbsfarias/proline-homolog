@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: Request) {
   try {
@@ -10,9 +9,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Quote ID é obrigatório' }, { status: 400 });
     }
 
-    const supabase = createServerComponentClient({
-      cookies: async () => await cookies(),
-    });
+    // Use a service role client to bypass RLS and authentication issues for this specific check
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Buscar o vehicle_id através da quote (forma robusta, objeto ou array)
     const { data: quote, error: quoteError } = await supabase

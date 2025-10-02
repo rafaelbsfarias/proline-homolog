@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
@@ -24,6 +24,7 @@ import {
 
 // Tipo derivado para exibição na tabela
 type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'> & {
+  raw_status: string;
   status: string;
   total_value: string;
   date: string;
@@ -52,16 +53,26 @@ const PartnerDashboard = () => {
 
   // Função para verificar se existe checklist salvo para o orçamento
   const checkChecklistExists = async (quoteId: string): Promise<boolean> => {
-    try {
-      const response = await post<{ hasChecklist: boolean }>(
-        '/api/partner/checklist/exists',
-        { quoteId },
-        { requireAuth: true }
-      );
-      return response.data?.hasChecklist || false;
-    } catch {
-      return false;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        const response = await post<{ hasChecklist: boolean }>(
+          '/api/partner/checklist/exists',
+          { quoteId, _t: Date.now() }, // Cache-busting
+          { requireAuth: true }
+        );
+        if (response.data?.hasChecklist) {
+          return true;
+        }
+      } catch {
+        // Ignore error and retry
+      }
+      attempts++;
+      if (attempts < 3) {
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retrying
+      }
     }
+    return false;
   };
 
   const {
@@ -76,7 +87,6 @@ const PartnerDashboard = () => {
     reloadData,
   } = usePartnerDashboard();
 
-  // Função para verificar checklist para todos os quotes
   const checkAllQuotesChecklist = async () => {
     const checklistStatuses = new Set<string>();
     if (!pendingQuotes || pendingQuotes.length === 0) {
@@ -97,6 +107,11 @@ const PartnerDashboard = () => {
     setQuotesWithChecklist(checklistStatuses);
   };
 
+  const checkAllQuotesChecklistRef = useRef(checkAllQuotesChecklist);
+  useEffect(() => {
+    checkAllQuotesChecklistRef.current = checkAllQuotesChecklist;
+  });
+
   // Verificar checklist quando a lista de pendingQuotes mudar
   useEffect(() => {
     checkAllQuotesChecklist();
@@ -105,11 +120,11 @@ const PartnerDashboard = () => {
   // Re-checar quando o usuário volta ao dashboard (focus/visibility)
   useEffect(() => {
     const onFocus = () => {
-      checkAllQuotesChecklist();
+      checkAllQuotesChecklistRef.current();
     };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
-        checkAllQuotesChecklist();
+        checkAllQuotesChecklistRef.current();
       }
     };
     if (typeof window !== 'undefined') {
@@ -403,6 +418,7 @@ const PartnerDashboard = () => {
             title="Solicitações de Orçamentos Pendentes"
             data={pendingQuotes.map(quote => ({
               ...quote,
+              raw_status: quote.status,
               vehicle: formatVehicleInfo(quote),
               status: formatQuoteStatus(quote.status),
               total_value: formatCurrency(quote.total_value),
@@ -414,7 +430,11 @@ const PartnerDashboard = () => {
             onEdit={handleEditQuote}
             onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
-            canEdit={quote => quotesWithChecklist.has(quote.id)}
+            canEdit={quote =>
+              quotesWithChecklist.has(quote.id) &&
+              // quote.raw_status !== 'pending_admin_approval' &&
+              quote.raw_status !== 'admin_review'
+            }
           />
 
           <DataTable
