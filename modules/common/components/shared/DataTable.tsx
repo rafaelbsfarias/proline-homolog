@@ -15,6 +15,7 @@ interface DataTableProps<T> {
   onChecklist?: (item: T) => void;
   showActions?: boolean;
   useConfirmDialog?: boolean; // Nova prop para controlar o dialog de confirmação
+  canEdit?: (item: T) => boolean; // Nova prop para controlar se o botão deve estar habilitado
 }
 
 const DataTable = <T extends { id: React.Key }>({
@@ -28,6 +29,7 @@ const DataTable = <T extends { id: React.Key }>({
   onChecklist,
   showActions = false,
   useConfirmDialog = true, // Padrão é usar confirmação para compatibilidade com dashboard
+  canEdit, // Nova prop para controlar habilitação do botão
 }: DataTableProps<T>) => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);
@@ -132,20 +134,24 @@ const DataTable = <T extends { id: React.Key }>({
                       )}
                       {onEdit && (
                         <button
-                          onClick={() => onEdit(row)}
+                          onClick={() => (canEdit && !canEdit(row) ? undefined : onEdit(row))}
+                          disabled={canEdit ? !canEdit(row) : false}
                           style={{
                             padding: '4px 8px',
-                            background: '#002e4c',
+                            background: canEdit && !canEdit(row) ? '#ccc' : '#002e4c',
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: canEdit && !canEdit(row) ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
+                            opacity: canEdit && !canEdit(row) ? 0.5 : 1,
                           }}
-                          title="Editar"
+                          title={
+                            canEdit && !canEdit(row) ? 'Realize o checklist primeiro' : 'Editar'
+                          }
                         >
                           <FaEdit size={14} />
                         </button>

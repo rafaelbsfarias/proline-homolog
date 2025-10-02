@@ -14,11 +14,12 @@ interface AnomalyEvidence {
 
 const DynamicChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, loading, error, success } = useSpecialistChecklist();
+  const { form, vehicle, loading, error, success, saving, saveChecklist } =
+    useSpecialistChecklist();
   const [anomalies, setAnomalies] = useState<AnomalyEvidence[]>([
     { id: '1', description: '', photos: [] },
   ]);
-  const [saving, setSaving] = useState(false);
+  // saving vem do hook; remove estado local
 
   const handleBack = () => {
     router.push('/dashboard');
@@ -53,27 +54,21 @@ const DynamicChecklistPage = () => {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      // Validar se pelo menos uma anomalia tem descrição
+      // Opcional: validar se há ao menos uma anomalia descrita
       const hasValidAnomaly = anomalies.some(anomaly => anomaly.description.trim() !== '');
-
       if (!hasValidAnomaly) {
-        console.error('Pelo menos uma anomalia deve ter descrição');
-        return;
+        // Sem anomalias é permitido; checklist técnico ainda pode ser salvo
+        // mas poderíamos alertar o usuário caso queira obrigar evidências
       }
 
-      // Aqui você implementaria a lógica para salvar as anomalias
-      // Por enquanto, apenas simula um delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Anomalias salvas:', anomalies);
+      // Persistir checklist técnico para habilitar edição de orçamento
+      await saveChecklist();
 
-      // Redirecionar de volta ao dashboard após salvar
+      // Voltar ao dashboard após salvar
       router.push('/dashboard');
     } catch (err) {
-      console.error('Erro ao salvar anomalias:', err);
-    } finally {
-      setSaving(false);
+      console.error('Erro ao salvar checklist:', err);
     }
   };
 

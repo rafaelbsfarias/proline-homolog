@@ -27,6 +27,8 @@ const ChecklistPage = () => {
     e.preventDefault();
     try {
       await saveChecklist();
+      // Após salvar com sucesso, voltar ao dashboard para habilitar edição de orçamento
+      router.push('/dashboard');
     } catch {
       // Error já tratado no hook
     }

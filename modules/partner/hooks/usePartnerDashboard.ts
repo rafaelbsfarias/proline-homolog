@@ -19,10 +19,10 @@ export interface PendingQuote {
 
 export interface BudgetCounters {
   total: number;
-  pending: number; // pending_client_approval
-  in_review?: number; // pending_admin_approval (novo campo)
-  approved: number;
-  rejected: number;
+  pending: number; // Novas solicitações (veículo "Análise Finalizada")
+  in_analysis: number; // Em análise (pending_admin_approval + pending_client_approval)
+  approved: number; // Aprovados
+  rejected: number; // Rejeitados
 }
 
 export interface InProgressService {
@@ -61,7 +61,7 @@ export function usePartnerDashboard() {
     budgetCounters: {
       total: 0,
       pending: 0,
-      in_review: 0,
+      in_analysis: 0,
       approved: 0,
       rejected: 0,
     },
@@ -133,7 +133,7 @@ export function usePartnerDashboard() {
         budgetCounters: apiData?.budget_counters || {
           total: 0,
           pending: 0,
-          in_review: 0,
+          in_analysis: 0,
           approved: 0,
           rejected: 0,
         },

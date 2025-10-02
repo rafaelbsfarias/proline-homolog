@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { FaPaperPlane } from 'react-icons/fa';
+
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
@@ -36,6 +36,7 @@ const PartnerDashboard = () => {
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
+  const [quotesWithChecklist, setQuotesWithChecklist] = useState<Set<string>>(new Set());
 
   // Sistema de toast interno
   const [toast, setToast] = useState<{
@@ -49,6 +50,20 @@ const PartnerDashboard = () => {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
+  // Função para verificar se existe checklist salvo para o orçamento
+  const checkChecklistExists = async (quoteId: string): Promise<boolean> => {
+    try {
+      const response = await post<{ hasChecklist: boolean }>(
+        '/api/partner/checklist/exists',
+        { quoteId },
+        { requireAuth: true }
+      );
+      return response.data?.hasChecklist || false;
+    } catch {
+      return false;
+    }
+  };
+
   const {
     loading,
     userName,
@@ -60,6 +75,54 @@ const PartnerDashboard = () => {
     inProgressServices,
     reloadData,
   } = usePartnerDashboard();
+
+  // Função para verificar checklist para todos os quotes
+  const checkAllQuotesChecklist = async () => {
+    const checklistStatuses = new Set<string>();
+    if (!pendingQuotes || pendingQuotes.length === 0) {
+      setQuotesWithChecklist(checklistStatuses);
+      return;
+    }
+
+    // Verificação concorrente para reduzir latência
+    const results = await Promise.all(
+      pendingQuotes.map(async quote => ({
+        id: quote.id,
+        exists: await checkChecklistExists(quote.id),
+      }))
+    );
+    for (const r of results) {
+      if (r.exists) checklistStatuses.add(r.id);
+    }
+    setQuotesWithChecklist(checklistStatuses);
+  };
+
+  // Verificar checklist quando a lista de pendingQuotes mudar
+  useEffect(() => {
+    checkAllQuotesChecklist();
+  }, [pendingQuotes]);
+
+  // Re-checar quando o usuário volta ao dashboard (focus/visibility)
+  useEffect(() => {
+    const onFocus = () => {
+      checkAllQuotesChecklist();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkAllQuotesChecklist();
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', onFocus);
+      document.addEventListener('visibilitychange', onVisibility);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', onFocus);
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
+    };
+  }, []);
 
   async function handleAcceptContract() {
     if (!checked) return;
@@ -86,8 +149,18 @@ const PartnerDashboard = () => {
     setIsAcceptingContract(false);
   }
 
-  const handleEditQuote = (quote: PendingQuoteDisplay) => {
-    // Navegar para a página de orçamento com o ID da cotação
+  const handleEditQuote = async (quote: PendingQuoteDisplay) => {
+    // Verificar se existe checklist salvo antes de permitir edição do orçamento
+    const hasChecklist = await checkChecklistExists(quote.id);
+
+    if (!hasChecklist) {
+      showToast('É necessário realizar o checklist antes de editar o orçamento.', 'info');
+      // Redirecionar para o checklist
+      handleChecklist(quote);
+      return;
+    }
+
+    // Se existe checklist, permitir editar orçamento
     router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
 
@@ -95,21 +168,43 @@ const PartnerDashboard = () => {
 
   const handleSendToAdmin = async (quote: PendingQuoteDisplay) => {
     try {
+      // Verificar se existe checklist e orçamento salvo
+      const hasChecklist = await checkChecklistExists(quote.id);
+      if (!hasChecklist) {
+        showToast('É necessário realizar o checklist antes de enviar o orçamento.', 'error');
+        return;
+      }
+
+      // Verificar se o orçamento foi salvo (tem valor > 0)
+      const quoteValue = parseFloat(quote.total_value.replace(/[^\d,.-]/g, '').replace(',', '.'));
+      if (quoteValue <= 0) {
+        showToast(
+          'É necessário salvar o orçamento com valor antes de enviar para análise.',
+          'error'
+        );
+        return;
+      }
+
       const resp = await post<{ ok: boolean; error?: string }>(
         '/api/partner/quotes/send-to-admin',
-        { quoteId: quote.id, vehicleStatus: 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO' },
+        {
+          quoteId: quote.id,
+          vehicleStatus: 'Análise Orçamentária Iniciada',
+        },
         { requireAuth: true }
       );
+
       if (!resp.ok || !resp.data?.ok) {
         showToast(resp.error || 'Falha ao enviar orçamento.', 'error');
         return;
       }
+
       showToast(
-        'Orçamento enviado ao admin e veículo marcado como aguardando aprovação!',
+        'Orçamento enviado ao admin e veículo marcado como "Análise Orçamentária Iniciada"!',
         'success'
       );
       reloadData();
-    } catch (err) {
+    } catch {
       showToast('Erro inesperado. Tente novamente.', 'error');
     }
   };
@@ -126,11 +221,7 @@ const PartnerDashboard = () => {
         partner_id: user.id,
       });
 
-      console.log('Debug - Partner categories:', partnerCategories);
-      console.log('Debug - User ID:', user.id);
-
       if (error) {
-        console.error('Error fetching partner categories:', error);
         return;
       }
 
@@ -138,16 +229,11 @@ const PartnerDashboard = () => {
       const categories = partnerCategories || [];
       const isMechanical = categories.includes('Mecânica');
 
-      console.log('Debug - Is mechanical?', isMechanical);
-
       // Se o parceiro tem categoria "mechanics", vai para checklist estruturado
       // Senão, vai para checklist dinâmico (com evidências)
       const route = isMechanical
         ? `/dashboard/partner/checklist?quoteId=${quote.id}`
         : `/dashboard/partner/dynamic-checklist?quoteId=${quote.id}`;
-
-      console.log('Debug - Route selected:', route);
-      document.title = `Debug: Route = ${route}, IsMech = ${isMechanical}`;
 
       router.push(route);
     }
@@ -260,7 +346,7 @@ const PartnerDashboard = () => {
                 >
                   {budgetCounters.pending}
                 </div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>Aguardando Cliente</div>
+                <div style={{ fontSize: '0.875rem', color: '#666' }}>Pendente</div>
               </div>
               <div
                 style={{
@@ -274,7 +360,7 @@ const PartnerDashboard = () => {
                 <div
                   style={{ fontSize: '2rem', fontWeight: 700, color: '#9b59b6', marginBottom: 4 }}
                 >
-                  {budgetCounters.in_review || 0}
+                  {budgetCounters.in_analysis || 0}
                 </div>
                 <div style={{ fontSize: '0.875rem', color: '#666' }}>Em Análise</div>
               </div>
@@ -328,6 +414,7 @@ const PartnerDashboard = () => {
             onEdit={handleEditQuote}
             onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
+            canEdit={quote => quotesWithChecklist.has(quote.id)}
           />
 
           <DataTable
