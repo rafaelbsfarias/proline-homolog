@@ -12,6 +12,7 @@ export interface PendingQuote {
   date: string;
   status: 'pending_admin_approval' | 'pending_client_approval' | 'approved' | 'rejected';
   total_value?: number;
+  sent_to_admin_at?: string | null;
   vehicle_plate?: string;
   vehicle_brand?: string;
   vehicle_model?: string;

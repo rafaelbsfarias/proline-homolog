@@ -41,6 +41,7 @@ BEGIN
                 'date', q.created_at,
                 'status', q.status,
                 'total_value', q.total_value,
+                'sent_to_admin_at', q.sent_to_admin_at, -- <<< ADICIONADO
                 -- DADOS DO VEÍCULO
                 'vehicle_plate', v.plate,
                 'vehicle_brand', v.brand,
