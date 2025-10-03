@@ -30,7 +30,7 @@ export function formatTotalCurrencyBR(unitValue: number | null | undefined, qty:
  * @returns Valor formatado em Real ou 'N/A' se inválido
  */
 export const formatCurrency = (value: number | null | undefined): string => {
-  if (!value) return 'N/A';
+  if (!value || value === 0) return '-';
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { FaEdit, FaPaperPlane } from 'react-icons/fa';
-import { TbTrashXFilled } from 'react-icons/tb';
-import { FaClipboardList } from 'react-icons/fa';
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
+import Spinner from '@/modules/common/components/Spinner/Spinner'; // <<< ADICIONADO
+import { useState } from 'react';
+import { FaClipboardList, FaEdit, FaPaperPlane } from 'react-icons/fa';
+import { TbTrashXFilled } from 'react-icons/tb';
 
 interface DataTableProps<T> {
   title: string;
@@ -17,6 +17,7 @@ interface DataTableProps<T> {
   useConfirmDialog?: boolean; // Nova prop para controlar o dialog de confirmação
   canEdit?: (item: T) => boolean; // Nova prop para controlar se o botão deve estar habilitado
   canSendToAdmin?: (item: T) => boolean;
+  loading?: boolean;
 }
 
 const DataTable = <T extends { id: React.Key }>({
@@ -28,6 +29,7 @@ const DataTable = <T extends { id: React.Key }>({
   onDelete,
   onSendToAdmin,
   onChecklist,
+  loading = false,
   showActions = false,
   useConfirmDialog = true, // Padrão é usar confirmação para compatibilidade com dashboard
   canEdit, // Nova prop para controlar habilitação do botão
@@ -72,34 +74,43 @@ const DataTable = <T extends { id: React.Key }>({
       <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#333', marginBottom: 16 }}>
         {title}
       </h2>
-      {data.length > 0 ? (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f0f0f0' }}>
-              {columns.map(column => (
-                <th
-                  key={column.key as string}
-                  style={{ padding: '10px', borderBottom: '1px solid #ddd', textAlign: 'left' }}
-                >
-                  {column.header}
-                </th>
-              ))}
-              {showActions && (
-                <th
-                  style={{
-                    padding: '10px',
-                    borderBottom: '1px solid #ddd',
-                    textAlign: 'center',
-                    width: '120px',
-                  }}
-                >
-                  Ações
-                </th>
-              )}
+      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr style={{ background: '#f0f0f0' }}>
+            {columns.map(column => (
+              <th
+                key={column.key as string}
+                style={{ padding: '10px', borderBottom: '1px solid #ddd', textAlign: 'left' }}
+              >
+                {column.header}
+              </th>
+            ))}
+            {showActions && (
+              <th
+                style={{
+                  padding: '10px',
+                  borderBottom: '1px solid #ddd',
+                  textAlign: 'center',
+                  width: '120px',
+                }}
+              >
+                Ações
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td
+                colSpan={columns.length + (showActions ? 1 : 0)}
+                style={{ textAlign: 'center', padding: '20px' }}
+              >
+                <Spinner size={30} />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {data.map(row => (
+          ) : data.length > 0 ? (
+            data.map(row => (
               <tr key={row.id}>
                 {columns.map(column => (
                   <td
@@ -211,12 +222,19 @@ const DataTable = <T extends { id: React.Key }>({
                   </td>
                 )}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p style={{ color: '#666' }}>{emptyMessage}</p>
-      )}
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan={columns.length + (showActions ? 1 : 0)}
+                style={{ textAlign: 'center', padding: '40px', color: '#666' }}
+              >
+                {emptyMessage}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
       {useConfirmDialog && (
         <ConfirmDialog
           open={confirmDialogOpen}

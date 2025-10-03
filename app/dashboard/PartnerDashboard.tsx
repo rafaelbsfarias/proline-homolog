@@ -418,66 +418,61 @@ const PartnerDashboard = () => {
             </div>
           </div>
 
-          {isCheckingChecklists ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
-              <Loading />
-            </div>
-          ) : (
-            <DataTable<PendingQuoteDisplay>
-              title="Solicitações de Orçamentos Pendentes"
-              data={pendingQuotes.map(quote => {
-                const getStatus = () => {
-                  const hasChecklist = quotesWithChecklist.has(quote.id);
-                  const hasValue = quote.total_value > 0;
-
-                  if (!hasChecklist) {
-                    return 'Checklist Pendente';
-                  }
-                  if (hasChecklist && !hasValue) {
-                    return 'Checklist Iniciado';
-                  }
-                  if (hasChecklist && hasValue) {
-                    // Lógica final: se a data de envio existe, foi enviado. Senão, está em elaboração.
-                    if (quote.sent_to_admin_at) {
-                      return 'Aguardando Admin';
-                    }
-                    return 'Orçamento Iniciado';
-                  }
-
-                  // Fallback para outros status como approved, rejected, etc.
-                  return formatQuoteStatus(quote.status);
-                };
-
-                return {
-                  ...quote,
-                  raw_status: quote.status,
-                  vehicle: formatVehicleInfo(quote),
-                  status: getStatus(),
-                  total_value: formatCurrency(quote.total_value),
-                  date: formatDate(quote.date),
-                };
-              })}
-              columns={pendingQuotesColumns}
-              emptyMessage="Nenhuma solicitação de orçamento pendente."
-              showActions={true}
-              onEdit={handleEditQuote}
-              onSendToAdmin={handleSendToAdmin}
-              onChecklist={handleChecklist}
-              canEdit={quote => quotesWithChecklist.has(quote.id)}
-              canSendToAdmin={quote => {
+          <DataTable<PendingQuoteDisplay>
+            title="Solicitações de Orçamentos Pendentes"
+            data={pendingQuotes.map(quote => {
+              const getStatus = () => {
                 const hasChecklist = quotesWithChecklist.has(quote.id);
-                // O valor vem formatado como 'R$ 1.234,56', precisamos converter para número
-                const hasValue =
-                  parseFloat(quote.total_value.replace(/[^\d,.-]/g, '').replace(',', '.')) > 0;
-                const isFinalStatus = ['pending_client_approval', 'approved', 'rejected'].includes(
-                  quote.raw_status
-                );
+                const hasValue = quote.total_value > 0;
 
-                // Libera o botão se o status for "Orçamento Iniciado"
-                return hasChecklist && hasValue && !isFinalStatus;
-              }}
-            />
-          )}
+                if (!hasChecklist) {
+                  return 'Checklist Pendente';
+                }
+                if (hasChecklist && !hasValue) {
+                  return 'Checklist Iniciado';
+                }
+                if (hasChecklist && hasValue) {
+                  // Lógica final: se a data de envio existe, foi enviado. Senão, está em elaboração.
+                  if (quote.sent_to_admin_at) {
+                    return 'Aguardando Admin';
+                  }
+                  return 'Orçamento Iniciado';
+                }
+
+                // Fallback para outros status como approved, rejected, etc.
+                return formatQuoteStatus(quote.status);
+              };
+
+              return {
+                ...quote,
+                raw_status: quote.status,
+                vehicle: formatVehicleInfo(quote),
+                status: getStatus(),
+                total_value: formatCurrency(quote.total_value),
+                date: formatDate(quote.date),
+              };
+            })}
+            columns={pendingQuotesColumns}
+            emptyMessage="Nenhuma solicitação de orçamento pendente."
+            showActions={true}
+            onEdit={handleEditQuote}
+            onSendToAdmin={handleSendToAdmin}
+            onChecklist={handleChecklist}
+            canEdit={quote => quotesWithChecklist.has(quote.id)}
+            canSendToAdmin={quote => {
+              const hasChecklist = quotesWithChecklist.has(quote.id);
+              // O valor vem formatado como 'R$ 1.234,56', precisamos converter para número
+              const hasValue =
+                parseFloat(quote.total_value.replace(/[^\d,.-]/g, '').replace(',', '.')) > 0;
+              const isFinalStatus = ['pending_client_approval', 'approved', 'rejected'].includes(
+                quote.raw_status
+              );
+
+              // Libera o botão se o status for "Orçamento Iniciado"
+              return hasChecklist && hasValue && !isFinalStatus;
+            }}
+            loading={isCheckingChecklists}
+          />
 
           <DataTable
             title="Serviços em Andamento"
