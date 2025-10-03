@@ -176,9 +176,6 @@ const PartnerDashboard = () => {
       return;
     }
 
-    // Marca como editado
-    setEditedQuotes(prev => new Set([...prev, quote.id]));
-
     // Se existe checklist, permitir editar orçamento
     router.push(`/dashboard/partner/orcamento?quoteId=${quote.id}`);
   };
@@ -434,22 +431,12 @@ const PartnerDashboard = () => {
             onEdit={handleEditQuote}
             onSendToAdmin={handleSendToAdmin}
             onChecklist={handleChecklist}
-            canSendToAdmin={quote => {
-              const canSend =
-                editedQuotes.has(quote.id) &&
-                quotesWithChecklist.has(quote.id) &&
-                //quote.raw_status !== 'pending_admin_approval' &&
-                quote.raw_status !== 'admin_review';
-
-              console.log('canSendToAdmin:', quote.id, {
-                edited: editedQuotes.has(quote.id),
-                checklist: quotesWithChecklist.has(quote.id),
-                raw_status: quote.raw_status,
-                result: canSend,
-              });
-
-              return canSend;
-            }}
+            canSendToAdmin={quote =>
+              editedQuotes.has(quote.id) &&
+              quotesWithChecklist.has(quote.id) &&
+              quote.raw_status !== 'pending_admin_approval' &&
+              quote.raw_status !== 'admin_review'
+            }
           />
 
           <DataTable
