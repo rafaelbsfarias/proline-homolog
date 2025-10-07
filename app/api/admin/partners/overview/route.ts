@@ -117,6 +117,11 @@ export const GET = withAdminAuth(async () => {
       return NextResponse.json({ error: 'Erro ao buscar orçamentos aprovados' }, { status: 500 });
     }
 
+    logger.info('debug_approved_quotes', {
+      total: approvedQuotes?.length || 0,
+      quotes: approvedQuotes?.map(q => ({ partner_id: q.partner_id, so: q.service_order_id })),
+    });
+
     // Contar ordens de serviço em progresso
     const { data: inProgressOrders, error: inProgressErr } = await admin
       .from('service_orders')
@@ -142,6 +147,15 @@ export const GET = withAdminAuth(async () => {
       const so = r.service_order_id as string;
       if (!mapDistinct.has(pid)) mapDistinct.set(pid, new Set());
       mapDistinct.get(pid)!.add(so);
+    });
+
+    logger.info('debug_executing_after_approved', {
+      mapSize: mapDistinct.size,
+      entries: Array.from(mapDistinct.entries()).map(([pid, soSet]) => ({
+        partner_id: pid,
+        count: soSet.size,
+        service_orders: Array.from(soSet),
+      })),
     });
 
     // Adicionar service_orders in_progress
@@ -171,6 +185,14 @@ export const GET = withAdminAuth(async () => {
     executingByPartner = new Map(
       Array.from(mapDistinct.entries()).map(([pid, set]) => [pid, set.size])
     );
+
+    logger.info('debug_executing_final', {
+      executingByPartnerSize: executingByPartner.size,
+      entries: Array.from(executingByPartner.entries()).map(([pid, count]) => ({
+        partner_id: pid,
+        executing_count: count,
+      })),
+    });
 
     // 5) Vehicles awaiting budget approval per partner (status on vehicles)
     // 5.1) Fetch quotes for these partners with service_orders to resolve vehicle_id
