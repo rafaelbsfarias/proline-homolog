@@ -105,22 +105,18 @@ export const GET = withAdminAuth(async () => {
       pendingClientByPartner.set(k, (pendingClientByPartner.get(k) || 0) + 1);
     });
 
-    // 4) Executing budgets (approved quotes + service_orders in_progress with quotes for partner)
-    // Contar orçamentos aprovados pelo cliente (status 'approved')
+    // 3. Executing budgets: approved quotes + distinct service orders in progress with quotes for this partner
+    // Primeiro, buscar quotes aprovados para cada parceiro
     const { data: approvedQuotes, error: approvedErr } = await admin
       .from('quotes')
       .select('partner_id, service_order_id')
-      .eq('status', 'approved');
+      .eq('status', 'approved')
+      .in('partner_id', partnerIds);
 
     if (approvedErr) {
       logger.error('failed_fetch_approved_quotes', { error: approvedErr });
       return NextResponse.json({ error: 'Erro ao buscar orçamentos aprovados' }, { status: 500 });
     }
-
-    logger.info('debug_approved_quotes', {
-      total: approvedQuotes?.length || 0,
-      quotes: approvedQuotes?.map(q => ({ partner_id: q.partner_id, so: q.service_order_id })),
-    });
 
     // Contar ordens de serviço em progresso
     const { data: inProgressOrders, error: inProgressErr } = await admin
@@ -138,8 +134,6 @@ export const GET = withAdminAuth(async () => {
 
     const soIds = (inProgressOrders || []).map(r => r.id as string);
 
-    let executingByPartner = new Map<string, number>();
-
     // Adicionar orçamentos aprovados ao contador
     const mapDistinct = new Map<string, Set<string>>();
     (approvedQuotes || []).forEach(r => {
@@ -147,15 +141,6 @@ export const GET = withAdminAuth(async () => {
       const so = r.service_order_id as string;
       if (!mapDistinct.has(pid)) mapDistinct.set(pid, new Set());
       mapDistinct.get(pid)!.add(so);
-    });
-
-    logger.info('debug_executing_after_approved', {
-      mapSize: mapDistinct.size,
-      entries: Array.from(mapDistinct.entries()).map(([pid, soSet]) => ({
-        partner_id: pid,
-        count: soSet.size,
-        service_orders: Array.from(soSet),
-      })),
     });
 
     // Adicionar service_orders in_progress
@@ -182,17 +167,9 @@ export const GET = withAdminAuth(async () => {
       });
     }
 
-    executingByPartner = new Map(
+    const executingByPartner = new Map(
       Array.from(mapDistinct.entries()).map(([pid, set]) => [pid, set.size])
     );
-
-    logger.info('debug_executing_final', {
-      executingByPartnerSize: executingByPartner.size,
-      entries: Array.from(executingByPartner.entries()).map(([pid, count]) => ({
-        partner_id: pid,
-        executing_count: count,
-      })),
-    });
 
     // 5) Vehicles awaiting budget approval per partner (status on vehicles)
     // 5.1) Fetch quotes for these partners with service_orders to resolve vehicle_id
@@ -207,7 +184,7 @@ export const GET = withAdminAuth(async () => {
     }
 
     const vehiclesByPartner = new Map<string, Set<string>>();
-    (quotesWithSO || []).forEach((r: any) => {
+    (quotesWithSO || []).forEach(r => {
       const pid = r.partner_id as string;
       const so = Array.isArray(r.service_orders) ? r.service_orders[0] : r.service_orders;
       const vid = so?.vehicle_id as string | undefined;

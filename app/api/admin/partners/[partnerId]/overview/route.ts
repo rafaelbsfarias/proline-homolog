@@ -64,7 +64,20 @@ export const GET = withAdminAuth(
         );
       }
 
-      // Executing budgets: count distinct service orders in progress with quotes for this partner
+      // Executing budgets: approved quotes + distinct service orders in progress with quotes for this partner
+      // Primeiro, buscar quotes aprovados para este parceiro
+      const { data: approvedQuotes, error: approvedErr } = await admin
+        .from('quotes')
+        .select('service_order_id')
+        .eq('partner_id', partnerId)
+        .eq('status', 'approved');
+
+      if (approvedErr) {
+        logger.error('failed_fetch_approved_quotes', { error: approvedErr, partnerId });
+        return NextResponse.json({ error: 'Erro ao buscar orçamentos aprovados' }, { status: 500 });
+      }
+
+      // Depois, buscar service orders em progresso
       const { data: soInProgress, error: soErr } = await admin
         .from('service_orders')
         .select('id')
@@ -77,7 +90,15 @@ export const GET = withAdminAuth(
         );
       }
 
-      let executing = 0;
+      // Combinar ambos usando Set para evitar duplicatas
+      const executingSoSet = new Set<string>();
+
+      // Adicionar service_orders dos quotes aprovados
+      (approvedQuotes || []).forEach(q => {
+        if (q.service_order_id) executingSoSet.add(q.service_order_id as string);
+      });
+
+      // Adicionar service_orders em progresso que têm quotes deste parceiro
       if (soInProgress && soInProgress.length) {
         const soIds = soInProgress.map(r => r.id as string);
         const { data: quotesForSo, error: qInProgErr } = await admin
@@ -92,11 +113,12 @@ export const GET = withAdminAuth(
             { status: 500 }
           );
         }
-        const distinctSo = new Set<string>(
-          (quotesForSo || []).map(r => r.service_order_id as string)
-        );
-        executing = distinctSo.size;
+        (quotesForSo || []).forEach(q => {
+          if (q.service_order_id) executingSoSet.add(q.service_order_id as string);
+        });
       }
+
+      const executing = executingSoSet.size;
 
       // Load quotes list for this partner and group by status
       const { data: partnerQuotes, error: quotesErr } = await admin
