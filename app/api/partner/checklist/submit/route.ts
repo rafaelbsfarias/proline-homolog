@@ -101,7 +101,7 @@ function mapChecklistToMechanicsSchema(input: any, partnerId: string) {
     partner_id: partnerId,
 
     // Status geral do checklist
-    status: input.status || 'submitted',
+    status: 'pending_admin_review', // Changed from 'submitted'
     created_at: input.created_at || undefined,
     updated_at: new Date().toISOString(),
 
