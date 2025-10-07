@@ -22,15 +22,6 @@ export interface ChecklistForm {
   date: string;
   odometer: string;
   fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
-  exterior: ChecklistStatus;
-  interior: ChecklistStatus;
-  tires: ChecklistStatus;
-  brakes: ChecklistStatus;
-  lights: ChecklistStatus;
-  fluids: ChecklistStatus;
-  engine: ChecklistStatus;
-  suspension: ChecklistStatus;
-  battery: ChecklistStatus;
   observations: string;
   services: ServicesFlags;
 }
@@ -46,15 +37,6 @@ export const buildDefaultForm = (today: string): ChecklistForm => ({
   date: today,
   odometer: '',
   fuelLevel: 'half',
-  exterior: 'ok',
-  interior: 'ok',
-  tires: 'ok',
-  brakes: 'ok',
-  lights: 'ok',
-  fluids: 'ok',
-  engine: 'ok',
-  suspension: 'ok',
-  battery: 'ok',
   observations: '',
   services: {
     mechanics: { required: false, notes: '' },

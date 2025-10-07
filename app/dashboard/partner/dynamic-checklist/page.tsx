@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSpecialistChecklist } from '@/modules/specialist/hooks/useSpecialistChecklist';
+import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
 
@@ -14,8 +14,7 @@ interface AnomalyEvidence {
 
 const DynamicChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, loading, error, success, saving, saveChecklist } =
-    useSpecialistChecklist();
+  const { form, vehicle, loading, error, success, saving, saveChecklist } = usePartnerChecklist();
   const [anomalies, setAnomalies] = useState<AnomalyEvidence[]>([
     { id: '1', description: '', photos: [] },
   ]);
