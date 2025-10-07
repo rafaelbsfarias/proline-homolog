@@ -14,6 +14,11 @@ import {
   MAX_SIZE_MB,
 } from '@/modules/specialist/checklist/useImageUploader';
 import ServiceCategoryField from '../Checklist/ServiceCategoryField';
+import Input from '@/modules/common/components/Input/Input';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
+import Select from '@/modules/common/components/Select/Select';
+import ImageUpload from '@/modules/common/components/ImageUpload/ImageUpload';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 // duplicate imports removed below
 
@@ -28,6 +33,14 @@ interface VehicleChecklistModalProps {
 // Form types and defaults moved to checklist/types and managed by hook
 
 const STORAGE_PREFIX = 'vehicle_checklists:';
+
+const fuelLevelOptions = [
+  { value: 'empty', label: 'Vazio' },
+  { value: 'quarter', label: '1/4' },
+  { value: 'half', label: '1/2' },
+  { value: 'three_quarters', label: '3/4' },
+  { value: 'full', label: 'Cheio' },
+];
 
 const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   isOpen,
@@ -53,10 +66,10 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   const [isFinalized, setIsFinalized] = useState(false);
   const [existingImages, setExistingImages] = useState<{ path: string; url: string }[]>([]);
 
-  const title = useMemo(() => {
-    if (!vehicle) return 'Checklist do Veículo';
-    return `Checklist • ${vehicle.brand} ${vehicle.model} • ${vehicle.plate}`;
-  }, [vehicle]);
+  // const title = useMemo(() => {
+  //   if (!vehicle) return 'Checklist do Veículo';
+  //   return `Checklist • ${vehicle.brand} ${vehicle.model} • ${vehicle.plate}`;
+  // }, [vehicle]);
 
   const handleClose = () => {
     resetForm();
@@ -273,62 +286,66 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   if (!isOpen || !vehicle) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={title}>
+    <Modal isOpen={isOpen} onClose={handleClose} title={'Checklist do Veículo'} size="lg">
       <form className={styles.container} onSubmit={handleSubmit}>
         {/* Área de conteúdo que vai rolar */}
         <div className={styles.content}>
           <div className={styles.vehicleHeader}>
             <div>
-              Veículo: {vehicle.brand} {vehicle.model} {vehicle.year ? `• ${vehicle.year}` : ''}
+              <span className={styles.detailLabel}>Veículo:</span> {vehicle.brand} {vehicle.model}{' '}
+              {vehicle.year ? `• ${vehicle.year}` : ''}
             </div>
-            <div>Placa: {vehicle.plate}</div>
-            {vehicle.color && <div>Cor: {vehicle.color}</div>}
+            <div>
+              <span className={styles.detailLabel}>Placa:</span> {vehicle.plate}
+            </div>
+            {vehicle.color && (
+              <div>
+                <span className={styles.detailLabel}>Cor:</span> {vehicle.color}
+              </div>
+            )}
             {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
           </div>
 
           {/* Dados básicos da inspeção */}
           <div className={styles.grid}>
             <div className={styles.field}>
-              <label htmlFor="date">Data da inspeção</label>
-              <input
+              <DatePickerBR
                 id="date"
-                name="date"
-                type="date"
-                value={form.date}
-                onChange={e => setField('date', e.target.value)}
-                required
-                disabled={isFinalized}
+                label="Data da inspeção"
+                valueIso={form.date}
+                onChangeIso={iso => setField('date', iso)}
+                minIso={new Date().toISOString().split('T')[0]}
+                disabledDatesIso={[]}
+                ariaLabel="Data da inspeção"
+                containerClass={styles.datePickerContainer}
+                inputClass={styles.datePickerInput} /* Add this back */
+                placeholder="dd/mm/aaaa"
               />
             </div>
             <div className={styles.field}>
-              <label htmlFor="odometer">Quilometragem atual (km)</label>
-              <input
+              <Input
                 id="odometer"
                 name="odometer"
-                type="number"
-                min="0"
-                inputMode="numeric"
+                label="Quilometragem atual (km)"
+                type="text"
                 value={form.odometer}
                 onChange={e => setField('odometer', e.target.value)}
-                disabled={isFinalized}
                 required
+                disabled={isFinalized}
+                mask={Number} // se quiser usar imask pra forçar numérico
               />
             </div>
             <div className={styles.field}>
-              <label htmlFor="fuelLevel">Nível de combustível</label>
-              <select
+              <Select
                 id="fuelLevel"
+                className={styles.fuelLevel}
                 name="fuelLevel"
+                label="Nível de combustível"
                 value={form.fuelLevel}
                 onChange={e => setField('fuelLevel', e.target.value)}
+                options={fuelLevelOptions}
                 disabled={isFinalized}
-              >
-                <option value="empty">Vazio</option>
-                <option value="quarter">1/4</option>
-                <option value="half">1/2</option>
-                <option value="three_quarters">3/4</option>
-                <option value="full">Cheio</option>
-              </select>
+              />
             </div>
           </div>
 
@@ -388,82 +405,67 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           </div>
 
           {/* Upload de fotos (galeria/câmera) */}
-          <div className={styles.upload}>
-            <label htmlFor="photos">Fotos do veículo</label>
-            <input
-              id="photos"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              multiple
-              onChange={e => handleFiles(e.target.files)}
-              disabled={isFinalized}
-            />
-            <small>
-              Até {MAX_FILES} imagens, {MAX_SIZE_MB}MB cada. Formatos: JPG, PNG, WEBP, HEIC.
-            </small>
-            {(existingImages.length > 0 || previews.length > 0) && (
-              <div className={styles.previews}>
-                {existingImages.map((image, i) => (
-                  <div key={image.path} className={styles.previewItem}>
-                    <img
-                      src={image.url}
-                      alt={`Imagem existente ${i + 1}`}
-                      className={styles.previewImage}
-                    />
-                    {!isFinalized && (
-                      <button
-                        type="button"
-                        className={styles.removeBtn}
-                        onClick={() => handleRemoveExistingImage(i)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {previews.map((src, i) => (
-                  <div key={src} className={styles.previewItem}>
-                    <img
-                      src={src}
-                      alt={`Pré-visualização ${i + 1}`}
-                      className={styles.previewImage}
-                    />
-                    {!isFinalized && (
-                      <button
-                        type="button"
-                        className={styles.removeBtn}
-                        onClick={() => removeFile(i)}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {error && <div className={styles.error}>{error}</div>}
-          {success && <div className={styles.success}>{success}</div>}
+          <ImageUpload
+            label="Fotos do veículo"
+            onFilesSelect={handleFiles}
+            isFinalized={isFinalized}
+            maxFiles={MAX_FILES}
+            maxSizeMB={MAX_SIZE_MB}
+          />
+          {(existingImages.length > 0 || previews.length > 0) && (
+            <div className={styles.previews}>
+              {existingImages.map((image, i) => (
+                <div key={image.path} className={styles.previewItem}>
+                  <img
+                    src={image.url}
+                    alt={`Imagem existente ${i + 1}`}
+                    className={styles.previewImage}
+                  />
+                  {!isFinalized && (
+                    <button
+                      type="button"
+                      className={styles.removeBtn}
+                      onClick={() => handleRemoveExistingImage(i)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {previews.map((src, i) => (
+                <div key={src} className={styles.previewItem}>
+                  <img
+                    src={src}
+                    alt={`Pré-visualização ${i + 1}`}
+                    className={styles.previewImage}
+                  />
+                  {!isFinalized && (
+                    <button
+                      type="button"
+                      className={styles.removeBtn}
+                      onClick={() => removeFile(i)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
+        {error && <div className={styles.error}>{error}</div>}
+        {success && <div className={styles.success}>{success}</div>}
 
         {/* Rodapé de Ações Fixo */}
         <div className={`${styles.actions} ${styles.actionsFooter}`}>
-          <button
-            type="button"
-            className={styles.secondary}
-            onClick={handleClose}
-            disabled={saving}
-          >
-            Fechar
-          </button>
-          <button type="submit" className={styles.primary} disabled={saving || isFinalized}>
+          <SolidButton type="submit" className={styles.saveButton} disabled={saving || isFinalized}>
             {saving ? 'Salvando...' : 'Salvar checklist'}
-          </button>
-          <button
+          </SolidButton>
+
+          <SolidButton
             type="button"
-            className={styles.primary}
+            className={styles.finalizeButton}
             onClick={async () => {
               if (!vehicle || isFinalized) return;
               try {
@@ -502,7 +504,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             disabled={saving || isFinalized}
           >
             Finalizar checklist
-          </button>
+          </SolidButton>
         </div>
       </form>
     </Modal>

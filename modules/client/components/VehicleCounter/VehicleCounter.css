@@ -8,10 +8,6 @@
   transition: transform 0.2s ease;
 }
 
-.vehicle-counter:hover {
-  transform: translateY(-2px);
-}
-
 .vehicle-counter.loading {
   background: linear-gradient(135deg, #002e4c 100%, #002e4c 100%);
 }

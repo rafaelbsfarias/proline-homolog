@@ -3,6 +3,7 @@ import { IMaskInput } from 'react-imask';
 import { LuEye } from 'react-icons/lu';
 import { LuEyeOff } from 'react-icons/lu';
 import styles from './Input.module.css';
+import Label from '../Label/Label';
 
 interface InputProps {
   id: string;
@@ -56,7 +57,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     return (
       <div className={styles.formGroup}>
-        <label htmlFor={id}>{label}</label>
+        <Label htmlFor={id}>{label}</Label>
         <div className={styles.inputWrapper}>
           {mask ? (
             <IMaskInput

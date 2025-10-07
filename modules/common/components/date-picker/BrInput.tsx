@@ -2,6 +2,7 @@ import React from 'react';
 import { brToIso, isoToBr } from './utils';
 
 interface BrInputProps {
+  id?: string;
   className?: string;
   placeholder?: string;
   ariaLabel?: string;
@@ -12,6 +13,7 @@ interface BrInputProps {
 }
 
 export const BrInput: React.FC<BrInputProps> = ({
+  id,
   className,
   placeholder,
   ariaLabel,
@@ -22,6 +24,7 @@ export const BrInput: React.FC<BrInputProps> = ({
 }) => {
   return (
     <input
+      id={id}
       className={className}
       placeholder={placeholder}
       inputMode="numeric"

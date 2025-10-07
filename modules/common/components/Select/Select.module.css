@@ -1,6 +1,6 @@
 .formGroup {
-  margin-bottom: 16px;
   position: relative;
+  margin-bottom: 16px;
 }
 
 .formGroup label {
@@ -25,7 +25,9 @@
   background: transparent;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 8px 36px 8px 12px;
+  padding: 0.9rem 1rem;
+  padding-right: 36px; /* Keep space for the icon */
+  box-sizing: border-box;
 }
 
 .inputWrapper .icon {

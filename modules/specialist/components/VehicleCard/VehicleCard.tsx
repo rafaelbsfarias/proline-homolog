@@ -25,12 +25,27 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
 }) => {
   const router = useRouter();
 
-  console.log('vehicle.estimated_arrival_date', v.estimated_arrival_date);
+  const getBorderColorClass = (
+    estimatedArrivalDate?: string | null,
+    endDate?: string | null,
+    status?: string | null
+  ) => {
+    const s = String(status || '').toUpperCase();
+    if (
+      s === VehicleStatus.CHEGADA_CONFIRMADA ||
+      s === VehicleStatus.ANALISE_FINALIZADA ||
+      s === VehicleStatus.EM_ANALISE
+    ) {
+      return styles.card;
+    }
 
-  const getBorderColorClass = (estimatedArrivalDate?: string) => {
-    console.log('ESTIMATED ARRIVAL DATE', estimatedArrivalDate);
+    if (endDate) {
+      return styles.card;
+    }
 
-    if (!estimatedArrivalDate) return '';
+    if (!estimatedArrivalDate) {
+      return '';
+    }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize today to start of day
@@ -41,15 +56,19 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
     const diffTime = arrivalDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays <= 0) {
-      return styles.overdue; // Overdue or today
+    if (diffDays < 0) {
+      return styles.overdue; // After prevision_date (Red)
     } else if (diffDays <= 5) {
-      return styles.nearExpiry; // Within 5 days
+      return styles.nearExpiry; // 5 days before or on prevision_date (Yellow)
     }
     return '';
   };
 
-  const borderColorClass = getBorderColorClass(v.estimated_arrival_date);
+  const borderColorClass = getBorderColorClass(
+    v.estimated_arrival_date,
+    (v as any).end_date,
+    v.status
+  );
   const s = String(v.status || '').toUpperCase();
   const isChecklistEnabled =
     s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
@@ -61,10 +80,6 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
       if (onNavigateToDetails) onNavigateToDetails(v.id);
       else router.push(`/dashboard/vehicle/${v.id}`);
     }
-  };
-
-  const stopPropagation = (e: React.MouseEvent) => {
-    e.stopPropagation();
   };
 
   return (
