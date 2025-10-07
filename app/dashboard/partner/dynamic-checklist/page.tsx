@@ -79,6 +79,18 @@ const DynamicChecklistPage = () => {
     );
   };
 
+  const removePhoto = (anomalyId: string, photoIndex: number) => {
+    setLocalAnomalies(prev =>
+      prev.map(anomaly => {
+        if (anomaly.id === anomalyId) {
+          const updatedPhotos = anomaly.photos.filter((_, index) => index !== photoIndex);
+          return { ...anomaly, photos: updatedPhotos };
+        }
+        return anomaly;
+      })
+    );
+  };
+
   const handleSave = async () => {
     try {
       // Opcional: validar se há ao menos uma anomalia descrita
@@ -417,21 +429,58 @@ const DynamicChecklistPage = () => {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {anomaly.photos
                         .filter(photo => typeof photo === 'string')
-                        .map((photoUrl, photoIndex) => (
-                          <div key={photoIndex} style={{ position: 'relative' }}>
-                            <img
-                              src={photoUrl as string}
-                              alt={`Evidência ${photoIndex + 1}`}
+                        .map((photoUrl, photoIndex) => {
+                          // Encontrar o índice real no array completo de fotos
+                          const realIndex = anomaly.photos.findIndex(p => p === photoUrl);
+                          return (
+                            <div
+                              key={photoIndex}
                               style={{
+                                position: 'relative',
                                 width: '80px',
                                 height: '80px',
-                                objectFit: 'cover',
-                                borderRadius: '4px',
-                                border: '1px solid #d1d5db',
                               }}
-                            />
-                          </div>
-                        ))}
+                            >
+                              <img
+                                src={photoUrl as string}
+                                alt={`Evidência ${photoIndex + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  borderRadius: '4px',
+                                  border: '1px solid #d1d5db',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(anomaly.id, realIndex)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '-8px',
+                                  right: '-8px',
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: '2px solid white',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                }}
+                                title="Remover imagem"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -452,17 +501,77 @@ const DynamicChecklistPage = () => {
                   }}
                 />
 
-                {/* Contador de arquivos selecionados para upload */}
+                {/* Preview de arquivos selecionados para upload */}
                 {anomaly.photos.filter(photo => photo instanceof File).length > 0 && (
-                  <div
-                    style={{
-                      marginTop: '8px',
-                      fontSize: '14px',
-                      color: '#6b7280',
-                    }}
-                  >
-                    {anomaly.photos.filter(photo => photo instanceof File).length} novo(s)
-                    arquivo(s) selecionado(s) para upload
+                  <div style={{ marginTop: '16px' }}>
+                    <h4
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Novos arquivos para upload (
+                      {anomaly.photos.filter(photo => photo instanceof File).length}):
+                    </h4>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {anomaly.photos
+                        .map((photo, idx) => ({ photo, idx }))
+                        .filter(({ photo }) => photo instanceof File)
+                        .map(({ photo, idx }) => {
+                          const file = photo as File;
+                          const previewUrl = URL.createObjectURL(file);
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                position: 'relative',
+                                width: '80px',
+                                height: '80px',
+                              }}
+                            >
+                              <img
+                                src={previewUrl}
+                                alt={file.name}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  borderRadius: '4px',
+                                  border: '2px solid #3b82f6',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(anomaly.id, idx)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '-8px',
+                                  right: '-8px',
+                                  width: '24px',
+                                  height: '24px',
+                                  borderRadius: '50%',
+                                  background: '#ef4444',
+                                  color: 'white',
+                                  border: '2px solid white',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  padding: 0,
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                }}
+                                title="Remover imagem"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
                   </div>
                 )}
               </div>
