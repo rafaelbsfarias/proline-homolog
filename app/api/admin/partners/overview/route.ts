@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { withAdminAuth } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 
@@ -11,7 +11,7 @@ type PartnerRow = {
   is_active: boolean | null;
 };
 
-export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
+export const GET = withAdminAuth(async () => {
   try {
     logger.info('debug_environment', {
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...',
@@ -151,8 +151,6 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
     }
 
     // 5) Vehicles awaiting budget approval per partner (status on vehicles)
-    const TARGET_VEHICLE_STATUS = 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO';
-
     // 5.1) Fetch quotes for these partners with service_orders to resolve vehicle_id
     const { data: quotesWithSO, error: quotesWithSOErr } = await admin
       .from('quotes')
@@ -203,11 +201,14 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
         id: p.profile_id,
         company_name: p.company_name || '',
         services_count: servicesCountByPartner.get(p.profile_id) || 0,
-        // Orçamentos pendentes para ADMIN (aguardando aprovação do admin)
-        pending_budgets: pendingAdminByPartner.get(p.profile_id) || 0,
+        // Orçamentos pendentes: ainda não enviados pelo parceiro (draft, pending)
+        pending_budgets: 0, // a fazer: implementar contagem de orçamentos em draft
         executing_budgets: executingByPartner.get(p.profile_id) || 0,
-        // Para Aprovação (Cliente): orçamentos aguardando aprovação do cliente
-        approval_budgets: pendingClientByPartner.get(p.profile_id) || 0,
+        // Para Aprovação: aguardando aprovação do ADMIN (pending_admin_approval)
+        // + aguardando aprovação do CLIENTE (pending_client_approval)
+        approval_budgets:
+          (pendingAdminByPartner.get(p.profile_id) || 0) +
+          (pendingClientByPartner.get(p.profile_id) || 0),
       }));
 
     // Debug: Log detalhado dos dados para diagnosticar

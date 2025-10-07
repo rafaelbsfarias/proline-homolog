@@ -6,6 +6,7 @@ import { supabase } from '@/modules/common/services/supabaseClient';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { useSearchParams } from 'next/navigation';
 import Modal from '@/modules/common/components/Modal/Modal';
+import QuoteReviewModal from '@/modules/admin/components/QuoteReviewModal';
 import { formatQuoteStatus } from '@/modules/common/utils/format';
 
 type PartnerSummary = {
@@ -63,6 +64,11 @@ export default function PartnerOverviewPage() {
   const [serviceStatus, setServiceStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [quoteDetails, setQuoteDetails] = useState<null | { quote: any; items: any[] }>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedQuoteForReview, setSelectedQuoteForReview] = useState<{
+    quote: any;
+    items: any[];
+  } | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -217,41 +223,79 @@ export default function PartnerOverviewPage() {
     } catch {}
   };
 
-  const approveQuote = async (quoteId: string) => {
+  const openReviewModal = async (quoteId: string) => {
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const resp = await fetch(`/api/admin/quotes/${quoteId}/approve`, {
-        method: 'POST',
+      const resp = await fetch(`/api/admin/quotes/${quoteId}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
       });
+      const data = await resp.json();
       if (resp.ok) {
-        // Refresh overview data quickly
+        setSelectedQuoteForReview({ quote: data.quote, items: data.items || [] });
+        setReviewModalOpen(true);
+      }
+    } catch {}
+  };
+
+  const handleReviewSubmit = async (
+    action: 'approve_full' | 'reject_full' | 'approve_partial',
+    data: {
+      rejectedItemIds?: string[];
+      rejectionReason?: string;
+    }
+  ) => {
+    if (!selectedQuoteForReview) return;
+
+    const quoteId = selectedQuoteForReview.quote.id;
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const resp = await fetch(`/api/admin/quotes/${quoteId}/review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          action,
+          rejected_items: data.rejectedItemIds || [],
+          rejection_reason: data.rejectionReason,
+        }),
+      });
+      if (resp.ok) {
+        setReviewModalOpen(false);
+        setSelectedQuoteForReview(null);
+        // Refresh overview data
         setQuotes(prev => {
           if (!prev) return prev;
-          // Move quote from pending_admin_approval -> pending_client_approval
           const all = { ...prev } as any;
           const from = all['pending_admin_approval'] as any[];
           const idx = from?.findIndex((q: any) => q.id === quoteId) ?? -1;
           if (idx >= 0) {
             const [moved] = from.splice(idx, 1);
-            moved.status = 'pending_client_approval';
-            (all['pending_client_approval'] as any[]).unshift(moved);
+            if (action === 'reject_full') {
+              moved.status = 'rejected';
+              (all['rejected'] as any[]).unshift(moved);
+            } else {
+              moved.status = 'pending_client_approval';
+              (all['pending_client_approval'] as any[]).unshift(moved);
+            }
           }
           return { ...all };
         });
-        // If details modal is open for this quote, update it too
-        setQuoteDetails(d =>
-          d && d.quote?.id === quoteId
-            ? { ...d, quote: { ...d.quote, status: 'pending_client_approval' } }
-            : d
-        );
+        // Sucesso - a lista foi atualizada
+      } else {
+        // Erro na resposta - poderia exibir toast aqui
       }
-    } catch {}
+    } catch {
+      // Erro na requisição - poderia exibir toast aqui
+    }
   };
 
   return (
@@ -270,86 +314,6 @@ export default function PartnerOverviewPage() {
         </div>
       ) : (
         <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 20px' }}>
-          {/* Destaque: Orçamentos pendentes para aprovação (admin) */}
-          {quotes?.pending_admin_approval && quotes.pending_admin_approval.length > 0 && (
-            <div
-              style={{
-                background: '#fff',
-                borderRadius: 10,
-                padding: 20,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                marginBottom: 20,
-                borderLeft: '4px solid #f59e0b',
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: '1.2rem', marginBottom: 12 }}>
-                Orçamentos pendentes para aprovação ({quotes.pending_admin_approval.length})
-              </h2>
-              <div style={{ display: 'grid', gap: 12 }}>
-                {quotes.pending_admin_approval.map((q: any) => (
-                  <div
-                    key={q.id}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 1fr 1fr auto',
-                      gap: 8,
-                      alignItems: 'center',
-                      borderTop: '1px solid #eee',
-                      paddingTop: 8,
-                    }}
-                  >
-                    <div>
-                      <strong>ID:</strong> {q.id}
-                    </div>
-                    <div>
-                      <strong>Data:</strong>{' '}
-                      {q.created_at ? new Date(q.created_at).toLocaleDateString('pt-BR') : '-'}
-                    </div>
-                    <div>
-                      <strong>Valor:</strong>{' '}
-                      {typeof q.total_value === 'number'
-                        ? q.total_value.toLocaleString('pt-BR', {
-                            style: 'currency',
-                            currency: 'BRL',
-                          })
-                        : '-'}
-                    </div>
-                    <div>
-                      <strong>OS:</strong> {q.service_order_id || '-'}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                      <button
-                        onClick={() => openQuoteDetails(q.id)}
-                        style={{
-                          background: '#072e4c',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Detalhes
-                      </button>
-                      <button
-                        onClick={() => approveQuote(q.id)}
-                        style={{
-                          background: '#10b981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 6,
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Aprovar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
           <div style={{ marginBottom: 16 }}>
             <a href="/dashboard" style={{ color: '#072e4c', textDecoration: 'none' }}>
               &larr; Voltar
@@ -537,7 +501,7 @@ export default function PartnerOverviewPage() {
                                 item.status === 'pending_admin_approval' ||
                                 item.status === 'admin_review') && (
                                 <button
-                                  onClick={() => approveQuote(item.id)}
+                                  onClick={() => openReviewModal(item.id)}
                                   style={{
                                     background: '#10b981',
                                     color: 'white',
@@ -547,7 +511,7 @@ export default function PartnerOverviewPage() {
                                     cursor: 'pointer',
                                   }}
                                 >
-                                  Aprovar
+                                  Revisar
                                 </button>
                               )}
                             </td>
@@ -764,9 +728,12 @@ export default function PartnerOverviewPage() {
               </table>
             </div>
             {['pending_admin_approval', 'admin_review'].includes(quoteDetails.quote.status) && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button
-                  onClick={() => approveQuote(quoteDetails.quote.id)}
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    openReviewModal(quoteDetails.quote.id);
+                  }}
                   style={{
                     background: '#10b981',
                     color: 'white',
@@ -776,13 +743,27 @@ export default function PartnerOverviewPage() {
                     cursor: 'pointer',
                   }}
                 >
-                  Aprovar
+                  Revisar Orçamento
                 </button>
               </div>
             )}
           </div>
         )}
       </Modal>
+
+      {/* Quote Review Modal for Partial Approval */}
+      {selectedQuoteForReview && (
+        <QuoteReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setSelectedQuoteForReview(null);
+          }}
+          quote={selectedQuoteForReview.quote}
+          items={selectedQuoteForReview.items}
+          onReview={handleReviewSubmit}
+        />
+      )}
     </div>
   );
 }

@@ -103,7 +103,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
           />
           <select
             value={filter}
-            onChange={e => setFilter(e.target.value as any)}
+            onChange={e => setFilter(e.target.value as typeof filter)}
             style={{
               border: '1px solid #e3e3e3',
               borderRadius: 6,
@@ -126,7 +126,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
                 <th className={styles.servicesColumn}>Serviços Cadastrados</th>
                 <th className={styles.budgetColumn}>Orçamentos Pendentes</th>
                 <th className={styles.budgetColumn}>Em Execução</th>
-                <th className={styles.budgetColumn}>Para Aprovação (Cliente)</th>
+                <th className={styles.budgetColumn}>Para Aprovação</th>
               </tr>
             </thead>
             <tbody>

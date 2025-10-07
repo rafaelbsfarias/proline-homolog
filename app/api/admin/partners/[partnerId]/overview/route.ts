@@ -113,17 +113,50 @@ export const GET = withAdminAuth(
       }
 
       const byStatus = {
-        pending_admin_approval: [] as any[],
-        pending_client_approval: [] as any[],
-        approved: [] as any[],
-        rejected: [] as any[],
-        executing: [] as any[],
+        pending_admin_approval: [] as Array<{
+          id: string;
+          created_at: string;
+          status: string;
+          total_value: number | null;
+          service_order_id: string | null;
+        }>,
+        pending_client_approval: [] as Array<{
+          id: string;
+          created_at: string;
+          status: string;
+          total_value: number | null;
+          service_order_id: string | null;
+        }>,
+        approved: [] as Array<{
+          id: string;
+          created_at: string;
+          status: string;
+          total_value: number | null;
+          service_order_id: string | null;
+        }>,
+        rejected: [] as Array<{
+          id: string;
+          created_at: string;
+          status: string;
+          total_value: number | null;
+          service_order_id: string | null;
+        }>,
+        executing: [] as Array<{
+          id: string;
+          created_at: string;
+          status: string;
+          total_value: number | null;
+          service_order_id: string | null;
+        }>,
       };
+
+      // Set de service orders em progresso para classificação
+      const soSet = new Set((soInProgress || []).map(r => r.id as string));
+
       (partnerQuotes || []).forEach(q => {
         // Map legacy 'admin_review' into 'pending_admin_approval'
-        const statusKey = (
-          q.status === 'admin_review' ? 'pending_admin_approval' : (q.status as any)
-        ) as keyof typeof byStatus;
+        const statusKey = q.status === 'admin_review' ? 'pending_admin_approval' : q.status;
+
         const item = {
           id: q.id,
           created_at: q.created_at,
@@ -131,29 +164,29 @@ export const GET = withAdminAuth(
           total_value: q.total_value,
           service_order_id: q.service_order_id,
         };
-        const arr = (byStatus as any)[statusKey] as any[] | undefined;
-        if (arr) arr.push(item);
+
+        // Se o service_order está em progresso, classificar como executing
+        // independente do status do quote
+        if (q.service_order_id && soSet.has(q.service_order_id as string)) {
+          byStatus.executing.push(item);
+        } else {
+          // Caso contrário, classificar pelo status do quote
+          if (statusKey in byStatus) {
+            byStatus[statusKey as keyof typeof byStatus].push(item);
+          }
+        }
       });
-      if (soInProgress && soInProgress.length) {
-        const soSet = new Set((soInProgress || []).map(r => r.id as string));
-        byStatus.executing = (partnerQuotes || [])
-          .filter(q => soSet.has(q.service_order_id as string))
-          .map(q => ({
-            id: q.id,
-            created_at: q.created_at,
-            status: q.status,
-            total_value: q.total_value,
-            service_order_id: q.service_order_id,
-          }));
-      }
 
       const result = {
         id: partner.profile_id as string,
         company_name: (partner.company_name as string) || '',
         services_count: servicesCount || 0,
-        pending_budgets: pendingAdmin || 0,
+        // Orçamentos pendentes: ainda não enviados pelo parceiro (draft, pending)
+        pending_budgets: 0, // a fazer: implementar contagem de orçamentos em draft
         executing_budgets: executing,
-        approval_budgets: pendingClient || 0,
+        // Para Aprovação: aguardando aprovação do ADMIN (pending_admin_approval)
+        // + aguardando aprovação do CLIENTE (pending_client_approval)
+        approval_budgets: (pendingAdmin || 0) + (pendingClient || 0),
         is_active: !!partner.is_active,
         quotes: byStatus,
       };
