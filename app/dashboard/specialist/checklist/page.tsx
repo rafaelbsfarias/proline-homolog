@@ -5,22 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useSpecialistChecklist } from '@/modules/specialist/hooks/useSpecialistChecklist';
 import SpecialistInspectionGroups from '@/modules/specialist/components/checklist/SpecialistInspectionGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import type { ChecklistForm } from '@/modules/specialist/checklist/types';
 
 const ChecklistPage = () => {
   const router = useRouter();
-  const {
-    form,
-    vehicle,
-    loading,
-    saving,
-    error,
-    success,
-    setField,
-    saveChecklist,
-    evidences,
-    setEvidence,
-    removeEvidence,
-  } = useSpecialistChecklist();
+  const { form, vehicle, loading, saving, error, success, setField, saveChecklist } =
+    useSpecialistChecklist();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +19,19 @@ const ChecklistPage = () => {
     } catch {
       // Error já tratado no hook
     }
+  };
+
+  const handleServiceChange = (
+    service: keyof ChecklistForm['services'],
+    field: 'required' | 'notes',
+    value: boolean | string
+  ) => {
+    setField(
+      `services.${String(service)}.${field}` as
+        | keyof ChecklistForm
+        | `services.${keyof ChecklistForm['services']}.${keyof ChecklistForm['services'][keyof ChecklistForm['services']]}`,
+      value
+    );
   };
 
   const handleBack = () => {
@@ -337,74 +340,7 @@ const ChecklistPage = () => {
               Grupos de Inspeção
             </h2>
 
-            <SpecialistInspectionGroups
-              values={{
-                clutch: form.clutch,
-                sparkPlugs: form.sparkPlugs,
-                belts: form.belts,
-                radiator: form.radiator,
-                frontShocks: form.frontShocks,
-                rearShocks: form.rearShocks,
-                suspension: form.suspension,
-                tires: form.tires,
-                brakePads: form.brakePads,
-                brakeDiscs: form.brakeDiscs,
-                engine: form.engine,
-                steeringBox: form.steeringBox,
-                electricSteeringBox: form.electricSteeringBox,
-                exhaust: form.exhaust,
-                fluids: form.fluids,
-                airConditioning: form.airConditioning,
-                airConditioningCompressor: form.airConditioningCompressor,
-                airConditioningCleaning: form.airConditioningCleaning,
-                electricalActuationGlass: form.electricalActuationGlass,
-                electricalActuationGlassNotes: form.electricalActuationGlassNotes,
-                electricalActuationMirror: form.electricalActuationMirror,
-                electricalActuationMirrorNotes: form.electricalActuationMirrorNotes,
-                electricalActuationSocket: form.electricalActuationSocket,
-                electricalActuationSocketNotes: form.electricalActuationSocketNotes,
-                electricalActuationLock: form.electricalActuationLock,
-                electricalActuationLockNotes: form.electricalActuationLockNotes,
-                electricalActuationTrunk: form.electricalActuationTrunk,
-                electricalActuationTrunkNotes: form.electricalActuationTrunkNotes,
-                electricalActuationWiper: form.electricalActuationWiper,
-                electricalActuationWiperNotes: form.electricalActuationWiperNotes,
-                electricalActuationKey: form.electricalActuationKey,
-                electricalActuationKeyNotes: form.electricalActuationKeyNotes,
-                electricalActuationAlarm: form.electricalActuationAlarm,
-                electricalActuationAlarmNotes: form.electricalActuationAlarmNotes,
-                electricalActuationInteriorLight: form.electricalActuationInteriorLight,
-                electricalActuationInteriorLightNotes: form.electricalActuationInteriorLightNotes,
-                dashboardPanel: form.dashboardPanel,
-                lights: form.lights,
-                battery: form.battery,
-                clutchNotes: form.clutchNotes,
-                sparkPlugsNotes: form.sparkPlugsNotes,
-                beltsNotes: form.beltsNotes,
-                radiatorNotes: form.radiatorNotes,
-                frontShocksNotes: form.frontShocksNotes,
-                rearShocksNotes: form.rearShocksNotes,
-                suspensionNotes: form.suspensionNotes,
-                tiresNotes: form.tiresNotes,
-                brakePadsNotes: form.brakePadsNotes,
-                brakeDiscsNotes: form.brakeDiscsNotes,
-                engineNotes: form.engineNotes,
-                steeringBoxNotes: form.steeringBoxNotes,
-                electricSteeringBoxNotes: form.electricSteeringBoxNotes,
-                exhaustNotes: form.exhaustNotes,
-                fluidsNotes: form.fluidsNotes,
-                airConditioningNotes: form.airConditioningNotes,
-                airConditioningCompressorNotes: form.airConditioningCompressorNotes,
-                airConditioningCleaningNotes: form.airConditioningCleaningNotes,
-                dashboardPanelNotes: form.dashboardPanelNotes,
-                lightsNotes: form.lightsNotes,
-                batteryNotes: form.batteryNotes,
-              }}
-              onChange={(name, value) => setField(name, value)}
-              evidences={evidences}
-              setEvidence={setEvidence}
-              removeEvidence={removeEvidence}
-            />
+            <SpecialistInspectionGroups values={form.services} onChange={handleServiceChange} />
           </div>
 
           {/* Messages */}
