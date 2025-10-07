@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const logger = getLogger('api:client:quotes:approve');
 
@@ -94,6 +95,33 @@ export const POST = withClientAuth(
       if (updateErr) {
         logger.error('failed_update_quote', { error: updateErr });
         return NextResponse.json({ error: 'Erro ao aprovar orçamento' }, { status: 500 });
+      }
+
+      // Atualizar status do veículo para 'Fase de Execução Iniciada'
+      const vehicleId = serviceOrder?.vehicle_id;
+      if (vehicleId) {
+        const { error: vehicleUpdateErr } = await admin
+          .from('vehicles')
+          .update({
+            status: VehicleStatus.FASE_EXECUCAO_INICIADA,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', vehicleId);
+
+        if (vehicleUpdateErr) {
+          logger.error('failed_update_vehicle_status', {
+            error: vehicleUpdateErr,
+            vehicleId,
+            quoteId,
+          });
+          // Não retornar erro, apenas logar
+          // O orçamento foi aprovado com sucesso, mas o status do veículo não foi atualizado
+        } else {
+          logger.info('vehicle_status_updated', {
+            vehicleId,
+            newStatus: VehicleStatus.FASE_EXECUCAO_INICIADA,
+          });
+        }
       }
 
       logger.info('quote_approved_by_client', {

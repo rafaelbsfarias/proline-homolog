@@ -4,6 +4,7 @@ export const VehicleStatus = {
   CHEGADA_CONFIRMADA: 'CHEGADA CONFIRMADA',
   EM_ANALISE: 'EM ANÁLISE',
   ANALISE_FINALIZADA: 'ANALISE FINALIZADA',
+  FASE_EXECUCAO_INICIADA: 'FASE DE EXECUÇÃO INICIADA',
 } as const;
 
 export type VehicleStatus = (typeof VehicleStatus)[keyof typeof VehicleStatus];
