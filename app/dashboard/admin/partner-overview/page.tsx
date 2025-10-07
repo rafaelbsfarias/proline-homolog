@@ -252,23 +252,35 @@ export default function PartnerOverviewPage() {
     if (!selectedQuoteForReview) return;
 
     const quoteId = selectedQuoteForReview.quote.id;
+    console.log('[handleReviewSubmit] Starting review', { action, quoteId, data });
+
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+
+      const payload = {
+        action,
+        rejectedItemIds: data.rejectedItemIds || [],
+        rejectionReason: data.rejectionReason,
+      };
+
+      console.log('[handleReviewSubmit] Sending payload:', payload);
+
       const resp = await fetch(`/api/admin/quotes/${quoteId}/review`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({
-          action,
-          rejected_items: data.rejectedItemIds || [],
-          rejection_reason: data.rejectionReason,
-        }),
+        body: JSON.stringify(payload),
       });
+
+      const result = await resp.json();
+      console.log('[handleReviewSubmit] Response:', { status: resp.status, result });
+
       if (resp.ok) {
+        console.log('[handleReviewSubmit] Success! Updating UI...');
         setReviewModalOpen(false);
         setSelectedQuoteForReview(null);
         // Refresh overview data
@@ -289,12 +301,12 @@ export default function PartnerOverviewPage() {
           }
           return { ...all };
         });
-        // Sucesso - a lista foi atualizada
+        console.log('[handleReviewSubmit] UI updated successfully');
       } else {
-        // Erro na resposta - poderia exibir toast aqui
+        console.error('[handleReviewSubmit] API error:', result);
       }
-    } catch {
-      // Erro na requisição - poderia exibir toast aqui
+    } catch (err) {
+      console.error('[handleReviewSubmit] Exception:', err);
     }
   };
 

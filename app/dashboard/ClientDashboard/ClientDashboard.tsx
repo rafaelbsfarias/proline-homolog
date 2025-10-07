@@ -119,11 +119,11 @@ const ClientDashboard: React.FC = () => {
             </div>
 
             <div className="dashboard-counter">
-              <PendingQuotesCard onLoadingChange={setPendingQuotesLoading} />
+              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
             </div>
 
             <div className="dashboard-counter">
-              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+              <PendingQuotesCard onLoadingChange={setPendingQuotesLoading} />
             </div>
           </main>
         )}

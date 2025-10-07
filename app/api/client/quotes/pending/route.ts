@@ -59,11 +59,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
         status,
         total_value,
         service_order_id,
-        created_at,
-        is_partial_approval,
-        rejected_items,
-        rejection_reason,
-        admin_reviewed_at
+        created_at
       `
       )
       .in('service_order_id', serviceOrderIds)

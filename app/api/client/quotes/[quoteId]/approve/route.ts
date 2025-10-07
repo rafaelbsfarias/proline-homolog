@@ -10,6 +10,8 @@ export const POST = withClientAuth(
     try {
       const { quoteId } = await context.params;
       const clientId = req.user.id;
+      const body = await req.json();
+      const { approvedItemIds } = body;
 
       if (!clientId) {
         logger.error('client_id_not_found');
@@ -67,13 +69,24 @@ export const POST = withClientAuth(
         );
       }
 
+      // Se foi fornecida uma lista de itens aprovados, validar que não está vazia
+      if (approvedItemIds && Array.isArray(approvedItemIds) && approvedItemIds.length === 0) {
+        logger.warn('no_items_approved', { quoteId });
+        return NextResponse.json(
+          { error: 'Pelo menos um item deve ser aprovado' },
+          { status: 400 }
+        );
+      }
+
       // Atualizar status para approved
+      // Se pelo menos 1 item foi aprovado, o orçamento é aprovado (mesmo que parcialmente)
       const { error: updateErr } = await admin
         .from('quotes')
         .update({
           status: 'approved',
           client_approved_at: new Date().toISOString(),
           client_approved_by: clientId,
+          client_approved_items: approvedItemIds || [],
           updated_at: new Date().toISOString(),
         })
         .eq('id', quoteId);
@@ -83,7 +96,11 @@ export const POST = withClientAuth(
         return NextResponse.json({ error: 'Erro ao aprovar orçamento' }, { status: 500 });
       }
 
-      logger.info('quote_approved_by_client', { quoteId, clientId });
+      logger.info('quote_approved_by_client', {
+        quoteId,
+        clientId,
+        approvedItemsCount: approvedItemIds?.length || 'all',
+      });
 
       return NextResponse.json({ success: true, message: 'Orçamento aprovado com sucesso' });
     } catch (error) {

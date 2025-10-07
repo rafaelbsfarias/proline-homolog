@@ -28,6 +28,7 @@ export const GET = withClientAuth(
         .select(
           `
         id,
+        rejected_items,
         service_order_id,
         service_orders (
           vehicle_id,
@@ -57,8 +58,8 @@ export const GET = withClientAuth(
         return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
       }
 
-      // Buscar itens do orçamento (excluindo rejeitados visualmente)
-      const { data: items, error: itemsErr } = await admin
+      // Buscar itens do orçamento
+      const { data: allItems, error: itemsErr } = await admin
         .from('quote_items')
         .select('id, description, quantity, unit_price, total_price')
         .eq('quote_id', quoteId)
@@ -69,9 +70,22 @@ export const GET = withClientAuth(
         return NextResponse.json({ error: 'Erro ao buscar itens' }, { status: 500 });
       }
 
-      logger.info('quote_details_fetched', { quoteId, itemsCount: items?.length || 0 });
+      // Filtrar itens rejeitados pelo admin (cliente não vê estes itens)
+      const rejectedItemIds = new Set(
+        Array.isArray(quote.rejected_items) ? quote.rejected_items : []
+      );
+      const items = (allItems || []).filter(
+        (item: { id: string }) => !rejectedItemIds.has(item.id)
+      );
 
-      return NextResponse.json({ items: items || [] });
+      logger.info('quote_details_fetched', {
+        quoteId,
+        totalItems: allItems?.length || 0,
+        visibleItems: items.length,
+        rejectedItems: rejectedItemIds.size,
+      });
+
+      return NextResponse.json({ items });
     } catch (error) {
       logger.error('unexpected_error', { error });
       return NextResponse.json({ error: 'Erro inesperado' }, { status: 500 });
