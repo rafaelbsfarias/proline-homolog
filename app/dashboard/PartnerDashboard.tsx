@@ -424,7 +424,7 @@ const PartnerDashboard = () => {
             data={pendingQuotes.map(quote => {
               const getStatus = () => {
                 const hasChecklist = quotesWithChecklist.has(quote.id);
-                const hasValue = quote.total_value > 0;
+                const hasValue = (quote.total_value ?? 0) > 0;
 
                 if (!hasChecklist) {
                   return 'Checklist Pendente';
@@ -449,7 +449,7 @@ const PartnerDashboard = () => {
                 raw_status: quote.status,
                 vehicle: formatVehicleInfo(quote),
                 status: getStatus(),
-                total_value: formatCurrency(quote.total_value),
+                total_value: formatCurrency(quote.total_value ?? 0),
                 date: formatDate(quote.date),
               };
             })}
