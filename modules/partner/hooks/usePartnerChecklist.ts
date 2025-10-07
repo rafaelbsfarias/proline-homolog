@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 // Chave dos itens do checklist que aceitam evidência
 export const EVIDENCE_KEYS = [
   'clutch',
@@ -41,6 +41,12 @@ import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { supabase } from '@/modules/common/services/supabaseClient';
+
+export interface AnomalyEvidence {
+  id: string;
+  description: string;
+  photos: (File | string)[]; // Pode ser File (novo upload) ou string (URL do banco)
+}
 
 export interface PartnerChecklistForm {
   date: string;
@@ -232,6 +238,14 @@ export function usePartnerChecklist() {
   // Variável para fallback do inspectionId retornado da API
   const inspectionIdRef = useRef<string | undefined>(undefined);
 
+  // Anomalies state
+  const [anomaliesData, setAnomaliesData] = useState<AnomalyEvidence[]>([
+    { id: '1', description: '', photos: [] },
+  ]);
+  const [anomaliesLoading, setAnomaliesLoading] = useState(false);
+  const [anomaliesSaving, setAnomaliesSaving] = useState(false);
+  const [anomaliesError, setAnomaliesError] = useState<string | null>(null);
+
   // Buscar dados reais do veículo
   useEffect(() => {
     const fetchVehicleData = async () => {
@@ -329,6 +343,34 @@ export function usePartnerChecklist() {
             }
           } catch {}
         } else {
+          // Se não há inspeção, mas temos vehicle, ainda podemos tentar carregar anomalias
+          // usando o vehicleId diretamente (se for o caso)
+        }
+
+        // Carregar anomalias se temos vehicle e inspection
+        if (vehicleData && inspectionData) {
+          try {
+            // Carregar anomalias inline para evitar dependência circular
+            const anomaliesResponse = await get<{
+              success: boolean;
+              data: AnomalyEvidence[];
+              error?: string;
+            }>(
+              `/api/partner/checklist/load-anomalies?inspection_id=${inspectionData.id}&vehicle_id=${vehicleData.id}`
+            );
+
+            if (anomaliesResponse.ok && anomaliesResponse.data?.success) {
+              const loadedAnomalies = anomaliesResponse.data.data || [];
+              // Sempre atualizar - se vazio, mostrar uma anomalia inicial
+              const finalAnomalies =
+                loadedAnomalies.length > 0
+                  ? loadedAnomalies
+                  : [{ id: '1', description: '', photos: [] }];
+              setAnomaliesData(finalAnomalies);
+            }
+          } catch {
+            // Silently handle anomaly loading errors to not disrupt the main flow
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao carregar dados do veículo';
@@ -451,6 +493,106 @@ export function usePartnerChecklist() {
     setSuccess(null);
   };
 
+  // Load anomalies from API
+  const loadAnomalies = useCallback(async () => {
+    if (!vehicle || !inspection) return;
+
+    setAnomaliesLoading(true);
+    setAnomaliesError(null);
+
+    try {
+      const response = await get<{
+        success: boolean;
+        data: AnomalyEvidence[];
+        error?: string;
+      }>(
+        `/api/partner/checklist/load-anomalies?inspection_id=${inspection.id}&vehicle_id=${vehicle.id}`
+      );
+
+      if (!response.ok || !response.data?.success) {
+        throw new Error(response.data?.error || 'Erro ao carregar anomalias');
+      }
+
+      const loadedAnomalies = response.data.data || [];
+      // Sempre atualizar o estado, mesmo que vazio
+      setAnomaliesData(
+        loadedAnomalies.length > 0 ? loadedAnomalies : [{ id: '1', description: '', photos: [] }]
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao carregar anomalias';
+      setAnomaliesError(message);
+    } finally {
+      setAnomaliesLoading(false);
+    }
+  }, [vehicle, inspection, get]);
+
+  // Save anomalies to API
+  const saveAnomalies = useCallback(
+    async (anomalies: AnomalyEvidence[]) => {
+      if (!vehicle || !inspection) {
+        throw new Error('Veículo ou inspeção não encontrados');
+      }
+
+      setAnomaliesSaving(true);
+      setAnomaliesError(null);
+
+      try {
+        // Criar FormData para enviar arquivos e dados
+        const formData = new FormData();
+        formData.append('inspection_id', inspection.id);
+        formData.append('vehicle_id', vehicle.id);
+
+        // Preparar dados das anomalias sem os arquivos (apenas metadados)
+        const anomaliesData = anomalies.map((anomaly, anomalyIndex) => {
+          // Adicionar arquivos ao FormData com chaves específicas
+          anomaly.photos.forEach((photo, photoIndex) => {
+            if (photo instanceof File) {
+              formData.append(`anomaly-${anomalyIndex}-photo-${photoIndex}`, photo);
+            }
+          });
+
+          return {
+            description: anomaly.description,
+            photos: anomaly.photos.map((photo, photoIndex) =>
+              photo instanceof File ? `anomaly-${anomalyIndex}-photo-${photoIndex}` : photo
+            ),
+          };
+        });
+
+        formData.append('anomalies', JSON.stringify(anomaliesData));
+
+        // Enviar como FormData
+        const { data: sessionRes } = await supabase.auth.getSession();
+        const accessToken = sessionRes.session?.access_token;
+
+        const response = await fetch('/api/partner/checklist/save-anomalies', {
+          method: 'POST',
+          headers: {
+            Authorization: accessToken ? `Bearer ${accessToken}` : '',
+          },
+          body: formData,
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok || !responseData.success) {
+          throw new Error(responseData.error || 'Erro ao salvar anomalias');
+        }
+
+        setAnomaliesData(anomalies);
+        showToast('success', responseData.message || 'Anomalias salvas com sucesso!');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erro ao salvar anomalias';
+        setAnomaliesError(message);
+        showToast('error', message);
+        throw err;
+      } finally {
+        setAnomaliesSaving(false);
+      }
+    },
+    [vehicle, inspection, showToast]
+  );
+
   return {
     form,
     vehicle,
@@ -465,5 +607,12 @@ export function usePartnerChecklist() {
     evidences,
     setEvidence,
     removeEvidence,
+    // Anomalies functionality
+    anomalies: anomaliesData,
+    loadAnomalies,
+    saveAnomalies,
+    anomaliesLoading,
+    anomaliesSaving,
+    anomaliesError,
   };
 }

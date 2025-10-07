@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import { Loading } from '@/modules/common/components/Loading/Loading';
@@ -9,15 +9,35 @@ import InspectionData from '@/modules/partner/components/InspectionData';
 interface AnomalyEvidence {
   id: string;
   description: string;
-  photos: File[];
+  photos: (File | string)[]; // Pode ser File (novo upload) ou string (URL do banco)
 }
 
 const DynamicChecklistPage = () => {
   const router = useRouter();
-  const { form, vehicle, loading, error, success, saving, saveChecklist } = usePartnerChecklist();
-  const [anomalies, setAnomalies] = useState<AnomalyEvidence[]>([
-    { id: '1', description: '', photos: [] },
-  ]);
+  const {
+    form,
+    vehicle,
+    loading,
+    error,
+    success,
+    saving,
+    saveChecklist,
+    anomalies,
+    saveAnomalies,
+  } = usePartnerChecklist();
+
+  // Estado local para edição das anomalias
+  const [localAnomalies, setLocalAnomalies] = useState<AnomalyEvidence[]>([]);
+  const [hasInitialized, setHasInitialized] = useState(false);
+
+  // Atualizar estado local quando as anomalias do hook mudarem (somente na primeira carga)
+  useEffect(() => {
+    // Sincronizar apenas quando carregar pela primeira vez
+    if (!hasInitialized && !loading) {
+      setLocalAnomalies(anomalies);
+      setHasInitialized(true);
+    }
+  }, [anomalies, loading, hasInitialized]);
   // saving vem do hook; remove estado local
 
   const handleBack = () => {
@@ -30,15 +50,15 @@ const DynamicChecklistPage = () => {
       description: '',
       photos: [],
     };
-    setAnomalies(prev => [...prev, newAnomaly]);
+    setLocalAnomalies(prev => [...prev, newAnomaly]);
   };
 
   const removeAnomaly = (id: string) => {
-    setAnomalies(prev => prev.filter(anomaly => anomaly.id !== id));
+    setLocalAnomalies(prev => prev.filter(anomaly => anomaly.id !== id));
   };
 
   const updateAnomalyDescription = (id: string, description: string) => {
-    setAnomalies(prev =>
+    setLocalAnomalies(prev =>
       prev.map(anomaly => (anomaly.id === id ? { ...anomaly, description } : anomaly))
     );
   };
@@ -46,16 +66,23 @@ const DynamicChecklistPage = () => {
   const updateAnomalyPhotos = (id: string, files: FileList | null) => {
     if (!files) return;
 
-    const photosArray = Array.from(files);
-    setAnomalies(prev =>
-      prev.map(anomaly => (anomaly.id === id ? { ...anomaly, photos: photosArray } : anomaly))
+    setLocalAnomalies(prev =>
+      prev.map(anomaly => {
+        if (anomaly.id === id) {
+          // Manter URLs existentes e adicionar novos arquivos
+          const existingUrls = anomaly.photos.filter(photo => typeof photo === 'string');
+          const newFiles = Array.from(files);
+          return { ...anomaly, photos: [...existingUrls, ...newFiles] };
+        }
+        return anomaly;
+      })
     );
   };
 
   const handleSave = async () => {
     try {
       // Opcional: validar se há ao menos uma anomalia descrita
-      const hasValidAnomaly = anomalies.some(anomaly => anomaly.description.trim() !== '');
+      const hasValidAnomaly = localAnomalies.some(anomaly => anomaly.description.trim() !== '');
       if (!hasValidAnomaly) {
         // Sem anomalias é permitido; checklist técnico ainda pode ser salvo
         // mas poderíamos alertar o usuário caso queira obrigar evidências
@@ -64,10 +91,13 @@ const DynamicChecklistPage = () => {
       // Persistir checklist técnico para habilitar edição de orçamento
       await saveChecklist();
 
+      // Salvar anomalias
+      await saveAnomalies(localAnomalies);
+
       // Voltar ao dashboard após salvar
       router.push('/dashboard');
-    } catch (err) {
-      console.error('Erro ao salvar checklist:', err);
+    } catch {
+      // Erro já é tratado pelo hook
     }
   };
 
@@ -244,7 +274,7 @@ const DynamicChecklistPage = () => {
                 margin: 0,
               }}
             >
-              Evidências e Anomalias
+              Evidências e Anomalias {localAnomalies.length > 0 && `(${localAnomalies.length})`}
             </h2>
             <button
               type="button"
@@ -264,7 +294,25 @@ const DynamicChecklistPage = () => {
             </button>
           </div>
 
-          {anomalies.map((anomaly, index) => (
+          {localAnomalies.length === 0 && (
+            <div
+              style={{
+                padding: '40px',
+                textAlign: 'center',
+                color: '#6b7280',
+                background: '#f9fafb',
+                borderRadius: '8px',
+                border: '1px dashed #d1d5db',
+              }}
+            >
+              <p style={{ margin: 0, fontSize: '16px' }}>
+                Nenhuma anomalia registrada. Clique em &quot;+ Adicionar Anomalia&quot; para
+                começar.
+              </p>
+            </div>
+          )}
+
+          {localAnomalies.map((anomaly, index) => (
             <div
               key={anomaly.id}
               style={{
@@ -293,7 +341,7 @@ const DynamicChecklistPage = () => {
                 >
                   Anomalia {index + 1}
                 </h3>
-                {anomalies.length > 1 && (
+                {localAnomalies.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeAnomaly(anomaly.id)}
@@ -352,6 +400,43 @@ const DynamicChecklistPage = () => {
                 >
                   Evidências (Fotos)
                 </label>
+
+                {/* Exibir imagens já carregadas */}
+                {anomaly.photos.filter(photo => typeof photo === 'string').length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <h4
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#374151',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      Imagens Carregadas:
+                    </h4>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {anomaly.photos
+                        .filter(photo => typeof photo === 'string')
+                        .map((photoUrl, photoIndex) => (
+                          <div key={photoIndex} style={{ position: 'relative' }}>
+                            <img
+                              src={photoUrl as string}
+                              alt={`Evidência ${photoIndex + 1}`}
+                              style={{
+                                width: '80px',
+                                height: '80px',
+                                objectFit: 'cover',
+                                borderRadius: '4px',
+                                border: '1px solid #d1d5db',
+                              }}
+                            />
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Input para novas fotos */}
                 <input
                   type="file"
                   multiple
@@ -366,7 +451,9 @@ const DynamicChecklistPage = () => {
                     backgroundColor: '#ffffff',
                   }}
                 />
-                {anomaly.photos.length > 0 && (
+
+                {/* Contador de arquivos selecionados para upload */}
+                {anomaly.photos.filter(photo => photo instanceof File).length > 0 && (
                   <div
                     style={{
                       marginTop: '8px',
@@ -374,7 +461,8 @@ const DynamicChecklistPage = () => {
                       color: '#6b7280',
                     }}
                   >
-                    {anomaly.photos.length} arquivo(s) selecionado(s)
+                    {anomaly.photos.filter(photo => photo instanceof File).length} novo(s)
+                    arquivo(s) selecionado(s) para upload
                   </div>
                 )}
               </div>

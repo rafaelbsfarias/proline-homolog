@@ -25,24 +25,60 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_update_vehicle_anomalies_updated_at
-  BEFORE UPDATE ON vehicle_anomalies
-  FOR EACH ROW
-  EXECUTE FUNCTION update_vehicle_anomalies_updated_at();
+-- Criar trigger apenas se não existir
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger 
+    WHERE tgname = 'trigger_update_vehicle_anomalies_updated_at'
+  ) THEN
+    CREATE TRIGGER trigger_update_vehicle_anomalies_updated_at
+      BEFORE UPDATE ON vehicle_anomalies
+      FOR EACH ROW
+      EXECUTE FUNCTION update_vehicle_anomalies_updated_at();
+  END IF;
+END $$;
 
 -- RLS (Row Level Security)
 ALTER TABLE vehicle_anomalies ENABLE ROW LEVEL SECURITY;
 
+-- Remove política existente se houver
+DROP POLICY IF EXISTS "Users can manage anomalies for accessible inspections" ON vehicle_anomalies;
+DROP POLICY IF EXISTS "Users can manage anomalies for accessible vehicles" ON vehicle_anomalies;
+
 -- Política: usuários autenticados podem gerenciar anomalias de inspeções que têm acesso
-CREATE POLICY "Users can manage anomalies for accessible inspections" ON vehicle_anomalies
+-- Partners podem acessar anomalias de vehicles para os quais têm quotes ativas
+-- Clients podem acessar anomalias de seus próprios vehicles
+-- Specialists podem acessar anomalias de vehicles de seus clients
+CREATE POLICY "Users can manage anomalies for accessible vehicles" ON vehicle_anomalies
   FOR ALL USING (
+    -- Partners: têm quotes para service_orders que envolvem o vehicle
     EXISTS (
-      SELECT 1 FROM inspections i
-      WHERE i.id = vehicle_anomalies.inspection_id
-      AND (
-        i.partner_id::text = auth.uid()::text
-        OR i.client_id::text = auth.uid()::text
-      )
+      SELECT 1 FROM quotes q
+      JOIN service_orders so ON so.id = q.service_order_id
+      WHERE so.vehicle_id = vehicle_anomalies.vehicle_id
+      AND q.partner_id = auth.uid()
+    )
+    OR
+    -- Clients: proprietários do vehicle
+    EXISTS (
+      SELECT 1 FROM vehicles v
+      WHERE v.id = vehicle_anomalies.vehicle_id
+      AND v.client_id = auth.uid()
+    )
+    OR
+    -- Specialists: vehicles de seus clients associados
+    EXISTS (
+      SELECT 1 FROM vehicles v
+      JOIN client_specialists cs ON cs.client_id = v.client_id
+      WHERE v.id = vehicle_anomalies.vehicle_id
+      AND cs.specialist_id = auth.uid()
+    )
+    OR
+    -- Admins: acesso total
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.id = auth.uid() AND p.role = 'admin'
     )
   );
 
