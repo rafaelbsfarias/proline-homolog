@@ -9,7 +9,7 @@ export const GET = withClientAuth(
   async (req: AuthenticatedRequest, context: { params: Promise<{ quoteId: string }> }) => {
     try {
       const { quoteId } = await context.params;
-      const clientId = req.user?.user_metadata?.profile_id;
+      const clientId = req.user.id;
 
       if (!clientId) {
         logger.error('client_id_not_found');
