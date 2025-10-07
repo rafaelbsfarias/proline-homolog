@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     let anomalies;
     try {
       anomalies = JSON.parse(anomaliesJson);
-    } catch (e) {
+    } catch {
       return NextResponse.json(
         { success: false, error: 'anomalies deve ser um JSON válido' },
         { status: 400 }
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${photoFile.name.split('.').pop()}`;
             const filePath = `anomalies/${inspection_id}/${vehicle_id}/${fileName}`;
 
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
               .from('vehicle-media')
               .upload(filePath, photoFile, {
                 cacheControl: '3600',
@@ -143,12 +143,9 @@ export async function POST(request: Request) {
               continue;
             }
 
-            // Obter URL pública da imagem
-            const { data: urlData } = supabase.storage.from('vehicle-media').getPublicUrl(filePath);
-
-            if (urlData?.publicUrl) {
-              uploadedPhotoUrls.push(urlData.publicUrl);
-            }
+            // Salvar apenas o path do arquivo, não a URL completa
+            // As URLs assinadas serão geradas no momento da leitura
+            uploadedPhotoUrls.push(filePath);
           } catch (uploadErr) {
             logger.error('photo_upload_exception', {
               error: String(uploadErr),

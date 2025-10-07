@@ -105,11 +105,57 @@ export async function GET(request: Request) {
     });
 
     // Converter para o formato esperado pelo frontend
-    const formattedAnomalies = (anomalies || []).map(anomaly => ({
-      id: anomaly.id,
-      description: anomaly.description,
-      photos: anomaly.photos || [], // Já são URLs das imagens
-    }));
+    // Gerar URLs assinadas para as imagens (válidas por 1 hora)
+    const formattedAnomalies = await Promise.all(
+      (anomalies || []).map(async anomaly => {
+        const signedPhotos = await Promise.all(
+          (anomaly.photos || []).map(async (photoPath: string) => {
+            try {
+              // Extrair o caminho da imagem (remover domínio/bucket se presente)
+              let path = photoPath;
+
+              // Se for uma URL completa, extrair apenas o path
+              if (photoPath.includes('vehicle-media/')) {
+                const parts = photoPath.split('vehicle-media/');
+                path = parts[parts.length - 1];
+              }
+
+              // Se começar com barra, remover
+              if (path.startsWith('/')) {
+                path = path.substring(1);
+              }
+
+              const { data: signedData, error: signedError } = await supabase.storage
+                .from('vehicle-media')
+                .createSignedUrl(path, 3600); // 1 hora de validade
+
+              if (signedError || !signedData) {
+                logger.warn('failed_to_sign_url', {
+                  original: photoPath,
+                  extracted_path: path,
+                  error: signedError?.message,
+                });
+                return photoPath; // Retorna o path original como fallback
+              }
+
+              return signedData.signedUrl;
+            } catch (error) {
+              logger.error('sign_url_exception', {
+                path: photoPath,
+                error: error instanceof Error ? error.message : String(error),
+              });
+              return photoPath;
+            }
+          })
+        );
+
+        return {
+          id: anomaly.id,
+          description: anomaly.description,
+          photos: signedPhotos,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
