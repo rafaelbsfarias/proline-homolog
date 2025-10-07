@@ -1,0 +1,382 @@
+.pending-quotes-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.pending-quotes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pending-quotes-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #002e4c;
+  margin: 0;
+}
+
+.pending-quotes-count {
+  background: #002e4c;
+  color: white;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.pending-quotes-loading,
+.pending-quotes-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.pending-quotes-error {
+  color: #ef4444;
+}
+
+.pending-quotes-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.pending-quotes-list {
+  display: grid;
+  gap: 16px;
+}
+
+.pending-quote-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.pending-quote-item:hover {
+  border-color: #002e4c;
+  box-shadow: 0 2px 8px rgba(0, 46, 76, 0.1);
+}
+
+.pending-quote-info {
+  flex: 1;
+}
+
+.pending-quote-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.pending-quote-os {
+  font-weight: 600;
+  color: #002e4c;
+  font-size: 1rem;
+}
+
+.pending-quote-badge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pending-quote-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 4px;
+}
+
+.pending-quote-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.pending-quote-rejection {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+  padding: 8px 12px;
+  margin-top: 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.pending-quote-rejection strong {
+  color: #991b1b;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pending-quote-view-btn {
+  background: #002e4c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.pending-quote-view-btn:hover {
+  background: #004a7c;
+  transform: translateY(-1px);
+}
+
+/* Modal Styles */
+.quote-details-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.quote-details-modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.quote-details-header {
+  background: #002e4c;
+  color: white;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quote-details-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.quote-details-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.quote-details-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.quote-details-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.quote-details-info {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.quote-detail-row {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+.quote-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.quote-detail-row strong {
+  color: #002e4c;
+  margin-right: 8px;
+}
+
+.quote-partial-info {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 4px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.quote-rejection-reason {
+  background: #fef2f2;
+  border-left: 3px solid #ef4444;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 4px;
+}
+
+.quote-rejection-reason strong {
+  color: #991b1b;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.quote-rejection-reason p {
+  margin: 0;
+  color: #7f1d1d;
+}
+
+.quote-items {
+  margin-top: 24px;
+}
+
+.quote-items h4 {
+  margin: 0 0 16px 0;
+  color: #002e4c;
+  font-size: 1.1rem;
+}
+
+.quote-items-loading {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.quote-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.quote-items-table th {
+  background: #f3f4f6;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #002e4c;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.quote-items-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.quote-items-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.quote-item-rejected {
+  background: #fee2e2 !important;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.item-status-approved {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.item-status-rejected {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.quote-details-actions {
+  border-top: 1px solid #e5e7eb;
+  padding: 20px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.quote-action-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quote-reject-btn {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.quote-reject-btn:hover {
+  background: #fecaca;
+}
+
+.quote-approve-btn {
+  background: #10b981;
+  color: white;
+}
+
+.quote-approve-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pending-quote-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .pending-quote-view-btn {
+    width: 100%;
+  }
+
+  .quote-items-table {
+    font-size: 0.8rem;
+  }
+
+  .quote-items-table th,
+  .quote-items-table td {
+    padding: 8px;
+  }
+
+  .quote-details-actions {
+    flex-direction: column-reverse;
+  }
+
+  .quote-action-btn {
+    width: 100%;
+  }
+}

@@ -7,6 +7,7 @@ import ForceChangePasswordModal from '@/modules/common/components/ForceChangePas
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import './ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
+import PendingQuotesCard from '@/modules/client/components/PendingQuotes/PendingQuotesCard';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
 import ContractAcceptanceScreen from '@/modules/client/components/Dashboard/ContractAcceptanceScreen';
@@ -38,8 +39,10 @@ const ClientDashboard: React.FC = () => {
 
   const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
   const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
+  const [pendingQuotesLoading, setPendingQuotesLoading] = useState(true);
 
-  const isComponentLoading = vehicleCounterLoading || collectionSectionLoading;
+  const isComponentLoading =
+    vehicleCounterLoading || collectionSectionLoading || pendingQuotesLoading;
 
   useEffect(() => {
     if (profileData) {
@@ -113,6 +116,10 @@ const ClientDashboard: React.FC = () => {
                 key={refreshVehicleCounter}
                 onLoadingChange={setVehicleCounterLoading}
               />
+            </div>
+
+            <div className="dashboard-counter">
+              <PendingQuotesCard onLoadingChange={setPendingQuotesLoading} />
             </div>
 
             <div className="dashboard-counter">
