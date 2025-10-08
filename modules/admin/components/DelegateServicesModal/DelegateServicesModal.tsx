@@ -59,12 +59,11 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
   const [delegationForms, setDelegationForms] = useState<ServiceDelegationForm[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null); // For initial data loading errors
+  const [error, setError] = useState<string | null>(null);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset all states when modal is closed from outside
       setPartnersByCategory({});
       setDelegationForms([]);
       setError(null);
@@ -128,10 +127,8 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
   const handleSubmit = async () => {
     if (!inspectionId) return;
     setSubmitting(true);
-    setError(null); // Clear previous inline errors
-
+    setError(null);
     try {
-      // --- Validations ---
       for (const form of delegationForms) {
         if (!form.partnerId) {
           throw new Error(
@@ -153,7 +150,6 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
         throw new Error('Serviços sequenciais (não paralelos) não podem ter a mesma prioridade.');
       }
 
-      // --- API Call ---
       const payload = delegationForms.map(form => ({
         inspection_id: inspectionId,
         service_category_id: form.serviceCategoryId,
@@ -165,7 +161,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
       const response = await post('/api/admin/delegate-service', payload);
 
       if (response.error) {
-        throw new Error(response.error.message || 'Erro desconhecido ao delegar.');
+        throw new Error(response.error || 'Erro desconhecido ao delegar.');
       }
 
       setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
@@ -185,7 +181,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
     const isSuccess = submissionResult?.status === 'success';
     setSubmissionResult(null);
     if (isSuccess) {
-      onClose(); // Close the main DelegateServicesModal only on success
+      onClose();
     }
   };
 
