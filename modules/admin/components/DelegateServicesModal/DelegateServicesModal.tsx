@@ -22,6 +22,7 @@ interface DelegateServicesModalProps {
   onClose: () => void;
   inspectionId: string | null;
   inspectionServices: string[];
+  onSuccess?: () => void;
 }
 
 interface Partner {
@@ -53,6 +54,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
   onClose,
   inspectionId,
   inspectionServices,
+  onSuccess,
 }) => {
   const { get, post } = useAuthenticatedFetch();
   const [partnersByCategory, setPartnersByCategory] = useState<Record<string, Partner[]>>({});
@@ -165,6 +167,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
       }
 
       setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
+      if (onSuccess) onSuccess();
     } catch (e) {
       logger.error(
         `Erro ao enviar delegação:

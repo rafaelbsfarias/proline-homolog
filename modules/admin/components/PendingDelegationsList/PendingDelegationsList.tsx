@@ -29,19 +29,20 @@ const PendingDelegationsList = () => {
   const [selectedInspectionId, setSelectedInspectionId] = useState<string | null>(null);
   const [selectedInspectionServices, setSelectedInspectionServices] = useState<string[]>([]);
 
+  const fetchPendingChecklists = async () => {
+    try {
+      setLoading(true);
+      const response = await get<PendingChecklist[]>('/api/admin/pending-checklist-reviews');
+      if (response.error) throw new Error(`Erro ao buscar delegações: ${response.error}`);
+      setChecklists(response.data || []);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchPendingChecklists = async () => {
-      try {
-        setLoading(true);
-        const response = await get<PendingChecklist[]>('/api/admin/pending-checklist-reviews');
-        if (response.error) throw new Error(`Erro ao buscar delegações: ${response.error}`);
-        setChecklists(response.data || []);
-      } catch (e) {
-        setError((e as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPendingChecklists();
   }, [get]);
 
@@ -132,6 +133,7 @@ const PendingDelegationsList = () => {
           onClose={handleCloseDelegateModal}
           inspectionId={selectedInspectionId}
           inspectionServices={selectedInspectionServices}
+          onSuccess={fetchPendingChecklists}
         />
       )}
     </>
