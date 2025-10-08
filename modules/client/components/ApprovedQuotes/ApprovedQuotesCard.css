@@ -1,0 +1,134 @@
+.approved-quotes-card {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.approved-quotes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.approved-quotes-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.approved-quotes-count {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.approved-quotes-loading,
+.approved-quotes-error,
+.approved-quotes-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.approved-quotes-error {
+  color: #dc2626;
+}
+
+.approved-quotes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.approved-quote-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.approved-quote-item:hover {
+  border-color: #10b981;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.approved-quote-info {
+  flex: 1;
+}
+
+.approved-quote-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.approved-quote-os {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.875rem;
+}
+
+.approved-quote-status-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.approved-quote-vehicle {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.approved-quote-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 4px;
+}
+
+.approved-quote-date {
+  font-size: 0.875rem;
+  color: #999;
+}
+
+.approved-quote-view-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.approved-quote-view-btn:hover {
+  background: #059669;
+}
+
+@media (max-width: 768px) {
+  .approved-quote-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .approved-quote-view-btn {
+    width: 100%;
+  }
+}

@@ -8,27 +8,18 @@ import MessageModal from '@/modules/common/components/MessageModal/MessageModal'
 import './ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
 import PendingQuotesCard from '@/modules/client/components/PendingQuotes/PendingQuotesCard';
+import ApprovedQuotesCard from '@/modules/client/components/ApprovedQuotes/ApprovedQuotesCard';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
 import ContractAcceptanceScreen from '@/modules/client/components/Dashboard/ContractAcceptanceScreen';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
-interface ProfileData {
-  full_name: string;
-  must_change_password?: boolean; // Made optional to prevent type errors
-  clients: {
-    parqueamento?: number;
-    taxa_operacao?: number;
-  }[];
-}
-
 const ClientDashboard: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
   const { profileData, userId, loading } = useUserProfile();
-  const { accepted, setAccepted, loadingAcceptance, acceptContract } =
-    useContractAcceptance(userId);
+  const { accepted, loadingAcceptance, acceptContract } = useContractAcceptance(userId);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
@@ -40,9 +31,13 @@ const ClientDashboard: React.FC = () => {
   const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
   const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
   const [pendingQuotesLoading, setPendingQuotesLoading] = useState(true);
+  const [approvedQuotesLoading, setApprovedQuotesLoading] = useState(true);
 
   const isComponentLoading =
-    vehicleCounterLoading || collectionSectionLoading || pendingQuotesLoading;
+    vehicleCounterLoading ||
+    collectionSectionLoading ||
+    pendingQuotesLoading ||
+    approvedQuotesLoading;
 
   useEffect(() => {
     if (profileData) {
@@ -124,6 +119,10 @@ const ClientDashboard: React.FC = () => {
 
             <div className="dashboard-counter">
               <PendingQuotesCard onLoadingChange={setPendingQuotesLoading} />
+            </div>
+
+            <div className="dashboard-counter">
+              <ApprovedQuotesCard onLoadingChange={setApprovedQuotesLoading} />
             </div>
           </main>
         )}

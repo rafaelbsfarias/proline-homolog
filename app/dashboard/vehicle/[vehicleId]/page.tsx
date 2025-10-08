@@ -13,7 +13,10 @@ const UnifiedVehicleDetailsPage = () => {
   const { user } = useAuth();
   const role = user?.user_metadata.role as 'client' | 'specialist';
 
-  const { vehicle, inspection, mediaUrls, loading, error } = useVehicleDetails(role, vehicleId);
+  const { vehicle, inspection, vehicleHistory, mediaUrls, loading, error } = useVehicleDetails(
+    role,
+    vehicleId
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -21,6 +24,7 @@ const UnifiedVehicleDetailsPage = () => {
       <VehicleDetails
         vehicle={vehicle}
         inspection={inspection}
+        vehicleHistory={vehicleHistory}
         mediaUrls={mediaUrls}
         loading={loading}
         error={error}

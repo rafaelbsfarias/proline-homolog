@@ -97,14 +97,13 @@ export const POST = withClientAuth(
         return NextResponse.json({ error: 'Erro ao aprovar orçamento' }, { status: 500 });
       }
 
-      // Atualizar status do veículo para 'Fase de Execução Iniciada'
+      // Atualizar status do veículo para 'Orçamento Aprovado'
       const vehicleId = serviceOrder?.vehicle_id;
       if (vehicleId) {
         const { error: vehicleUpdateErr } = await admin
           .from('vehicles')
           .update({
-            status: VehicleStatus.FASE_EXECUCAO_INICIADA,
-            updated_at: new Date().toISOString(),
+            status: VehicleStatus.ORCAMENTO_APROVADO,
           })
           .eq('id', vehicleId);
 
@@ -119,7 +118,7 @@ export const POST = withClientAuth(
         } else {
           logger.info('vehicle_status_updated', {
             vehicleId,
-            newStatus: VehicleStatus.FASE_EXECUCAO_INICIADA,
+            newStatus: VehicleStatus.ORCAMENTO_APROVADO,
           });
         }
       }

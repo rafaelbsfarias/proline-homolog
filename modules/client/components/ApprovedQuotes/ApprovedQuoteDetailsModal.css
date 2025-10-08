@@ -1,0 +1,239 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.approved-quote-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.approved-quote-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.approved-quote-modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.approved-quote-modal-os {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 4px 0;
+}
+
+.approved-quote-modal-vehicle {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+.approved-quote-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.approved-quote-modal-close:hover {
+  background: #f3f4f6;
+  color: #333;
+}
+
+.approved-quote-modal-content {
+  padding: 24px;
+}
+
+.approved-quote-modal-loading,
+.approved-quote-modal-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.approved-quote-modal-error {
+  color: #dc2626;
+}
+
+.approved-quote-items-section {
+  margin-bottom: 24px;
+}
+
+.approved-quote-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.approved-quote-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.approved-quote-item-row {
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.approved-quote-item-description {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.approved-quote-item-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.approved-quote-item-quantity {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.approved-quote-item-total {
+  font-weight: 600;
+  color: #10b981;
+  font-size: 1rem;
+}
+
+.approved-quote-total-section {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.approved-quote-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.approved-quote-total-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.approved-quote-total-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.approved-quote-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.approved-quote-info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.approved-quote-info-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.approved-quote-info-value {
+  font-size: 0.875rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.approved-quote-info-value-success {
+  font-size: 0.875rem;
+  color: #10b981;
+  font-weight: 600;
+  background: #d1fae5;
+  padding: 4px 12px;
+  border-radius: 4px;
+}
+
+.approved-quote-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.approved-quote-modal-close-btn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.approved-quote-modal-close-btn:hover {
+  background: #4b5563;
+}
+
+@media (max-width: 768px) {
+  .approved-quote-modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .approved-quote-item-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .approved-quote-total-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

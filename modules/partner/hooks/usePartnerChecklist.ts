@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('partner:checklist');
+
 // Chave dos itens do checklist que aceitam evidência
 export const EVIDENCE_KEYS = [
   'clutch',
@@ -301,6 +305,44 @@ export function usePartnerChecklist() {
         }
 
         setVehicle(vehicleData);
+
+        // Registrar início da fase orçamentária APÓS obter o vehicleId
+        // Usar o ID do veículo retornado pela API
+        const actualVehicleId = vehicleData.id;
+        if (actualVehicleId) {
+          try {
+            logger.info('Registrando início do checklist', {
+              vehicleId: actualVehicleId.slice(0, 8),
+              quoteId: quoteId?.slice(0, 8),
+            });
+
+            const initResponse = await post<{
+              success: boolean;
+              message?: string;
+              status?: string;
+              error?: string;
+            }>(
+              '/api/partner/checklist/init',
+              { vehicleId: actualVehicleId, quoteId },
+              { requireAuth: true }
+            );
+
+            if (initResponse.ok && initResponse.data) {
+              logger.info('Timeline atualizada com sucesso', {
+                status: initResponse.data.status,
+              });
+            } else {
+              logger.warn('Falha ao atualizar timeline', {
+                error: initResponse.error,
+                status: initResponse.status,
+              });
+            }
+          } catch (initError) {
+            logger.error('Erro ao registrar início do checklist', {
+              error: initError instanceof Error ? initError.message : String(initError),
+            });
+          }
+        }
 
         // Se temos dados da inspeção, preencher o formulário
         if (inspectionData) {

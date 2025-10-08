@@ -40,9 +40,24 @@ interface InspectionData {
   }>;
 }
 
+interface VehicleHistoryEntry {
+  id: string;
+  vehicle_id: string;
+  status: string;
+  prevision_date: string | null;
+  end_date: string | null;
+  created_at: string;
+}
+
 interface InspectionResponse {
   success: boolean;
   inspection?: InspectionData;
+  error?: string;
+}
+
+interface VehicleHistoryResponse {
+  success: boolean;
+  history?: VehicleHistoryEntry[];
   error?: string;
 }
 
@@ -52,6 +67,7 @@ export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: stri
 
   const [vehicle, setVehicle] = useState<VehicleDetailsData | null>(null);
   const [inspection, setInspection] = useState<InspectionData | null>(null);
+  const [vehicleHistory, setVehicleHistory] = useState<VehicleHistoryEntry[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,8 +119,23 @@ export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: stri
           error?: string;
         }>(`/api/${role}/vehicles/${vehicleId}`);
 
-        if (!vehicleResp.ok || !vehicleResp.data?.success) {
-          throw new Error(vehicleResp.data?.error || 'Erro ao carregar veículo');
+        logger.info('Vehicle response received', {
+          ok: vehicleResp.ok,
+          status: vehicleResp.status,
+          success: vehicleResp.data?.success,
+          hasVehicle: !!vehicleResp.data?.vehicle,
+          error: vehicleResp.data?.error,
+        });
+
+        if (!vehicleResp.ok) {
+          throw new Error(
+            vehicleResp.error ||
+              `Erro HTTP ${vehicleResp.status}: ${vehicleResp.data?.error || 'Erro desconhecido'}`
+          );
+        }
+
+        if (!vehicleResp.data?.success) {
+          throw new Error(vehicleResp.data?.error || 'Resposta inválida da API');
         }
 
         setVehicle(vehicleResp.data.vehicle || null);
@@ -121,6 +152,20 @@ export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: stri
             fetchMediaUrls(inspectionData.media);
           }
         }
+
+        // Buscar histórico do veículo (não falhar se der erro)
+        try {
+          const historyResp = await get<VehicleHistoryResponse>(
+            `/api/${role}/vehicle-history?vehicleId=${vehicleId}`
+          );
+
+          if (historyResp.ok && historyResp.data?.success && historyResp.data.history) {
+            setVehicleHistory(historyResp.data.history);
+          }
+        } catch (historyError) {
+          // Log mas não falhar a request principal
+          logger.warn('Failed to fetch vehicle history:', historyError);
+        }
       } catch (err) {
         logger.error('Error fetching vehicle details:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados do veículo');
@@ -134,5 +179,5 @@ export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: stri
     }
   }, [vehicleId, get, role]);
 
-  return { vehicle, inspection, mediaUrls, loading, error };
+  return { vehicle, inspection, vehicleHistory, mediaUrls, loading, error };
 };

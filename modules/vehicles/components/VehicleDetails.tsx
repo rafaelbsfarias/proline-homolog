@@ -47,9 +47,19 @@ interface InspectionData {
   }>;
 }
 
+interface VehicleHistoryEntry {
+  id: string;
+  vehicle_id: string;
+  status: string;
+  prevision_date: string | null;
+  end_date: string | null;
+  created_at: string;
+}
+
 interface VehicleDetailsProps {
   vehicle: VehicleDetails | null;
   inspection: InspectionData | null;
+  vehicleHistory: VehicleHistoryEntry[];
   mediaUrls: Record<string, string>;
   loading: boolean;
   error: string | null;
@@ -58,6 +68,7 @@ interface VehicleDetailsProps {
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
   inspection,
+  vehicleHistory,
   mediaUrls,
   loading,
   error,
@@ -334,6 +345,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
             Timeline do Veículo
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Veículo cadastrado - sempre presente */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div
                 style={{
@@ -351,6 +363,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
               </div>
             </div>
 
+            {/* Previsão de chegada */}
             {vehicle.estimated_arrival_date && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
@@ -370,6 +383,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
               </div>
             )}
 
+            {/* Análise iniciada */}
             {inspection && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
@@ -389,6 +403,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
               </div>
             )}
 
+            {/* Análise finalizada */}
             {inspection?.finalized && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
@@ -407,6 +422,41 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
                 </div>
               </div>
             )}
+
+            {/* Histórico adicional do veículo */}
+            {vehicleHistory.map(historyEntry => {
+              // Definir cores baseadas no tipo de status
+              let color = '#9b59b6'; // Roxo padrão
+              if (historyEntry.status.includes('Orçament')) {
+                color = '#f39c12'; // Laranja para fase orçamentária
+              } else if (historyEntry.status.includes('Finalizada')) {
+                color = '#27ae60'; // Verde para finalizações
+              } else if (historyEntry.status.includes('Iniciada')) {
+                color = '#3498db'; // Azul para inícios
+              }
+
+              return (
+                <div
+                  key={historyEntry.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
+                >
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: color,
+                    }}
+                  ></div>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>{historyEntry.status}</div>
+                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
+                      {formatDate(historyEntry.created_at)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
