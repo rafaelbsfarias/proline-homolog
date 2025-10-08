@@ -62,7 +62,7 @@ const PendingDelegationsList = () => {
     return (
       <>
         <Header />
-        <Loading minHeight="50vh" />
+        <Loading />
       </>
     );
   if (error)
