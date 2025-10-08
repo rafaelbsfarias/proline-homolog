@@ -12,9 +12,11 @@ import Input from '@/modules/common/components/Input/Input';
 import Select from '@/modules/common/components/Select/Select';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 import Spinner from '@/modules/common/components/Spinner/Spinner';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 
 const logger = getLogger('DelegateServicesModal');
 
+// Interfaces
 interface DelegateServicesModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,87 +36,77 @@ interface ServiceCategory {
 }
 
 interface ServiceDelegationForm {
-  serviceCategoryKey: string; // This is the key (e.g., 'mechanics')
-  serviceCategoryId: string; // The UUID
+  serviceCategoryKey: string;
+  serviceCategoryId: string;
   partnerId: string | null;
   priority: number;
   is_parallel: boolean;
+}
+
+interface SubmissionResult {
+  status: 'success' | 'error';
+  message: string;
 }
 
 const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
   isOpen,
   onClose,
   inspectionId,
-  inspectionServices, // These are service keys
+  inspectionServices,
 }) => {
   const { get, post } = useAuthenticatedFetch();
   const [partnersByCategory, setPartnersByCategory] = useState<Record<string, Partner[]>>({});
   const [delegationForms, setDelegationForms] = useState<ServiceDelegationForm[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
+  const [error, setError] = useState<string | null>(null); // For initial data loading errors
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResult | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
+      // Reset all states when modal is closed from outside
       setPartnersByCategory({});
       setDelegationForms([]);
-      setServiceCategories([]);
+      setError(null);
+      setSubmissionResult(null);
+      setLoadingPartners(false);
+      setSubmitting(false);
       return;
     }
 
     const fetchAllData = async () => {
       setLoadingPartners(true);
       setError(null);
-
       try {
         const response = await get<{ success: boolean; categories: ServiceCategory[] }>(
           '/api/admin/service-categories'
         );
-
         const categoriesData: ServiceCategory[] = response.data?.categories || [];
-
         if (!response.ok || !response.data?.success || categoriesData.length === 0) {
-          logger.error('Nenhuma categoria de serviço encontrada ou falha na resposta da API.');
-          setError('Erro ao carregar categorias de serviço.');
-          setLoadingPartners(false);
-          return;
+          throw new Error('Erro ao carregar categorias de serviço.');
         }
-
-        setServiceCategories(categoriesData);
 
         const initialForms: ServiceDelegationForm[] = inspectionServices.map(serviceKey => {
           const category = categoriesData.find(sc => sc.key === serviceKey);
-          if (!category) {
-            logger.warn(`Service category key '${serviceKey}' não encontrada.`);
-          }
           return {
             serviceCategoryKey: serviceKey,
             serviceCategoryId: category?.id || '',
             partnerId: null,
             priority: 0,
-            is_parallel: false, // Initialize here
+            is_parallel: false,
           };
         });
         setDelegationForms(initialForms);
 
         const newPartnersByCategory: Record<string, Partner[]> = {};
-
         for (const form of initialForms) {
-          try {
-            const partnerResponse = await get(
-              `/api/admin/partners-by-service-category?category=${form.serviceCategoryKey}`
-            );
-            const partners: Partner[] = Array.isArray(partnerResponse.data)
-              ? partnerResponse.data
-              : [];
-            newPartnersByCategory[form.serviceCategoryKey] = partners;
-          } catch (e) {
-            logger.error(`Erro ao buscar parceiros para ${form.serviceCategoryKey}:`, e);
-            newPartnersByCategory[form.serviceCategoryKey] = [];
-          }
+          const partnerResponse = await get(
+            `/api/admin/partners-by-service-category?category=${form.serviceCategoryKey}`
+          );
+          newPartnersByCategory[form.serviceCategoryKey] = Array.isArray(partnerResponse.data)
+            ? partnerResponse.data
+            : [];
         }
-
         setPartnersByCategory(newPartnersByCategory);
       } catch (e) {
         logger.error('Erro ao buscar dados de delegação:', e);
@@ -136,126 +128,147 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
   const handleSubmit = async () => {
     if (!inspectionId) return;
     setSubmitting(true);
-    setError(null);
+    setError(null); // Clear previous inline errors
 
     try {
+      // --- Validations ---
       for (const form of delegationForms) {
         if (!form.partnerId) {
-          setError(
-            `Por favor, selecione um parceiro para o serviço ${translateServiceCategory(form.serviceCategoryKey)}.`
+          throw new Error(
+            `Selecione um parceiro para ${translateServiceCategory(form.serviceCategoryKey)}.`
           );
-          setSubmitting(false);
-          return;
         }
         if (!form.serviceCategoryId) {
-          setError(
-            `ID da categoria de serviço não encontrado para ${translateServiceCategory(form.serviceCategoryKey)}.`
+          throw new Error(
+            `ID da categoria não encontrado para ${translateServiceCategory(
+              form.serviceCategoryKey
+            )}.`
           );
-          setSubmitting(false);
-          return;
-        }
-
-        const payload = delegationForms.map(form => ({
-          inspection_id: inspectionId,
-          service_category_id: form.serviceCategoryId,
-          partner_id: form.partnerId,
-          is_parallel: form.is_parallel,
-          priority: form.priority,
-        }));
-
-        logger.info('Payload completo:', payload);
-
-        const response = await post('/api/admin/delegate-service', {
-          body: JSON.stringify(payload),
-        });
-
-        if (response.error) {
-          throw new Error(response.error);
         }
       }
-      logger.info(`Delegation for inspection ${inspectionId} submitted successfully.`);
-      onClose(); // Close modal on success
+
+      const sequentialServices = delegationForms.filter(form => !form.is_parallel);
+      const priorities = sequentialServices.map(form => form.priority);
+      if (new Set(priorities).size < priorities.length) {
+        throw new Error('Serviços sequenciais (não paralelos) não podem ter a mesma prioridade.');
+      }
+
+      // --- API Call ---
+      const payload = delegationForms.map(form => ({
+        inspection_id: inspectionId,
+        service_category_id: form.serviceCategoryId,
+        partner_id: form.partnerId,
+        is_parallel: form.is_parallel,
+        priority: form.priority,
+      }));
+
+      const response = await post('/api/admin/delegate-service', payload);
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro desconhecido ao delegar.');
+      }
+
+      setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
     } catch (e) {
-      logger.error(`Error submitting delegation for inspection ${inspectionId}:`, e);
-      setError(`Erro ao delegar serviços: ${(e as Error).message}`);
+      logger.error(
+        `Erro ao enviar delegação:
+`,
+        e
+      );
+      setSubmissionResult({ status: 'error', message: (e as Error).message });
     } finally {
       setSubmitting(false);
     }
   };
 
+  const handleCloseResultModal = () => {
+    const isSuccess = submissionResult?.status === 'success';
+    setSubmissionResult(null);
+    if (isSuccess) {
+      onClose(); // Close the main DelegateServicesModal only on success
+    }
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Delegar Serviços" size="lg">
-      {loadingPartners ? (
-        <div className={styles.loadingContainer}>
-          <Spinner />
-        </div>
-      ) : error ? (
-        <div className={styles.errorText}>{error}</div>
-      ) : (
-        <div className={styles.formSection}>
-          {delegationForms.map((form, index) => (
-            <div key={form.serviceCategoryKey} className={styles.serviceCard}>
-              <h3 className={styles.serviceTitle}>
-                {translateServiceCategory(form.serviceCategoryKey)}
-              </h3>
-              <div className={styles.formGrid}>
-                <div>
-                  <label htmlFor={`partner-${index}`} className={styles.label}>
-                    Parceiro
-                  </label>
-                  <Select
-                    id={`partner-${index}`}
-                    name={`partner-${index}`}
-                    className={styles.select}
-                    value={form.partnerId || ''}
-                    onChange={(e: any) =>
-                      handleFormChange(index, 'partnerId', e.target.value || null)
-                    }
-                    options={[
-                      { value: '', label: 'Selecione um parceiro' },
-                      ...(partnersByCategory[form.serviceCategoryKey]?.map(p => ({
-                        value: p.id,
-                        label: p.company_name,
-                      })) || []),
-                    ]}
-                  />
-                </div>
-                <div>
-                  <label htmlFor={`priority-${index}`} className={styles.label}>
-                    Prioridade
-                  </label>
-                  <Input
-                    type="number"
-                    name="priority"
-                    id={`priority-${index}`}
-                    className={styles.input}
-                    value={form.priority.toString()}
-                    onChange={e =>
-                      handleFormChange(index, 'priority', parseInt(e.target.value) || 0)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="mt-2">
-                <Checkbox
-                  id={`isParallel-${index}`}
-                  name={`isParallel-${index}`}
-                  label="Execução Paralela"
-                  checked={form.is_parallel}
-                  onChange={checked => handleFormChange(index, 'is_parallel', checked)}
-                />
-              </div>
-            </div>
-          ))}
-          <div className={styles.buttonGroup}>
-            <OutlineButton onClick={onClose}>Cancelar</OutlineButton>
-            <SolidButton onClick={handleSubmit} disabled={submitting}>
-              {submitting ? 'Delegando...' : 'Delegar'}
-            </SolidButton>
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} title="Delegar Serviços" size="lg">
+        {loadingPartners ? (
+          <div className={styles.loadingContainer}>
+            <Spinner />
           </div>
-        </div>
+        ) : error ? (
+          <div className={styles.errorText}>{error}</div>
+        ) : (
+          <div className={styles.formSection}>
+            {delegationForms.map((form, index) => (
+              <div key={form.serviceCategoryKey} className={styles.serviceCard}>
+                <h3 className={styles.serviceTitle}>
+                  {translateServiceCategory(form.serviceCategoryKey)}
+                </h3>
+                <div className={styles.formGrid}>
+                  <div>
+                    <label htmlFor={`partner-${index}`} className={styles.label}>
+                      Parceiro
+                    </label>
+                    <Select
+                      id={`partner-${index}`}
+                      name={`partner-${index}`}
+                      className={styles.select}
+                      value={form.partnerId || ''}
+                      onChange={e => handleFormChange(index, 'partnerId', e.target.value || null)}
+                      options={[
+                        { value: '', label: 'Selecione um parceiro' },
+                        ...(partnersByCategory[form.serviceCategoryKey]?.map(p => ({
+                          value: p.id,
+                          label: p.company_name,
+                        })) || []),
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor={`priority-${index}`} className={styles.label}>
+                      Prioridade
+                    </label>
+                    <Input
+                      type="number"
+                      name="priority"
+                      id={`priority-${index}`}
+                      className={styles.input}
+                      value={form.priority.toString()}
+                      onChange={e =>
+                        handleFormChange(index, 'priority', parseInt(e.target.value) || 0)
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <Checkbox
+                    id={`isParallel-${index}`}
+                    name={`isParallel-${index}`}
+                    label="Execução Paralela"
+                    checked={form.is_parallel}
+                    onChange={checked => handleFormChange(index, 'is_parallel', checked)}
+                  />
+                </div>
+              </div>
+            ))}
+            <div className={styles.buttonGroup}>
+              <OutlineButton onClick={onClose}>Cancelar</OutlineButton>
+              <SolidButton onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Delegando...' : 'Delegar'}
+              </SolidButton>
+            </div>
+          </div>
+        )}
+      </Modal>
+      {submissionResult && (
+        <MessageModal
+          variant={submissionResult.status}
+          message={submissionResult.message}
+          onClose={handleCloseResultModal}
+        />
       )}
-    </Modal>
+    </>
   );
 };
 

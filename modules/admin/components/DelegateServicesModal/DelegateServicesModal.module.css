@@ -61,7 +61,7 @@
 .buttonGroup {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 0.7rem;
   margin-top: 1rem;
 }
 

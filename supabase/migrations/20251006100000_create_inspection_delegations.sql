@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS public.inspection_delegations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     inspection_id UUID NOT NULL REFERENCES public.inspections(id) ON DELETE CASCADE,
     service_category_id UUID NOT NULL REFERENCES public.service_categories(id) ON DELETE CASCADE,
+    partner_id UUID NOT NULL REFERENCES public.partners(profile_id) ON DELETE CASCADE,
     is_parallel BOOLEAN NOT NULL DEFAULT false,
     priority INTEGER NOT NULL DEFAULT 0,
     reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
