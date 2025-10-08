@@ -1,20 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Import useRouter
-import { LuArrowLeft } from 'react-icons/lu'; // Import LuArrowLeft icon
-import styles from './PendingDelegationsList.module.css'; // Using new styles
+import { useRouter } from 'next/navigation';
+import { LuArrowLeft } from 'react-icons/lu';
+import styles from './PendingDelegationsList.module.css';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import { translateServiceCategory } from '@/app/constants/messages'; // Import translation utility
-import Header from '../Header'; // Import Header component
-// import ActionButton from '../ActionButton'; // Removed ActionButton import
-import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton'; // Import SolidButton component
+import { translateServiceCategory } from '@/app/constants/messages';
+import Header from '../Header';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import DelegateServicesModal from '../DelegateServicesModal/DelegateServicesModal';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 
 interface PendingChecklist {
   inspection_id: string;
   plate: string;
-  services: string[]; // Array of categories
+  services: string[];
 }
 
 const PendingDelegationsList = () => {
@@ -22,18 +23,18 @@ const PendingDelegationsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { get } = useAuthenticatedFetch();
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter();
+
+  const [isDelegateModalOpen, setIsDelegateModalOpen] = useState(false);
+  const [selectedInspectionId, setSelectedInspectionId] = useState<string | null>(null);
+  const [selectedInspectionServices, setSelectedInspectionServices] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchPendingChecklists = async () => {
       try {
         setLoading(true);
         const response = await get<PendingChecklist[]>('/api/admin/pending-checklist-reviews');
-
-        if (response.error) {
-          throw new Error(`Erro ao buscar delegações: ${response.error}`);
-        }
-
+        if (response.error) throw new Error(`Erro ao buscar delegações: ${response.error}`);
         setChecklists(response.data || []);
       } catch (e) {
         setError((e as Error).message);
@@ -41,44 +42,51 @@ const PendingDelegationsList = () => {
         setLoading(false);
       }
     };
-
     fetchPendingChecklists();
   }, [get]);
 
-  if (loading) {
+  const handleOpenDelegateModal = (inspectionId: string, services: string[]) => {
+    setSelectedInspectionId(inspectionId);
+    setSelectedInspectionServices(services);
+    setIsDelegateModalOpen(true);
+  };
+
+  const handleCloseDelegateModal = () => {
+    setIsDelegateModalOpen(false);
+    setSelectedInspectionId(null);
+    setSelectedInspectionServices([]);
+  };
+
+  if (loading)
     return (
       <>
         <Header />
-        <div className={styles.loading}>Carregando...</div>
+        <Loading minHeight="50vh" />
       </>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <>
         <Header />
         <div className={styles.error}>{error}</div>
       </>
     );
-  }
 
   return (
     <>
-      <Header /> {/* Add Header component outside the container */}
+      <Header />
       <div className={styles.container}>
         <div className="flex items-center mb-4">
-          {' '}
-          {/* Flex container for back button and title */}
-          {/*  <SolidButton
+          <OutlineButton
             onClick={() => router.back()}
             title="Voltar"
-            className="mr-4 flex items-center gap-1" // Add some margin to the right and flex for icon/text
+            className="mr-4 flex items-center gap-1"
           >
-          </SolidButton> */}
-          <h1 className="text-xl font-bold">Delegação de Serviços Pendentes</h1>{' '}
-          {/* Adjusted title size */}
+            <LuArrowLeft size={20} /> Voltar
+          </OutlineButton>
+          <h1 className="text-xl font-bold">Delegação de Serviços Pendentes</h1>
         </div>
+
         {checklists.length === 0 ? (
           <div className={styles.emptyState}>
             <p>Nenhuma delegação de serviço pendente no momento.</p>
@@ -98,13 +106,17 @@ const PendingDelegationsList = () => {
                 {checklists.map(checklist => (
                   <tr key={checklist.inspection_id} className={styles.tableRow}>
                     <td>{checklist.plate}</td>
-                    <td>{checklist.services.map(translateServiceCategory).join(', ')}</td>{' '}
-                    {/* Translated services */}
+                    <td>{checklist.services.map(translateServiceCategory).join(', ')}</td>
                     <td>{checklist.inspection_id}</td>
                     <td>
-                      <Link href={`/admin/delegate-services/${checklist.inspection_id}`}>
-                        <button className={styles.approveButton}>Delegar Serviços</button>
-                      </Link>
+                      <SolidButton
+                        onClick={() =>
+                          handleOpenDelegateModal(checklist.inspection_id, checklist.services)
+                        }
+                        className={styles.approveButton}
+                      >
+                        Delegar Serviços
+                      </SolidButton>
                     </td>
                   </tr>
                 ))}
@@ -113,6 +125,15 @@ const PendingDelegationsList = () => {
           </div>
         )}
       </div>
+
+      {selectedInspectionId && (
+        <DelegateServicesModal
+          isOpen={isDelegateModalOpen}
+          onClose={handleCloseDelegateModal}
+          inspectionId={selectedInspectionId}
+          inspectionServices={selectedInspectionServices}
+        />
+      )}
     </>
   );
 };
