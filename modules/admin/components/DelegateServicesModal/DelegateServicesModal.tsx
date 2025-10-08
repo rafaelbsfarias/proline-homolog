@@ -130,7 +130,9 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
     if (!inspectionId) return;
     setSubmitting(true);
     setError(null);
+
     try {
+      // 1. Validações
       for (const form of delegationForms) {
         if (!form.partnerId) {
           throw new Error(
@@ -139,42 +141,61 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
         }
         if (!form.serviceCategoryId) {
           throw new Error(
-            `ID da categoria não encontrado para ${translateServiceCategory(
-              form.serviceCategoryKey
-            )}.`
+            `ID da categoria não encontrado para ${translateServiceCategory(form.serviceCategoryKey)}.`
           );
         }
       }
 
-      const sequentialServices = delegationForms.filter(form => !form.is_parallel);
-      const priorities = sequentialServices.map(form => form.priority);
+      const sequentialServices = delegationForms.filter(f => !f.is_parallel);
+      const priorities = sequentialServices.map(f => f.priority);
       if (new Set(priorities).size < priorities.length) {
-        throw new Error('Serviços sequenciais (não paralelos) não podem ter a mesma prioridade.');
+        throw new Error('Serviços sequenciais não podem ter a mesma prioridade.');
       }
 
-      const payload = delegationForms.map(form => ({
+      // 2. Monta payload
+      const payload = delegationForms.map(f => ({
         inspection_id: inspectionId,
-        service_category_id: form.serviceCategoryId,
-        partner_id: form.partnerId,
-        is_parallel: form.is_parallel,
-        priority: form.priority,
+        service_category_id: f.serviceCategoryId,
+        partner_id: f.partnerId,
+        is_parallel: f.is_parallel,
+        priority: f.priority,
       }));
 
-      const response = await post('/api/admin/delegate-service', payload);
-
-      if (response.error) {
-        throw new Error(response.error || 'Erro desconhecido ao delegar.');
+      // 3. Faz POST com tipagem correta
+      interface DelegateServiceResult {
+        success: boolean;
+        inspection_id: string;
+        service_order_id?: string;
+        partner_id?: string;
+        quoteStatus?: 'submitted' | 'queued';
+        message?: string;
       }
 
-      setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
-      if (onSuccess) onSuccess();
-    } catch (e) {
-      logger.error(
-        `Erro ao enviar delegação:
-`,
-        e
-      );
-      setSubmissionResult({ status: 'error', message: (e as Error).message });
+      interface DelegateServiceResponse {
+        results: DelegateServiceResult[];
+      }
+
+      const response = await post<DelegateServiceResponse>('/api/admin/delegate-service', payload);
+
+      const results = response.data?.results;
+      if (!results || results.length === 0) {
+        throw new Error('Nenhuma delegação foi processada.');
+      }
+
+      // 4. Verifica falhas
+      const failed = results.filter(r => !r.success);
+      if (failed.length > 0) {
+        const messages = failed.map(r => r.message).join('; ');
+        setSubmissionResult({ status: 'error', message: messages });
+      } else {
+        setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
+        if (onSuccess) onSuccess();
+      }
+    } catch (e: any) {
+      setSubmissionResult({
+        status: 'error',
+        message: e.message || 'Erro desconhecido ao delegar.',
+      });
     } finally {
       setSubmitting(false);
     }
