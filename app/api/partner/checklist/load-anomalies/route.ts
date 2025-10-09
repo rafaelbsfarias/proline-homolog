@@ -1,96 +1,67 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:load-anomalies');
+
+// Schema de validação
+const LoadAnomaliesSchema = z.object({
+  inspection_id: z.string().uuid('inspection_id deve ser um UUID válido'),
+  vehicle_id: z.string().uuid('vehicle_id deve ser um UUID válido'),
+});
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET(request: Request) {
+async function loadAnomaliesHandler(req: AuthenticatedRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const inspection_id = searchParams.get('inspection_id');
     const vehicle_id = searchParams.get('vehicle_id');
 
-    if (!inspection_id) {
-      return NextResponse.json(
-        { success: false, error: 'inspection_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!vehicle_id) {
-      return NextResponse.json(
-        { success: false, error: 'vehicle_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createApiClient();
-    logger.info('load_anomalies_start', {
+    // Validação com Zod
+    const validation = LoadAnomaliesSchema.safeParse({
       inspection_id,
       vehicle_id,
     });
 
-    // Determinar partner_id a partir do token do usuário
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
-
-    let partnerId: string | undefined;
-    if (token) {
-      const { data: userData } = await supabase.auth.getUser(token);
-      partnerId = userData.user?.id;
-    }
-    if (!partnerId) {
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: 'Usuário não autenticado' },
-        { status: 401 }
+        {
+          success: false,
+          error: 'Parâmetros inválidos',
+          details: validation.error.errors,
+        },
+        { status: 400 }
       );
     }
 
-    // Verificar se o partner tem acesso ao vehicle através de quotes
-    // Temporariamente desabilitado para debug
-    /*
-    const { data: accessCheck, error: accessError } = await supabase
-      .from('quotes')
-      .select(`
-        id,
-        service_orders!inner(vehicle_id)
-      `)
-      .eq('partner_id', partnerId)
-      .eq('service_orders.vehicle_id', vehicle_id)
-      .limit(1);
+    const { inspection_id: validInspectionId, vehicle_id: validVehicleId } = validation.data;
+    const partnerId = req.user.id;
 
-    if (accessError || !accessCheck || accessCheck.length === 0) {
-      logger.warn('partner_access_denied', {
-        partner_id: partnerId,
-        vehicle_id,
-        error: accessError?.message,
-      });
-      return NextResponse.json(
-        { success: false, error: 'Acesso negado: partner não tem permissão para este veículo' },
-        { status: 403 }
-      );
-    }
-    */
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    logger.info('load_anomalies_start', {
+      inspection_id: validInspectionId,
+      vehicle_id: validVehicleId,
+      partner_id: partnerId,
+    });
 
     // Buscar anomalias existentes
     const { data: anomalies, error: anomaliesError } = await supabase
       .from('vehicle_anomalies')
       .select('*')
-      .eq('inspection_id', inspection_id)
-      .eq('vehicle_id', vehicle_id)
+      .eq('inspection_id', validInspectionId)
+      .eq('vehicle_id', validVehicleId)
       .order('created_at', { ascending: true });
 
     if (anomaliesError) {
       logger.error('load_anomalies_error', {
         error: anomaliesError.message,
-        inspection_id,
-        vehicle_id,
+        inspection_id: validInspectionId,
+        vehicle_id: validVehicleId,
       });
       return NextResponse.json(
         { success: false, error: 'Erro ao carregar anomalias' },
@@ -100,8 +71,8 @@ export async function GET(request: Request) {
 
     logger.info('anomalies_loaded_successfully', {
       count: anomalies?.length || 0,
-      inspection_id,
-      vehicle_id,
+      inspection_id: validInspectionId,
+      vehicle_id: validVehicleId,
     });
 
     // Converter para o formato esperado pelo frontend
@@ -172,3 +143,5 @@ export async function GET(request: Request) {
     );
   }
 }
+
+export const GET = withPartnerAuth(loadAnomaliesHandler);
