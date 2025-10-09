@@ -63,13 +63,13 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
     // Verificar se já existe registro deste status na timeline
     const { data: existingHistory } = await supabase
       .from('vehicle_history')
-      .select('id')
+      .select('id, created_at')
       .eq('vehicle_id', vehicleId)
       .eq('status', timelineStatus)
-      .maybeSingle();
+      .order('created_at', { ascending: true });
 
-    // Se não existe, criar novo registro na timeline
-    if (!existingHistory) {
+    if (!existingHistory || existingHistory.length === 0) {
+      // Se não existe, criar novo registro na timeline
       const { error: historyError } = await supabase.from('vehicle_history').insert({
         vehicle_id: vehicleId,
         status: timelineStatus,
@@ -88,7 +88,32 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
         });
       }
     } else {
-      logger.info('history_already_exists', { vehicleId: vehicleId.slice(0, 8) });
+      logger.info('history_already_exists', {
+        vehicleId: vehicleId.slice(0, 8),
+        duplicates: existingHistory.length,
+      });
+
+      // Deduplicação: manter o primeiro e remover demais
+      if (existingHistory.length > 1) {
+        const idsToKeep = existingHistory[0]?.id;
+        const idsToDelete = existingHistory.slice(1).map(h => h.id);
+
+        if (idsToDelete.length > 0) {
+          const { error: cleanupError } = await supabase
+            .from('vehicle_history')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (cleanupError) {
+            logger.warn('history_cleanup_error', { error: cleanupError.message });
+          } else {
+            logger.info('history_cleanup_done', {
+              kept: idsToKeep,
+              removedCount: idsToDelete.length,
+            });
+          }
+        }
+      }
     }
 
     // Atualizar status do veículo se ainda estiver em "Análise Finalizada" ou "Em Análise"
