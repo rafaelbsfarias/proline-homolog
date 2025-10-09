@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,32 +10,34 @@ export const revalidate = 0;
 
 const logger = getLogger('api:partner:checklist:upload-evidence');
 
-export async function POST(request: Request) {
+// Validação do FormData
+const UploadEvidenceSchema = z.object({
+  vehicle_id: z.string().uuid('ID do veículo inválido'),
+  item_key: z.string().min(1, 'item_key é obrigatório'),
+});
+
+async function uploadEvidenceHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    const userId = req.user.id;
 
-    const supabase = createApiClient();
-
-    if (!token) {
-      return NextResponse.json({ ok: false, error: 'Usuário não autenticado' }, { status: 401 });
-    }
-
-    const { data: userInfo } = await supabase.auth.getUser(token);
-    const userId = userInfo.user?.id;
-    if (!userId) {
-      return NextResponse.json({ ok: false, error: 'Usuário não autenticado' }, { status: 401 });
-    }
-
-    const form = await request.formData();
+    const form = await req.formData();
     const file = form.get('file') as File | null;
     const vehicle_id = String(form.get('vehicle_id') || '');
     const item_key = String(form.get('item_key') || '');
 
-    if (!file || !vehicle_id || !item_key) {
-      return NextResponse.json({ ok: false, error: 'Parâmetros inválidos' }, { status: 400 });
+    // Validar entrada
+    const validation = UploadEvidenceSchema.safeParse({ vehicle_id, item_key });
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
+      return NextResponse.json(
+        { ok: false, error: 'Dados inválidos', details: validation.error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (!file) {
+      return NextResponse.json({ ok: false, error: 'Arquivo é obrigatório' }, { status: 400 });
     }
 
     const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
@@ -64,7 +68,10 @@ export async function POST(request: Request) {
       url: signed?.signedUrl || null,
     });
   } catch (e) {
-    logger.error('unexpected', { error: (e as any)?.message || String(e) });
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error('unexpected', { error: error.message });
     return NextResponse.json({ ok: false, error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
+
+export const POST = withPartnerAuth(uploadEvidenceHandler);
