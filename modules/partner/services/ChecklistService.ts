@@ -1,4 +1,11 @@
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { TABLES, BUCKETS } from '@/modules/common/constants/database';
+import {
+  CHECKLIST_STATUS,
+  LEGACY_STATUS_MAP,
+  UI_STATUS,
+  WORKFLOW_STATUS,
+} from '@/modules/partner/constants/checklist';
 import { getLogger } from '@/modules/logger';
 
 const logger = getLogger('services:checklist');
@@ -29,7 +36,7 @@ export interface ChecklistSubmissionResult {
 /**
  * Status normalizado do checklist (binário: ok ou nok)
  */
-export type ChecklistStatus = 'ok' | 'nok' | null;
+export type ChecklistStatus = (typeof CHECKLIST_STATUS)[keyof typeof CHECKLIST_STATUS] | null;
 
 /**
  * ChecklistService - Serviço de domínio para gestão de checklists
@@ -59,11 +66,8 @@ export class ChecklistService {
    */
   public mapStatus(status?: string): ChecklistStatus {
     if (!status) return null;
-    const s = String(status).toLowerCase();
-    if (s === 'ok' || s === 'good') return 'ok';
-    if (s === 'nok' || s === 'attention' || s === 'poor' || s === 'regular' || s === 'critical')
-      return 'nok';
-    return null;
+    const normalized = String(status).toLowerCase();
+    return LEGACY_STATUS_MAP[normalized] || null;
   }
 
   /**
@@ -72,7 +76,9 @@ export class ChecklistService {
   private worstStatus(values: (string | undefined)[]): ChecklistStatus {
     const mapped = values.map(v => this.mapStatus(v)).filter(Boolean) as string[];
     if (mapped.length === 0) return null;
-    return mapped.some(v => v === 'nok') ? 'nok' : 'ok';
+    return mapped.some(v => v === CHECKLIST_STATUS.NOK)
+      ? CHECKLIST_STATUS.NOK
+      : CHECKLIST_STATUS.OK;
   }
 
   /**
@@ -168,7 +174,7 @@ export class ChecklistService {
       partner_id: partnerId,
 
       // Status geral do checklist
-      status: input.status || 'submitted',
+      status: input.status || WORKFLOW_STATUS.SUBMITTED,
       created_at: input.created_at || undefined,
       updated_at: new Date().toISOString(),
 
@@ -265,7 +271,7 @@ export class ChecklistService {
 
       // Verificar se já existe checklist
       const { data: existing } = await this.supabase
-        .from('mechanics_checklist')
+        .from(TABLES.MECHANICS_CHECKLIST)
         .select('id')
         .eq('vehicle_id', vehicle_id)
         .eq('inspection_id', inspection_id)
@@ -275,7 +281,7 @@ export class ChecklistService {
       if (existing) {
         // Atualizar existente
         const { data: updated, error: updateError } = await this.supabase
-          .from('mechanics_checklist')
+          .from(TABLES.MECHANICS_CHECKLIST)
           .update(mapped)
           .eq('id', existing.id)
           .select()
@@ -289,7 +295,7 @@ export class ChecklistService {
       } else {
         // Inserir novo
         const { data: inserted, error: insertError } = await this.supabase
-          .from('mechanics_checklist')
+          .from(TABLES.MECHANICS_CHECKLIST)
           .insert(mapped)
           .select()
           .single();
@@ -330,7 +336,7 @@ export class ChecklistService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await this.supabase
-        .from('mechanics_checklist_items')
+        .from(TABLES.MECHANICS_CHECKLIST_ITEMS)
         .upsert(items, { onConflict: 'inspection_id,item_key' });
 
       if (error) {
@@ -362,7 +368,7 @@ export class ChecklistService {
   public async loadChecklist(vehicle_id: string, inspection_id: string) {
     try {
       const { data, error } = await this.supabase
-        .from('mechanics_checklist')
+        .from(TABLES.MECHANICS_CHECKLIST)
         .select('*')
         .eq('vehicle_id', vehicle_id)
         .eq('inspection_id', inspection_id)
@@ -391,7 +397,7 @@ export class ChecklistService {
     try {
       // 1) Carregar mechanics_checklist por inspection_id
       const { data: checklist, error: checklistError } = await this.supabase
-        .from('mechanics_checklist')
+        .from(TABLES.MECHANICS_CHECKLIST)
         .select('*')
         .eq('inspection_id', inspection_id)
         .single();
@@ -403,7 +409,7 @@ export class ChecklistService {
 
       // 2) Carregar evidências e gerar URLs públicas
       const { data: evidences, error: evError } = await this.supabase
-        .from('mechanics_checklist_evidences')
+        .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
         .select('item_key, storage_path')
         .eq('inspection_id', inspection_id);
 
@@ -417,7 +423,7 @@ export class ChecklistService {
         for (const row of evidences) {
           try {
             const { data: signed } = await this.supabase.storage
-              .from('vehicle-media')
+              .from(BUCKETS.VEHICLE_MEDIA)
               .createSignedUrl(row.storage_path, 60 * 60); // 1h
             const url = signed?.signedUrl || '';
             if (url) evidenceMap[row.item_key] = { url };
@@ -432,7 +438,7 @@ export class ChecklistService {
 
       // 3) Carregar itens por inspeção e montar objeto para UI
       const { data: items, error: itemsError } = await this.supabase
-        .from('mechanics_checklist_items')
+        .from(TABLES.MECHANICS_CHECKLIST_ITEMS)
         .select('item_key, item_status, item_notes')
         .eq('inspection_id', inspection_id);
 
@@ -483,11 +489,11 @@ export class ChecklistService {
   /**
    * Converte status do DB para formato da UI
    */
-  private toFrontStatus(db?: string): 'ok' | 'attention' {
+  private toFrontStatus(db?: string): (typeof UI_STATUS)[keyof typeof UI_STATUS] {
     const s = (db || '').toLowerCase();
-    if (s === 'ok') return 'ok';
-    if (s === 'nok') return 'attention';
-    return 'ok';
+    if (s === CHECKLIST_STATUS.OK) return UI_STATUS.OK;
+    if (s === CHECKLIST_STATUS.NOK) return UI_STATUS.ATTENTION;
+    return UI_STATUS.OK;
   }
 
   /**
@@ -543,7 +549,7 @@ export class ChecklistService {
                 }
 
                 const { data: signedData, error: signedError } = await this.supabase.storage
-                  .from('vehicle-media')
+                  .from(BUCKETS.VEHICLE_MEDIA)
                   .createSignedUrl(path, 3600); // 1 hora de validade
 
                 if (signedError || !signedData) {
@@ -595,7 +601,7 @@ export class ChecklistService {
   public async checklistExists(vehicle_id: string, inspection_id: string): Promise<boolean> {
     try {
       const { data } = await this.supabase
-        .from('mechanics_checklist')
+        .from(TABLES.MECHANICS_CHECKLIST)
         .select('id')
         .eq('vehicle_id', vehicle_id)
         .eq('inspection_id', inspection_id)
@@ -618,10 +624,10 @@ export class ChecklistService {
   public async hasSubmittedChecklist(vehicle_id: string): Promise<boolean> {
     try {
       const { data } = await this.supabase
-        .from('mechanics_checklist')
+        .from(TABLES.MECHANICS_CHECKLIST)
         .select('id')
         .eq('vehicle_id', vehicle_id)
-        .eq('status', 'submitted')
+        .eq('status', WORKFLOW_STATUS.SUBMITTED)
         .limit(1)
         .maybeSingle();
 

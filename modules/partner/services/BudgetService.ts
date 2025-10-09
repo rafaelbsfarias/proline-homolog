@@ -14,6 +14,7 @@
  * @see docs/partner/REFACTOR_PLAN_DRY_SOLID.md - Fase 2
  */
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { TABLES } from '@/modules/common/constants/database';
 import { getLogger } from '@/modules/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -132,21 +133,20 @@ export class BudgetService {
         vehicleYear: vehicle?.year || budgetData.vehicleYear || null,
       };
 
-      // Criar o orçamento com dados do veículo
+      // Criar o budget usando insert + update
       const { data: budget, error: budgetError } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .insert({
           partner_id: partnerId,
           name: budgetData.name,
           vehicle_plate: vehicleData.vehiclePlate,
-          vehicle_model: vehicleData.vehicleModel || null,
-          vehicle_brand: vehicleData.vehicleBrand || null,
+          vehicle_model: vehicleData.vehicleModel,
+          vehicle_brand: vehicleData.vehicleBrand,
           vehicle_year: vehicleData.vehicleYear,
           total_value: budgetData.totalValue,
           status: budgetData.status,
-          service_order_id: quoteId, // Vincula ao quote original
         })
-        .select()
+        .select('id')
         .single();
 
       if (budgetError) throw budgetError;
@@ -167,11 +167,7 @@ export class BudgetService {
         if (itemsError) throw itemsError;
       }
 
-      logger.info('Orçamento criado a partir de quote', {
-        budgetId: budget.id,
-        quoteId,
-        partnerId,
-      });
+      logger.info('create_budget_from_quote', { budgetId: budget.id, quoteId, partnerId });
       return budget.id;
     } catch (error) {
       logger.error('Erro ao criar orçamento a partir de quote', { error, quoteId, partnerId });
@@ -189,7 +185,7 @@ export class BudgetService {
   async getBudgetByQuoteId(partnerId: string, quoteId: string): Promise<string | null> {
     try {
       const { data, error } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .select('id')
         .eq('service_order_id', quoteId)
         .eq('partner_id', partnerId)
@@ -215,7 +211,7 @@ export class BudgetService {
     try {
       // Criar o orçamento
       const { data: budget, error: budgetError } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .insert({
           partner_id: partnerId,
           name: budgetData.name,
@@ -270,7 +266,7 @@ export class BudgetService {
     try {
       // Atualizar o orçamento
       const { error: budgetError } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .update({
           name: budgetData.name,
           vehicle_plate: budgetData.vehiclePlate,
@@ -325,7 +321,7 @@ export class BudgetService {
   async listPartnerBudgets(partnerId: string): Promise<BudgetData[]> {
     try {
       const { data: budgets, error } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .select(
           `
           id,
@@ -385,7 +381,7 @@ export class BudgetService {
   async getBudgetById(partnerId: string, budgetId: string): Promise<BudgetData | null> {
     try {
       const { data: budget, error } = await this.supabase
-        .from('quotes')
+        .from(TABLES.QUOTES)
         .select(
           `
           id,
