@@ -1,37 +1,40 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:save-anomalies');
+
+// Validação do FormData
+const SaveAnomaliesSchema = z.object({
+  inspection_id: z.string().uuid('ID da inspeção inválido'),
+  vehicle_id: z.string().uuid('ID do veículo inválido'),
+  anomalies: z.string().min(1, 'anomalies é obrigatório'),
+});
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function POST(request: Request) {
+async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const formData = await request.formData();
+    const formData = await req.formData();
     const inspection_id = formData.get('inspection_id') as string;
     const vehicle_id = formData.get('vehicle_id') as string;
     const anomaliesJson = formData.get('anomalies') as string;
 
-    if (!inspection_id) {
-      return NextResponse.json(
-        { success: false, error: 'inspection_id é obrigatório' },
-        { status: 400 }
-      );
-    }
+    // Validar entrada
+    const validation = SaveAnomaliesSchema.safeParse({
+      inspection_id,
+      vehicle_id,
+      anomalies: anomaliesJson,
+    });
 
-    if (!vehicle_id) {
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { success: false, error: 'vehicle_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!anomaliesJson) {
-      return NextResponse.json(
-        { success: false, error: 'anomalies é obrigatório' },
+        { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
@@ -53,30 +56,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    const partnerId = req.user.id;
+
     logger.info('save_anomalies_start', {
       inspection_id,
       vehicle_id,
       anomalies_count: anomalies.length,
     });
-
-    // Determinar partner_id a partir do token do usuário
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
-
-    let partnerId: string | undefined;
-    if (token) {
-      const { data: userData } = await supabase.auth.getUser(token);
-      partnerId = userData.user?.id;
-    }
-    if (!partnerId) {
-      return NextResponse.json(
-        { success: false, error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
-    }
 
     // Verificar se o partner tem acesso ao vehicle através de quotes
     const { data: accessCheck, error: accessError } = await supabase
@@ -243,3 +230,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withPartnerAuth(saveAnomaliesHandler);
