@@ -16,34 +16,36 @@ interface BaseTableProps<T> {
 
 const BaseTable = <T,>({ data, columns, getRowKey }: BaseTableProps<T>) => {
   return (
-    <table className={styles.table}>
-      <thead>
-        <tr className={styles.headerRow}>
-          {columns.map(col => (
-            <th
-              key={String(col.key)}
-              className={col.align === 'center' ? styles.headerCellCenter : styles.headerCell}
-            >
-              {col.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map(row => (
-          <tr key={getRowKey(row)} className={styles.bodyRow}>
+    <div className={styles.tableWrapper}>
+      <table className={styles.table}>
+        <thead>
+          <tr className={styles.headerRow}>
             {columns.map(col => (
-              <td
+              <th
                 key={String(col.key)}
-                className={col.align === 'center' ? styles.cellCenter : styles.cell}
+                className={col.align === 'center' ? styles.headerCellCenter : styles.headerCell}
               >
-                {col.render ? col.render((row as any)[col.key], row) : (row as any)[col.key]}
-              </td>
+                {col.label}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.map(row => (
+            <tr key={getRowKey(row)} className={styles.bodyRow}>
+              {columns.map(col => (
+                <td
+                  key={String(col.key)}
+                  className={col.align === 'center' ? styles.cellCenter : styles.cell}
+                >
+                  {col.render ? col.render((row as any)[col.key], row) : (row as any)[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 

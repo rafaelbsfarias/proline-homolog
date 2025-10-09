@@ -1,5 +1,12 @@
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto; /* permite scroll horizontal */
+  -webkit-overflow-scrolling: touch; /* suaviza scroll no mobile */
+}
+
 .table {
   width: 100%;
+  min-width: 600px; /* largura mínima para não quebrar colunas */
   border-collapse: collapse;
   border-radius: 4px;
   overflow: hidden;
@@ -49,4 +56,31 @@
 
 .cellCenter {
   text-align: center;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .headerCell,
+  .headerCellCenter,
+  .cell,
+  .cellCenter {
+    padding: 10px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .table {
+    font-size: 0.75rem;
+  }
+
+  .headerCell,
+  .headerCellCenter,
+  .cell,
+  .cellCenter {
+    padding: 8px 5px;
+  }
 }

@@ -108,14 +108,13 @@ const PendingDelegationsList = () => {
       <Header />
       <div className={styles.container}>
         <div className="flex items-center mb-4">
-          <OutlineButton
+          {/*  <OutlineButton
             onClick={() => router.back()}
             title="Voltar"
             className="mr-4 flex items-center gap-1"
           >
             <LuArrowLeft size={20} /> Voltar
-          </OutlineButton>
-          <h1 className="text-xl font-bold">Delegação de Serviços Pendentes</h1>
+          </OutlineButton> */}
         </div>
 
         {checklists.length === 0 ? (
@@ -123,8 +122,11 @@ const PendingDelegationsList = () => {
             <p>Nenhuma delegação de serviço pendente no momento.</p>
           </div>
         ) : (
-          <div className={styles.tableContainer}>
-            <BaseTable data={checklists} columns={columns} getRowKey={row => row.inspection_id} />
+          <div className={styles.cardContainer}>
+            <h2 className={styles.cardTitle}>Lista de Delegações Pendentes</h2>
+            <div className={styles.tableContainer}>
+              <BaseTable data={checklists} columns={columns} getRowKey={row => row.inspection_id} />
+            </div>
           </div>
         )}
       </div>

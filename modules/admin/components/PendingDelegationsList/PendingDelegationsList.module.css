@@ -4,43 +4,6 @@
   margin: 0 auto;
 }
 
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  color: #666;
-  font-size: 1rem;
-}
-
-.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  border: 1px solid #f5c6cb;
-}
-
-.error p {
-  margin: 0 0 1rem 0;
-}
-
-.retryButton {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.retryButton:hover {
-  background-color: #c82333;
-}
-
 .emptyState {
   text-align: center;
   padding: 2rem;
@@ -54,66 +17,13 @@
   font-size: 1rem;
 }
 
-.refreshButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-}
-
-.refreshButton:hover {
-  background-color: #0056b3;
-}
-
-.tableContainer {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  margin-top: 1rem;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.table th {
-  background-color: #f8f9fa;
-  color: #333;
-  font-weight: 600;
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 2px solid #dee2e6;
-}
-
-.tableRow {
-  transition: background-color 0.2s;
-}
-
-.tableRow:hover {
-  background-color: #f8f9fa;
-}
-
-.tableRow td {
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-  vertical-align: middle;
-}
-
 .actions {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
 
-.approveButton,
-.rejectButton {
+.approveButton {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
@@ -125,12 +35,12 @@
 }
 
 .approveButton {
-  background-color: #28a745;
+  background-color: #194d00;
   color: white;
 }
 
 .approveButton:hover:not(:disabled) {
-  background-color: #218838;
+  background-color: #194d00;
 }
 
 .approveButton:disabled {
@@ -139,19 +49,20 @@
   opacity: 0.6;
 }
 
-.rejectButton {
-  background-color: #dc3545;
-  color: white;
+.cardContainer {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  padding: 36px 22px;
+  max-width: 90vw;
+  margin: 0 auto 30px;
 }
 
-.rejectButton:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.rejectButton:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.6;
+.cardTitle {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #333;
+  margin-top: 0;
 }
 
 /* Responsividade */
@@ -160,27 +71,12 @@
     padding: 0.5rem;
   }
 
-  .tableContainer {
-    overflow-x: auto;
-  }
-
-  .table {
-    min-width: 600px;
-  }
-
-  .table th,
-  .tableRow td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
   .actions {
     flex-direction: column;
     gap: 0.25rem;
   }
 
-  .approveButton,
-  .rejectButton {
+  .approveButton {
     min-width: 70px;
     padding: 0.4rem 0.8rem;
     font-size: 0.75rem;
@@ -201,13 +97,4 @@
   .emptyState {
     padding: 1rem;
   }
-}
-
-/* Accessibility */
-.approveButton:focus,
-.rejectButton:focus,
-.retryButton:focus,
-.refreshButton:focus {
-  outline: 2px solid #0066cc;
-  outline-offset: 2px;
 }
