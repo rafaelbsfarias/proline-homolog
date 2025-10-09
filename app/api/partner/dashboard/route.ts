@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { createApiClient } from '@/lib/supabase/api';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { handleApiError } from '@/lib/utils/apiErrorHandlers';
 import { DatabaseError } from '@/lib/utils/errors';
 import { getLogger } from '@/modules/logger';
@@ -16,7 +16,7 @@ async function getDashboardData(req: AuthenticatedRequest) {
       userEmail: req.user.email,
     });
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     const { data, error } = await supabase.rpc('get_partner_dashboard_data', {
       p_partner_id: partnerId,

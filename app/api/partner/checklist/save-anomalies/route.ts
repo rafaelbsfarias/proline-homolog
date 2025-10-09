@@ -1,37 +1,41 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { MediaUploadService } from '@/modules/common/services/MediaUploadService';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:save-anomalies');
+
+// Validação do FormData
+const SaveAnomaliesSchema = z.object({
+  inspection_id: z.string().uuid('ID da inspeção inválido'),
+  vehicle_id: z.string().uuid('ID do veículo inválido'),
+  anomalies: z.string().min(1, 'anomalies é obrigatório'),
+});
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function POST(request: Request) {
+async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const formData = await request.formData();
+    const formData = await req.formData();
     const inspection_id = formData.get('inspection_id') as string;
     const vehicle_id = formData.get('vehicle_id') as string;
     const anomaliesJson = formData.get('anomalies') as string;
 
-    if (!inspection_id) {
-      return NextResponse.json(
-        { success: false, error: 'inspection_id é obrigatório' },
-        { status: 400 }
-      );
-    }
+    // Validar entrada
+    const validation = SaveAnomaliesSchema.safeParse({
+      inspection_id,
+      vehicle_id,
+      anomalies: anomaliesJson,
+    });
 
-    if (!vehicle_id) {
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { success: false, error: 'vehicle_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!anomaliesJson) {
-      return NextResponse.json(
-        { success: false, error: 'anomalies é obrigatório' },
+        { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
@@ -53,30 +57,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    const mediaService = MediaUploadService.getInstance();
+    const partnerId = req.user.id;
+
     logger.info('save_anomalies_start', {
       inspection_id,
       vehicle_id,
       anomalies_count: anomalies.length,
     });
-
-    // Determinar partner_id a partir do token do usuário
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
-
-    let partnerId: string | undefined;
-    if (token) {
-      const { data: userData } = await supabase.auth.getUser(token);
-      partnerId = userData.user?.id;
-    }
-    if (!partnerId) {
-      return NextResponse.json(
-        { success: false, error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
-    }
 
     // Verificar se o partner tem acesso ao vehicle através de quotes
     const { data: accessCheck, error: accessError } = await supabase
@@ -113,49 +102,53 @@ export async function POST(request: Request) {
       if (!description) continue; // Pular anomalias sem descrição
 
       const photos = anomaly.photos || [];
-      const uploadedPhotoUrls: string[] = [];
+      const photoFiles: File[] = [];
 
-      // Fazer upload das fotos para o bucket
+      // Coletar todos os arquivos de fotos
       for (let j = 0; j < photos.length; j++) {
         const photoKey = `anomaly-${i}-photo-${j}`;
         const photoFile = formData.get(photoKey) as File;
-
         if (photoFile && photoFile instanceof File) {
-          try {
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${photoFile.name.split('.').pop()}`;
-            const filePath = `anomalies/${inspection_id}/${vehicle_id}/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-              .from('vehicle-media')
-              .upload(filePath, photoFile, {
-                cacheControl: '3600',
-                upsert: false,
-              });
-
-            if (uploadError) {
-              logger.error('photo_upload_error', {
-                error: uploadError.message,
-                fileName,
-                inspection_id,
-                vehicle_id,
-              });
-              // Continuar sem esta foto, não falhar toda a operação
-              continue;
-            }
-
-            // Salvar apenas o path do arquivo, não a URL completa
-            // As URLs assinadas serão geradas no momento da leitura
-            uploadedPhotoUrls.push(filePath);
-          } catch (uploadErr) {
-            logger.error('photo_upload_exception', {
-              error: String(uploadErr),
-              photoKey,
-              inspection_id,
-              vehicle_id,
-            });
-            // Continuar sem esta foto
-          }
+          photoFiles.push(photoFile);
         }
+      }
+
+      // Fazer upload usando MediaUploadService
+      let uploadedPhotoUrls: string[] = [];
+      if (photoFiles.length > 0) {
+        const uploadResults = await mediaService.uploadMultipleFiles(
+          photoFiles,
+          {
+            bucket: 'vehicle-media',
+            folder: `anomalies/${inspection_id}/${vehicle_id}`,
+            allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+            maxSizeBytes: 10 * 1024 * 1024, // 10MB por foto
+            cacheControl: '3600',
+            upsert: false,
+          },
+          {
+            inspection_id,
+            vehicle_id,
+            anomaly_index: String(i),
+            partner_id: partnerId,
+          }
+        );
+
+        // Coletar apenas os uploads bem-sucedidos
+        uploadedPhotoUrls = uploadResults
+          .filter(r => r.success && r.result)
+          .map(r => r.result!.path);
+
+        // Logar erros de upload individual
+        uploadResults.forEach((r, idx) => {
+          if (!r.success) {
+            logger.warn('anomaly_photo_upload_failed', {
+              anomaly_index: i,
+              photo_index: idx,
+              error: r.error,
+            });
+          }
+        });
       }
 
       processedAnomalies.push({
@@ -243,3 +236,5 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export const POST = withPartnerAuth(saveAnomaliesHandler);
