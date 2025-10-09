@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:init');
+
+// Validação do corpo da requisição
+const InitChecklistSchema = z.object({
+  vehicleId: z.string().uuid('ID do veículo inválido'),
+  quoteId: z.string().uuid('ID do orçamento inválido').optional(),
+});
 
 /**
  * Endpoint para registrar o início da fase orçamentária quando parceiro acessa o checklist
@@ -12,16 +19,19 @@ const logger = getLogger('api:partner:checklist:init');
 async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
-    const { vehicleId, quoteId } = body;
 
-    if (!vehicleId) {
+    // Validar entrada
+    const validation = InitChecklistSchema.safeParse(body);
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { success: false, error: 'vehicleId é obrigatório' },
+        { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
 
-    const supabase = createApiClient();
+    const { vehicleId, quoteId } = validation.data;
+    const supabase = SupabaseService.getInstance().getAdminClient();
     const partnerId = req.user.id;
 
     logger.info('init_checklist_start', {
