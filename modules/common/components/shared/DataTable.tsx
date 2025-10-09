@@ -1,7 +1,7 @@
 import ConfirmDialog from '@/modules/admin/components/ConfirmDialog';
 import Spinner from '@/modules/common/components/Spinner/Spinner'; // <<< ADICIONADO
 import { useState } from 'react';
-import { FaClipboardList, FaEdit, FaPaperPlane } from 'react-icons/fa';
+import { FaClipboardList, FaEdit, FaPaperPlane, FaDownload, FaCamera } from 'react-icons/fa';
 import { TbTrashXFilled } from 'react-icons/tb';
 
 interface DataTableProps<T> {
@@ -13,6 +13,8 @@ interface DataTableProps<T> {
   onDelete?: (item: T) => void | Promise<void>;
   onSendToAdmin?: (item: T) => void | Promise<void>;
   onChecklist?: (item: T) => void;
+  onDownloadOS?: (item: T) => void; // Nova prop para download da OS
+  onExecutionEvidence?: (item: T) => void; // Nova prop para evidências de execução
   showActions?: boolean;
   useConfirmDialog?: boolean; // Nova prop para controlar o dialog de confirmação
   canEdit?: (item: T) => boolean; // Nova prop para controlar se o botão deve estar habilitado
@@ -29,6 +31,8 @@ const DataTable = <T extends { id: React.Key }>({
   onDelete,
   onSendToAdmin,
   onChecklist,
+  onDownloadOS, // Nova prop
+  onExecutionEvidence, // Nova prop para evidências
   loading = false,
   showActions = false,
   useConfirmDialog = true, // Padrão é usar confirmação para compatibilidade com dashboard
@@ -196,6 +200,46 @@ const DataTable = <T extends { id: React.Key }>({
                           }
                         >
                           <FaPaperPlane size={14} />
+                        </button>
+                      )}
+                      {onDownloadOS && (
+                        <button
+                          onClick={() => onDownloadOS(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#16a34a',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Baixar Ordem de Serviço"
+                        >
+                          <FaDownload size={14} />
+                        </button>
+                      )}
+                      {onExecutionEvidence && (
+                        <button
+                          onClick={() => onExecutionEvidence(row)}
+                          style={{
+                            padding: '4px 8px',
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                          title="Evidências de Execução"
+                        >
+                          <FaCamera size={14} />
                         </button>
                       )}
                       {onDelete && (

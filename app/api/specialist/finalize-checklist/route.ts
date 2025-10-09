@@ -20,10 +20,13 @@ export const POST = createVehicleActionHandler(async ({ vehicleId, supabase }) =
     return { json: { error: 'Nenhuma análise em andamento' }, status: 404 };
   }
 
-  // Mark as finalized
+  // Mark as finalized with timestamp
   const { error: updErr } = await supabase
     .from('inspections')
-    .update({ finalized: true })
+    .update({
+      finalized: true,
+      finalized_at: new Date().toISOString(),
+    })
     .eq('id', inspection.id);
 
   if (updErr) {

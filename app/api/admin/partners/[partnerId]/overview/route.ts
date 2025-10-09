@@ -64,6 +64,20 @@ export const GET = withAdminAuth(
         );
       }
 
+      // Pending budgets (partner) — quotes aguardando parceiro preencher
+      const { count: pendingPartner, error: q3Err } = await admin
+        .from('quotes')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_id', partnerId)
+        .eq('status', 'pending_partner');
+      if (q3Err) {
+        logger.error('failed_pending_partner', { error: q3Err, partnerId });
+        return NextResponse.json(
+          { error: 'Erro ao contar orçamentos pendentes (parceiro)' },
+          { status: 500 }
+        );
+      }
+
       // Executing budgets: approved quotes + distinct service orders in progress with quotes for this partner
       // Primeiro, buscar quotes aprovados para este parceiro
       const { data: approvedQuotes, error: approvedErr } = await admin
@@ -203,8 +217,8 @@ export const GET = withAdminAuth(
         id: partner.profile_id as string,
         company_name: (partner.company_name as string) || '',
         services_count: servicesCount || 0,
-        // Orçamentos pendentes: ainda não enviados pelo parceiro (draft, pending)
-        pending_budgets: 0, // a fazer: implementar contagem de orçamentos em draft
+        // Orçamentos pendentes: aguardando parceiro preencher (pending_partner)
+        pending_budgets: pendingPartner || 0,
         executing_budgets: executing,
         // Para Aprovação: aguardando aprovação do ADMIN (pending_admin_approval)
         // + aguardando aprovação do CLIENTE (pending_client_approval)

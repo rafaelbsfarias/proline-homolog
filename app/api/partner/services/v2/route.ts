@@ -11,7 +11,11 @@ import {
   mapPartnerServicesToResponse,
   mapPaginatedResponse,
 } from './lib/mappers';
-import { handleServiceResult, handleValidationError, handleApiError } from './lib/error-handler';
+import {
+  handleServiceResult,
+  handleValidationError,
+  handleApiError,
+} from '@/modules/common/http/errorHandlers';
 import { PartnerServiceApplicationServiceImpl } from '@/modules/partner/domain/application/services/PartnerServiceApplicationServiceImpl';
 import { SupabasePartnerServiceRepository } from '@/modules/partner/domain/repositories/SupabasePartnerServiceRepository';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';

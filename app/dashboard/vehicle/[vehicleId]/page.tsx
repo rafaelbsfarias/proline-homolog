@@ -11,9 +11,21 @@ const UnifiedVehicleDetailsPage = () => {
   const params = useParams();
   const vehicleId = params.vehicleId as string;
   const { user } = useAuth();
-  const role = user?.user_metadata.role as 'client' | 'specialist';
+  // Mapear role corretamente para cada tipo de usuário
+  const rawRole = (user?.user_metadata?.role as string | undefined) || 'specialist';
+  const role: 'client' | 'specialist' | 'admin' | 'partner' =
+    rawRole === 'client'
+      ? 'client'
+      : rawRole === 'admin'
+        ? 'admin'
+        : rawRole === 'partner'
+          ? 'partner'
+          : 'specialist';
 
-  const { vehicle, inspection, mediaUrls, loading, error } = useVehicleDetails(role, vehicleId);
+  const { vehicle, inspection, vehicleHistory, mediaUrls, loading, error } = useVehicleDetails(
+    role,
+    vehicleId
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -21,6 +33,7 @@ const UnifiedVehicleDetailsPage = () => {
       <VehicleDetails
         vehicle={vehicle}
         inspection={inspection}
+        vehicleHistory={vehicleHistory}
         mediaUrls={mediaUrls}
         loading={loading}
         error={error}

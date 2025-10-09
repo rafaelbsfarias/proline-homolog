@@ -1,10 +1,37 @@
+/**
+ * @deprecated Este endpoint está depreciado e será removido em breve.
+ *
+ * **Use o novo endpoint V2:**
+ * - POST /api/partner/services/v2 (criar serviço)
+ *
+ * **Mudanças no V2:**
+ * - Validação com Zod (schema rigoroso)
+ * - Arquitetura DDD (Value Objects, Entidades)
+ * - Tratamento de erros padronizado
+ * - Retorna domain objects ao invés de DB raw
+ *
+ * **Timeline de remoção:** Sprint +2 (após migração completa dos hooks)
+ *
+ * @see app/api/partner/services/v2/route.ts
+ * @see docs/partner/REFACTOR_PLAN_DRY_SOLID.md - Fase 3 (P1.2)
+ */
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { handleApiError } from '@/lib/utils/apiErrorHandlers';
 import { DatabaseError, ValidationError } from '@/lib/utils/errors';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('api:partner:services:legacy');
 
 async function createServiceHandler(req: AuthenticatedRequest) {
+  // Log de depreciação
+  logger.warn('deprecated_endpoint_used', {
+    endpoint: 'POST /api/partner/services',
+    partnerId: req.user.id,
+    message: 'Este endpoint está depreciado. Use POST /api/partner/services/v2',
+  });
+
   try {
     const body = await req.json();
     const { name, description, price, category } = body;
@@ -37,7 +64,13 @@ async function createServiceHandler(req: AuthenticatedRequest) {
       throw new DatabaseError(`Erro ao criar serviço no banco de dados: ${error.message}`);
     }
 
-    return NextResponse.json({ success: true, service: data }, { status: 201 });
+    // Headers indicando depreciação
+    const response = NextResponse.json({ success: true, service: data }, { status: 201 });
+    response.headers.set('X-Deprecated', 'true');
+    response.headers.set('X-Deprecated-Replacement', '/api/partner/services/v2');
+    response.headers.set('X-Deprecated-Removal-Date', '2025-12-01');
+
+    return response;
   } catch (error) {
     return handleApiError(error);
   }

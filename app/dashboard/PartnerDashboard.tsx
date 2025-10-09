@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import { useChecklistCache } from '@/modules/partner/hooks/useChecklistCache';
 
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
@@ -31,14 +32,29 @@ type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'>
   vehicle: string;
 };
 
+// Tipo derivado para exibição de serviços em andamento
+type InProgressServiceDisplay = Omit<InProgressService, 'total_value' | 'approved_at'> & {
+  total_value: string;
+  approved_at: string;
+  vehicle_info: string;
+};
+
 const PartnerDashboard = () => {
   const router = useRouter();
-  const { post } = useAuthenticatedFetch();
+  const { post } = useAuthenticatedFetch(); // Mantém para handleSendToAdmin
+
+  // Hook otimizado de cache de checklist
+  const { checkSingleQuote, checkMultipleQuotes, invalidateCache, getFromCache } =
+    useChecklistCache({
+      cacheTTL: 60000, // Cache de 60 segundos (vs requisições a cada 2-3 segundos)
+      debounceMs: 500, // Debounce de 500ms
+      maxConcurrent: 3, // Máximo 3 requisições simultâneas
+    });
+
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
   const [quotesWithChecklist, setQuotesWithChecklist] = useState<Set<string>>(new Set());
-  const [editedQuotes, setEditedQuotes] = useState<Set<string>>(new Set());
   const [isCheckingChecklists, setIsCheckingChecklists] = useState(false);
 
   // Sistema de toast interno
@@ -53,28 +69,9 @@ const PartnerDashboard = () => {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 4000);
   };
 
-  // Função para verificar se existe checklist salvo para o orçamento
+  // ✅ Função otimizada com cache
   const checkChecklistExists = async (quoteId: string): Promise<boolean> => {
-    let attempts = 0;
-    while (attempts < 3) {
-      try {
-        const response = await post<{ hasChecklist: boolean }>(
-          '/api/partner/checklist/exists',
-          { quoteId, _t: Date.now() }, // Cache-busting
-          { requireAuth: true }
-        );
-        if (response.data?.hasChecklist) {
-          return true;
-        }
-      } catch {
-        // Ignore error and retry
-      }
-      attempts++;
-      if (attempts < 3) {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retrying
-      }
-    }
-    return false;
+    return checkSingleQuote(quoteId);
   };
 
   const {
@@ -89,59 +86,63 @@ const PartnerDashboard = () => {
     reloadData,
   } = usePartnerDashboard();
 
+  // ✅ Verificação otimizada em lote com cache
   const checkAllQuotesChecklist = async () => {
-    setIsCheckingChecklists(true);
-    const checklistStatuses = new Set<string>();
     if (!pendingQuotes || pendingQuotes.length === 0) {
-      setQuotesWithChecklist(checklistStatuses);
-      setIsCheckingChecklists(false);
+      setQuotesWithChecklist(new Set());
       return;
     }
 
-    // Verificação concorrente para reduzir latência
-    const results = await Promise.all(
-      pendingQuotes.map(async quote => ({
-        id: quote.id,
-        exists: await checkChecklistExists(quote.id),
-      }))
-    );
-    for (const r of results) {
-      if (r.exists) checklistStatuses.add(r.id);
+    setIsCheckingChecklists(true);
+
+    try {
+      // Usar verificação em lote do hook otimizado
+      const quoteIds = pendingQuotes.map(q => q.id);
+      const results = await checkMultipleQuotes(quoteIds);
+
+      // Converter Map para Set de IDs que têm checklist
+      const checklistStatuses = new Set<string>();
+      results.forEach((hasChecklist, quoteId) => {
+        if (hasChecklist) {
+          checklistStatuses.add(quoteId);
+        }
+      });
+
+      setQuotesWithChecklist(checklistStatuses);
+    } finally {
+      setIsCheckingChecklists(false);
     }
-    setQuotesWithChecklist(checklistStatuses);
-    setIsCheckingChecklists(false);
   };
   const checkAllQuotesChecklistRef = useRef(checkAllQuotesChecklist);
   useEffect(() => {
     checkAllQuotesChecklistRef.current = checkAllQuotesChecklist;
   });
 
-  // Verificar checklist quando a lista de pendingQuotes mudar
+  // ✅ Verificar checklist quando a lista de pendingQuotes mudar (com cache)
   useEffect(() => {
     checkAllQuotesChecklist();
   }, [pendingQuotes]);
 
-  // Re-checar quando o usuário volta ao dashboard (focus/visibility)
+  // ✅ Re-checar APENAS quando o usuário volta ao dashboard (invalida cache e recarrega)
   useEffect(() => {
-    const onFocus = () => {
-      checkAllQuotesChecklistRef.current();
-    };
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
+        // Invalidar cache e forçar atualização
+        invalidateCache();
         checkAllQuotesChecklistRef.current();
       }
     };
+
     if (typeof window !== 'undefined') {
-      window.addEventListener('focus', onFocus);
       document.addEventListener('visibilitychange', onVisibility);
     }
+
     return () => {
       if (typeof window !== 'undefined') {
-        window.removeEventListener('focus', onFocus);
         document.removeEventListener('visibilitychange', onVisibility);
       }
     };
-  }, []);
+  }, [invalidateCache]);
 
   async function handleAcceptContract() {
     if (!checked) return;
@@ -169,8 +170,13 @@ const PartnerDashboard = () => {
   }
 
   const handleEditQuote = async (quote: PendingQuoteDisplay) => {
-    // Verificar se existe checklist salvo antes de permitir edição do orçamento
-    const hasChecklist = await checkChecklistExists(quote.id);
+    // ✅ Tentar cache primeiro, depois API
+    let hasChecklist = getFromCache(quote.id);
+
+    if (hasChecklist === null) {
+      // Cache miss - fazer requisição
+      hasChecklist = await checkChecklistExists(quote.id);
+    }
 
     if (!hasChecklist) {
       showToast('É necessário realizar o checklist antes de editar o orçamento.', 'info');
@@ -187,8 +193,12 @@ const PartnerDashboard = () => {
 
   const handleSendToAdmin = async (quote: PendingQuoteDisplay) => {
     try {
-      // Verificar se existe checklist e orçamento salvo
-      const hasChecklist = await checkChecklistExists(quote.id);
+      // ✅ Verificar cache primeiro
+      let hasChecklist = getFromCache(quote.id);
+      if (hasChecklist === null) {
+        hasChecklist = await checkChecklistExists(quote.id);
+      }
+
       if (!hasChecklist) {
         showToast('É necessário realizar o checklist antes de enviar o orçamento.', 'error');
         return;
@@ -208,7 +218,7 @@ const PartnerDashboard = () => {
         '/api/partner/quotes/send-to-admin',
         {
           quoteId: quote.id,
-          vehicleStatus: 'Análise Orçamentária Iniciada',
+          vehicleStatus: 'FASE ORÇAMENTÁRIA',
         },
         { requireAuth: true }
       );
@@ -218,10 +228,10 @@ const PartnerDashboard = () => {
         return;
       }
 
-      showToast(
-        'Orçamento enviado ao admin e veículo marcado como "Análise Orçamentária Iniciada"!',
-        'success'
-      );
+      showToast('Orçamento enviado ao admin e veículo marcado como Fase Orçamentária!', 'success');
+
+      // ✅ Invalidar cache do quote após enviar
+      invalidateCache(quote.id);
       reloadData();
     } catch {
       showToast('Erro inesperado. Tente novamente.', 'error');
@@ -258,12 +268,14 @@ const PartnerDashboard = () => {
     }
   };
 
-  const handleEditService = () => {
-    // Implementar lógica para editar serviço
+  const handleDownloadServiceOrder = (service: InProgressServiceDisplay) => {
+    // Navegar para a página de ordem de serviço que pode ser impressa/baixada
+    router.push(`/dashboard/partner/service-order?quoteId=${service.id}`);
   };
 
-  const handleDeleteService = () => {
-    // Implementar lógica para excluir serviço
+  const handleExecutionEvidence = (service: InProgressServiceDisplay) => {
+    // Navegar para a página de evidências de execução
+    router.push(`/dashboard/partner/execution-evidence?quoteId=${service.id}`);
   };
 
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
@@ -273,9 +285,12 @@ const PartnerDashboard = () => {
     { key: 'date', header: 'Data' },
   ];
 
-  const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
-    { key: 'id', header: 'ID' },
-    { key: 'status', header: 'Status' },
+  const inProgressServicesColumns: { key: keyof InProgressServiceDisplay; header: string }[] = [
+    { key: 'vehicle_info', header: 'Veículo' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
+    { key: 'total_value', header: 'Valor' },
+    { key: 'approved_at', header: 'Aprovado em' },
   ];
 
   return (
@@ -423,7 +438,7 @@ const PartnerDashboard = () => {
             data={pendingQuotes.map(quote => {
               const getStatus = () => {
                 const hasChecklist = quotesWithChecklist.has(quote.id);
-                const hasValue = quote.total_value > 0;
+                const hasValue = (quote.total_value ?? 0) > 0;
 
                 if (!hasChecklist) {
                   return 'Checklist Pendente';
@@ -448,7 +463,7 @@ const PartnerDashboard = () => {
                 raw_status: quote.status,
                 vehicle: formatVehicleInfo(quote),
                 status: getStatus(),
-                total_value: formatCurrency(quote.total_value),
+                total_value: formatCurrency(quote.total_value ?? 0),
                 date: formatDate(quote.date),
               };
             })}
@@ -474,14 +489,25 @@ const PartnerDashboard = () => {
             loading={isCheckingChecklists}
           />
 
-          <DataTable
-            title="Serviços em Andamento"
-            data={inProgressServices}
+          <DataTable<InProgressServiceDisplay>
+            title="Orçamentos Aprovados - Aguardando Execução"
+            data={inProgressServices.map(service => ({
+              ...service,
+              total_value: service.total_value ? formatCurrency(service.total_value) : 'N/A',
+              approved_at: service.approved_at ? formatDate(service.approved_at) : 'N/A',
+              vehicle_info:
+                service.vehicle_info ||
+                formatVehicleInfo({
+                  vehicle_plate: service.vehicle_plate,
+                  vehicle_brand: service.vehicle_brand,
+                  vehicle_model: service.vehicle_model,
+                }),
+            }))}
             columns={inProgressServicesColumns}
-            emptyMessage="Nenhum serviço em andamento."
+            emptyMessage="Nenhum orçamento aprovado aguardando execução."
             showActions={true}
-            onEdit={handleEditService}
-            onDelete={handleDeleteService}
+            onDownloadOS={handleDownloadServiceOrder}
+            onExecutionEvidence={handleExecutionEvidence}
           />
           <ServiceModal
             isOpen={showAddServiceModal}

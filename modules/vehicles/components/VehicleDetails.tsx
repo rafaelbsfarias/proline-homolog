@@ -10,6 +10,7 @@ import {
 } from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
+import TimelineSection from './TimelineSection';
 
 interface VehicleDetails {
   id: string;
@@ -47,9 +48,19 @@ interface InspectionData {
   }>;
 }
 
+interface VehicleHistoryEntry {
+  id: string;
+  vehicle_id: string;
+  status: string;
+  prevision_date: string | null;
+  end_date: string | null;
+  created_at: string;
+}
+
 interface VehicleDetailsProps {
   vehicle: VehicleDetails | null;
   inspection: InspectionData | null;
+  vehicleHistory: VehicleHistoryEntry[];
   mediaUrls: Record<string, string>;
   loading: boolean;
   error: string | null;
@@ -58,6 +69,7 @@ interface VehicleDetailsProps {
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
   inspection,
+  vehicleHistory,
   mediaUrls,
   loading,
   error,
@@ -121,6 +133,8 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       </main>
     );
   }
+
+  // (hook moved above early returns to respect Rules of Hooks)
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
@@ -322,93 +336,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         </div>
 
         {/* Timeline e Status */}
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-            padding: '24px',
-          }}
-        >
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-            Timeline do Veículo
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#3498db',
-                }}
-              ></div>
-              <div>
-                <div style={{ fontWeight: 500 }}>Veículo Cadastrado</div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                  {formatDateBR(vehicle.created_at)}
-                </div>
-              </div>
-            </div>
-
-            {vehicle.estimated_arrival_date && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: '#f39c12',
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>Previsão de Chegada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(vehicle.estimated_arrival_date)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {inspection && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: '#e74c3c',
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>Análise Iniciada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(inspection.inspection_date)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {inspection?.finalized && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: '#27ae60',
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>Análise Finalizada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(inspection.inspection_date)}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <TimelineSection
+          createdAt={vehicle.created_at}
+          estimatedArrivalDate={vehicle.estimated_arrival_date}
+          inspectionDate={inspection?.inspection_date}
+          inspectionFinalized={inspection?.finalized}
+          vehicleHistory={vehicleHistory}
+        />
 
         {/* Serviços Necessários */}
         {inspection?.services && inspection.services.length > 0 && (

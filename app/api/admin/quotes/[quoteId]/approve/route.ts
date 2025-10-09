@@ -11,10 +11,10 @@ export const POST = withAdminAuth(
       const { quoteId } = await ctx.params;
       const admin = SupabaseService.getInstance().getAdminClient();
 
-      // Load current status
+      // Load current status and service_order_id
       const { data: current, error: loadErr } = await admin
         .from('quotes')
-        .select('id, status')
+        .select('id, status, service_order_id')
         .eq('id', quoteId)
         .maybeSingle();
       if (loadErr) {
@@ -24,9 +24,34 @@ export const POST = withAdminAuth(
       if (!current)
         return NextResponse.json({ error: 'Orçamento não encontrado' }, { status: 404 });
 
-      if (!['pending_admin_approval', 'admin_review'].includes(current.status as any)) {
+      const validStatuses = ['pending_admin_approval', 'admin_review'];
+      if (!validStatuses.includes(current.status)) {
         return NextResponse.json(
           { error: 'Aprovação indisponível para o status atual' },
+          { status: 400 }
+        );
+      }
+
+      // Validar que o quote foi enviado pelo parceiro
+      if (!current.sent_to_admin_at) {
+        logger.warn('attempt_approve_unsent_quote', { quoteId });
+        return NextResponse.json(
+          { error: 'Orçamento não foi enviado pelo parceiro' },
+          { status: 400 }
+        );
+      }
+
+      // Validar que o quote tem valor
+      const { data: quoteData } = await admin
+        .from('quotes')
+        .select('total_value')
+        .eq('id', quoteId)
+        .single();
+
+      if (!quoteData || quoteData.total_value === 0) {
+        logger.warn('attempt_approve_zero_value_quote', { quoteId });
+        return NextResponse.json(
+          { error: 'Orçamento não pode ser aprovado sem valor' },
           { status: 400 }
         );
       }
@@ -38,6 +63,41 @@ export const POST = withAdminAuth(
       if (updErr) {
         logger.error('failed_update_status', { error: updErr, quoteId });
         return NextResponse.json({ error: 'Erro ao aprovar orçamento' }, { status: 500 });
+      }
+
+      // Atualizar status do veículo e criar entrada no histórico
+      try {
+        const { data: serviceOrder } = await admin
+          .from('service_orders')
+          .select('vehicle_id')
+          .eq('id', current.service_order_id)
+          .single();
+
+        if (serviceOrder?.vehicle_id) {
+          // Atualizar status do veículo
+          await admin
+            .from('vehicles')
+            .update({ status: 'Fase Orçamentaria' })
+            .eq('id', serviceOrder.vehicle_id);
+
+          // Criar entrada no vehicle_history
+          await admin.from('vehicle_history').insert({
+            vehicle_id: serviceOrder.vehicle_id,
+            status: 'Orçamento Aprovado pelo Administrador',
+            notes: 'Aprovação integral via rota simplificada',
+          });
+
+          logger.info('vehicle_status_updated_after_approval', {
+            vehicleId: serviceOrder.vehicle_id,
+            quoteId,
+          });
+        }
+      } catch (historyError) {
+        logger.warn('failed_to_update_vehicle_status_or_history', {
+          error: historyError,
+          quoteId,
+        });
+        // Não falhar a requisição principal
       }
 
       return NextResponse.json({ success: true, newStatus: 'pending_client_approval' });

@@ -88,6 +88,19 @@ export const GET = withAdminAuth(async () => {
       );
     }
 
+    const { data: pendingPartnerQuotes, error: pendingPartnerErr } = await admin
+      .from('quotes')
+      .select('partner_id')
+      .eq('status', 'pending_partner');
+
+    if (pendingPartnerErr) {
+      logger.error('failed_fetch_pending_partner_quotes', { error: pendingPartnerErr });
+      return NextResponse.json(
+        { error: 'Erro ao buscar orçamentos pendentes (parceiro)' },
+        { status: 500 }
+      );
+    }
+
     const pendingAdminByPartner = new Map<string, number>();
     logger.info('debug_pending_admin_quotes', {
       total: pendingAdminQuotes?.length || 0,
@@ -103,6 +116,12 @@ export const GET = withAdminAuth(async () => {
     (pendingClientQuotes || []).forEach(r => {
       const k = r.partner_id as string;
       pendingClientByPartner.set(k, (pendingClientByPartner.get(k) || 0) + 1);
+    });
+
+    const pendingPartnerByPartner = new Map<string, number>();
+    (pendingPartnerQuotes || []).forEach(r => {
+      const k = r.partner_id as string;
+      pendingPartnerByPartner.set(k, (pendingPartnerByPartner.get(k) || 0) + 1);
     });
 
     // 3. Executing budgets: approved quotes + distinct service orders in progress with quotes for this partner
@@ -222,8 +241,8 @@ export const GET = withAdminAuth(async () => {
         id: p.profile_id,
         company_name: p.company_name || '',
         services_count: servicesCountByPartner.get(p.profile_id) || 0,
-        // Orçamentos pendentes: ainda não enviados pelo parceiro (draft, pending)
-        pending_budgets: 0, // a fazer: implementar contagem de orçamentos em draft
+        // Orçamentos pendentes: aguardando parceiro preencher (pending_partner)
+        pending_budgets: pendingPartnerByPartner.get(p.profile_id) || 0,
         executing_budgets: executingByPartner.get(p.profile_id) || 0,
         // Para Aprovação: aguardando aprovação do ADMIN (pending_admin_approval)
         // + aguardando aprovação do CLIENTE (pending_client_approval)

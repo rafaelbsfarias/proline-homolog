@@ -1,229 +1,51 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { ChecklistService } from '@/modules/partner/services/ChecklistService';
+import { z } from 'zod';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const logger = getLogger('api:partner:checklist:submit');
 
-// Normaliza status do front (2 estados: 'ok' | 'nok') e variações legadas
-// para persistir também em 2 estados no banco ('ok' | 'nok')
-function mapStatus(status?: string) {
-  if (!status) return null;
-  const s = String(status).toLowerCase();
-  if (s === 'ok' || s === 'good') return 'ok';
-  if (s === 'nok' || s === 'attention' || s === 'poor' || s === 'regular' || s === 'critical')
-    return 'nok';
-  return null;
-}
-
-// Agregação binária: se qualquer item for 'nok', retorna 'nok'; caso contrário 'ok'
-function worstStatus(values: (string | undefined)[]): string | null {
-  const mapped = values.map(mapStatus).filter(Boolean) as string[];
-  if (mapped.length === 0) return null;
-  return mapped.some(v => v === 'nok') ? 'nok' : 'ok';
-}
-
-function concatNotes(notes: (string | undefined)[]) {
-  return notes.filter(n => !!n && String(n).trim() !== '').join(' | ');
-}
-
-// Mapeia o payload atual do front para o schema mechanics_checklist
-function mapChecklistToMechanicsSchema(input: any, partnerId: string) {
-  const motor_condition = worstStatus([
-    input.engine,
-    input.radiator,
-    input.sparkPlugs,
-    input.belts,
-    input.exhaust,
-  ]);
-  const motor_notes = concatNotes([
-    input.engineNotes,
-    input.radiatorNotes,
-    input.sparkPlugsNotes,
-    input.beltsNotes,
-    input.exhaustNotes,
-  ]);
-
-  const transmission_condition = mapStatus(input.clutch);
-  const transmission_notes = input.clutchNotes || null;
-
-  const brakes_condition = worstStatus([input.brakePads, input.brakeDiscs]);
-  const brakes_notes = concatNotes([input.brakePadsNotes, input.brakeDiscsNotes]);
-
-  const suspension_condition = worstStatus([input.suspension, input.frontShocks, input.rearShocks]);
-  const suspension_notes = concatNotes([
-    input.suspensionNotes,
-    input.frontShocksNotes,
-    input.rearShocksNotes,
-  ]);
-
-  const tires_condition = mapStatus(input.tires);
-  const tires_notes = input.tiresNotes || null;
-
-  const electrical_condition = worstStatus([
-    input.electricalActuationGlass,
-    input.electricalActuationMirror,
-    input.electricalActuationSocket,
-    input.electricalActuationLock,
-    input.electricalActuationTrunk,
-    input.electricalActuationWiper,
-    input.electricalActuationKey,
-    input.electricalActuationAlarm,
-    input.electricalActuationInteriorLight,
-    input.dashboardPanel,
-    input.lights,
-    input.battery,
-    input.airConditioning,
-    input.airConditioningCompressor,
-    input.airConditioningCleaning,
-  ]);
-  const electrical_notes = concatNotes([
-    input.electricalActuationGlassNotes,
-    input.electricalActuationMirrorNotes,
-    input.electricalActuationSocketNotes,
-    input.electricalActuationLockNotes,
-    input.electricalActuationTrunkNotes,
-    input.electricalActuationWiperNotes,
-    input.electricalActuationKeyNotes,
-    input.electricalActuationAlarmNotes,
-    input.electricalActuationInteriorLightNotes,
-    input.dashboardPanelNotes,
-    input.lightsNotes,
-    input.batteryNotes,
-    input.airConditioningNotes,
-    input.airConditioningCompressorNotes,
-    input.airConditioningCleaningNotes,
-  ]);
-
-  return {
-    // Identificação
-    vehicle_id: input.vehicle_id,
-    inspection_id: input.inspection_id || null,
-    partner_id: partnerId,
-
-    // Status geral do checklist
-    status: 'pending_admin_review', // Changed from 'submitted'
-    created_at: input.created_at || undefined,
-    updated_at: new Date().toISOString(),
-
-    // Motor
-    motor_condition,
-    motor_notes: motor_notes || null,
-
-    // Transmissão
-    transmission_condition,
-    transmission_notes: transmission_notes || null,
-
-    // Freios
-    brakes_condition,
-    brake_pads_front: input.brake_pads_front ?? null,
-    brake_pads_rear: input.brake_pads_rear ?? null,
-    brake_discs_front_condition: null,
-    brake_discs_rear_condition: null,
-    brakes_notes: brakes_notes || null,
-
-    // Suspensão
-    suspension_condition,
-    suspension_front_left: null,
-    suspension_front_right: null,
-    suspension_rear_left: null,
-    suspension_rear_right: null,
-    suspension_notes: suspension_notes || null,
-
-    // Pneus
-    tires_condition,
-    tire_front_left_depth: null,
-    tire_front_right_depth: null,
-    tire_rear_left_depth: null,
-    tire_rear_right_depth: null,
-    tire_front_left_condition: null,
-    tire_front_right_condition: null,
-    tire_rear_left_condition: null,
-    tire_rear_right_condition: null,
-    tires_notes: tires_notes || null,
-
-    // Elétrico
-    electrical_condition,
-    battery_voltage: null,
-    alternator_condition: null,
-    electrical_notes: electrical_notes || null,
-
-    // Fluidos
-    oil_condition: null,
-    oil_level: null,
-    coolant_condition: null,
-    coolant_level: null,
-    brake_fluid_condition: null,
-    brake_fluid_level: null,
-    fluids_notes: input.fluidsNotes || null,
-
-    // Carroceria / Interior (não coletado na UI atual)
-    body_condition: null,
-    paint_condition: null,
-    rust_spots: null,
-    dents: null,
-    scratches: null,
-    body_notes: null,
-    interior_condition: null,
-    seats_condition: null,
-    dashboard_condition: null,
-    interior_notes: null,
-
-    // Gerais
-    documents_ok: null,
-    maintenance_history: null,
-    general_observations: input.observations || null,
-    recommended_repairs: null,
-    estimated_repair_cost: null,
-  } as any;
-}
+// Schema de validação
+const SubmitChecklistSchema = z
+  .object({
+    vehicle_id: z.string().uuid('ID do veículo inválido'),
+    inspection_id: z.string().uuid('ID da inspeção inválido'),
+    // Demais campos são opcionais
+  })
+  .passthrough(); // Permite campos adicionais
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function PUT(request: Request) {
+async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const checklistData = await request.json();
+    const checklistData = await req.json();
 
-    if (!checklistData.vehicle_id) {
+    // Validar entrada
+    const validation = SubmitChecklistSchema.safeParse(checklistData);
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { success: false, error: 'vehicle_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-    if (!checklistData.inspection_id) {
-      return NextResponse.json(
-        { success: false, error: 'inspection_id é obrigatório' },
+        { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    const checklistService = ChecklistService.getInstance();
+    const partnerId = req.user.id;
+
     logger.info('submit_start', {
       vehicle_id: checklistData.vehicle_id,
       inspection_id: checklistData.inspection_id,
     });
 
-    // Determinar partner_id a partir do token do usuário
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
-
-    let partnerId: string | undefined;
-    if (token) {
-      const { data: userData } = await supabase.auth.getUser(token);
-      partnerId = userData.user?.id;
-    }
-    if (!partnerId) {
-      return NextResponse.json(
-        { success: false, error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
-    }
-
-    // Mapear dados do front para o schema do banco (sem salvar imagens na tabela principal)
-    const mapped = mapChecklistToMechanicsSchema(checklistData, partnerId);
+    // Mapear dados usando ChecklistService
+    const mapped = checklistService.mapChecklistToMechanicsSchema(checklistData, partnerId);
     logger.debug('mapped_payload', {
       vehicle_id: mapped.vehicle_id,
       inspection_id: mapped.inspection_id,
@@ -241,6 +63,66 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
     logger.info('mechanics_checklist_upsert_ok', { rows: Array.isArray(data) ? data.length : 0 });
+
+    // Registrar entrada de timeline idempotente e atualizar status do veículo
+    try {
+      // Buscar categoria do parceiro
+      const { data: partnerCategories, error: categoryError } = await supabase.rpc(
+        'get_partner_categories',
+        { partner_id: partnerId }
+      );
+
+      if (categoryError) {
+        logger.error('category_fetch_error', { error: categoryError.message });
+      } else {
+        const categories = partnerCategories || [];
+        const categoryName = categories[0] || 'Parceiro';
+        const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
+
+        // Verificar se já existe este status na timeline para evitar duplicatas
+        const { data: existingHistory } = await supabase
+          .from('vehicle_history')
+          .select('id')
+          .eq('vehicle_id', checklistData.vehicle_id)
+          .eq('status', timelineStatus)
+          .maybeSingle();
+
+        // Se não existe, criar novo registro na timeline
+        if (!existingHistory) {
+          const { error: historyError } = await supabase.from('vehicle_history').insert({
+            vehicle_id: checklistData.vehicle_id,
+            status: timelineStatus,
+            prevision_date: null,
+            end_date: null,
+            created_at: new Date().toISOString(),
+          });
+
+          if (historyError) {
+            logger.error('timeline_insert_error', { error: historyError.message });
+          } else {
+            logger.info('timeline_created', {
+              vehicle_id: checklistData.vehicle_id.slice(0, 8),
+              status: timelineStatus,
+              partner_id: partnerId.slice(0, 8),
+            });
+          }
+        }
+      }
+
+      // Atualizar status do veículo para Fase Orçamentária
+      const { error: statusError } = await supabase
+        .from('vehicles')
+        .update({ status: VehicleStatus.FASE_ORCAMENTARIA })
+        .eq('id', checklistData.vehicle_id);
+      if (statusError) {
+        logger.warn('vehicle_status_update_failed', { error: statusError.message });
+      }
+    } catch (timelineError) {
+      logger.error('timeline_or_status_update_error', {
+        error: timelineError instanceof Error ? timelineError.message : String(timelineError),
+      });
+      // Não falhar a requisição principal por causa da timeline/status
+    }
 
     // Persistir status e notas por item em mechanics_checklist_items
     const itemDefs: { key: string; notesKey: string }[] = [
@@ -281,17 +163,20 @@ export async function PUT(request: Request) {
 
     const itemRows = itemDefs
       .map(({ key, notesKey }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const status = (checklistData as any)?.[key];
-        const mappedStatus = mapStatus(status);
+        const mappedStatus = checklistService.mapStatus(status);
         if (!mappedStatus) return null;
         return {
           inspection_id: checklistData.inspection_id,
           vehicle_id: checklistData.vehicle_id,
           item_key: key,
           item_status: mappedStatus,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           item_notes: (checklistData as any)?.[notesKey] || null,
         };
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter(Boolean) as any[];
 
     logger.debug('mechanics_checklist_items_prepared', { count: itemRows.length });
@@ -330,15 +215,58 @@ export async function PUT(request: Request) {
       }
     }
 
+    // Deduplicação defensiva: manter apenas uma linha por status "Fase Orçamentária Iniciada - *"
+    try {
+      const { data: allHist } = await supabase
+        .from('vehicle_history')
+        .select('id,status,created_at')
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .ilike('status', 'Fase Orçamentária Iniciada - %')
+        .order('created_at', { ascending: true });
+
+      if (Array.isArray(allHist) && allHist.length > 1) {
+        const byStatus: Record<string, { keepId: string; removeIds: string[] }> = {};
+        for (const row of allHist) {
+          const s = row.status as string;
+          if (!byStatus[s]) {
+            byStatus[s] = { keepId: row.id as string, removeIds: [] };
+          } else {
+            byStatus[s].removeIds.push(row.id as string);
+          }
+        }
+
+        const idsToDelete = Object.values(byStatus).flatMap(g => g.removeIds);
+        if (idsToDelete.length > 0) {
+          const { error: cleanupError } = await supabase
+            .from('vehicle_history')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (cleanupError) {
+            logger.warn('timeline_dedup_cleanup_error', { error: cleanupError.message });
+          } else {
+            logger.info('timeline_dedup_cleanup_done', { removedCount: idsToDelete.length });
+          }
+        }
+      }
+    } catch (dedupErr) {
+      logger.warn('timeline_dedup_unexpected_error', {
+        error: dedupErr instanceof Error ? dedupErr.message : String(dedupErr),
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: Array.isArray(data) && data[0] ? data[0] : mapped,
     });
   } catch (e) {
-    logger.error('submit_unexpected_error', { error: (e as any)?.message || String(e) });
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error('submit_unexpected_error', { error: error.message });
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }
     );
   }
 }
+
+export const PUT = withPartnerAuth(submitChecklistHandler);

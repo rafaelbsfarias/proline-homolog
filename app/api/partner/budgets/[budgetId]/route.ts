@@ -1,7 +1,7 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 
@@ -71,7 +71,7 @@ async function getBudgetHandler(
 
     // Configurar cliente Supabase com service role para APIs
     logger.info('🔧 Configurando cliente Supabase com service role');
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Buscar o quote com dados do veículo (versão que funcionou no teste)
     logger.info('📡 Executando consulta complexa no Supabase', {
@@ -282,7 +282,7 @@ async function updateBudgetHandler(
       );
     }
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Verificar se o orçamento existe e pertence ao partner
     const { data: existingBudget, error: checkError } = await supabase
@@ -317,20 +317,17 @@ async function updateBudgetHandler(
 
     // Remover itens existentes
     // Remover itens existentes (com fallback para variações de esquema)
-    let deleteItemsError: any = null;
+    let deleteItemsError: Error | null = null;
     try {
       const del1 = await supabase.from('quote_items').delete().eq('quote_id', budgetId);
       deleteItemsError = del1.error;
-      if (deleteItemsError && deleteItemsError.code === '42703') {
+      if (deleteItemsError && 'code' in deleteItemsError && deleteItemsError.code === '42703') {
         // coluna quote_id não existe – tentar budget_id (compat legado)
-        const del2 = await supabase
-          .from('quote_items')
-          .delete()
-          .eq('budget_id', budgetId as any);
+        const del2 = await supabase.from('quote_items').delete().eq('budget_id', budgetId);
         deleteItemsError = del2.error;
       }
     } catch (e) {
-      deleteItemsError = e;
+      deleteItemsError = e instanceof Error ? e : new Error(String(e));
     }
     if (deleteItemsError) {
       logger.error('Erro ao remover itens existentes', { error: deleteItemsError, budgetId });
