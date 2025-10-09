@@ -189,7 +189,6 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
         setSubmissionResult({ status: 'error', message: messages });
       } else {
         setSubmissionResult({ status: 'success', message: 'Serviços delegados com sucesso!' });
-        if (onSuccess) onSuccess();
       }
     } catch (e: any) {
       setSubmissionResult({
@@ -205,6 +204,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
     const isSuccess = submissionResult?.status === 'success';
     setSubmissionResult(null);
     if (isSuccess) {
+      if (onSuccess) onSuccess();
       onClose();
     }
   };
