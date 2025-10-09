@@ -164,18 +164,42 @@ async function createServiceOrderAndQuotes({
       )
       .eq('category_id', serviceCategory.id);
 
+    logger.info(`Parceiros encontrados para categoria ${category}:`, {
+      count: partners?.length,
+      partners: partners?.map(p => ({ partner_id: p.partner_id, partners: p.partners })),
+    });
+
     if (partners && partners.length > 0) {
       // Create quotes for each partner
+      // Status = NULL indica que o parceiro precisa preencher o orçamento
+      // Após preenchimento, muda para 'admin_review' (aguardando aprovação do admin)
       const quotesToInsert = partners.map(
-        (partnerRelation: { partner_id: string; partners: { profile_id: string }[] }) => ({
-          service_order_id: serviceOrder.id,
-          partner_id: partnerRelation.partners[0]?.profile_id || partnerRelation.partner_id,
-          status: 'pending_admin_approval',
-          total_value: 0, // Will be updated when partner submits quote
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        (partnerRelation: {
+          partner_id: string;
+          partners: { profile_id: string } | { profile_id: string }[];
+        }) => {
+          // O Supabase pode retornar partners como objeto ou array dependendo da relação
+          const profileId = Array.isArray(partnerRelation.partners)
+            ? partnerRelation.partners[0]?.profile_id
+            : (partnerRelation.partners as { profile_id: string })?.profile_id;
+
+          return {
+            service_order_id: serviceOrder.id,
+            partner_id: profileId, // Sempre usar o profile_id, não o partner_id da tabela partners
+            status: null, // NULL = aguardando parceiro preencher
+            total_value: 0, // Will be updated when partner submits quote
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
       );
+
+      logger.info(`Quotes a serem inseridas:`, {
+        quotes: quotesToInsert.map(q => ({
+          service_order_id: q.service_order_id,
+          partner_id: q.partner_id,
+        })),
+      });
 
       const { error: quotesError } = await supabase.from('quotes').insert(quotesToInsert);
 

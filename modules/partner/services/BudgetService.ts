@@ -85,6 +85,57 @@ export class BudgetService {
   }
 
   /**
+   * Método privado para inserir itens de orçamento
+   * Elimina duplicação entre createBudgetFromQuote e createBudget
+   *
+   * @param quoteId - ID do orçamento
+   * @param items - Lista de itens a inserir
+   */
+  private async insertQuoteItems(quoteId: string, items: BudgetItemData[]): Promise<void> {
+    if (items.length === 0) return;
+
+    const { error } = await this.supabase.from('quote_items').insert(
+      items.map(item => ({
+        quote_id: quoteId,
+        service_id: item.serviceId,
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        total_price: item.totalPrice,
+      }))
+    );
+
+    if (error) throw error;
+  }
+
+  /**
+   * Método privado para mapear dados do Supabase para BudgetData
+   * Elimina duplicação entre getAllBudgets e getBudgetById
+   *
+   * @param budget - Dados do orçamento do Supabase
+   * @returns Orçamento no formato de domínio
+   */
+  private mapSupabaseToBudgetData(budget: SupabaseQuote): BudgetData {
+    return {
+      id: budget.id,
+      name: budget.name,
+      vehiclePlate: budget.vehicle_plate,
+      vehicleModel: budget.vehicle_model || undefined,
+      vehicleBrand: budget.vehicle_brand || undefined,
+      vehicleYear: budget.vehicle_year || undefined,
+      totalValue: budget.total_value,
+      status: budget.status as BudgetData['status'],
+      items: budget.quote_items.map((item: SupabaseQuoteItem) => ({
+        serviceId: item.service_id,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        totalPrice: item.total_price,
+      })),
+    };
+  }
+
+  /**
    * Criar orçamento baseado em um quote existente
    *
    * @param partnerId - ID do parceiro autenticado (vem da camada de API)
@@ -151,21 +202,8 @@ export class BudgetService {
 
       if (budgetError) throw budgetError;
 
-      // Criar os itens
-      if (budgetData.items.length > 0) {
-        const { error: itemsError } = await this.supabase.from('quote_items').insert(
-          budgetData.items.map(item => ({
-            quote_id: budget.id,
-            service_id: item.serviceId,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unitPrice,
-            total_price: item.totalPrice,
-          }))
-        );
-
-        if (itemsError) throw itemsError;
-      }
+      // Criar os itens usando método privado
+      await this.insertQuoteItems(budget.id, budgetData.items);
 
       logger.info('create_budget_from_quote', { budgetId: budget.id, quoteId, partnerId });
       return budget.id;
@@ -227,21 +265,8 @@ export class BudgetService {
 
       if (budgetError) throw budgetError;
 
-      // Criar os itens
-      if (budgetData.items.length > 0) {
-        const { error: itemsError } = await this.supabase.from('quote_items').insert(
-          budgetData.items.map(item => ({
-            quote_id: budget.id,
-            service_id: item.serviceId,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unitPrice,
-            total_price: item.totalPrice,
-          }))
-        );
-
-        if (itemsError) throw itemsError;
-      }
+      // Criar os itens usando método privado
+      await this.insertQuoteItems(budget.id, budgetData.items);
 
       logger.info('Orçamento criado', { budgetId: budget.id, partnerId });
       return budget.id;
@@ -348,23 +373,7 @@ export class BudgetService {
 
       if (!budgets) return [];
 
-      return budgets.map((budget: SupabaseQuote) => ({
-        id: budget.id,
-        name: budget.name,
-        vehiclePlate: budget.vehicle_plate,
-        vehicleModel: budget.vehicle_model || undefined,
-        vehicleBrand: budget.vehicle_brand || undefined,
-        vehicleYear: budget.vehicle_year || undefined,
-        totalValue: budget.total_value,
-        status: budget.status as BudgetData['status'],
-        items: budget.quote_items.map((item: SupabaseQuoteItem) => ({
-          serviceId: item.service_id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          totalPrice: item.total_price,
-        })),
-      }));
+      return budgets.map(budget => this.mapSupabaseToBudgetData(budget));
     } catch (error) {
       logger.error('Erro ao listar orçamentos do parceiro', { error, partnerId });
       throw error;
@@ -410,23 +419,7 @@ export class BudgetService {
         throw error;
       }
 
-      return {
-        id: budget.id,
-        name: budget.name,
-        vehiclePlate: budget.vehicle_plate,
-        vehicleModel: budget.vehicle_model || undefined,
-        vehicleBrand: budget.vehicle_brand || undefined,
-        vehicleYear: budget.vehicle_year || undefined,
-        totalValue: budget.total_value,
-        status: budget.status as BudgetData['status'],
-        items: budget.quote_items.map((item: SupabaseQuoteItem) => ({
-          serviceId: item.service_id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          totalPrice: item.total_price,
-        })),
-      };
+      return this.mapSupabaseToBudgetData(budget);
     } catch (error) {
       logger.error('Erro ao buscar orçamento por ID', { error, budgetId, partnerId });
       throw error;

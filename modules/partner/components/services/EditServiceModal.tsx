@@ -24,6 +24,31 @@ const inputFocusHandlers = {
   },
 };
 
+// Estilos reutilizáveis para labels e inputs
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '14px',
+  fontWeight: 500,
+  color: '#374151',
+  marginBottom: '4px',
+};
+
+const inputBaseStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 12px',
+  border: '1px solid #d1d5db',
+  borderRadius: '6px',
+  fontSize: '14px',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+  boxSizing: 'border-box',
+};
+
+const textareaStyle: React.CSSProperties = {
+  ...inputBaseStyle,
+  resize: 'none' as const,
+};
+
 const EditServiceModal: React.FC<EditServiceModalProps> = ({
   service,
   isOpen,
@@ -143,31 +168,12 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
           style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}
         >
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '4px',
-              }}
-            >
-              Nome do Serviço
-            </label>
+            <label style={labelStyle}>Nome do Serviço</label>
             <input
               type="text"
               value={formData.name}
               onChange={e => handleInputChange('name', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                boxSizing: 'border-box',
-              }}
+              style={inputBaseStyle}
               {...inputFocusHandlers}
               required
               disabled={loading}
@@ -175,32 +181,12 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '4px',
-              }}
-            >
-              Descrição
-            </label>
+            <label style={labelStyle}>Descrição</label>
             <textarea
               value={formData.description}
               onChange={e => handleInputChange('description', e.target.value)}
               rows={3}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                resize: 'none',
-                boxSizing: 'border-box',
-              }}
+              style={textareaStyle}
               {...inputFocusHandlers}
               required
               disabled={loading}
@@ -208,33 +194,14 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '4px',
-              }}
-            >
-              Preço (R$)
-            </label>
+            <label style={labelStyle}>Preço (R$)</label>
             <input
               type="number"
               step="0.01"
               min="0"
               value={formData.price}
               onChange={e => handleInputChange('price', parseFloat(e.target.value) || 0)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                boxSizing: 'border-box',
-              }}
+              style={inputBaseStyle}
               {...inputFocusHandlers}
               required
               disabled={loading}
@@ -242,31 +209,12 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
           </div>
 
           <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#374151',
-                marginBottom: '4px',
-              }}
-            >
-              Categoria
-            </label>
+            <label style={labelStyle}>Categoria</label>
             <input
               type="text"
               value={formData.category || ''}
               onChange={e => handleInputChange('category', e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '14px',
-                outline: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                boxSizing: 'border-box',
-              }}
+              style={inputBaseStyle}
               {...inputFocusHandlers}
               placeholder="Opcional"
               disabled={loading}
