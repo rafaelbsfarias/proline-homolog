@@ -48,17 +48,7 @@
 - [Plano de Ação de Segurança de Rotas](security/plano-acao-seguranca-rotas.md) - Plano de ação para segurança de rotas
 - [Relatório de Rotas Completas](security/relatorio-rotas-completas.md) - Relatório completo de rotas do sistema
 
-## 6. Análises Técnicas
-
-### 6.1 Análise do Sistema de Timeline de Veículos
-- [📚 Índice da Análise](timeline-analysis/README.md) - Análise completa do sistema de timeline
-- [📊 Resumo Executivo](timeline-analysis/EXECUTIVE_SUMMARY.md) - Resumo para stakeholders (10 min)
-- [🔬 Análise Comparativa](timeline-analysis/SPECIALIST_VS_PARTNER_ANALYSIS.md) - Especialista vs Parceiro (30 min)
-- [🚨 Violações de Código](timeline-analysis/DEVELOPMENT_INSTRUCTIONS_VIOLATIONS.md) - Auditoria de conformidade (45 min)
-- [🔧 Guia de Diagnóstico](timeline-analysis/TRIGGER_DIAGNOSTIC_GUIDE.md) - Diagnóstico do trigger (15 min)
-- [✅ Correção Implementada](timeline-analysis/FIX_PARTNER_CHECKLIST_INIT.md) - Hook usePartnerChecklist
-
-## 7. Bugs e Issues Conhecidos
+## 6. Bugs e Issues Conhecidos
 
 - [Índice de Bugs](bugs/indice.md) - Índice completo dos bugs documentados
 - [Erro ao Aceitar Data Proposta pelo Cliente](bugs/admin_accept_proposed_date_bug.md) - Bug crítico na aceitação de datas propostas
