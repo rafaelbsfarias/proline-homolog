@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:load');
+
+// Schema de validação
+const LoadChecklistSchema = z.object({
+  inspectionId: z.string().uuid('inspectionId deve ser um UUID válido'),
+});
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,15 +22,25 @@ function toFrontStatus(db?: string): 'ok' | 'attention' {
   return 'ok';
 }
 
-export async function POST(request: Request) {
+async function loadChecklistHandler(req: AuthenticatedRequest) {
   try {
-    const { inspectionId } = await request.json();
+    const body = await req.json();
 
-    if (!inspectionId) {
-      return NextResponse.json({ ok: false, error: 'inspectionId é obrigatório' }, { status: 400 });
+    // Validação com Zod
+    const validation = LoadChecklistSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Dados inválidos',
+          details: validation.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    const supabase = createApiClient();
+    const { inspectionId } = validation.data;
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     // 1) Carregar mechanics_checklist por inspection_id
     const { data: checklist, error: checklistError } = await supabase
@@ -70,7 +87,7 @@ export async function POST(request: Request) {
     }
 
     // 4) Construir formPartial: observações gerais e itens persistidos
-    const formPartial: Record<string, any> = {};
+    const formPartial: Record<string, string | { url: string }> = {};
 
     if (checklist) {
       formPartial.observations = checklist.general_observations || '';
@@ -94,7 +111,10 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ ok: true, data: { form: formPartial, evidences: evidenceMap } });
   } catch (e) {
-    logger.error('load_unexpected_error', { error: (e as any)?.message || String(e) });
+    const error = e as Error;
+    logger.error('load_unexpected_error', { error: error.message || String(e) });
     return NextResponse.json({ ok: false, error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
+
+export const POST = withPartnerAuth(loadChecklistHandler);
