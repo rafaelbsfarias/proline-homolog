@@ -273,6 +273,11 @@ const PartnerDashboard = () => {
     router.push(`/dashboard/partner/service-order?quoteId=${service.id}`);
   };
 
+  const handleExecutionEvidence = (service: InProgressServiceDisplay) => {
+    // Navegar para a página de evidências de execução
+    router.push(`/dashboard/partner/execution-evidence?quoteId=${service.id}`);
+  };
+
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
     { key: 'vehicle', header: 'Veículo' },
     { key: 'status', header: 'Status' },
@@ -502,6 +507,7 @@ const PartnerDashboard = () => {
             emptyMessage="Nenhum orçamento aprovado aguardando execução."
             showActions={true}
             onDownloadOS={handleDownloadServiceOrder}
+            onExecutionEvidence={handleExecutionEvidence}
           />
           <ServiceModal
             isOpen={showAddServiceModal}

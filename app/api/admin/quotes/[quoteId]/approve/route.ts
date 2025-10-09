@@ -32,6 +32,30 @@ export const POST = withAdminAuth(
         );
       }
 
+      // Validar que o quote foi enviado pelo parceiro
+      if (!current.sent_to_admin_at) {
+        logger.warn('attempt_approve_unsent_quote', { quoteId });
+        return NextResponse.json(
+          { error: 'Orçamento não foi enviado pelo parceiro' },
+          { status: 400 }
+        );
+      }
+
+      // Validar que o quote tem valor
+      const { data: quoteData } = await admin
+        .from('quotes')
+        .select('total_value')
+        .eq('id', quoteId)
+        .single();
+
+      if (!quoteData || quoteData.total_value === 0) {
+        logger.warn('attempt_approve_zero_value_quote', { quoteId });
+        return NextResponse.json(
+          { error: 'Orçamento não pode ser aprovado sem valor' },
+          { status: 400 }
+        );
+      }
+
       const { error: updErr } = await admin
         .from('quotes')
         .update({ status: 'pending_client_approval', updated_at: new Date().toISOString() })

@@ -43,7 +43,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     // Verificar se o quote existe e está pendente de aprovação do admin
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
-      .select('id, status, total_value, partner_id, service_order_id')
+      .select('id, status, total_value, partner_id, service_order_id, sent_to_admin_at')
       .eq('id', quoteId)
       .in('status', ['pending_admin_approval', 'admin_review'])
       .single();
@@ -53,6 +53,24 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
       return NextResponse.json(
         { ok: false, error: 'Orçamento não encontrado ou não está pendente de aprovação' },
         { status: 404 }
+      );
+    }
+
+    // Validar que o quote foi enviado pelo parceiro
+    if (!quote.sent_to_admin_at) {
+      logger.warn('attempt_review_unsent_quote', { quoteId });
+      return NextResponse.json(
+        { ok: false, error: 'Orçamento não foi enviado pelo parceiro' },
+        { status: 400 }
+      );
+    }
+
+    // Validar que o quote tem valor (exceto para rejeição total)
+    if (action !== 'reject_full' && quote.total_value === 0) {
+      logger.warn('attempt_review_zero_value_quote', { quoteId, action });
+      return NextResponse.json(
+        { ok: false, error: 'Orçamento não pode ser aprovado sem valor' },
+        { status: 400 }
       );
     }
 
