@@ -57,7 +57,7 @@ export class ChecklistService {
   /**
    * Normaliza status do front (2 estados: 'ok' | 'nok') e variações legadas
    */
-  private mapStatus(status?: string): ChecklistStatus {
+  public mapStatus(status?: string): ChecklistStatus {
     if (!status) return null;
     const s = String(status).toLowerCase();
     if (s === 'ok' || s === 'good') return 'ok';
