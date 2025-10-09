@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { ChecklistService } from '@/modules/partner/services/ChecklistService';
 import { getLogger } from '@/modules/logger';
 import { z } from 'zod';
 
@@ -31,6 +32,7 @@ async function existsChecklistHandler(req: AuthenticatedRequest) {
     const partnerId = req.user.id;
 
     const supabase = SupabaseService.getInstance().getAdminClient();
+    const checklistService = ChecklistService.getInstance();
 
     logger.info('checking_checklist_existence', {
       quote_id: quoteId,
@@ -76,23 +78,8 @@ async function existsChecklistHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ hasChecklist: false });
     }
 
-    // Verificar se existe pelo menos um checklist com status 'submitted' para este veículo
-    const { data: rows, error: checklistError } = await supabase
-      .from('mechanics_checklist')
-      .select('id')
-      .eq('vehicle_id', vehicleId)
-      .eq('status', 'submitted')
-      .limit(1);
-
-    if (checklistError) {
-      logger.error('checklist_check_error', {
-        error: checklistError.message,
-        vehicle_id: vehicleId,
-      });
-      return NextResponse.json({ hasChecklist: false });
-    }
-
-    const hasSubmittedChecklist = Array.isArray(rows) && rows.length > 0;
+    // Verificar se existe checklist submetido usando ChecklistService
+    const hasSubmittedChecklist = await checklistService.hasSubmittedChecklist(vehicleId);
 
     logger.info('checklist_existence_checked', {
       quote_id: quoteId,

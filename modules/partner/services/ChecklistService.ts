@@ -405,4 +405,28 @@ export class ChecklistService {
       return false;
     }
   }
+
+  /**
+   * Verifica se existe um checklist submetido para um veículo
+   *
+   * @param vehicle_id - ID do veículo
+   */
+  public async hasSubmittedChecklist(vehicle_id: string): Promise<boolean> {
+    try {
+      const { data } = await this.supabase
+        .from('mechanics_checklist')
+        .select('id')
+        .eq('vehicle_id', vehicle_id)
+        .eq('status', 'submitted')
+        .limit(1)
+        .maybeSingle();
+
+      return !!data;
+    } catch (error) {
+      logger.error('has_submitted_checklist_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return false;
+    }
+  }
 }
