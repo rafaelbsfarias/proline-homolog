@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { MediaUploadService, UploadError } from '@/modules/common/services/MediaUploadService';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -18,7 +18,7 @@ const UploadEvidenceSchema = z.object({
 
 async function uploadEvidenceHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const supabase = SupabaseService.getInstance().getAdminClient();
+    const mediaService = MediaUploadService.getInstance();
     const userId = req.user.id;
 
     const form = await req.formData();
@@ -40,34 +40,35 @@ async function uploadEvidenceHandler(req: AuthenticatedRequest): Promise<NextRes
       return NextResponse.json({ ok: false, error: 'Arquivo é obrigatório' }, { status: 400 });
     }
 
-    const ext = (file.name?.split('.').pop() || 'jpg').toLowerCase();
-    const safeExt = ext.replace(/[^a-z0-9]/gi, '') || 'jpg';
-    const filename = `checklist-${item_key}-${Date.now()}.${safeExt}`;
-    const objectPath = `${vehicle_id}/${userId}/${filename}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const { data: up, error: upErr } = await supabase.storage
-      .from('vehicle-media')
-      .upload(objectPath, arrayBuffer, {
-        contentType: file.type || 'application/octet-stream',
+    // Usar MediaUploadService
+    const uploadResult = await mediaService.uploadSingleFile(
+      file,
+      {
+        bucket: 'vehicle-media',
+        folder: `${vehicle_id}/${userId}`,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
+        maxSizeBytes: 10 * 1024 * 1024, // 10MB
+        cacheControl: '3600',
         upsert: true,
-      });
-
-    if (upErr) {
-      logger.error('upload_error', { error: upErr.message });
-      return NextResponse.json({ ok: false, error: upErr.message }, { status: 500 });
-    }
-
-    const { data: signed } = await supabase.storage
-      .from('vehicle-media')
-      .createSignedUrl(objectPath, 60 * 60);
+      },
+      {
+        vehicle_id,
+        item_key,
+        partner_id: userId,
+      }
+    );
 
     return NextResponse.json({
       ok: true,
-      storage_path: up?.path || objectPath,
-      url: signed?.signedUrl || null,
+      storage_path: uploadResult.path,
+      url: uploadResult.signedUrl || null,
     });
   } catch (e) {
+    if (e instanceof UploadError) {
+      logger.warn('upload_validation_error', { code: e.code, message: e.message });
+      return NextResponse.json({ ok: false, error: e.message }, { status: 400 });
+    }
+
     const error = e instanceof Error ? e : new Error(String(e));
     logger.error('unexpected', { error: error.message });
     return NextResponse.json({ ok: false, error: 'Erro interno do servidor' }, { status: 500 });
