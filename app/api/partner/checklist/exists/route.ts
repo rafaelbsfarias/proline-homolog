@@ -1,19 +1,41 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { getLogger } from '@/modules/logger';
+import { z } from 'zod';
 
-export async function POST(request: Request) {
+const logger = getLogger('api:partner:checklist:exists');
+
+// Schema de validação
+const ExistsChecklistSchema = z.object({
+  quoteId: z.string().uuid('quoteId deve ser um UUID válido'),
+});
+
+async function existsChecklistHandler(req: AuthenticatedRequest) {
   try {
-    const { quoteId } = await request.json();
+    const body = await req.json();
 
-    if (!quoteId) {
-      return NextResponse.json({ error: 'Quote ID é obrigatório' }, { status: 400 });
+    // Validação com Zod
+    const validation = ExistsChecklistSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Dados inválidos',
+          details: validation.error.errors,
+        },
+        { status: 400 }
+      );
     }
 
-    // Use a service role client to bypass RLS and authentication issues for this specific check
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const { quoteId } = validation.data;
+    const partnerId = req.user.id;
+
+    const supabase = SupabaseService.getInstance().getAdminClient();
+
+    logger.info('checking_checklist_existence', {
+      quote_id: quoteId,
+      partner_id: partnerId,
+    });
 
     // Buscar o vehicle_id através da quote (forma robusta, objeto ou array)
     const { data: quote, error: quoteError } = await supabase
@@ -29,16 +51,28 @@ export async function POST(request: Request) {
       `
       )
       .eq('id', quoteId)
+      .eq('partner_id', partnerId)
       .single();
 
     if (quoteError || !quote) {
+      logger.warn('quote_not_found', {
+        quote_id: quoteId,
+        partner_id: partnerId,
+        error: quoteError?.message,
+      });
       return NextResponse.json({ hasChecklist: false });
     }
 
-    const so = (quote as any).service_orders;
-    const vehicleId: string | undefined = Array.isArray(so) ? so[0]?.vehicle_id : so?.vehicle_id;
+    // Type-safe extraction
+    const serviceOrders = quote.service_orders as unknown as
+      | { vehicle_id: string }
+      | { vehicle_id: string }[];
+    const vehicleId: string | undefined = Array.isArray(serviceOrders)
+      ? serviceOrders[0]?.vehicle_id
+      : serviceOrders?.vehicle_id;
 
     if (!vehicleId) {
+      logger.warn('vehicle_id_not_found', { quote_id: quoteId });
       return NextResponse.json({ hasChecklist: false });
     }
 
@@ -51,13 +85,28 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (checklistError) {
+      logger.error('checklist_check_error', {
+        error: checklistError.message,
+        vehicle_id: vehicleId,
+      });
       return NextResponse.json({ hasChecklist: false });
     }
 
     const hasSubmittedChecklist = Array.isArray(rows) && rows.length > 0;
 
+    logger.info('checklist_existence_checked', {
+      quote_id: quoteId,
+      vehicle_id: vehicleId,
+      has_checklist: hasSubmittedChecklist,
+    });
+
     return NextResponse.json({ hasChecklist: hasSubmittedChecklist });
-  } catch {
+  } catch (error) {
+    logger.error('exists_unexpected_error', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ hasChecklist: false });
   }
 }
+
+export const POST = withPartnerAuth(existsChecklistHandler);
