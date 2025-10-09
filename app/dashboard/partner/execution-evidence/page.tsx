@@ -139,7 +139,12 @@ function ExecutionEvidenceContent() {
         })) || [];
 
       setServices(servicesWithEvidences);
-    } catch (error) {
+
+      // Log para debug
+      if (servicesWithEvidences.length === 0) {
+        showToast('Nenhum serviço encontrado neste orçamento', 'info');
+      }
+    } catch {
       showToast('Erro ao carregar dados do orçamento', 'error');
     } finally {
       setLoading(false);
@@ -190,7 +195,7 @@ function ExecutionEvidenceContent() {
       );
 
       showToast('Imagem carregada com sucesso', 'success');
-    } catch (error) {
+    } catch {
       showToast('Erro ao fazer upload da imagem', 'error');
     }
   };
@@ -339,6 +344,27 @@ function ExecutionEvidenceContent() {
             Veículo: {vehicleInfo.plate} - {vehicleInfo.brand} {vehicleInfo.model}
           </p>
         </div>
+
+        {services.length === 0 && !loading ? (
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 10,
+              padding: 48,
+              marginBottom: 24,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ color: '#666', fontSize: '1.1rem', marginBottom: 16 }}>
+              📋 Nenhum serviço encontrado neste orçamento
+            </p>
+            <p style={{ color: '#999', fontSize: '0.95rem' }}>
+              Este orçamento não possui serviços cadastrados ou ainda não foi completamente
+              processado.
+            </p>
+          </div>
+        ) : null}
 
         {services.map((service, serviceIndex) => (
           <div
