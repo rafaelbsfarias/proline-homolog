@@ -32,6 +32,31 @@ interface UpdateServiceData {
   category?: string | null;
 }
 
+/**
+ * Valida se o serviço existe e pertence ao parceiro autenticado.
+ * @throws {NotFoundError} Se o serviço não for encontrado
+ * @throws {ValidationError} Se o serviço não pertencer ao parceiro
+ */
+async function validateServiceOwnership(serviceId: string, partnerId: string) {
+  const supabase = SupabaseService.getInstance().getAdminClient();
+
+  const { data: existingService, error: fetchError } = await supabase
+    .from('partner_services')
+    .select('id, partner_id')
+    .eq('id', serviceId)
+    .single();
+
+  if (fetchError || !existingService) {
+    throw new NotFoundError('Serviço não encontrado');
+  }
+
+  if (existingService.partner_id !== partnerId) {
+    throw new ValidationError('Você não tem permissão para editar este serviço');
+  }
+
+  return existingService;
+}
+
 async function updateServiceHandler(
   req: AuthenticatedRequest,
   context: { params: Promise<{ serviceId: string }> }
@@ -57,22 +82,10 @@ async function updateServiceHandler(
       throw new ValidationError('Nome, descrição e preço são obrigatórios');
     }
 
+    // Validar propriedade do serviço
+    await validateServiceOwnership(serviceId, req.user.id);
+
     const supabase = SupabaseService.getInstance().getAdminClient();
-
-    // Primeiro, verificar se o serviço existe e pertence ao parceiro
-    const { data: existingService, error: fetchError } = await supabase
-      .from('partner_services')
-      .select('id, partner_id')
-      .eq('id', serviceId)
-      .single();
-
-    if (fetchError || !existingService) {
-      throw new NotFoundError('Serviço não encontrado');
-    }
-
-    if (existingService.partner_id !== req.user.id) {
-      throw new ValidationError('Você não tem permissão para editar este serviço');
-    }
 
     // Preparar dados para atualização
     const updateData: UpdateServiceData = {
@@ -137,22 +150,10 @@ async function deleteServiceHandler(
       throw new ValidationError('ID do serviço é obrigatório');
     }
 
+    // Validar propriedade do serviço
+    await validateServiceOwnership(serviceId, req.user.id);
+
     const supabase = SupabaseService.getInstance().getAdminClient();
-
-    // Primeiro, verificar se o serviço existe e pertence ao parceiro
-    const { data: existingService, error: fetchError } = await supabase
-      .from('partner_services')
-      .select('id, partner_id')
-      .eq('id', serviceId)
-      .single();
-
-    if (fetchError || !existingService) {
-      throw new NotFoundError('Serviço não encontrado');
-    }
-
-    if (existingService.partner_id !== req.user.id) {
-      throw new ValidationError('Você não tem permissão para excluir este serviço');
-    }
 
     // Excluir o serviço
     const { error } = await supabase
