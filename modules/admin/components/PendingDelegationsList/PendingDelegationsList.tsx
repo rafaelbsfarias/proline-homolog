@@ -8,7 +8,7 @@ import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFe
 import { translateServiceCategory } from '@/app/constants/messages';
 import Header from '../Header';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
-import { IconButton } from '@/modules/common/components/IconButton/IconButton';
+import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import DelegateServicesModal from '../DelegateServicesModal/DelegateServicesModal';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import BaseTable from '@/modules/common/components/BaseTable/BaseTable';
@@ -108,14 +108,14 @@ const PendingDelegationsList = () => {
       <Header />
       <div className={styles.container}>
         <div className="flex items-center mb-8">
-          <IconButton
+          <IconTextButton
             onClick={() => router.back()}
             title="Voltar"
             icon={<LuArrowLeft size={20} />}
             className="mr-4"
           >
             Voltar
-          </IconButton>
+          </IconTextButton>
         </div>
 
         {checklists.length === 0 ? (

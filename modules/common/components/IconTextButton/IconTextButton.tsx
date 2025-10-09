@@ -1,12 +1,12 @@
 import React, { ButtonHTMLAttributes } from 'react';
-import styles from './IconButton.module.css';
+import styles from './IconTextButton.module.css';
 
-interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface IconTextButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon: React.ReactNode;
   iconPosition?: 'left' | 'right';
 }
 
-export const IconButton: React.FC<IconButtonProps> = ({
+export const IconTextButton: React.FC<IconTextButtonProps> = ({
   children,
   className,
   icon,
