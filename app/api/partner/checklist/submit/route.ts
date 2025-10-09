@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
-import { createApiClient } from '@/lib/supabase/api';
 import { getLogger } from '@/modules/logger';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:submit');
+
+// Schema de validação
+const SubmitChecklistSchema = z
+  .object({
+    vehicle_id: z.string().uuid('ID do veículo inválido'),
+    inspection_id: z.string().uuid('ID da inspeção inválido'),
+    // Demais campos são opcionais
+  })
+  .passthrough(); // Permite campos adicionais
 
 // Normaliza status do front (2 estados: 'ok' | 'nok') e variações legadas
 // para persistir também em 2 estados no banco ('ok' | 'nok')
@@ -27,6 +38,7 @@ function concatNotes(notes: (string | undefined)[]) {
 }
 
 // Mapeia o payload atual do front para o schema mechanics_checklist
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapChecklistToMechanicsSchema(input: any, partnerId: string) {
   const motor_condition = worstStatus([
     input.engine,
@@ -174,6 +186,7 @@ function mapChecklistToMechanicsSchema(input: any, partnerId: string) {
     general_observations: input.observations || null,
     recommended_repairs: null,
     estimated_repair_cost: null,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 }
 
@@ -181,46 +194,27 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function PUT(request: Request) {
+async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const checklistData = await request.json();
+    const checklistData = await req.json();
 
-    if (!checklistData.vehicle_id) {
+    // Validar entrada
+    const validation = SubmitChecklistSchema.safeParse(checklistData);
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { success: false, error: 'vehicle_id é obrigatório' },
-        { status: 400 }
-      );
-    }
-    if (!checklistData.inspection_id) {
-      return NextResponse.json(
-        { success: false, error: 'inspection_id é obrigatório' },
+        { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
 
-    const supabase = createApiClient();
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    const partnerId = req.user.id;
+
     logger.info('submit_start', {
       vehicle_id: checklistData.vehicle_id,
       inspection_id: checklistData.inspection_id,
     });
-
-    // Determinar partner_id a partir do token do usuário
-    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring('Bearer '.length)
-      : undefined;
-
-    let partnerId: string | undefined;
-    if (token) {
-      const { data: userData } = await supabase.auth.getUser(token);
-      partnerId = userData.user?.id;
-    }
-    if (!partnerId) {
-      return NextResponse.json(
-        { success: false, error: 'Usuário não autenticado' },
-        { status: 401 }
-      );
-    }
 
     // Mapear dados do front para o schema do banco (sem salvar imagens na tabela principal)
     const mapped = mapChecklistToMechanicsSchema(checklistData, partnerId);
@@ -281,6 +275,7 @@ export async function PUT(request: Request) {
 
     const itemRows = itemDefs
       .map(({ key, notesKey }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const status = (checklistData as any)?.[key];
         const mappedStatus = mapStatus(status);
         if (!mappedStatus) return null;
@@ -289,9 +284,11 @@ export async function PUT(request: Request) {
           vehicle_id: checklistData.vehicle_id,
           item_key: key,
           item_status: mappedStatus,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           item_notes: (checklistData as any)?.[notesKey] || null,
         };
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter(Boolean) as any[];
 
     logger.debug('mechanics_checklist_items_prepared', { count: itemRows.length });
@@ -335,10 +332,13 @@ export async function PUT(request: Request) {
       data: Array.isArray(data) && data[0] ? data[0] : mapped,
     });
   } catch (e) {
-    logger.error('submit_unexpected_error', { error: (e as any)?.message || String(e) });
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error('submit_unexpected_error', { error: error.message });
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }
     );
   }
 }
+
+export const PUT = withPartnerAuth(submitChecklistHandler);
