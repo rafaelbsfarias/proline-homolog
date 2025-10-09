@@ -1,19 +1,50 @@
 import { NextResponse } from 'next/server';
+import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { validateUUID } from '@/modules/common/utils/inputSanitization';
 import { getLogger } from '@/modules/logger';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:get-vehicle-from-inspection');
 
-export async function GET(request: Request) {
+// Schema de validação
+const GetVehicleSchema = z
+  .object({
+    inspectionId: z.string().uuid().optional(),
+    vehicleId: z.string().uuid().optional(),
+    quoteId: z.string().uuid().optional(),
+  })
+  .refine(data => data.inspectionId || data.vehicleId || data.quoteId, {
+    message: 'Pelo menos um ID deve ser fornecido (inspectionId, vehicleId ou quoteId)',
+  });
+
+async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
 
     // Aceitar inspectionId, vehicleId ou quoteId
     const inspectionId = searchParams.get('inspectionId');
     const vehicleId = searchParams.get('vehicleId');
     const quoteId = searchParams.get('quoteId');
 
+    // Validação com Zod
+    const validation = GetVehicleSchema.safeParse({
+      inspectionId: inspectionId || undefined,
+      vehicleId: vehicleId || undefined,
+      quoteId: quoteId || undefined,
+    });
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: 'Parâmetros inválidos',
+          details: validation.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const partnerId = req.user.id;
     const targetId = inspectionId || vehicleId || quoteId;
     const isVehicleId = !!vehicleId;
     const isQuoteId = !!quoteId;
@@ -26,6 +57,13 @@ export async function GET(request: Request) {
 
       return NextResponse.json({ error: errorType }, { status: 400 });
     }
+
+    logger.info('get_vehicle_request', {
+      partner_id: partnerId,
+      inspection_id: inspectionId,
+      vehicle_id: vehicleId,
+      quote_id: quoteId,
+    });
 
     const supabase = SupabaseService.getInstance().getAdminClient();
 
@@ -173,3 +211,5 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
+
+export const GET = withPartnerAuth(getVehicleFromInspectionHandler);
