@@ -31,9 +31,13 @@ export interface InProgressService {
   client_name: string;
   service_description: string;
   status: string;
+  total_value?: number;
+  approved_at?: string;
   vehicle_plate?: string;
   vehicle_brand?: string;
   vehicle_model?: string;
+  vehicle_year?: number;
+  vehicle_info?: string;
 }
 
 export interface PartnerDashboardData {

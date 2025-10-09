@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -31,6 +31,13 @@ type PendingQuoteDisplay = Omit<PendingQuote, 'status' | 'total_value' | 'date'>
   vehicle: string;
 };
 
+// Tipo derivado para exibição de serviços em andamento
+type InProgressServiceDisplay = Omit<InProgressService, 'total_value' | 'approved_at'> & {
+  total_value: string;
+  approved_at: string;
+  vehicle_info: string;
+};
+
 const PartnerDashboard = () => {
   const router = useRouter();
   const { post } = useAuthenticatedFetch();
@@ -38,7 +45,6 @@ const PartnerDashboard = () => {
   const [checked, setChecked] = useState(false); // Para o checkbox do contrato
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
   const [quotesWithChecklist, setQuotesWithChecklist] = useState<Set<string>>(new Set());
-  const [editedQuotes, setEditedQuotes] = useState<Set<string>>(new Set());
   const [isCheckingChecklists, setIsCheckingChecklists] = useState(false);
 
   // Sistema de toast interno
@@ -258,14 +264,6 @@ const PartnerDashboard = () => {
     }
   };
 
-  const handleEditService = () => {
-    // Implementar lógica para editar serviço
-  };
-
-  const handleDeleteService = () => {
-    // Implementar lógica para excluir serviço
-  };
-
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
     { key: 'vehicle', header: 'Veículo' },
     { key: 'status', header: 'Status' },
@@ -273,9 +271,12 @@ const PartnerDashboard = () => {
     { key: 'date', header: 'Data' },
   ];
 
-  const inProgressServicesColumns: { key: keyof InProgressService; header: string }[] = [
-    { key: 'id', header: 'ID' },
-    { key: 'status', header: 'Status' },
+  const inProgressServicesColumns: { key: keyof InProgressServiceDisplay; header: string }[] = [
+    { key: 'vehicle_info', header: 'Veículo' },
+    { key: 'client_name', header: 'Cliente' },
+    { key: 'service_description', header: 'Serviço' },
+    { key: 'total_value', header: 'Valor' },
+    { key: 'approved_at', header: 'Aprovado em' },
   ];
 
   return (
@@ -423,7 +424,7 @@ const PartnerDashboard = () => {
             data={pendingQuotes.map(quote => {
               const getStatus = () => {
                 const hasChecklist = quotesWithChecklist.has(quote.id);
-                const hasValue = quote.total_value > 0;
+                const hasValue = (quote.total_value ?? 0) > 0;
 
                 if (!hasChecklist) {
                   return 'Checklist Pendente';
@@ -448,7 +449,7 @@ const PartnerDashboard = () => {
                 raw_status: quote.status,
                 vehicle: formatVehicleInfo(quote),
                 status: getStatus(),
-                total_value: formatCurrency(quote.total_value),
+                total_value: formatCurrency(quote.total_value ?? 0),
                 date: formatDate(quote.date),
               };
             })}
@@ -474,14 +475,23 @@ const PartnerDashboard = () => {
             loading={isCheckingChecklists}
           />
 
-          <DataTable
-            title="Serviços em Andamento"
-            data={inProgressServices}
+          <DataTable<InProgressServiceDisplay>
+            title="Orçamentos Aprovados - Aguardando Execução"
+            data={inProgressServices.map(service => ({
+              ...service,
+              total_value: service.total_value ? formatCurrency(service.total_value) : 'N/A',
+              approved_at: service.approved_at ? formatDate(service.approved_at) : 'N/A',
+              vehicle_info:
+                service.vehicle_info ||
+                formatVehicleInfo({
+                  vehicle_plate: service.vehicle_plate,
+                  vehicle_brand: service.vehicle_brand,
+                  vehicle_model: service.vehicle_model,
+                }),
+            }))}
             columns={inProgressServicesColumns}
-            emptyMessage="Nenhum serviço em andamento."
-            showActions={true}
-            onEdit={handleEditService}
-            onDelete={handleDeleteService}
+            emptyMessage="Nenhum orçamento aprovado aguardando execução."
+            showActions={false}
           />
           <ServiceModal
             isOpen={showAddServiceModal}
