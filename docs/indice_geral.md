@@ -64,3 +64,25 @@
 **Status**: 🔴 CRÍTICO - Afeta produção. Especialistas bloqueados.  
 **Causa Raiz**: Endpoint `start-analysis` não cria registro na tabela `inspections`.  
 **Impacto**: Erro 404 em todas as tentativas de finalização de checklist.
+
+## 8. Refatorações e Melhorias
+
+### 8.1 Refatoração do Contexto do Parceiro (2025-10-09)
+- [📖 README](partner-refactoring/README.md) - Visão geral do projeto de refatoração
+- [🔍 Análise de Inconsistências](partner-refactoring/01-ANALYSIS.md) - Análise completa de problemas encontrados
+- [🗺️ Plano de Refatoração](partner-refactoring/02-REFACTORING-PLAN.md) - Plano detalhado em 4 fases
+
+**Status**: 🟡 Em Planejamento  
+**Objetivo**: Aplicar princípios DRY, SOLID e Arquitetura Modular ao contexto do parceiro  
+**Problemas Identificados**:
+- 19 endpoints com padrões inconsistentes
+- 6 endpoints sem autenticação adequada
+- Código duplicado em múltiplos arquivos
+- Falta de Domain Layer consistente
+- Funções com 100-344 linhas
+
+**Fases**:
+1. 🔴 P0 - Correções Críticas de Segurança (2-3h)
+2. 🔴 P1 - Padronização de Infraestrutura (4-6h)
+3. 🔴 P2 - Refatoração de Arquitetura (10-15h)
+4. 🔴 P3 - Melhorias de Qualidade (6-8h)
