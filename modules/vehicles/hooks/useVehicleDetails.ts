@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 interface VehicleDetailsData {
   id: string;
@@ -61,7 +62,10 @@ interface VehicleHistoryResponse {
   error?: string;
 }
 
-export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: string) => {
+export const useVehicleDetails = (
+  role: 'client' | 'specialist' | 'admin' | 'partner',
+  vehicleId: string
+) => {
   const logger = getLogger(`${role}:useVehicleDetails`);
   const { get } = useAuthenticatedFetch();
 
@@ -178,6 +182,50 @@ export const useVehicleDetails = (role: 'client' | 'specialist', vehicleId: stri
       fetchVehicleDetails();
     }
   }, [vehicleId, get, role]);
+
+  // Realtime: atualizar timeline quando houver INSERT em vehicle_history para este veículo
+  useEffect(() => {
+    if (!vehicleId) return;
+
+    const channel = supabase
+      .channel(`vehicle_history:${vehicleId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'vehicle_history',
+          filter: `vehicle_id=eq.${vehicleId}`,
+        },
+        payload => {
+          try {
+            const newEntry = payload.new as unknown as VehicleHistoryEntry;
+            if (!newEntry?.id) return;
+            setVehicleHistory(prev => {
+              // evitar duplicação
+              if (prev.some(h => h.id === newEntry.id)) return prev;
+              const next = [...prev, newEntry];
+              // ordenar por created_at asc
+              next.sort(
+                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+              return next;
+            });
+          } catch (err) {
+            logger.warn('realtime_payload_parse_error', { err });
+          }
+        }
+      )
+      .subscribe(status => {
+        logger.info('realtime_sub_status', { channel: 'vehicle_history', status });
+      });
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {}
+    };
+  }, [vehicleId]);
 
   return { vehicle, inspection, vehicleHistory, mediaUrls, loading, error };
 };
