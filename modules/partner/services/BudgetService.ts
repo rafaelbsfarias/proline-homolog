@@ -1,9 +1,21 @@
 /**
- * Service responsável por todas as operações relacionadas a orçamentos
- * Segue o princípio Single Responsibility
+ * BudgetService - Serviço de domínio para gestão de orçamentos
+ *
+ * Responsabilidades:
+ * - CRUD de orçamentos (quotes)
+ * - Gestão de itens de orçamento (quote_items)
+ * - Mapeamento entre modelos de domínio e banco de dados
+ *
+ * Segue princípios:
+ * - Single Responsibility: apenas lógica de negócio de orçamentos
+ * - Dependency Inversion: recebe SupabaseClient via construtor
+ * - Separação de concerns: autenticação é responsabilidade da camada de API
+ *
+ * @see docs/partner/REFACTOR_PLAN_DRY_SOLID.md - Fase 2
  */
-import { supabase } from '@/modules/common/services/supabaseClient';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 const logger = getLogger('partner:BudgetService');
 
@@ -48,31 +60,45 @@ interface SupabaseQuote {
   quote_items: SupabaseQuoteItem[];
 }
 
+/**
+ * Serviço de orçamentos seguindo padrão Singleton + Dependency Injection
+ */
 export class BudgetService {
   private static instance: BudgetService;
+  private readonly supabase: SupabaseClient;
 
+  private constructor(supabaseClient: SupabaseClient) {
+    this.supabase = supabaseClient;
+  }
+
+  /**
+   * Obtém instância singleton do serviço
+   * Usa SupabaseService para obter client configurado
+   */
   static getInstance(): BudgetService {
     if (!BudgetService.instance) {
-      BudgetService.instance = new BudgetService();
+      const supabaseService = SupabaseService.getInstance();
+      BudgetService.instance = new BudgetService(supabaseService.getAdminClient());
     }
     return BudgetService.instance;
   }
 
   /**
    * Criar orçamento baseado em um quote existente
+   *
+   * @param partnerId - ID do parceiro autenticado (vem da camada de API)
+   * @param quoteId - ID do quote original
+   * @param budgetData - Dados do orçamento a ser criado
+   * @returns ID do orçamento criado
    */
   async createBudgetFromQuote(
+    partnerId: string,
     quoteId: string,
     budgetData: Omit<BudgetData, 'id'>
   ): Promise<string> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
       // Buscar dados do veículo do quote original
-      const { data: quoteWithVehicle, error: quoteError } = await supabase
+      const { data: quoteWithVehicle, error: quoteError } = await this.supabase
         .from('quotes')
         .select(
           `
@@ -90,7 +116,7 @@ export class BudgetService {
         `
         )
         .eq('id', quoteId)
-        .eq('partner_id', user.id)
+        .eq('partner_id', partnerId)
         .single();
 
       if (quoteError) {
@@ -107,10 +133,10 @@ export class BudgetService {
       };
 
       // Criar o orçamento com dados do veículo
-      const { data: budget, error: budgetError } = await supabase
+      const { data: budget, error: budgetError } = await this.supabase
         .from('quotes')
         .insert({
-          partner_id: user.id,
+          partner_id: partnerId,
           name: budgetData.name,
           vehicle_plate: vehicleData.vehiclePlate,
           vehicle_model: vehicleData.vehicleModel || null,
@@ -127,7 +153,7 @@ export class BudgetService {
 
       // Criar os itens
       if (budgetData.items.length > 0) {
-        const { error: itemsError } = await supabase.from('quote_items').insert(
+        const { error: itemsError } = await this.supabase.from('quote_items').insert(
           budgetData.items.map(item => ({
             quote_id: budget.id,
             service_id: item.serviceId,
@@ -141,55 +167,57 @@ export class BudgetService {
         if (itemsError) throw itemsError;
       }
 
-      logger.info('Orçamento criado a partir de quote', { budgetId: budget.id, quoteId });
+      logger.info('Orçamento criado a partir de quote', {
+        budgetId: budget.id,
+        quoteId,
+        partnerId,
+      });
       return budget.id;
     } catch (error) {
-      logger.error('Erro ao criar orçamento a partir de quote', { error, quoteId });
+      logger.error('Erro ao criar orçamento a partir de quote', { error, quoteId, partnerId });
       throw error;
     }
   }
 
   /**
    * Verificar se já existe orçamento para um quote
+   *
+   * @param partnerId - ID do parceiro autenticado
+   * @param quoteId - ID do quote a verificar
+   * @returns ID do orçamento existente ou null
    */
-  async getBudgetByQuoteId(quoteId: string): Promise<string | null> {
+  async getBudgetByQuoteId(partnerId: string, quoteId: string): Promise<string | null> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { data, error } = await supabase
+      const { data, error } = await this.supabase
         .from('quotes')
         .select('id')
         .eq('service_order_id', quoteId)
-        .eq('partner_id', user.id)
+        .eq('partner_id', partnerId)
         .maybeSingle();
 
       if (error) throw error;
 
       return data?.id || null;
     } catch (error) {
-      logger.error('Erro ao buscar orçamento por quote ID', { error, quoteId });
+      logger.error('Erro ao buscar orçamento por quote ID', { error, quoteId, partnerId });
       return null;
     }
   }
 
   /**
    * Criar novo orçamento
+   *
+   * @param partnerId - ID do parceiro autenticado
+   * @param budgetData - Dados do orçamento
+   * @returns ID do orçamento criado
    */
-  async createBudget(budgetData: Omit<BudgetData, 'id'>): Promise<string> {
+  async createBudget(partnerId: string, budgetData: Omit<BudgetData, 'id'>): Promise<string> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
       // Criar o orçamento
-      const { data: budget, error: budgetError } = await supabase
+      const { data: budget, error: budgetError } = await this.supabase
         .from('quotes')
         .insert({
-          partner_id: user.id,
+          partner_id: partnerId,
           name: budgetData.name,
           vehicle_plate: budgetData.vehiclePlate,
           vehicle_model: budgetData.vehicleModel || null,
@@ -205,7 +233,7 @@ export class BudgetService {
 
       // Criar os itens
       if (budgetData.items.length > 0) {
-        const { error: itemsError } = await supabase.from('quote_items').insert(
+        const { error: itemsError } = await this.supabase.from('quote_items').insert(
           budgetData.items.map(item => ({
             quote_id: budget.id,
             service_id: item.serviceId,
@@ -219,26 +247,29 @@ export class BudgetService {
         if (itemsError) throw itemsError;
       }
 
-      logger.info('Orçamento criado', { budgetId: budget.id });
+      logger.info('Orçamento criado', { budgetId: budget.id, partnerId });
       return budget.id;
     } catch (error) {
-      logger.error('Erro ao criar orçamento', { error });
+      logger.error('Erro ao criar orçamento', { error, partnerId });
       throw error;
     }
   }
 
   /**
    * Atualizar orçamento existente
+   *
+   * @param partnerId - ID do parceiro autenticado
+   * @param budgetId - ID do orçamento a atualizar
+   * @param budgetData - Novos dados do orçamento
    */
-  async updateBudget(budgetId: string, budgetData: Omit<BudgetData, 'id'>): Promise<void> {
+  async updateBudget(
+    partnerId: string,
+    budgetId: string,
+    budgetData: Omit<BudgetData, 'id'>
+  ): Promise<void> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
       // Atualizar o orçamento
-      const { error: budgetError } = await supabase
+      const { error: budgetError } = await this.supabase
         .from('quotes')
         .update({
           name: budgetData.name,
@@ -250,12 +281,12 @@ export class BudgetService {
           updated_at: new Date().toISOString(),
         })
         .eq('id', budgetId)
-        .eq('partner_id', user.id);
+        .eq('partner_id', partnerId);
 
       if (budgetError) throw budgetError;
 
       // Remover itens existentes
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await this.supabase
         .from('quote_items')
         .delete()
         .eq('quote_id', budgetId);
@@ -264,7 +295,7 @@ export class BudgetService {
 
       // Inserir novos itens
       if (budgetData.items.length > 0) {
-        const { error: itemsError } = await supabase.from('quote_items').insert(
+        const { error: itemsError } = await this.supabase.from('quote_items').insert(
           budgetData.items.map(item => ({
             quote_id: budgetId,
             service_id: item.serviceId,
@@ -278,24 +309,22 @@ export class BudgetService {
         if (itemsError) throw itemsError;
       }
 
-      logger.info('Orçamento atualizado', { budgetId });
+      logger.info('Orçamento atualizado', { budgetId, partnerId });
     } catch (error) {
-      logger.error('Erro ao atualizar orçamento', { error, budgetId });
+      logger.error('Erro ao atualizar orçamento', { error, budgetId, partnerId });
       throw error;
     }
   }
 
   /**
    * Listar orçamentos do parceiro
+   *
+   * @param partnerId - ID do parceiro autenticado
+   * @returns Lista de orçamentos do parceiro
    */
-  async listPartnerBudgets(): Promise<BudgetData[]> {
+  async listPartnerBudgets(partnerId: string): Promise<BudgetData[]> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { data: budgets, error } = await supabase
+      const { data: budgets, error } = await this.supabase
         .from('quotes')
         .select(
           `
@@ -316,7 +345,7 @@ export class BudgetService {
           )
         `
         )
-        .eq('partner_id', user.id)
+        .eq('partner_id', partnerId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -341,22 +370,21 @@ export class BudgetService {
         })),
       }));
     } catch (error) {
-      logger.error('Erro ao listar orçamentos do parceiro', { error });
+      logger.error('Erro ao listar orçamentos do parceiro', { error, partnerId });
       throw error;
     }
   }
 
   /**
    * Buscar orçamento por ID
+   *
+   * @param partnerId - ID do parceiro autenticado
+   * @param budgetId - ID do orçamento
+   * @returns Dados do orçamento ou null se não encontrado
    */
-  async getBudgetById(budgetId: string): Promise<BudgetData | null> {
+  async getBudgetById(partnerId: string, budgetId: string): Promise<BudgetData | null> {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { data: budget, error } = await supabase
+      const { data: budget, error } = await this.supabase
         .from('quotes')
         .select(
           `
@@ -378,7 +406,7 @@ export class BudgetService {
         `
         )
         .eq('id', budgetId)
-        .eq('partner_id', user.id)
+        .eq('partner_id', partnerId)
         .single();
 
       if (error) {
@@ -404,7 +432,7 @@ export class BudgetService {
         })),
       };
     } catch (error) {
-      logger.error('Erro ao buscar orçamento por ID', { error, budgetId });
+      logger.error('Erro ao buscar orçamento por ID', { error, budgetId, partnerId });
       throw error;
     }
   }
