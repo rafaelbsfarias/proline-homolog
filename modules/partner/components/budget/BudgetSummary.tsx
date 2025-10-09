@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import BudgetActions from './BudgetActions';
 import { Budget, BudgetItem } from '@/modules/partner/hooks/useBudget';
 
 interface BudgetSummaryProps {
@@ -371,47 +372,14 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
         Complete as informações e selecione os serviços para habilitar o salvamento
       </div>
 
-      {/* Botões de Ação - Agora integrados e fixos */}
-      <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
-        <button
-          onClick={onSave}
-          disabled={!canSave || isSaving}
-          style={{
-            width: '100%',
-            padding: '12px 24px',
-            backgroundColor: canSave && !isSaving ? '#4caf50' : '#ccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: canSave && !isSaving ? 'pointer' : 'not-allowed',
-            transition: 'background-color 0.2s',
-          }}
-        >
-          {isSaving ? 'Salvando...' : mode === 'edit' ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
-        </button>
-
-        <button
-          onClick={onClear}
-          disabled={isSaving}
-          style={{
-            width: '100%',
-            padding: '12px 24px',
-            backgroundColor: 'transparent',
-            color: '#666',
-            border: '2px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: isSaving ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            opacity: isSaving ? 0.6 : 1,
-          }}
-        >
-          Limpar Orçamento
-        </button>
-      </div>
+      {/* Botões de Ação - reutilizando componente compartilhado */}
+      <BudgetActions
+        onSave={onSave}
+        onClear={onClear}
+        canSave={canSave}
+        isSaving={isSaving}
+        mode={mode}
+      />
     </div>
   );
 };

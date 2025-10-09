@@ -41,6 +41,8 @@ export async function fetchVehicleHistory(options: VehicleHistoryOptions): Promi
   const { supabase, vehicleId, logger, context } = options;
 
   try {
+    logger.info('fetching_vehicle_history', { vehicleId: vehicleId.slice(0, 8), context });
+
     // Buscar histórico do veículo
     const { data: history, error: historyError } = await supabase
       .from('vehicle_history')
@@ -49,7 +51,7 @@ export async function fetchVehicleHistory(options: VehicleHistoryOptions): Promi
       .order('created_at', { ascending: true });
 
     if (historyError) {
-      logger.error('history_fetch_error', { error: historyError.message });
+      logger.error('history_fetch_error', { error: historyError.message, code: historyError.code });
       return NextResponse.json(
         { success: false, error: 'Erro ao buscar histórico do veículo' },
         { status: 500 }
@@ -60,6 +62,7 @@ export async function fetchVehicleHistory(options: VehicleHistoryOptions): Promi
       vehicleId: vehicleId.slice(0, 8),
       context,
       count: history?.length || 0,
+      hasData: !!history,
     });
 
     return NextResponse.json({
