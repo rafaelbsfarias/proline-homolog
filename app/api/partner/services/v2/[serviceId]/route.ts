@@ -8,29 +8,12 @@ import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/uti
 import { PartnerServiceApplicationServiceImpl } from '@/modules/partner/domain/application/services/PartnerServiceApplicationServiceImpl';
 import { SupabasePartnerServiceRepository } from '@/modules/partner/domain/repositories/SupabasePartnerServiceRepository';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import { Result } from '@/modules/common/types/domain';
-import { z } from 'zod';
-
-// Schema para atualização de serviço
-const UpdateServiceSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Nome do serviço é obrigatório')
-    .max(100, 'Nome do serviço deve ter no máximo 100 caracteres')
-    .trim()
-    .optional(),
-  price: z
-    .number()
-    .positive('Preço deve ser um valor positivo')
-    .max(999999.99, 'Preço deve ser menor que 1.000.000')
-    .optional(),
-  description: z
-    .string()
-    .min(1, 'Descrição do serviço é obrigatória')
-    .max(500, 'Descrição deve ter no máximo 500 caracteres')
-    .trim()
-    .optional(),
-});
+import {
+  handleServiceResult,
+  handleValidationError,
+  handleApiError,
+} from '@/modules/common/http/errorHandlers';
+import { UpdateServiceSchema } from '../lib/schemas';
 
 // Instância do Application Service (singleton pattern)
 let applicationService: PartnerServiceApplicationServiceImpl | null = null;
@@ -65,64 +48,6 @@ function mapPartnerServiceToResponse(service: {
     createdAt: service.createdAt,
     updatedAt: service.updatedAt,
   };
-}
-
-// Tratamento de Result para resposta HTTP
-function handleServiceResult<T>(result: Result<T>, successStatus: number = 200): NextResponse {
-  if (result.success) {
-    return NextResponse.json({ success: true, data: result.data }, { status: successStatus });
-  }
-
-  // Type narrowing: aqui sabemos que result tem success: false
-  const failureResult = result as { readonly success: false; readonly error: Error };
-  const errorName = failureResult.error?.name || 'Error';
-  const errorMapping: Record<string, { code: string; status: number }> = {
-    ValidationError: { code: 'VALIDATION_ERROR', status: 400 },
-    NotFoundError: { code: 'NOT_FOUND_ERROR', status: 404 },
-    ConflictError: { code: 'CONFLICT_ERROR', status: 409 },
-    UnauthorizedError: { code: 'UNAUTHORIZED_ERROR', status: 401 },
-    ForbiddenError: { code: 'FORBIDDEN_ERROR', status: 403 },
-    DatabaseError: { code: 'DATABASE_ERROR', status: 500 },
-  };
-
-  const mapping = errorMapping[errorName] || { code: 'UNKNOWN_ERROR', status: 500 };
-
-  const errorResponse = {
-    success: false,
-    error: {
-      code: mapping.code,
-      message: failureResult.error?.message || 'Erro interno do servidor',
-    },
-  };
-
-  return NextResponse.json(errorResponse, { status: mapping.status });
-}
-
-// Tratamento de erros de validação
-function handleValidationError(error: { errors?: unknown; message?: string }): NextResponse {
-  const errorResponse = {
-    success: false,
-    error: {
-      code: 'VALIDATION_ERROR',
-      message: 'Dados de entrada inválidos',
-      details: error.errors || error.message,
-    },
-  };
-
-  return NextResponse.json(errorResponse, { status: 400 });
-}
-
-// Tratamento de erros gerais
-function handleApiError(): NextResponse {
-  const errorResponse = {
-    success: false,
-    error: {
-      code: 'INTERNAL_ERROR',
-      message: 'Erro interno do servidor',
-    },
-  };
-
-  return NextResponse.json(errorResponse, { status: 500 });
 }
 
 interface RouteParams {
