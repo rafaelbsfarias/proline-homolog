@@ -208,6 +208,30 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         vehicle_id,
       });
 
+      // Atualizar status do veículo para "Fase Orçamentaria"
+      const { data: statusUpdateData, error: statusUpdateError } = await supabase.rpc(
+        'partner_save_checklist_update_vehicle_status',
+        {
+          p_partner_id: partnerId,
+          p_vehicle_id: vehicle_id,
+        }
+      );
+
+      if (statusUpdateError || !statusUpdateData?.ok) {
+        logger.warn('vehicle_status_update_failed', {
+          error: statusUpdateError?.message || statusUpdateData?.error,
+          vehicle_id,
+          partner_id: partnerId,
+        });
+        // Não falhar a requisição - anomalias já foram salvas
+      } else {
+        logger.info('vehicle_status_updated', {
+          vehicle_id,
+          new_status: statusUpdateData.status,
+          history_entry: statusUpdateData.history_entry,
+        });
+      }
+
       return NextResponse.json({
         success: true,
         data: data,

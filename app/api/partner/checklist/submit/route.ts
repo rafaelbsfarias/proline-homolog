@@ -4,6 +4,7 @@ import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/uti
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ChecklistService } from '@/modules/partner/services/ChecklistService';
 import { z } from 'zod';
+import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const logger = getLogger('api:partner:checklist:submit');
 
@@ -63,65 +64,64 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
     }
     logger.info('mechanics_checklist_upsert_ok', { rows: Array.isArray(data) ? data.length : 0 });
 
-    // Verificar se é a primeira vez que este parceiro salva checklist para este veículo
-    // Se sim, adicionar entrada na timeline
-    const isFirstSave = Array.isArray(data) && data[0] && data[0].created_at === data[0].updated_at;
+    // Registrar entrada de timeline idempotente e atualizar status do veículo
+    try {
+      // Buscar categoria do parceiro
+      const { data: partnerCategories, error: categoryError } = await supabase.rpc(
+        'get_partner_categories',
+        { partner_id: partnerId }
+      );
 
-    if (isFirstSave) {
-      try {
-        // Buscar categoria do parceiro
-        const { data: partnerCategories, error: categoryError } = await supabase.rpc(
-          'get_partner_categories',
-          { partner_id: partnerId }
-        );
+      if (categoryError) {
+        logger.error('category_fetch_error', { error: categoryError.message });
+      } else {
+        const categories = partnerCategories || [];
+        const categoryName = categories[0] || 'Parceiro';
+        const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
 
-        if (categoryError) {
-          logger.error('category_fetch_error', { error: categoryError.message });
-        } else {
-          const categories = partnerCategories || [];
-          const categoryName = categories[0] || 'Parceiro';
-          const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
+        // Verificar se já existe este status na timeline para evitar duplicatas
+        const { data: existingHistory } = await supabase
+          .from('vehicle_history')
+          .select('id')
+          .eq('vehicle_id', checklistData.vehicle_id)
+          .eq('status', timelineStatus)
+          .maybeSingle();
 
-          // Verificar se já existe este status na timeline para evitar duplicatas
-          const { data: existingHistory } = await supabase
-            .from('vehicle_history')
-            .select('id')
-            .eq('vehicle_id', checklistData.vehicle_id)
-            .eq('status', timelineStatus)
-            .maybeSingle();
+        // Se não existe, criar novo registro na timeline
+        if (!existingHistory) {
+          const { error: historyError } = await supabase.from('vehicle_history').insert({
+            vehicle_id: checklistData.vehicle_id,
+            status: timelineStatus,
+            prevision_date: null,
+            end_date: null,
+            created_at: new Date().toISOString(),
+          });
 
-          // Se não existe, criar novo registro na timeline
-          if (!existingHistory) {
-            const { error: historyError } = await supabase.from('vehicle_history').insert({
-              vehicle_id: checklistData.vehicle_id,
-              status: timelineStatus,
-              prevision_date: null,
-              end_date: null,
-              created_at: new Date().toISOString(),
-            });
-
-            if (historyError) {
-              logger.error('timeline_insert_error', { error: historyError.message });
-              // Não falhar a request por causa do histórico
-            } else {
-              logger.info('timeline_created', {
-                vehicle_id: checklistData.vehicle_id.slice(0, 8),
-                status: timelineStatus,
-                partner_id: partnerId.slice(0, 8),
-              });
-            }
+          if (historyError) {
+            logger.error('timeline_insert_error', { error: historyError.message });
           } else {
-            logger.debug('timeline_already_exists', {
+            logger.info('timeline_created', {
               vehicle_id: checklistData.vehicle_id.slice(0, 8),
+              status: timelineStatus,
+              partner_id: partnerId.slice(0, 8),
             });
           }
         }
-      } catch (timelineError) {
-        logger.error('timeline_update_error', {
-          error: timelineError instanceof Error ? timelineError.message : String(timelineError),
-        });
-        // Não falhar a requisição principal por causa da timeline
       }
+
+      // Atualizar status do veículo para Fase Orçamentária
+      const { error: statusError } = await supabase
+        .from('vehicles')
+        .update({ status: VehicleStatus.FASE_ORCAMENTARIA })
+        .eq('id', checklistData.vehicle_id);
+      if (statusError) {
+        logger.warn('vehicle_status_update_failed', { error: statusError.message });
+      }
+    } catch (timelineError) {
+      logger.error('timeline_or_status_update_error', {
+        error: timelineError instanceof Error ? timelineError.message : String(timelineError),
+      });
+      // Não falhar a requisição principal por causa da timeline/status
     }
 
     // Persistir status e notas por item em mechanics_checklist_items

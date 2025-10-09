@@ -218,7 +218,7 @@ const PartnerDashboard = () => {
         '/api/partner/quotes/send-to-admin',
         {
           quoteId: quote.id,
-          vehicleStatus: 'Análise Orçamentária Iniciada',
+          vehicleStatus: 'FASE ORÇAMENTÁRIA',
         },
         { requireAuth: true }
       );
@@ -228,10 +228,7 @@ const PartnerDashboard = () => {
         return;
       }
 
-      showToast(
-        'Orçamento enviado ao admin e veículo marcado como "Análise Orçamentária Iniciada"!',
-        'success'
-      );
+      showToast('Orçamento enviado ao admin e veículo marcado como Fase Orçamentária!', 'success');
 
       // ✅ Invalidar cache do quote após enviar
       invalidateCache(quote.id);
@@ -269,6 +266,11 @@ const PartnerDashboard = () => {
 
       router.push(route);
     }
+  };
+
+  const handleDownloadServiceOrder = (service: InProgressServiceDisplay) => {
+    // Navegar para a página de ordem de serviço que pode ser impressa/baixada
+    router.push(`/dashboard/partner/service-order?quoteId=${service.id}`);
   };
 
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
@@ -498,7 +500,8 @@ const PartnerDashboard = () => {
             }))}
             columns={inProgressServicesColumns}
             emptyMessage="Nenhum orçamento aprovado aguardando execução."
-            showActions={false}
+            showActions={true}
+            onDownloadOS={handleDownloadServiceOrder}
           />
           <ServiceModal
             isOpen={showAddServiceModal}

@@ -32,6 +32,17 @@ const TimelineSection: React.FC<TimelineProps> = ({
   inspectionFinalized,
   vehicleHistory = [],
 }) => {
+  // Debug log
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.log('📊 [TimelineSection] Received vehicleHistory:', {
+        count: vehicleHistory.length,
+        items: vehicleHistory.map(h => ({ id: h.id, status: h.status, created_at: h.created_at })),
+      });
+    }
+  }, [vehicleHistory]);
+
   const sortedHistory = useMemo(() => {
     const items = [...vehicleHistory];
     items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());

@@ -148,6 +148,7 @@ export const VEHICLE_CONSTANTS = {
     aguardando_chegada: 'Aguardando Chegada',
     chegada_confirmada: 'Chegada Confirmada',
     em_analise: 'Em Análise',
+    'FASE ORÇAMENTÁRIA': 'Fase Orçamentária',
     analise_finalizada: 'Análise Finalizada',
     definir_opcao_de_coleta: 'Definir Opção de Coleta',
     active: 'Ativo',

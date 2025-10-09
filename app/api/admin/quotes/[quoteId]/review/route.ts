@@ -43,7 +43,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     // Verificar se o quote existe e está pendente de aprovação do admin
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
-      .select('id, status, total_value, partner_id')
+      .select('id, status, total_value, partner_id, service_order_id')
       .eq('id', quoteId)
       .in('status', ['pending_admin_approval', 'admin_review'])
       .single();
@@ -128,6 +128,55 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
         { ok: false, error: 'Erro ao atualizar orçamento' },
         { status: 500 }
       );
+    }
+
+    // Atualizar status do veículo e criar entrada no histórico quando aprovar
+    if (action === 'approve_full' || action === 'approve_partial') {
+      try {
+        // Buscar vehicle_id através do service_order
+        const { data: serviceOrder } = await supabase
+          .from('service_orders')
+          .select('vehicle_id')
+          .eq('id', quote.service_order_id)
+          .single();
+
+        if (serviceOrder?.vehicle_id) {
+          // Atualizar status do veículo
+          await supabase
+            .from('vehicles')
+            .update({ status: 'Fase Orçamentaria' })
+            .eq('id', serviceOrder.vehicle_id);
+
+          // Criar entrada no vehicle_history
+          const historyStatus =
+            action === 'approve_full'
+              ? 'Orçamento Aprovado Integralmente pelo Administrador'
+              : `Orçamento Aprovado Parcialmente pelo Administrador (${(allItems || []).length - finalRejectedItems.length}/${(allItems || []).length} itens)`;
+
+          await supabase.from('vehicle_history').insert({
+            vehicle_id: serviceOrder.vehicle_id,
+            status: historyStatus,
+            notes: rejectionReason || null,
+          });
+
+          logger.info('vehicle_status_updated_after_approval', {
+            vehicleId: serviceOrder.vehicle_id,
+            action,
+            historyStatus,
+          });
+        } else {
+          logger.warn('service_order_not_found_for_quote', {
+            quoteId,
+            serviceOrderId: quote.service_order_id,
+          });
+        }
+      } catch (historyError) {
+        logger.warn('failed_to_update_vehicle_status_or_history', {
+          error: historyError,
+          quoteId,
+        });
+        // Não falhar a requisição principal
+      }
     }
 
     logger.info('quote_reviewed_successfully', {

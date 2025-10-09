@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
+import TimelineSection from './TimelineSection';
 
 interface VehicleDetails {
   id: string;
@@ -92,68 +93,6 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       status
     );
   };
-
-  // Construir timeline unificada (itens estáticos + histórico do DB)
-  const timelineItems = useMemo(() => {
-    type Item = { id: string; label: string; date: string; color: string };
-    const items: Item[] = [];
-
-    const colorFor = (label: string) => {
-      if (label.includes('Orçament')) return '#f39c12';
-      if (label.includes('Finalizada')) return '#27ae60';
-      if (label.includes('Iniciad')) return '#3498db';
-      return '#9b59b6';
-    };
-
-    if (vehicle?.created_at) {
-      items.push({
-        id: `static-created-${vehicle.id}`,
-        label: 'Veículo Cadastrado',
-        date: vehicle.created_at,
-        color: '#3498db',
-      });
-    }
-
-    if (vehicle?.estimated_arrival_date) {
-      items.push({
-        id: `static-prevision-${vehicle.id}`,
-        label: 'Previsão de Chegada',
-        date: vehicle.estimated_arrival_date,
-        color: '#f39c12',
-      });
-    }
-
-    if (inspection?.inspection_date) {
-      items.push({
-        id: `static-analysis-started-${inspection.id}`,
-        label: 'Análise Iniciada',
-        date: inspection.inspection_date,
-        color: '#e74c3c',
-      });
-
-      if (inspection.finalized) {
-        items.push({
-          id: `static-analysis-finished-${inspection.id}`,
-          label: 'Análise Finalizada',
-          date: inspection.inspection_date,
-          color: '#27ae60',
-        });
-      }
-    }
-
-    for (const h of vehicleHistory || []) {
-      if (!h?.created_at) continue;
-      items.push({
-        id: `vh-${h.id}`,
-        label: h.status,
-        date: h.created_at,
-        color: colorFor(h.status),
-      });
-    }
-
-    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return items;
-  }, [vehicle, inspection, vehicleHistory]);
 
   if (loading) {
     return (
@@ -397,36 +336,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         </div>
 
         {/* Timeline e Status */}
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: 10,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-            padding: '24px',
-          }}
-        >
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-            Timeline do Veículo
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {timelineItems.map(item => (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: item.color,
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>{item.label}</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>{formatDate(item.date)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <TimelineSection
+          createdAt={vehicle.created_at}
+          estimatedArrivalDate={vehicle.estimated_arrival_date}
+          inspectionDate={inspection?.inspection_date}
+          inspectionFinalized={inspection?.finalized}
+          vehicleHistory={vehicleHistory}
+        />
 
         {/* Serviços Necessários */}
         {inspection?.services && inspection.services.length > 0 && (

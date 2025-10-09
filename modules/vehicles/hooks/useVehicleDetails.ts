@@ -163,12 +163,26 @@ export const useVehicleDetails = (
             `/api/${role}/vehicle-history?vehicleId=${vehicleId}`
           );
 
+          logger.info('Vehicle History Response', {
+            ok: historyResp.ok,
+            status: historyResp.status,
+            success: historyResp.data?.success,
+            historyCount: historyResp.data?.history?.length,
+          });
+
           if (historyResp.ok && historyResp.data?.success && historyResp.data.history) {
+            logger.info('Setting vehicle history', { count: historyResp.data.history.length });
             setVehicleHistory(historyResp.data.history);
+          } else {
+            logger.warn('History response not ok or no data', {
+              ok: historyResp.ok,
+              success: historyResp.data?.success,
+              hasHistory: !!historyResp.data?.history,
+            });
           }
         } catch (historyError) {
           // Log mas não falhar a request principal
-          logger.warn('Failed to fetch vehicle history:', historyError);
+          logger.error('Failed to fetch vehicle history', { error: historyError });
         }
       } catch (err) {
         logger.error('Error fetching vehicle details:', err);
