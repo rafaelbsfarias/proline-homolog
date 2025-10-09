@@ -383,6 +383,114 @@ export class ChecklistService {
   }
 
   /**
+   * Carrega checklist completo com evidências e itens formatados para UI
+   *
+   * @param inspection_id - ID da inspeção
+   */
+  public async loadChecklistWithDetails(inspection_id: string) {
+    try {
+      // 1) Carregar mechanics_checklist por inspection_id
+      const { data: checklist, error: checklistError } = await this.supabase
+        .from('mechanics_checklist')
+        .select('*')
+        .eq('inspection_id', inspection_id)
+        .single();
+
+      if (checklistError && checklistError.code !== 'PGRST116') {
+        logger.error('load_checklist_error', { error: checklistError.message });
+        return { success: false, error: checklistError.message };
+      }
+
+      // 2) Carregar evidências e gerar URLs públicas
+      const { data: evidences, error: evError } = await this.supabase
+        .from('mechanics_checklist_evidences')
+        .select('item_key, storage_path')
+        .eq('inspection_id', inspection_id);
+
+      if (evError) {
+        logger.error('load_evidences_error', { error: evError.message });
+        return { success: false, error: evError.message };
+      }
+
+      const evidenceMap: Record<string, { url: string }> = {};
+      if (Array.isArray(evidences) && evidences.length > 0) {
+        for (const row of evidences) {
+          try {
+            const { data: signed } = await this.supabase.storage
+              .from('vehicle-media')
+              .createSignedUrl(row.storage_path, 60 * 60); // 1h
+            const url = signed?.signedUrl || '';
+            if (url) evidenceMap[row.item_key] = { url };
+          } catch (err) {
+            logger.error('create_signed_url_error', {
+              item_key: row.item_key,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          }
+        }
+      }
+
+      // 3) Carregar itens por inspeção e montar objeto para UI
+      const { data: items, error: itemsError } = await this.supabase
+        .from('mechanics_checklist_items')
+        .select('item_key, item_status, item_notes')
+        .eq('inspection_id', inspection_id);
+
+      if (itemsError) {
+        logger.error('load_items_error', { error: itemsError.message });
+        return { success: false, error: itemsError.message };
+      }
+
+      // 4) Construir formPartial: observações gerais e itens persistidos
+      const formPartial: Record<string, string | { url: string }> = {};
+
+      if (checklist) {
+        formPartial.observations = checklist.general_observations || '';
+        formPartial.fluidsNotes = checklist.fluids_notes || '';
+      }
+
+      if (Array.isArray(items)) {
+        for (const it of items) {
+          formPartial[it.item_key] = this.toFrontStatus(it.item_status);
+          // Mapear notesKey como `${item_key}Notes`
+          const notesKey = `${it.item_key}Notes`;
+          formPartial[notesKey] = it.item_notes || '';
+        }
+      }
+
+      logger.info('load_checklist_with_details_ok', {
+        inspection_id,
+        hasChecklist: !!checklist,
+        itemsCount: Array.isArray(items) ? items.length : 0,
+        evidencesCount: Array.isArray(evidences) ? evidences.length : 0,
+      });
+
+      return {
+        success: true,
+        data: {
+          form: formPartial,
+          evidences: evidenceMap,
+        },
+      };
+    } catch (error) {
+      logger.error('load_checklist_with_details_unexpected_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Erro ao carregar checklist' };
+    }
+  }
+
+  /**
+   * Converte status do DB para formato da UI
+   */
+  private toFrontStatus(db?: string): 'ok' | 'attention' {
+    const s = (db || '').toLowerCase();
+    if (s === 'ok') return 'ok';
+    if (s === 'nok') return 'attention';
+    return 'ok';
+  }
+
+  /**
    * Verifica se um checklist existe
    *
    * @param vehicle_id - ID do veículo
