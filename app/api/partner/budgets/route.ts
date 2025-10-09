@@ -1,61 +1,59 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:budgets');
 
-interface BudgetItem {
-  serviceId: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-}
+// Schema de validação
+const BudgetItemSchema = z.object({
+  serviceId: z.string().uuid('ID do serviço inválido'),
+  description: z.string().min(1, 'Descrição é obrigatória'),
+  quantity: z.number().positive('Quantidade deve ser positiva'),
+  unitPrice: z.number().nonnegative('Preço unitário deve ser não-negativo'),
+  totalPrice: z.number().nonnegative('Preço total deve ser não-negativo'),
+});
 
-interface SaveBudgetRequest {
-  name: string;
-  vehiclePlate: string;
-  vehicleModel: string;
-  vehicleBrand: string;
-  vehicleYear?: number;
-  items: BudgetItem[];
-  totalValue: number;
-  serviceRequestId?: string; // Para associar a uma solicitação de serviço existente
-}
+const SaveBudgetSchema = z.object({
+  name: z.string().min(1, 'Nome do orçamento é obrigatório'),
+  vehiclePlate: z.string().min(1, 'Placa do veículo é obrigatória'),
+  vehicleModel: z.string().optional(),
+  vehicleBrand: z.string().optional(),
+  vehicleYear: z.number().optional(),
+  items: z.array(BudgetItemSchema).min(1, 'O orçamento deve conter pelo menos um serviço'),
+  totalValue: z.number().nonnegative('Valor total deve ser não-negativo'),
+  serviceRequestId: z.string().uuid().optional(),
+});
 
 async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
-    const body: SaveBudgetRequest = await req.json();
+    const body = await req.json();
     const partnerId = req.user.id;
 
-    logger.info('Salvando orçamento', {
-      partnerId,
-      budgetName: body.name,
-      vehiclePlate: body.vehiclePlate,
-      itemCount: body.items.length,
-      totalValue: body.totalValue,
-    });
-
-    // Validar dados obrigatórios
-    if (!body.name?.trim()) {
-      return NextResponse.json({ error: 'Nome do orçamento é obrigatório' }, { status: 400 });
-    }
-
-    if (!body.vehiclePlate?.trim()) {
-      return NextResponse.json({ error: 'Placa do veículo é obrigatória' }, { status: 400 });
-    }
-
-    if (!body.items || body.items.length === 0) {
+    // Validar entrada
+    const validation = SaveBudgetSchema.safeParse(body);
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
       return NextResponse.json(
-        { error: 'O orçamento deve conter pelo menos um serviço' },
+        { error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
       );
     }
 
-    const supabase = await createClient();
+    const data = validation.data;
+
+    logger.info('Salvando orçamento', {
+      partnerId,
+      budgetName: data.name,
+      vehiclePlate: data.vehiclePlate,
+      itemCount: data.items.length,
+      totalValue: data.totalValue,
+    });
+
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     // Verificar se o partner existe
     const { data: partner, error: partnerError } = await supabase
@@ -73,13 +71,13 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
     // Criar o orçamento
     const budgetData = {
       partner_id: partnerId,
-      name: body.name.trim(),
-      vehicle_plate: body.vehiclePlate.trim(),
-      vehicle_model: body.vehicleModel?.trim() || null,
-      vehicle_brand: body.vehicleBrand?.trim() || null,
-      vehicle_year: body.vehicleYear || null,
-      total_value: body.totalValue,
-      service_request_id: body.serviceRequestId || null,
+      name: data.name.trim(),
+      vehicle_plate: data.vehiclePlate.trim(),
+      vehicle_model: data.vehicleModel?.trim() || null,
+      vehicle_brand: data.vehicleBrand?.trim() || null,
+      vehicle_year: data.vehicleYear || null,
+      total_value: data.totalValue,
+      service_request_id: data.serviceRequestId || null,
       status: 'draft', // orçamento em rascunho
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -97,7 +95,7 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
     }
 
     // Salvar os itens do orçamento
-    const budgetItems = body.items.map(item => ({
+    const budgetItems = data.items.map(item => ({
       quote_id: budget.id,
       service_id: item.serviceId,
       description: item.description,
