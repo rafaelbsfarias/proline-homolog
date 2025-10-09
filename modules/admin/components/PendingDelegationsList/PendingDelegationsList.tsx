@@ -11,6 +11,7 @@ import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import DelegateServicesModal from '../DelegateServicesModal/DelegateServicesModal';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import BaseTable from '@/modules/common/components/BaseTable/BaseTable';
 
 interface PendingChecklist {
   inspection_id: string;
@@ -58,6 +59,35 @@ const PendingDelegationsList = () => {
     setSelectedInspectionServices([]);
   };
 
+  const columns = [
+    {
+      key: 'plate',
+      label: 'Placa',
+    },
+    {
+      key: 'services',
+      label: 'Serviços',
+      render: (services: string[]) => services.map(translateServiceCategory).join(', '),
+    },
+    {
+      key: 'inspection_id',
+      label: 'ID da Inspeção',
+    },
+    {
+      key: 'actions',
+      label: 'Ações',
+      align: 'center' as const,
+      render: (_: any, row: PendingChecklist) => (
+        <SolidButton
+          onClick={() => handleOpenDelegateModal(row.inspection_id, row.services)}
+          className={styles.approveButton}
+        >
+          Delegar Serviços
+        </SolidButton>
+      ),
+    },
+  ];
+
   if (loading)
     return (
       <>
@@ -94,35 +124,7 @@ const PendingDelegationsList = () => {
           </div>
         ) : (
           <div className={styles.tableContainer}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Placa</th>
-                  <th>Serviços</th>
-                  <th>ID da Inspeção</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {checklists.map(checklist => (
-                  <tr key={checklist.inspection_id} className={styles.tableRow}>
-                    <td>{checklist.plate}</td>
-                    <td>{checklist.services.map(translateServiceCategory).join(', ')}</td>
-                    <td>{checklist.inspection_id}</td>
-                    <td>
-                      <SolidButton
-                        onClick={() =>
-                          handleOpenDelegateModal(checklist.inspection_id, checklist.services)
-                        }
-                        className={styles.approveButton}
-                      >
-                        Delegar Serviços
-                      </SolidButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <BaseTable data={checklists} columns={columns} getRowKey={row => row.inspection_id} />
           </div>
         )}
       </div>
