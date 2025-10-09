@@ -1,20 +1,33 @@
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { createApiClient } from '@/lib/supabase/api';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
+import { z } from 'zod';
 
 const logger = getLogger('api:partner:quotes:send-to-admin');
 
+// Validação
+const SendQuoteSchema = z.object({
+  quoteId: z.string().uuid('ID do orçamento inválido'),
+  vehicleStatus: z.string().optional().default('AGUARDANDO APROVAÇÃO DO ORÇAMENTO'),
+});
+
 async function handler(req: AuthenticatedRequest) {
   try {
-    const supabase = createApiClient();
     const body = await req.json();
-    const quoteId: string | undefined = body?.quoteId;
-    const vehicleStatus: string = body?.vehicleStatus || 'AGUARDANDO APROVAÇÃO DO ORÇAMENTO';
 
-    if (!quoteId) {
-      return NextResponse.json({ ok: false, error: 'quoteId é obrigatório' }, { status: 400 });
+    // Validar entrada
+    const validation = SendQuoteSchema.safeParse(body);
+    if (!validation.success) {
+      logger.warn('validation_error', { errors: validation.error.errors });
+      return NextResponse.json(
+        { ok: false, error: 'Dados inválidos', details: validation.error.errors },
+        { status: 400 }
+      );
     }
+
+    const { quoteId, vehicleStatus } = validation.data;
+    const supabase = SupabaseService.getInstance().getAdminClient();
 
     const { data, error } = await supabase.rpc('partner_send_quote_to_admin', {
       p_partner_id: req.user.id,
@@ -33,7 +46,8 @@ async function handler(req: AuthenticatedRequest) {
     logger.info('quote_sent_to_admin', { quoteId, by: req.user.id, vehicleId: data.vehicle_id });
     return NextResponse.json({ ok: true, ...data });
   } catch (e) {
-    logger.error('unexpected_error', { error: (e as any)?.message || String(e) });
+    const error = e instanceof Error ? e : new Error(String(e));
+    logger.error('unexpected_error', { error: error.message });
     return NextResponse.json({ ok: false, error: 'Erro interno do servidor' }, { status: 500 });
   }
 }
