@@ -1,8 +1,29 @@
+/**
+ * @deprecated Este endpoint está depreciado e será removido em breve.
+ *
+ * **Use os novos endpoints V2:**
+ * - PUT /api/partner/services/v2/[serviceId] (atualizar)
+ * - DELETE /api/partner/services/v2/[serviceId] (deletar)
+ *
+ * **Mudanças no V2:**
+ * - Validação com Zod schemas
+ * - Arquitetura DDD
+ * - Tratamento de erros unificado
+ * - Melhor logging estruturado
+ *
+ * **Timeline de remoção:** Sprint +2
+ *
+ * @see app/api/partner/services/v2/[serviceId]/route.ts
+ * @see docs/partner/REFACTOR_PLAN_DRY_SOLID.md - Fase 3 (P1.2)
+ */
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { handleApiError } from '@/lib/utils/apiErrorHandlers';
 import { DatabaseError, ValidationError, NotFoundError } from '@/lib/utils/errors';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('api:partner:services:serviceId:legacy');
 
 interface UpdateServiceData {
   name: string;
@@ -17,6 +38,13 @@ async function updateServiceHandler(
 ) {
   try {
     const { serviceId } = await context.params;
+
+    // Log de depreciação
+    logger.warn('deprecated_endpoint_used', {
+      endpoint: `PUT /api/partner/services/${serviceId}`,
+      partnerId: req.user.id,
+      message: 'Este endpoint está depreciado. Use PUT /api/partner/services/v2/[serviceId]',
+    });
 
     if (!serviceId) {
       throw new ValidationError('ID do serviço é obrigatório');
@@ -75,11 +103,17 @@ async function updateServiceHandler(
       throw new DatabaseError(`Erro ao atualizar serviço: ${error.message}`);
     }
 
-    return NextResponse.json({
+    // Headers indicando depreciação
+    const response = NextResponse.json({
       success: true,
       service: data,
       message: 'Serviço atualizado com sucesso',
     });
+    response.headers.set('X-Deprecated', 'true');
+    response.headers.set('X-Deprecated-Replacement', `/api/partner/services/v2/${serviceId}`);
+    response.headers.set('X-Deprecated-Removal-Date', '2025-12-01');
+
+    return response;
   } catch (error) {
     return handleApiError(error);
   }
@@ -91,6 +125,13 @@ async function deleteServiceHandler(
 ) {
   try {
     const { serviceId } = await context.params;
+
+    // Log de depreciação
+    logger.warn('deprecated_endpoint_used', {
+      endpoint: `DELETE /api/partner/services/${serviceId}`,
+      partnerId: req.user.id,
+      message: 'Este endpoint está depreciado. Use DELETE /api/partner/services/v2/[serviceId]',
+    });
 
     if (!serviceId) {
       throw new ValidationError('ID do serviço é obrigatório');
