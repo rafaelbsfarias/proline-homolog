@@ -9,6 +9,7 @@ import { useClientVehicleDetails } from '@/modules/vehicles/hooks/useClientVehic
 import VehicleHeader from '@/modules/vehicles/components/VehicleHeader';
 import VehicleInfoCard from '@/modules/vehicles/components/VehicleInfoCard';
 import TimelineSection from '@/modules/vehicles/components/TimelineSection';
+import { useVehicleHistory } from '@/modules/vehicles/hooks/useVehicleHistory';
 import ServicesSection from '@/modules/vehicles/components/ServicesSection';
 import PhotosSection from '@/modules/vehicles/components/PhotosSection';
 import ObservationsSection from '@/modules/vehicles/components/ObservationsSection';
@@ -19,6 +20,7 @@ const VehicleDetailsPage = () => {
   const vehicleId = params.vehicleId as string;
 
   const { vehicle, inspection, mediaUrls, loading, error } = useClientVehicleDetails(vehicleId);
+  const { history } = useVehicleHistory('client', vehicleId);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
 
   if (loading) {
@@ -88,6 +90,7 @@ const VehicleDetailsPage = () => {
             estimatedArrivalDate={vehicle.estimated_arrival_date}
             inspectionDate={inspection?.inspection_date || null}
             inspectionFinalized={!!inspection?.finalized}
+            vehicleHistory={history}
           />
 
           <ServicesSection services={inspection?.services || []} />

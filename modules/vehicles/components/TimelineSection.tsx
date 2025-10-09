@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { formatDateBR } from '@/modules/client/utils/date';
 
 export interface TimelineProps {
@@ -8,6 +8,16 @@ export interface TimelineProps {
   estimatedArrivalDate?: string | null;
   inspectionDate?: string | null;
   inspectionFinalized?: boolean;
+  vehicleHistory?: VehicleHistoryEntry[];
+}
+
+export interface VehicleHistoryEntry {
+  id: string;
+  vehicle_id: string;
+  status: string;
+  prevision_date: string | null;
+  end_date: string | null;
+  created_at: string;
 }
 
 function formatDate(date?: string | null) {
@@ -20,7 +30,21 @@ const TimelineSection: React.FC<TimelineProps> = ({
   estimatedArrivalDate,
   inspectionDate,
   inspectionFinalized,
+  vehicleHistory = [],
 }) => {
+  const sortedHistory = useMemo(() => {
+    const items = [...vehicleHistory];
+    items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    return items;
+  }, [vehicleHistory]);
+
+  const colorFor = (label: string) => {
+    if (label.includes('Orçament')) return '#f39c12';
+    if (label.includes('Finalizada')) return '#27ae60';
+    if (label.includes('Iniciad')) return '#3498db';
+    return '#9b59b6';
+  };
+
   return (
     <div
       style={{
@@ -48,6 +72,15 @@ const TimelineSection: React.FC<TimelineProps> = ({
         {inspectionDate && inspectionFinalized && (
           <Event dotColor="#27ae60" title="Análise Finalizada" date={formatDate(inspectionDate)} />
         )}
+
+        {sortedHistory.map(h => (
+          <Event
+            key={`vh-${h.id}`}
+            dotColor={colorFor(h.status)}
+            title={h.status}
+            date={formatDate(h.created_at)}
+          />
+        ))}
       </div>
     </div>
   );

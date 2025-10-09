@@ -55,6 +55,31 @@ interface RouteParams {
 }
 
 /**
+ * Valida e extrai o serviceId dos parâmetros da rota
+ * @returns NextResponse com erro ou null se válido
+ */
+async function validateServiceId(context: {
+  params: Promise<RouteParams>;
+}): Promise<{ serviceId: string | null; error: NextResponse | null }> {
+  const { serviceId } = await context.params;
+
+  if (!serviceId) {
+    return {
+      serviceId: null,
+      error: NextResponse.json(
+        {
+          success: false,
+          error: { code: 'VALIDATION_ERROR', message: 'ID do serviço é obrigatório' },
+        },
+        { status: 400 }
+      ),
+    };
+  }
+
+  return { serviceId, error: null };
+}
+
+/**
  * GET /api/partner/services/v2/[serviceId]
  * Busca um serviço específico por ID
  */
@@ -63,17 +88,8 @@ async function getServiceHandler(
   context: { params: Promise<RouteParams> }
 ): Promise<NextResponse> {
   try {
-    const { serviceId } = await context.params;
-
-    if (!serviceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'ID do serviço é obrigatório' },
-        },
-        { status: 400 }
-      );
-    }
+    const { serviceId, error } = await validateServiceId(context);
+    if (error) return error;
 
     const service = getApplicationService();
     const result = await service.getServiceById(serviceId);
@@ -113,17 +129,8 @@ async function updateServiceHandler(
   context: { params: Promise<RouteParams> }
 ): Promise<NextResponse> {
   try {
-    const { serviceId } = await context.params;
-
-    if (!serviceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'ID do serviço é obrigatório' },
-        },
-        { status: 400 }
-      );
-    }
+    const { serviceId, error } = await validateServiceId(context);
+    if (error) return error;
 
     // Parse do corpo da requisição
     const body = await req.json();
@@ -160,17 +167,8 @@ async function deleteServiceHandler(
   context: { params: Promise<RouteParams> }
 ): Promise<NextResponse> {
   try {
-    const { serviceId } = await context.params;
-
-    if (!serviceId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: { code: 'VALIDATION_ERROR', message: 'ID do serviço é obrigatório' },
-        },
-        { status: 400 }
-      );
-    }
+    const { serviceId, error } = await validateServiceId(context);
+    if (error) return error;
 
     const service = getApplicationService();
     const result = await service.deactivateService(serviceId);

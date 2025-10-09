@@ -154,7 +154,12 @@ async function createServiceOrderAndQuotes({
     }
 
     // Find partners for this category
-    const { data: partners } = await supabase
+    logger.info(`Buscando parceiros para categoria ${category}`, {
+      service_category_id: serviceCategory.id,
+      service_category_key: category,
+    });
+
+    const { data: partners, error: partnersError } = await supabase
       .from('partners_service_categories')
       .select(
         `
@@ -164,14 +169,22 @@ async function createServiceOrderAndQuotes({
       )
       .eq('category_id', serviceCategory.id);
 
+    if (partnersError) {
+      logger.error(`Erro ao buscar parceiros para categoria ${category}:`, {
+        error: partnersError,
+        service_category_id: serviceCategory.id,
+      });
+    }
+
     logger.info(`Parceiros encontrados para categoria ${category}:`, {
       count: partners?.length,
+      service_category_id: serviceCategory.id,
       partners: partners?.map(p => ({ partner_id: p.partner_id, partners: p.partners })),
     });
 
     if (partners && partners.length > 0) {
       // Create quotes for each partner
-      // Status = NULL indica que o parceiro precisa preencher o orçamento
+      // Status = 'pending_partner' indica que o parceiro precisa preencher o orçamento
       // Após preenchimento, muda para 'admin_review' (aguardando aprovação do admin)
       const quotesToInsert = partners.map(
         (partnerRelation: {
@@ -186,7 +199,7 @@ async function createServiceOrderAndQuotes({
           return {
             service_order_id: serviceOrder.id,
             partner_id: profileId, // Sempre usar o profile_id, não o partner_id da tabela partners
-            status: null, // NULL = aguardando parceiro preencher
+            status: 'pending_partner', // Aguardando parceiro preencher o orçamento
             total_value: 0, // Will be updated when partner submits quote
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import {
@@ -93,6 +93,68 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
     );
   };
 
+  // Construir timeline unificada (itens estáticos + histórico do DB)
+  const timelineItems = useMemo(() => {
+    type Item = { id: string; label: string; date: string; color: string };
+    const items: Item[] = [];
+
+    const colorFor = (label: string) => {
+      if (label.includes('Orçament')) return '#f39c12';
+      if (label.includes('Finalizada')) return '#27ae60';
+      if (label.includes('Iniciad')) return '#3498db';
+      return '#9b59b6';
+    };
+
+    if (vehicle?.created_at) {
+      items.push({
+        id: `static-created-${vehicle.id}`,
+        label: 'Veículo Cadastrado',
+        date: vehicle.created_at,
+        color: '#3498db',
+      });
+    }
+
+    if (vehicle?.estimated_arrival_date) {
+      items.push({
+        id: `static-prevision-${vehicle.id}`,
+        label: 'Previsão de Chegada',
+        date: vehicle.estimated_arrival_date,
+        color: '#f39c12',
+      });
+    }
+
+    if (inspection?.inspection_date) {
+      items.push({
+        id: `static-analysis-started-${inspection.id}`,
+        label: 'Análise Iniciada',
+        date: inspection.inspection_date,
+        color: '#e74c3c',
+      });
+
+      if (inspection.finalized) {
+        items.push({
+          id: `static-analysis-finished-${inspection.id}`,
+          label: 'Análise Finalizada',
+          date: inspection.inspection_date,
+          color: '#27ae60',
+        });
+      }
+    }
+
+    for (const h of vehicleHistory || []) {
+      if (!h?.created_at) continue;
+      items.push({
+        id: `vh-${h.id}`,
+        label: h.status,
+        date: h.created_at,
+        color: colorFor(h.status),
+      });
+    }
+
+    items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return items;
+  }, [vehicle, inspection, vehicleHistory]);
+
   if (loading) {
     return (
       <div
@@ -132,6 +194,8 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       </main>
     );
   }
+
+  // (hook moved above early returns to respect Rules of Hooks)
 
   return (
     <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 0 0 0' }}>
@@ -345,118 +409,22 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
             Timeline do Veículo
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Veículo cadastrado - sempre presente */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '50%',
-                  background: '#3498db',
-                }}
-              ></div>
-              <div>
-                <div style={{ fontWeight: 500 }}>Veículo Cadastrado</div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                  {formatDateBR(vehicle.created_at)}
-                </div>
-              </div>
-            </div>
-
-            {/* Previsão de chegada */}
-            {vehicle.estimated_arrival_date && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {timelineItems.map(item => (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                   style={{
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    background: '#f39c12',
+                    background: item.color,
                   }}
                 ></div>
                 <div>
-                  <div style={{ fontWeight: 500 }}>Previsão de Chegada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(vehicle.estimated_arrival_date)}
-                  </div>
+                  <div style={{ fontWeight: 500 }}>{item.label}</div>
+                  <div style={{ fontSize: '0.875rem', color: '#666' }}>{formatDate(item.date)}</div>
                 </div>
               </div>
-            )}
-
-            {/* Análise iniciada */}
-            {inspection && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: '#e74c3c',
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>Análise Iniciada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(inspection.inspection_date)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Análise finalizada */}
-            {inspection?.finalized && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: '#27ae60',
-                  }}
-                ></div>
-                <div>
-                  <div style={{ fontWeight: 500 }}>Análise Finalizada</div>
-                  <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    {formatDate(inspection.inspection_date)}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Histórico adicional do veículo */}
-            {vehicleHistory.map(historyEntry => {
-              // Definir cores baseadas no tipo de status
-              let color = '#9b59b6'; // Roxo padrão
-              if (historyEntry.status.includes('Orçament')) {
-                color = '#f39c12'; // Laranja para fase orçamentária
-              } else if (historyEntry.status.includes('Finalizada')) {
-                color = '#27ae60'; // Verde para finalizações
-              } else if (historyEntry.status.includes('Iniciada')) {
-                color = '#3498db'; // Azul para inícios
-              }
-
-              return (
-                <div
-                  key={historyEntry.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                >
-                  <div
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: color,
-                    }}
-                  ></div>
-                  <div>
-                    <div style={{ fontWeight: 500 }}>{historyEntry.status}</div>
-                    <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                      {formatDate(historyEntry.created_at)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            ))}
           </div>
         </div>
 
