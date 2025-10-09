@@ -12,6 +12,18 @@ interface EditServiceModalProps {
   loading: boolean;
 }
 
+// Handlers reutilizáveis para focus/blur em inputs
+const inputFocusHandlers = {
+  onFocus: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#002e4c';
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 46, 76, 0.1)';
+  },
+  onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.currentTarget.style.borderColor = '#d1d5db';
+    e.currentTarget.style.boxShadow = 'none';
+  },
+};
+
 const EditServiceModal: React.FC<EditServiceModalProps> = ({
   service,
   isOpen,
@@ -156,14 +168,7 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 boxSizing: 'border-box',
               }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = '#002e4c';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 46, 76, 0.1)';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = '#d1d5db';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              {...inputFocusHandlers}
               required
               disabled={loading}
             />
@@ -196,14 +201,7 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 resize: 'none',
                 boxSizing: 'border-box',
               }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = '#002e4c';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 46, 76, 0.1)';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = '#d1d5db';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              {...inputFocusHandlers}
               required
               disabled={loading}
             />
@@ -237,14 +235,7 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 boxSizing: 'border-box',
               }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = '#002e4c';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 46, 76, 0.1)';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = '#d1d5db';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              {...inputFocusHandlers}
               required
               disabled={loading}
             />
@@ -276,14 +267,7 @@ const EditServiceModal: React.FC<EditServiceModalProps> = ({
                 transition: 'border-color 0.2s, box-shadow 0.2s',
                 boxSizing: 'border-box',
               }}
-              onFocus={e => {
-                e.currentTarget.style.borderColor = '#002e4c';
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0, 46, 76, 0.1)';
-              }}
-              onBlur={e => {
-                e.currentTarget.style.borderColor = '#d1d5db';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              {...inputFocusHandlers}
               placeholder="Opcional"
               disabled={loading}
             />

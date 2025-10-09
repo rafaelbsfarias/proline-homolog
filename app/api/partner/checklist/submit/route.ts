@@ -215,6 +215,46 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       }
     }
 
+    // Deduplicação defensiva: manter apenas uma linha por status "Fase Orçamentária Iniciada - *"
+    try {
+      const { data: allHist } = await supabase
+        .from('vehicle_history')
+        .select('id,status,created_at')
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .ilike('status', 'Fase Orçamentária Iniciada - %')
+        .order('created_at', { ascending: true });
+
+      if (Array.isArray(allHist) && allHist.length > 1) {
+        const byStatus: Record<string, { keepId: string; removeIds: string[] }> = {};
+        for (const row of allHist) {
+          const s = row.status as string;
+          if (!byStatus[s]) {
+            byStatus[s] = { keepId: row.id as string, removeIds: [] };
+          } else {
+            byStatus[s].removeIds.push(row.id as string);
+          }
+        }
+
+        const idsToDelete = Object.values(byStatus).flatMap(g => g.removeIds);
+        if (idsToDelete.length > 0) {
+          const { error: cleanupError } = await supabase
+            .from('vehicle_history')
+            .delete()
+            .in('id', idsToDelete);
+
+          if (cleanupError) {
+            logger.warn('timeline_dedup_cleanup_error', { error: cleanupError.message });
+          } else {
+            logger.info('timeline_dedup_cleanup_done', { removedCount: idsToDelete.length });
+          }
+        }
+      }
+    } catch (dedupErr) {
+      logger.warn('timeline_dedup_unexpected_error', {
+        error: dedupErr instanceof Error ? dedupErr.message : String(dedupErr),
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: Array.isArray(data) && data[0] ? data[0] : mapped,
