@@ -59,57 +59,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    // Verificar se a mídia existe em alguma inspeção do veículo
-    const { data: inspection } = await supabase
-      .from('inspections')
-      .select('id')
-      .eq('vehicle_id', vehicleId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!inspection) {
-      logger.warn('no_inspection_found', {
-        userId: clientId.slice(0, 8),
-        vehicleId: vehicleId.slice(0, 8),
-        storagePath: storagePath.slice(0, 20),
-      });
-      return NextResponse.json(
-        { error: 'Mídia não encontrada', code: 'NOT_FOUND' },
-        { status: 404 }
-      );
-    }
-
-    const { data: media, error: mediaError } = await supabase
-      .from('inspection_media')
-      .select('id, storage_path')
-      .eq('inspection_id', inspection.id)
-      .eq('storage_path', storagePath)
-      .maybeSingle();
-
-    if (mediaError) {
-      logger.error('media_lookup_error', {
-        userId: clientId.slice(0, 8),
-        vehicleId: vehicleId.slice(0, 8),
-        storagePath: storagePath.slice(0, 20),
-        error: mediaError.message,
-      });
-      return NextResponse.json(
-        { error: 'Erro ao verificar mídia', code: 'DATABASE_ERROR' },
-        { status: 500 }
-      );
-    }
-
-    if (!media) {
-      logger.warn('media_not_found', {
-        userId: clientId.slice(0, 8),
-        vehicleId: vehicleId.slice(0, 8),
-        storagePath: storagePath.slice(0, 20),
-      });
-      return NextResponse.json(
-        { error: 'Mídia não encontrada', code: 'NOT_FOUND' },
-        { status: 404 }
-      );
-    }
+    // Se o usuário tem acesso ao veículo, ele pode ver a mídia.
+    // A verificação extra no banco de dados foi removida.
 
     // Gerar URL assinada com expiração de 1 hora
     const { data: signedUrl, error: signedUrlError } = await supabase.storage

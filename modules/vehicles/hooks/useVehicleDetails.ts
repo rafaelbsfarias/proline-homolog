@@ -156,7 +156,6 @@ export const useVehicleDetails = (
             fetchMediaUrls(inspectionData.media);
           }
         }
-
         // Buscar histórico do veículo (não falhar se der erro)
         try {
           const historyResp = await get<VehicleHistoryResponse>(

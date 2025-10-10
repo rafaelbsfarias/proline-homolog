@@ -421,7 +421,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
             }}
           >
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 20, color: '#333' }}>
-              Fotos do Veículo
+              Evidências
             </h2>
             <div
               style={{
