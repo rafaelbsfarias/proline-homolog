@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import {
   sanitizeString,
@@ -6,7 +6,7 @@ import {
   sanitizeNumber,
 } from '@/modules/common/utils/inputSanitization';
 import { RegistrationApprovalService } from '@/modules/admin/services/RegistrationApprovalService'; // New import
-import { NotFoundError, DatabaseError, ValidationError, AppError } from '@/modules/common/errors'; // New imports
+import { ValidationError } from '@/modules/common/errors'; // New imports
 import { getLogger, ILogger } from '@/modules/logger';
 import { respondWithError } from '@/modules/common/utils/apiErrorResponse';
 
@@ -19,29 +19,26 @@ async function approveRegistrationHandler(req: AuthenticatedRequest) {
   try {
     const rawData = await req.json();
     const sanitizedData = sanitizeObject(rawData);
-    const { userId, parqueamento, quilometragem, percentualFipe, taxaOperacao } = sanitizedData;
+    const { userId, parqueamento, taxaOperacao } = sanitizedData;
     logger.info(`Processing approval for user ID: ${userId}`);
 
     if (!userId) {
       throw new ValidationError('ID do usuário não informado.');
     }
-    if (!parqueamento || !quilometragem || !percentualFipe || !taxaOperacao) {
+    if (!parqueamento || !taxaOperacao) {
       throw new ValidationError('Todos os campos do contrato são obrigatórios.');
     }
 
-    const numPercentualFipe = sanitizeNumber(percentualFipe);
     const numTaxaOperacao = sanitizeNumber(taxaOperacao);
 
-    if (isNaN(numPercentualFipe) || isNaN(numTaxaOperacao)) {
-      throw new ValidationError('Percentual FIPE e taxa de operação devem ser números válidos.');
+    if (isNaN(numTaxaOperacao)) {
+      throw new ValidationError('Taxa de operação deve ser um número válido.');
     }
 
     const approvalService = new RegistrationApprovalService();
     await approvalService.approveRegistration({
       userId: sanitizeString(userId as string),
       parqueamento: sanitizeString(parqueamento as string),
-      quilometragem: sanitizeString(quilometragem as string),
-      percentualFipe: numPercentualFipe,
       taxaOperacao: numTaxaOperacao,
     });
 

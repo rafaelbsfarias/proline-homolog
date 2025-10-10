@@ -10,15 +10,11 @@ interface ApproveRegistrationModalProps {
 
 export interface ApproveFields {
   parqueamento: string;
-  quilometragem: string;
-  percentualFipe: string;
   taxaOperacao: string;
 }
 
 const initialFields = {
   parqueamento: '',
-  quilometragem: '',
-  percentualFipe: '',
   taxaOperacao: '',
 };
 
@@ -39,12 +35,7 @@ const ApproveRegistrationModal: React.FC<ApproveRegistrationModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !fields.parqueamento ||
-      !fields.quilometragem ||
-      !fields.percentualFipe ||
-      !fields.taxaOperacao
-    ) {
+    if (!fields.parqueamento || !fields.taxaOperacao) {
       setError('Preencha todos os campos obrigatórios.');
       return;
     }
@@ -90,30 +81,6 @@ const ApproveRegistrationModal: React.FC<ApproveRegistrationModalProps> = ({
             <input
               name="parqueamento"
               value={fields.parqueamento}
-              onChange={handleChange}
-              style={{ width: '100%', padding: 8, borderRadius: 5, border: '1px solid #ccc' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>
-            Quilometragem*
-            <br />
-            <input
-              name="quilometragem"
-              value={fields.quilometragem}
-              onChange={handleChange}
-              style={{ width: '100%', padding: 8, borderRadius: 5, border: '1px solid #ccc' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>
-            Percentual da FIPE*
-            <br />
-            <input
-              name="percentualFipe"
-              value={fields.percentualFipe}
               onChange={handleChange}
               style={{ width: '100%', padding: 8, borderRadius: 5, border: '1px solid #ccc' }}
             />

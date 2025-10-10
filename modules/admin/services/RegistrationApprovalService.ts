@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { EmailServiceFactory } from '@/modules/common/services/EmailServiceFactory'; // Importar EmailServiceFactory
-import { DatabaseError, NotFoundError, ValidationError, AppError } from '@/modules/common/errors';
+import { DatabaseError, NotFoundError } from '@/modules/common/errors';
 import { getLogger, ILogger } from '@/modules/logger';
 
 const logger: ILogger = getLogger('RegistrationApprovalService');
@@ -9,8 +9,6 @@ const logger: ILogger = getLogger('RegistrationApprovalService');
 interface ApprovalData {
   userId: string;
   parqueamento: string;
-  quilometragem: string;
-  percentualFipe: number;
   taxaOperacao: number;
 }
 
@@ -25,7 +23,7 @@ export class RegistrationApprovalService {
   }
 
   async approveRegistration(data: ApprovalData): Promise<void> {
-    const { userId, parqueamento, quilometragem, percentualFipe, taxaOperacao } = data;
+    const { userId, parqueamento, taxaOperacao } = data;
     logger.info(`Attempting to approve registration for user ID: ${userId}`);
     logger.debug('Approval data:', data);
 
@@ -35,8 +33,6 @@ export class RegistrationApprovalService {
       .from('clients')
       .update({
         parqueamento: parqueamento,
-        quilometragem: quilometragem,
-        percentual_fipe: percentualFipe,
         taxa_operacao: taxaOperacao,
       })
       .eq('profile_id', userId);
