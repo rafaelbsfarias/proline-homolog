@@ -39,6 +39,12 @@ export async function fetchVehicleHistory({
     );
   }
 
+  logger?.info?.('raw_vehicle_history_data', {
+    context,
+    vehicleId: vehicleId.slice(0, 8),
+    data: history,
+  });
+
   logger?.info?.('history_fetched', {
     context,
     vehicleId: vehicleId.slice(0, 8),

@@ -24,7 +24,7 @@ CREATE POLICY "Allow individual read access"
 ON vehicle_history
 FOR SELECT
 USING (
-  (get_my_claim('role')::text = ANY (ARRAY['admin'::text, 'specialist'::text])) OR
+ (get_my_claim('role')::text = ANY (ARRAY['admin'::text,'specialist'::text])) OR
   (
     get_my_claim('role')::text = 'client' AND
     vehicle_id IN (

@@ -33,6 +33,8 @@ const statusDisplayMap: Record<string, string> = {
   orcamento_reprovado: 'Orçamento Reprovado',
   servico_iniciado: 'Serviço Iniciado',
   servico_finalizado: 'Serviço Finalizado',
+  'Fase Orçamentária Iniciada - Mecânica': 'Fase Orçamentária Iniciada - Mecânica',
+  'FASE ORÇAMENTÁRIA': 'Fase Orçamentária',
 };
 
 const getEventTitle = (historyEntry: VehicleHistoryEntry): string => {
@@ -60,25 +62,36 @@ const TimelineSection: React.FC<TimelineProps> = ({
   inspectionFinalized,
   vehicleHistory = [],
 }) => {
-  // Debug log
+  // DEBUG: informações recebidas
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
-      console.log('📊 [TimelineSection] Received vehicleHistory:', {
-        count: vehicleHistory.length,
-        items: vehicleHistory.map(h => ({
-          id: h.id,
-          status: h.status,
-          partner_service: h.partner_service,
-          created_at: h.created_at,
-        })),
-      });
+      console.group('%c🚗 [TimelineSection Debug]', 'color:#3498db;font-weight:bold;');
+      console.log('📅 createdAt:', createdAt);
+      console.log('🕓 estimatedArrivalDate:', estimatedArrivalDate || 'N/A');
+      console.log('🔍 inspectionDate:', inspectionDate || 'N/A');
+      console.log('✅ inspectionFinalized:', inspectionFinalized);
+      console.log('📊 vehicleHistory:', vehicleHistory);
+      console.log(`📈 Total de entradas no histórico: ${vehicleHistory?.length || 0}`);
+      console.groupEnd();
     }
-  }, [vehicleHistory]);
+  }, [createdAt, estimatedArrivalDate, inspectionDate, inspectionFinalized, vehicleHistory]);
 
   const sortedHistory = useMemo(() => {
     const items = [...vehicleHistory];
     items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    // DEBUG: histórico ordenado
+    console.group('%c📜 Histórico Ordenado', 'color:#9b59b6;font-weight:bold;');
+    console.table(
+      items.map(i => ({
+        id: i.id,
+        status: i.status,
+        partner_service: i.partner_service || '-',
+        created_at: i.created_at,
+      }))
+    );
+    console.groupEnd();
+
     return items;
   }, [vehicleHistory]);
 
@@ -119,6 +132,15 @@ const TimelineSection: React.FC<TimelineProps> = ({
 
         {sortedHistory.map(h => {
           const title = getEventTitle(h);
+
+          // DEBUG: renderização de cada evento
+          console.log('🟢 Renderizando evento:', {
+            id: h.id,
+            title,
+            date: h.created_at,
+            color: colorFor(title),
+          });
+
           return (
             <Event
               key={`vh-${h.id}`}
