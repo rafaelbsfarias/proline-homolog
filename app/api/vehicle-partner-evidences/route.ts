@@ -47,7 +47,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     }
 
     const items = Array.isArray(data) ? data : [];
-    // Gerar URLs assinadas
+    // Gerar URLs assinadas para evidências técnicas (itens do checklist)
     const results = await Promise.all(
       items.map(async row => {
         const meta = ITEM_METADATA[row.item_key as keyof typeof ITEM_METADATA];
@@ -73,12 +73,105 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       })
     );
 
-    const evidences = results.filter(Boolean) as Array<{
+    // Carregar anomalias (evidências livres) e gerar URLs assinadas
+    const { data: anomalies, error: anomaliesError } = await supabase
+      .from('vehicle_anomalies')
+      .select('description, photos')
+      .eq('inspection_id', inspectionId)
+      .eq('vehicle_id', vehicleId)
+      .order('created_at', { ascending: true });
+
+    if (anomaliesError) {
+      logger.warn('anomalies_fetch_error', { error: anomaliesError.message });
+    }
+
+    logger.info('anomalies_loaded', {
+      inspection_id: inspectionId.substring(0, 8),
+      vehicle_id: vehicleId.substring(0, 8),
+      count: anomalies?.length || 0,
+      has_error: !!anomaliesError,
+    });
+
+    const anomalyResults: Array<{
+      item_key: string;
+      label: string;
+      category: string;
+      url: string;
+    }> = [];
+    for (const anomaly of anomalies || []) {
+      const desc = anomaly.description || 'Anomalia';
+      const photos: string[] = Array.isArray(anomaly.photos) ? anomaly.photos : [];
+
+      logger.debug('processing_anomaly', {
+        description: desc.substring(0, 50),
+        photos_count: photos.length,
+        sample_photo: photos[0]?.substring(0, 100),
+      });
+
+      for (const photoPathRaw of photos) {
+        try {
+          // O path já está no formato correto: "anomalies/{inspection_id}/{vehicle_id}/{filename}"
+          // Não precisa fazer parsing adicional
+          let path = photoPathRaw || '';
+
+          // Apenas garantir que não comece com barra
+          if (path.startsWith('/')) {
+            path = path.substring(1);
+          }
+
+          logger.debug('creating_signed_url_for_anomaly', {
+            original_path: photoPathRaw.substring(0, 100),
+            final_path: path.substring(0, 100),
+          });
+
+          const { data: signed, error: signErr } = await supabase.storage
+            .from(BUCKETS.VEHICLE_MEDIA)
+            .createSignedUrl(path, 3600);
+
+          if (signErr || !signed) {
+            logger.warn('anomaly_sign_error', {
+              path: path.substring(0, 100),
+              error: signErr?.message,
+            });
+            continue;
+          }
+
+          logger.debug('signed_url_created_for_anomaly', {
+            path: path.substring(0, 50),
+            url_length: signed.signedUrl.length,
+          });
+
+          anomalyResults.push({
+            item_key: `anomaly:${desc}`,
+            label: `Anomalia: ${desc}`,
+            // Por ora, anomalias são agrupadas em Pintura/Funilaria (parceiros de funilaria/pintura)
+            // Se surgirem anomalias de outros parceiros, podemos enriquecer a origem e categoria
+            category: 'Pintura/Funilaria',
+            url: signed.signedUrl,
+          });
+        } catch (e) {
+          logger.error('anomaly_sign_exception', {
+            error: e instanceof Error ? e.message : String(e),
+            path: photoPathRaw.substring(0, 100),
+          });
+        }
+      }
+    }
+
+    const evidences = [...results.filter(Boolean), ...anomalyResults] as Array<{
       item_key: string;
       label: string;
       category: string;
       url: string;
     }>;
+
+    logger.info('evidences_returned', {
+      inspection_id: inspectionId.substring(0, 8),
+      vehicle_id: vehicleId.substring(0, 8),
+      checklist_evidences: results.filter(Boolean).length,
+      anomaly_evidences: anomalyResults.length,
+      total: evidences.length,
+    });
 
     return NextResponse.json({ success: true, evidences });
   } catch (e) {

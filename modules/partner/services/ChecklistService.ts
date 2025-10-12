@@ -525,6 +525,7 @@ export class ChecklistService {
         count: anomalies?.length || 0,
         inspection_id,
         vehicle_id,
+        sample_photos: anomalies?.[0]?.photos,
       });
 
       // Converter para o formato esperado pelo frontend
@@ -534,19 +535,19 @@ export class ChecklistService {
           const signedPhotos = await Promise.all(
             (anomaly.photos || []).map(async (photoPath: string) => {
               try {
-                // Extrair o caminho da imagem (remover domínio/bucket se presente)
+                // O path já está no formato correto: "anomalies/{inspection_id}/{vehicle_id}/{filename}"
+                // Não precisa fazer parsing adicional
                 let path = photoPath;
 
-                // Se for uma URL completa, extrair apenas o path
-                if (photoPath.includes('vehicle-media/')) {
-                  const parts = photoPath.split('vehicle-media/');
-                  path = parts[parts.length - 1];
-                }
-
-                // Se começar com barra, remover
+                // Apenas garantir que não comece com barra
                 if (path.startsWith('/')) {
                   path = path.substring(1);
                 }
+
+                logger.debug('creating_signed_url', {
+                  original_path: photoPath,
+                  final_path: path,
+                });
 
                 const { data: signedData, error: signedError } = await this.supabase.storage
                   .from(BUCKETS.VEHICLE_MEDIA)
@@ -555,11 +556,17 @@ export class ChecklistService {
                 if (signedError || !signedData) {
                   logger.warn('failed_to_sign_url', {
                     original: photoPath,
-                    extracted_path: path,
+                    final_path: path,
                     error: signedError?.message,
                   });
-                  return photoPath; // Retorna o path original como fallback
+                  // Retornar path original como fallback
+                  return photoPath;
                 }
+
+                logger.debug('signed_url_created', {
+                  path,
+                  url_length: signedData.signedUrl.length,
+                });
 
                 return signedData.signedUrl;
               } catch (error) {
@@ -579,6 +586,11 @@ export class ChecklistService {
           };
         })
       );
+
+      logger.info('anomalies_formatted_successfully', {
+        count: formattedAnomalies.length,
+        sample_signed_urls: formattedAnomalies[0]?.photos?.[0]?.substring(0, 100),
+      });
 
       return {
         success: true,

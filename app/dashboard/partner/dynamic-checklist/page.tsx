@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('partner:dynamic-checklist');
 
 interface AnomalyEvidence {
   id: string;
@@ -84,6 +87,11 @@ const DynamicChecklistPage = () => {
       prev.map(anomaly => {
         if (anomaly.id === anomalyId) {
           const updatedPhotos = anomaly.photos.filter((_, index) => index !== photoIndex);
+          logger.debug('photo_removed', {
+            anomaly_id: anomalyId,
+            photo_index: photoIndex,
+            remaining_photos: updatedPhotos.length,
+          });
           return { ...anomaly, photos: updatedPhotos };
         }
         return anomaly;
@@ -414,7 +422,7 @@ const DynamicChecklistPage = () => {
                 </label>
 
                 {/* Exibir imagens já carregadas */}
-                {anomaly.photos.filter(photo => typeof photo === 'string').length > 0 && (
+                {anomaly.photos.length > 0 && (
                   <div style={{ marginBottom: '16px' }}>
                     <h4
                       style={{
@@ -424,63 +432,97 @@ const DynamicChecklistPage = () => {
                         marginBottom: '8px',
                       }}
                     >
-                      Imagens Carregadas:
+                      Imagens ({anomaly.photos.length}):
                     </h4>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {anomaly.photos
-                        .filter(photo => typeof photo === 'string')
-                        .map((photoUrl, photoIndex) => {
-                          // Encontrar o índice real no array completo de fotos
-                          const realIndex = anomaly.photos.findIndex(p => p === photoUrl);
-                          return (
-                            <div
-                              key={photoIndex}
+                      {anomaly.photos.map((photo, photoIndex) => {
+                        // Determinar se é uma URL (string) ou File
+                        const isFile = photo instanceof File;
+                        const isUrl = typeof photo === 'string';
+
+                        // Gerar preview URL
+                        let previewUrl = '';
+                        if (isFile) {
+                          previewUrl = URL.createObjectURL(photo);
+                        } else if (isUrl) {
+                          previewUrl = photo;
+                        }
+
+                        return (
+                          <div
+                            key={photoIndex}
+                            style={{
+                              position: 'relative',
+                              width: '100px',
+                              height: '100px',
+                            }}
+                          >
+                            <img
+                              src={previewUrl}
+                              alt={`Evidência ${photoIndex + 1}`}
                               style={{
-                                position: 'relative',
-                                width: '80px',
-                                height: '80px',
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                borderRadius: '4px',
+                                border: isFile ? '2px solid #3b82f6' : '2px solid #10b981',
+                              }}
+                              onError={e => {
+                                logger.error('image_load_error', {
+                                  photo_index: photoIndex,
+                                  is_file: isFile,
+                                  is_url: isUrl,
+                                  url: previewUrl.substring(0, 100),
+                                });
+                                // Exibir placeholder em caso de erro
+                                (e.target as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                            {/* Badge indicando tipo */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                bottom: '4px',
+                                left: '4px',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: isFile ? '#3b82f6' : '#10b981',
+                                color: 'white',
+                                fontSize: '10px',
+                                fontWeight: 'bold',
                               }}
                             >
-                              <img
-                                src={photoUrl as string}
-                                alt={`Evidência ${photoIndex + 1}`}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  borderRadius: '4px',
-                                  border: '1px solid #d1d5db',
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removePhoto(anomaly.id, realIndex)}
-                                style={{
-                                  position: 'absolute',
-                                  top: '-8px',
-                                  right: '-8px',
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '50%',
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  border: '2px solid white',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                }}
-                                title="Remover imagem"
-                              >
-                                ×
-                              </button>
+                              {isFile ? 'NOVA' : 'SALVA'}
                             </div>
-                          );
-                        })}
+                            <button
+                              type="button"
+                              onClick={() => removePhoto(anomaly.id, photoIndex)}
+                              style={{
+                                position: 'absolute',
+                                top: '-8px',
+                                right: '-8px',
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: '50%',
+                                background: '#ef4444',
+                                color: 'white',
+                                border: '2px solid white',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 0,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                              }}
+                              title="Remover imagem"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -500,80 +542,17 @@ const DynamicChecklistPage = () => {
                     backgroundColor: '#ffffff',
                   }}
                 />
-
-                {/* Preview de arquivos selecionados para upload */}
-                {anomaly.photos.filter(photo => photo instanceof File).length > 0 && (
-                  <div style={{ marginTop: '16px' }}>
-                    <h4
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#374151',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      Novos arquivos para upload (
-                      {anomaly.photos.filter(photo => photo instanceof File).length}):
-                    </h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {anomaly.photos
-                        .map((photo, idx) => ({ photo, idx }))
-                        .filter(({ photo }) => photo instanceof File)
-                        .map(({ photo, idx }) => {
-                          const file = photo as File;
-                          const previewUrl = URL.createObjectURL(file);
-                          return (
-                            <div
-                              key={idx}
-                              style={{
-                                position: 'relative',
-                                width: '80px',
-                                height: '80px',
-                              }}
-                            >
-                              <img
-                                src={previewUrl}
-                                alt={file.name}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  borderRadius: '4px',
-                                  border: '2px solid #3b82f6',
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removePhoto(anomaly.id, idx)}
-                                style={{
-                                  position: 'absolute',
-                                  top: '-8px',
-                                  right: '-8px',
-                                  width: '24px',
-                                  height: '24px',
-                                  borderRadius: '50%',
-                                  background: '#ef4444',
-                                  color: 'white',
-                                  border: '2px solid white',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  fontWeight: 'bold',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  padding: 0,
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                }}
-                                title="Remover imagem"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    marginTop: '4px',
+                    marginBottom: 0,
+                  }}
+                >
+                  Você pode enviar múltiplas imagens. Imagens com borda azul são novas, com borda
+                  verde já foram salvas.
+                </p>
               </div>
             </div>
           ))}

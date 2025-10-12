@@ -26,8 +26,11 @@ const BudgetPhaseSection: React.FC<Props> = ({
   inspectionFinalized,
 }) => {
   const { events } = useVehicleTimeline(vehicleId);
-  const budgetStarted = useMemo(
-    () => events.find(e => e.type === 'BUDGET_STARTED') || null,
+  const budgetStartedEvents = useMemo(
+    () =>
+      events
+        .filter(e => e.type === 'BUDGET_STARTED')
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
   const budgetApproved = useMemo(
@@ -85,14 +88,15 @@ const BudgetPhaseSection: React.FC<Props> = ({
           />
         )}
 
-        {/* 5. Fase Orçamentária Iniciada - CONDICIONAL */}
-        {budgetStarted && (
+        {/* 5. Fase Orçamentária Iniciada - pode haver múltiplas categorias */}
+        {budgetStartedEvents.map(ev => (
           <Item
+            key={ev.id}
             color={TIMELINE_COLORS.ORANGE}
-            title={budgetStarted.title}
-            date={formatDateBR(budgetStarted.date)}
+            title={ev.title}
+            date={formatDateBR(ev.date)}
           />
-        )}
+        ))}
 
         {/* 6. Orçamento Aprovado - CONDICIONAL */}
         {budgetApproved && (

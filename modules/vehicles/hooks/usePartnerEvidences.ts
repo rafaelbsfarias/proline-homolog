@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { mapToTopCategory } from '@/modules/vehicles/utils/partnerEvidence';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 export type PartnerEvidence = {
@@ -46,8 +47,9 @@ export function usePartnerEvidences(vehicleId?: string, inspectionId?: string) {
   const grouped = useMemo(() => {
     return data.reduce(
       (acc, ev) => {
-        if (!acc[ev.category]) acc[ev.category] = [];
-        acc[ev.category].push(ev);
+        const top = mapToTopCategory(ev.category, ev.item_key);
+        if (!acc[top]) acc[top] = [];
+        acc[top].push(ev);
         return acc;
       },
       {} as Record<string, PartnerEvidence[]>

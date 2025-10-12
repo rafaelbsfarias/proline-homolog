@@ -586,18 +586,46 @@ export function usePartnerChecklist() {
 
         // Preparar dados das anomalias sem os arquivos (apenas metadados)
         const anomaliesData = anomalies.map((anomaly, anomalyIndex) => {
+          const photoRefs: string[] = [];
+
           // Adicionar arquivos ao FormData com chaves específicas
           anomaly.photos.forEach((photo, photoIndex) => {
             if (photo instanceof File) {
-              formData.append(`anomaly-${anomalyIndex}-photo-${photoIndex}`, photo);
+              const fileKey = `anomaly-${anomalyIndex}-photo-${photoIndex}`;
+              formData.append(fileKey, photo);
+              photoRefs.push(fileKey);
+            } else if (typeof photo === 'string') {
+              // Se for uma URL assinada do Supabase, extrair apenas o path
+              let photoPath = photo;
+
+              // Se for uma signed URL do Supabase, extrair o path
+              if (photo.includes('/storage/v1/object/sign/vehicle-media/')) {
+                const urlParts = photo.split('/storage/v1/object/sign/vehicle-media/');
+                if (urlParts[1]) {
+                  // Remover query parameters (token, etc)
+                  photoPath = urlParts[1].split('?')[0];
+                }
+              } else if (photo.includes('/storage/v1/object/public/vehicle-media/')) {
+                const urlParts = photo.split('/storage/v1/object/public/vehicle-media/');
+                if (urlParts[1]) {
+                  photoPath = urlParts[1];
+                }
+              }
+
+              // Decodificar URL encoding se houver
+              try {
+                photoPath = decodeURIComponent(photoPath);
+              } catch {
+                // Se falhar ao decodificar, usar o path como está
+              }
+
+              photoRefs.push(photoPath);
             }
           });
 
           return {
             description: anomaly.description,
-            photos: anomaly.photos.map((photo, photoIndex) =>
-              photo instanceof File ? `anomaly-${anomalyIndex}-photo-${photoIndex}` : photo
-            ),
+            photos: photoRefs,
           };
         });
 

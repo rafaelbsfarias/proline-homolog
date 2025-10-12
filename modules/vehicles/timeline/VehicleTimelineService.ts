@@ -16,7 +16,14 @@ export async function getBudgetStartedEvents(
     .from('vehicle_history')
     .select('id, vehicle_id, status, created_at')
     .eq('vehicle_id', vehicleId)
-    .ilike('status', 'Fase Orçamentária Iniciada%')
+    // Tolerante a variações com/sem acento
+    .or(
+      [
+        // PostgREST usa * como wildcard nesta sintaxe
+        'status.ilike.*Fase Orçamentária Iniciada*',
+        'status.ilike.*Fase Orcamentaria Iniciada*',
+      ].join(',')
+    )
     .order('created_at', { ascending: true });
 
   if (error) {

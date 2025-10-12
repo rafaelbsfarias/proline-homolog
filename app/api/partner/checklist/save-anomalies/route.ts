@@ -103,17 +103,52 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
 
       const photos = anomaly.photos || [];
       const photoFiles: File[] = [];
+      const existingPhotoPaths: string[] = [];
 
-      // Coletar todos os arquivos de fotos
+      // Separar arquivos novos de URLs existentes
       for (let j = 0; j < photos.length; j++) {
         const photoKey = `anomaly-${i}-photo-${j}`;
-        const photoFile = formData.get(photoKey) as File;
-        if (photoFile && photoFile instanceof File) {
-          photoFiles.push(photoFile);
+        const photoRef = photos[j];
+
+        logger.debug('processing_photo_reference', {
+          anomaly_index: i,
+          photo_index: j,
+          photo_ref_type: typeof photoRef,
+          is_string: typeof photoRef === 'string',
+          ref_value: typeof photoRef === 'string' ? photoRef.substring(0, 100) : 'File',
+          starts_with_anomaly: typeof photoRef === 'string' && photoRef.startsWith('anomaly-'),
+        });
+
+        // Se for uma string (URL/path existente), manter
+        if (typeof photoRef === 'string' && !photoRef.startsWith('anomaly-')) {
+          existingPhotoPaths.push(photoRef);
+          logger.debug('photo_marked_as_existing', {
+            anomaly_index: i,
+            photo_index: j,
+            path: photoRef.substring(0, 100),
+          });
+        } else {
+          // Caso contrário, buscar o arquivo no FormData
+          const photoFile = formData.get(photoKey) as File;
+          if (photoFile && photoFile instanceof File) {
+            photoFiles.push(photoFile);
+            logger.debug('photo_file_found_in_formdata', {
+              anomaly_index: i,
+              photo_index: j,
+              file_name: photoFile.name,
+              file_size: photoFile.size,
+            });
+          } else {
+            logger.warn('photo_file_not_found_in_formdata', {
+              anomaly_index: i,
+              photo_index: j,
+              photo_key: photoKey,
+            });
+          }
         }
       }
 
-      // Fazer upload usando MediaUploadService
+      // Fazer upload usando MediaUploadService apenas para novos arquivos
       let uploadedPhotoUrls: string[] = [];
       if (photoFiles.length > 0) {
         const uploadResults = await mediaService.uploadMultipleFiles(
@@ -151,11 +186,21 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         });
       }
 
+      // Combinar fotos existentes com novas fotos
+      const allPhotoPaths = [...existingPhotoPaths, ...uploadedPhotoUrls];
+
+      logger.debug('anomaly_photos_processed', {
+        anomaly_index: i,
+        existing_photos: existingPhotoPaths.length,
+        new_uploads: uploadedPhotoUrls.length,
+        total: allPhotoPaths.length,
+      });
+
       processedAnomalies.push({
         inspection_id,
         vehicle_id,
         description,
-        photos: uploadedPhotoUrls,
+        photos: allPhotoPaths,
       });
     }
 
