@@ -470,10 +470,89 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
               if (!vehicle || isFinalized) return;
               try {
                 setSaving(true);
+                setError(null);
+                setSuccess(null);
+
+                // 1. PRIMEIRO: Validar os dados
+                if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) {
+                  throw new Error('Data da inspeção inválida.');
+                }
+                if (!form.odometer || Number(form.odometer) < 0) {
+                  throw new Error('Informe a quilometragem atual válida.');
+                }
+
                 const {
                   data: { session },
+                  error: sessErr,
                 } = await supabase.auth.getSession();
-                const resp = await fetch('/api/specialist/finalize-checklist', {
+
+                if (sessErr || !session?.user) {
+                  throw new Error('Sessão inválida. Faça login novamente.');
+                }
+                const userId = session.user.id;
+
+                // 2. SEGUNDO: Salvar as imagens (se houver novas)
+                let uploadedPaths: string[] = [];
+                if (files.length) {
+                  uploadedPaths = await uploadFiles(userId, vehicle.id);
+                }
+
+                const existingPaths = existingImages.map(img => img.path);
+
+                // 3. TERCEIRO: Salvar o checklist completo
+                const payload = {
+                  vehicleId: vehicle.id,
+                  date: form.date,
+                  odometer: Number(form.odometer),
+                  fuelLevel: form.fuelLevel,
+                  observations: sanitizeString(form.observations),
+                  services: {
+                    mechanics: {
+                      required: form.services.mechanics.required,
+                      notes: sanitizeString(form.services.mechanics.notes),
+                    },
+                    bodyPaint: {
+                      required: form.services.bodyPaint.required,
+                      notes: sanitizeString(form.services.bodyPaint.notes),
+                    },
+                    washing: {
+                      required: form.services.washing.required,
+                      notes: sanitizeString(form.services.washing.notes),
+                    },
+                    tires: {
+                      required: form.services.tires.required,
+                      notes: sanitizeString(form.services.tires.notes),
+                    },
+                    loja: {
+                      required: form.services.loja.required,
+                      notes: sanitizeString(form.services.loja.notes),
+                    },
+                    patioAtacado: {
+                      required: form.services.patioAtacado.required,
+                      notes: sanitizeString(form.services.patioAtacado.notes),
+                    },
+                  },
+                  mediaPaths: [...existingPaths, ...uploadedPaths],
+                };
+
+                const saveResp = await fetch('/api/specialist/save-checklist', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    ...(session?.access_token
+                      ? { Authorization: `Bearer ${session.access_token}` }
+                      : {}),
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!saveResp.ok) {
+                  const data = await saveResp.json().catch(() => ({}));
+                  throw new Error(data?.error || 'Erro ao salvar checklist antes de finalizar');
+                }
+
+                // 4. QUARTO: Finalizar o checklist
+                const finalizeResp = await fetch('/api/specialist/finalize-checklist', {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -483,14 +562,20 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                   },
                   body: JSON.stringify({ vehicleId: vehicle.id }),
                 });
-                if (!resp.ok) {
-                  const data = await resp.json().catch(() => ({}));
+
+                if (!finalizeResp.ok) {
+                  const data = await finalizeResp.json().catch(() => ({}));
                   throw new Error(data?.error || 'Erro ao finalizar checklist');
                 }
+
+                // 5. Sucesso!
                 setIsFinalized(true);
-                setSuccess('Checklist finalizado.');
-                showToast('success', 'Checklist finalizado.');
+                setSuccess('Checklist salvo e finalizado com sucesso.');
+                showToast('success', 'Checklist salvo e finalizado com sucesso.');
+                resetImages();
+
                 try {
+                  onSaved && onSaved();
                   onFinalized && onFinalized();
                 } catch {}
               } catch (err) {

@@ -16,7 +16,7 @@ import BaseTable from '@/modules/common/components/BaseTable/BaseTable';
 interface PendingChecklist {
   inspection_id: string;
   plate: string;
-  services: string[];
+  services: string[] | null;
 }
 
 const PendingDelegationsList = () => {
@@ -47,9 +47,9 @@ const PendingDelegationsList = () => {
     fetchPendingChecklists();
   }, [get]);
 
-  const handleOpenDelegateModal = (inspectionId: string, services: string[]) => {
+  const handleOpenDelegateModal = (inspectionId: string, services: string[] | null) => {
     setSelectedInspectionId(inspectionId);
-    setSelectedInspectionServices(services);
+    setSelectedInspectionServices(services || []);
     setIsDelegateModalOpen(true);
   };
 
@@ -67,7 +67,8 @@ const PendingDelegationsList = () => {
     {
       key: 'services',
       label: 'Serviços',
-      render: (services: string[]) => services.map(translateServiceCategory).join(', '),
+      render: (services: string[] | null) =>
+        services ? services.map(translateServiceCategory).join(', ') : 'Nenhum serviço',
     },
     {
       key: 'inspection_id',
@@ -77,7 +78,7 @@ const PendingDelegationsList = () => {
       key: 'actions',
       label: 'Ações',
       align: 'center' as const,
-      render: (_: any, row: PendingChecklist) => (
+      render: (_value: unknown, row: PendingChecklist) => (
         <SolidButton
           onClick={() => handleOpenDelegateModal(row.inspection_id, row.services)}
           className={styles.approveButton}

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { formatDateBR } from '@/modules/client/utils/date';
+import { getStatusColor, TIMELINE_COLORS } from '@/modules/vehicles/constants/timelineColors';
 
 export interface TimelineProps {
   createdAt: string;
@@ -62,45 +63,11 @@ const TimelineSection: React.FC<TimelineProps> = ({
   inspectionFinalized,
   vehicleHistory = [],
 }) => {
-  // DEBUG: informações recebidas
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.group('%c🚗 [TimelineSection Debug]', 'color:#3498db;font-weight:bold;');
-      console.log('📅 createdAt:', createdAt);
-      console.log('🕓 estimatedArrivalDate:', estimatedArrivalDate || 'N/A');
-      console.log('🔍 inspectionDate:', inspectionDate || 'N/A');
-      console.log('✅ inspectionFinalized:', inspectionFinalized);
-      console.log('📊 vehicleHistory:', vehicleHistory);
-      console.log(`📈 Total de entradas no histórico: ${vehicleHistory?.length || 0}`);
-      console.groupEnd();
-    }
-  }, [createdAt, estimatedArrivalDate, inspectionDate, inspectionFinalized, vehicleHistory]);
-
   const sortedHistory = useMemo(() => {
     const items = [...vehicleHistory];
     items.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-    // DEBUG: histórico ordenado
-    console.group('%c📜 Histórico Ordenado', 'color:#9b59b6;font-weight:bold;');
-    console.table(
-      items.map(i => ({
-        id: i.id,
-        status: i.status,
-        partner_service: i.partner_service || '-',
-        created_at: i.created_at,
-      }))
-    );
-    console.groupEnd();
-
     return items;
   }, [vehicleHistory]);
-
-  const colorFor = (label: string) => {
-    if (label.includes('Orçament')) return '#f39c12';
-    if (label.includes('Finalizada')) return '#27ae60';
-    if (label.includes('Iniciad')) return '#3498db';
-    return '#9b59b6';
-  };
 
   return (
     <div
@@ -115,36 +82,40 @@ const TimelineSection: React.FC<TimelineProps> = ({
         Timeline do Veículo
       </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <Event dotColor="#3498db" title="Veículo Cadastrado" date={formatDateBR(createdAt)} />
+        <Event
+          dotColor={TIMELINE_COLORS.BLUE}
+          title="Veículo Cadastrado"
+          date={formatDateBR(createdAt)}
+        />
         {estimatedArrivalDate && (
           <Event
-            dotColor="#f39c12"
+            dotColor={TIMELINE_COLORS.ORANGE}
             title="Previsão de Chegada"
             date={formatDate(estimatedArrivalDate)}
           />
         )}
         {inspectionDate && (
-          <Event dotColor="#e74c3c" title="Análise Iniciada" date={formatDate(inspectionDate)} />
+          <Event
+            dotColor={TIMELINE_COLORS.RED}
+            title="Análise Iniciada"
+            date={formatDate(inspectionDate)}
+          />
         )}
         {inspectionDate && inspectionFinalized && (
-          <Event dotColor="#27ae60" title="Análise Finalizada" date={formatDate(inspectionDate)} />
+          <Event
+            dotColor={TIMELINE_COLORS.GREEN}
+            title="Análise Finalizada"
+            date={formatDate(inspectionDate)}
+          />
         )}
 
         {sortedHistory.map(h => {
           const title = getEventTitle(h);
 
-          // DEBUG: renderização de cada evento
-          console.log('🟢 Renderizando evento:', {
-            id: h.id,
-            title,
-            date: h.created_at,
-            color: colorFor(title),
-          });
-
           return (
             <Event
               key={`vh-${h.id}`}
-              dotColor={colorFor(title)}
+              dotColor={getStatusColor(title)}
               title={title}
               date={formatDate(h.created_at)}
             />
