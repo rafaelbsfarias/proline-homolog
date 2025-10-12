@@ -26,7 +26,14 @@ const BudgetPhaseSection: React.FC<Props> = ({
   inspectionFinalized,
 }) => {
   const { events } = useVehicleTimeline(vehicleId);
-  const event = useMemo(() => events.find(e => e.type === 'BUDGET_STARTED') || null, [events]);
+  const budgetStarted = useMemo(
+    () => events.find(e => e.type === 'BUDGET_STARTED') || null,
+    [events]
+  );
+  const budgetApproved = useMemo(
+    () => events.find(e => e.type === 'BUDGET_APPROVED') || null,
+    [events]
+  );
 
   // Exibe a timeline completa (legada) nesta nova seção
   // Se o evento de orçamentação não existir ainda, mostra os demais itens mesmo assim
@@ -79,11 +86,20 @@ const BudgetPhaseSection: React.FC<Props> = ({
         )}
 
         {/* 5. Fase Orçamentária Iniciada - CONDICIONAL */}
-        {event && (
+        {budgetStarted && (
           <Item
             color={TIMELINE_COLORS.ORANGE}
-            title={event.title}
-            date={formatDateBR(event.date)}
+            title={budgetStarted.title}
+            date={formatDateBR(budgetStarted.date)}
+          />
+        )}
+
+        {/* 6. Orçamento Aprovado - CONDICIONAL */}
+        {budgetApproved && (
+          <Item
+            color={TIMELINE_COLORS.GREEN}
+            title="Orçamento Aprovado"
+            date={formatDateBR(budgetApproved.date)}
           />
         )}
       </div>

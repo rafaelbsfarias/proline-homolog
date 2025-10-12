@@ -45,17 +45,11 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       'get_partner_categories',
       { partner_id: partnerId }
     );
-
     if (categoryError) {
-      logger.error('category_fetch_error', { error: categoryError.message });
-      return NextResponse.json(
-        { success: false, error: 'Erro ao buscar categoria do parceiro' },
-        { status: 500 }
-      );
+      logger.warn('category_fetch_error', { error: categoryError.message });
     }
-
-    const categories = partnerCategories || [];
-    const categoryName = categories[0] || 'Parceiro';
+    const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
+    const categoryName = normalizePartnerCategoryName(partnerCategories);
 
     // Status formatado para a timeline
     const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;

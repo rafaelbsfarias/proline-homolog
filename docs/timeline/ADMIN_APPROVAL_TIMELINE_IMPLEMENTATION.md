@@ -1,4 +1,4 @@
-# Implementação: Admin Approval Timeline Update
+# Timeline Unificada: Admin Approval Update
 
 ## Data: 09/10/2025
 ## Objetivo: Atualizar timeline quando admin aprovar orçamento

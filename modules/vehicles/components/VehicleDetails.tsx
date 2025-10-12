@@ -10,6 +10,7 @@ import {
 } from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
+import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import styles from './VehicleDetails.module.css'; // Importando o CSS Module
@@ -72,6 +73,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
 }) => {
   const router = useRouter();
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
 
   const formatCurrency = (value: number | undefined) => {
     if (!value) return 'N/A';
@@ -249,6 +251,40 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
                     }}
                   />
                   <div className={styles.mediaDate}>{formatDateBR(media.created_at)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Evidências do Parceiro (agrupadas por categoria) */}
+        {inspection?.id && (
+          <div className={`${styles.card} ${styles.fullWidthCard}`}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>
+            </div>
+            <div className={styles.mediaGrid}>
+              {Object.keys(partnerEvidenceByCategory).length === 0 && (
+                <div style={{ color: '#666', fontSize: '0.95rem' }}>
+                  Nenhuma evidência enviada pelo parceiro.
+                </div>
+              )}
+
+              {Object.entries(partnerEvidenceByCategory).map(([category, items]) => (
+                <div key={category} className={styles.fullWidthCard} style={{ paddingTop: 8 }}>
+                  <h3 style={{ marginBottom: 8, fontWeight: 600, color: '#333' }}>{category}</h3>
+                  <div className={styles.mediaGrid}>
+                    {items.map((ev, idx) => (
+                      <div key={`${ev.item_key}-${idx}`} className={styles.mediaItem}>
+                        <img
+                          src={ev.url}
+                          alt={`Evidência Parceiro - ${ev.label}`}
+                          className={styles.mediaImg}
+                        />
+                        <div className={styles.mediaDate}>{ev.label}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>

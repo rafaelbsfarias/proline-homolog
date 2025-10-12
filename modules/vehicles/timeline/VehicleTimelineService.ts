@@ -35,3 +35,33 @@ export async function getBudgetStartedEvents(
   logger?.info?.('timeline_budget_events', { count: events.length });
   return events;
 }
+
+export async function getBudgetApprovedEvents(
+  supabase: SupabaseClient,
+  vehicleId: string,
+  logger?: Logger
+): Promise<TimelineEvent[]> {
+  const { data, error } = await supabase
+    .from('vehicle_history')
+    .select('id, vehicle_id, status, created_at')
+    .eq('vehicle_id', vehicleId)
+    .ilike('status', 'Orçamento Aprovado%')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    logger?.error?.('timeline_budget_approved_fetch_error', { error: error.message });
+    throw new Error('Erro ao buscar eventos de aprovação de orçamento');
+  }
+
+  const events: TimelineEvent[] = (data || []).map(row => ({
+    id: row.id,
+    vehicleId: row.vehicle_id,
+    type: 'BUDGET_APPROVED',
+    // O título no histórico pode conter detalhes; mantemos conforme salvo
+    title: row.status || 'Orçamento Aprovado',
+    date: row.created_at,
+  }));
+
+  logger?.info?.('timeline_budget_approved_events', { count: events.length });
+  return events;
+}

@@ -3,7 +3,10 @@ import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getLogger } from '@/modules/logger';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { getBudgetStartedEvents } from '@/modules/vehicles/timeline/VehicleTimelineService';
+import {
+  getBudgetStartedEvents,
+  getBudgetApprovedEvents,
+} from '@/modules/vehicles/timeline/VehicleTimelineService';
 import type { TimelineEvent } from '@/modules/vehicles/timeline/types';
 
 const logger = getLogger('api:vehicle-timeline');
@@ -27,9 +30,14 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Por enquanto, retornamos apenas o evento de orçamentação
-    const budgetEvents = await getBudgetStartedEvents(supabase, vehicleId, logger);
-    const events: TimelineEvent[] = budgetEvents;
+    // Timeline unificada: incluir eventos de orçamentação iniciada e aprovada
+    const [budgetEvents, approvedEvents] = await Promise.all([
+      getBudgetStartedEvents(supabase, vehicleId, logger),
+      getBudgetApprovedEvents(supabase, vehicleId, logger),
+    ]);
+    const events: TimelineEvent[] = [...budgetEvents, ...approvedEvents].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
 
     return NextResponse.json({ success: true, events });
   } catch (e) {

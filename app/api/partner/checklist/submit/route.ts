@@ -72,11 +72,12 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
         { partner_id: partnerId }
       );
 
+      const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
       if (categoryError) {
-        logger.error('category_fetch_error', { error: categoryError.message });
-      } else {
-        const categories = partnerCategories || [];
-        const categoryName = categories[0] || 'Parceiro';
+        logger.warn('category_fetch_error', { error: categoryError.message });
+      }
+      {
+        const categoryName = normalizePartnerCategoryName(partnerCategories);
         const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
 
         // Verificar se já existe este status na timeline para evitar duplicatas

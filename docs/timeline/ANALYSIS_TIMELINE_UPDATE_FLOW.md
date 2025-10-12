@@ -1,4 +1,4 @@
-# Análise: Fluxo de Atualização da Timeline do Veículo
+# Timeline Unificada: Fluxo de Atualização
 
 ## Data: 09/10/2025
 ## Objetivo: Verificar se há impedimentos para atualização da timeline quando parceiro salva checklist

@@ -1,4 +1,4 @@
-export type TimelineEventType = 'BUDGET_STARTED';
+export type TimelineEventType = 'BUDGET_STARTED' | 'BUDGET_APPROVED';
 
 export interface TimelineEvent {
   id: string;
