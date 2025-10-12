@@ -10,7 +10,7 @@ import {
 } from '@/app/constants/messages';
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
-import TimelineSection from './TimelineSection';
+import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import styles from './VehicleDetails.module.css'; // Importando o CSS Module
 import { LuArrowLeft } from 'react-icons/lu';
@@ -181,13 +181,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           </div>
         </div>
 
-        {/* Timeline e Status */}
-        <TimelineSection
+        {/* Timeline (Nova seção substitui a legada) */}
+        <BudgetPhaseSection
+          vehicleId={vehicle.id}
           createdAt={vehicle.created_at}
           estimatedArrivalDate={vehicle.estimated_arrival_date}
           inspectionDate={inspection?.inspection_date}
           inspectionFinalized={inspection?.finalized}
-          vehicleHistory={vehicleHistory}
         />
 
         {/* Serviços Necessários */}

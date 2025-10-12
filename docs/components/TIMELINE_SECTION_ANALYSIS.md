@@ -1,4 +1,12 @@
-# Análise e Melhorias do TimelineSection.tsx
+# Timeline: componente legado removido
+
+O componente `TimelineSection.tsx` foi removido e substituído por `BudgetPhaseSection.tsx`.
+
+- Novo arquivo: `modules/vehicles/components/BudgetPhaseSection.tsx`
+- Hook: `modules/vehicles/hooks/useVehicleTimeline.ts`
+- API unificada: `GET /api/vehicle-timeline?vehicleId=...`
+
+As observações desta análise permanecem úteis como histórico, mas a implementação atual segue a arquitetura unificada.
 
 ## 📊 Status: ✅ BEM IMPLEMENTADO, COM MELHORIAS APLICADAS
 

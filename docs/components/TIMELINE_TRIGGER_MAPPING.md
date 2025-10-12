@@ -1,5 +1,7 @@
 # Mapeamento de Arquivos para Criação de Novo Trigger na Timeline
 
+Nota: O componente legado `TimelineSection.tsx` foi removido e substituído por `modules/vehicles/components/BudgetPhaseSection.tsx`, que consome a API unificada `/api/vehicle-timeline` via `useVehicleTimeline`.
+
 ## 📋 Visão Geral
 
 Este documento mapeia **TODOS** os arquivos que precisariam ser modificados/criados para adicionar um novo evento à timeline do veículo (tabela `vehicle_history`).

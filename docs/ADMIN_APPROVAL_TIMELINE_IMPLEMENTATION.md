@@ -137,31 +137,24 @@ const channel = supabase
 
 ---
 
-### 5. **Componente: `TimelineSection`**
+### 5. Componente: Timeline (atualizado)
 
-**Arquivo**: `modules/vehicles/components/TimelineSection.tsx`
+O componente legado `TimelineSection` foi removido.
 
-**Mudanças**: Adicionado log de debug
+- Novo componente: `modules/vehicles/components/BudgetPhaseSection.tsx`
+- Uso: Renderiza a timeline unificada até “Fase Orçamentária Iniciada - {Categoria}”
+- Fonte de dados: `GET /api/vehicle-timeline?vehicleId=...` via `useVehicleTimeline`
 
-```typescript
-React.useEffect(() => {
-  console.log('📊 [TimelineSection] Received vehicleHistory:', {
-    count: vehicleHistory.length,
-    items: vehicleHistory,
-  });
-}, [vehicleHistory]);
-```
+Exemplo de uso (dentro de VehicleDetails):
 
-**Renderização**:
 ```tsx
-{sortedHistory.map(h => (
-  <Event
-    key={`vh-${h.id}`}
-    dotColor={colorFor(h.status)}
-    title={h.status}
-    date={formatDate(h.created_at)}
-  />
-))}
+<BudgetPhaseSection
+  vehicleId={vehicle.id}
+  createdAt={vehicle.created_at}
+  estimatedArrivalDate={vehicle.estimated_arrival_date}
+  inspectionDate={inspection?.inspection_date}
+  inspectionFinalized={inspection?.finalized}
+/>
 ```
 
 ---

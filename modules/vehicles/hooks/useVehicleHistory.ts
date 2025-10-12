@@ -9,6 +9,8 @@ export interface VehicleHistoryEntry {
   id: string;
   vehicle_id: string;
   status: string;
+  partner_service?: string | null;
+  notes?: string | null;
   prevision_date: string | null;
   end_date: string | null;
   created_at: string;

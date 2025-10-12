@@ -141,7 +141,10 @@ const channel = supabase
 
 ---
 
-### 4. **Frontend: Componente `TimelineSection`**
+### 4. Frontend: Componente de Timeline (atualizado)
+
+O componente `TimelineSection` foi removido. A timeline agora é renderizada por `BudgetPhaseSection`,
+que usa o hook `useVehicleTimeline` e a rota unificada `/api/vehicle-timeline`.
 
 #### ✅ Renderização:
 
