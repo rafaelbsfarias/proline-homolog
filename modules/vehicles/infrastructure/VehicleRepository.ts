@@ -31,33 +31,7 @@ export interface InspectionRecord {
 
 const supabase = SupabaseService.getInstance().getAdminClient();
 
-// 1. Modify the helper function to include created_at
-async function listAllFiles(
-  path: string
-): Promise<{ storage_path: string; created_at: string | null }[]> {
-  const bucketName = 'vehicle-media';
-  let allFiles: { storage_path: string; created_at: string | null }[] = [];
-
-  const { data: files, error } = await supabase.storage.from(bucketName).list(path);
-
-  if (error) {
-    console.error(`Erro ao listar arquivos em ${path}:`, error);
-    return []; // Retorna array vazio em caso de erro para não quebrar a execução
-  }
-
-  for (const file of files) {
-    const newPath = `${path}/${file.name}`;
-    if (file.id === null) {
-      // É uma pasta
-      const subFiles = await listAllFiles(newPath);
-      allFiles = allFiles.concat(subFiles);
-    } else {
-      // É um arquivo
-      allFiles.push({ storage_path: newPath, created_at: file.created_at });
-    }
-  }
-  return allFiles;
-}
+// Removido scan recursivo do Storage para evitar mistura de mídias
 
 export class VehicleRepository {
   static async getById(vehicleId: string): Promise<VehicleRecord | null> {
@@ -100,49 +74,37 @@ export class VehicleRepository {
 
     if (error) throw new Error(error.message || 'Erro ao buscar inspeção');
 
-    // --- LÓGICA DE BUSCA DE MÍDIA MODIFICADA ---
-
-    // Passo 1: Buscar todas as mídias do storage de forma recursiva
-    const allStorageMedia = await listAllFiles(vehicleId);
-
-    // Passo 2: Se houver uma inspeção, buscar as mídias associadas a ela no DB
+    // Buscar mídias associadas à inspeção no banco (sem varrer storage)
     let inspectionDbMedia: { storage_path: string; uploaded_by: string; created_at: string }[] = [];
     if (insp) {
-      const { data: media } = await supabase
+      const { data: media, error: mediaError } = await supabase
         .from('inspection_media')
-        .select('storage_path, uploaded_by, created_at')
+        // Join com profiles para permitir filtro por role (especialista)
+        .select('storage_path, uploaded_by, created_at, profiles!inner(role)')
         .eq('inspection_id', insp.id)
+        .eq('profiles.role', 'specialist')
         .order('created_at', { ascending: false });
 
-      if (media) {
-        inspectionDbMedia = media;
+      if (mediaError) {
+        // Se join falhar por relação, cair para seleção simples
+        const { data: fallbackMedia } = await supabase
+          .from('inspection_media')
+          .select('storage_path, uploaded_by, created_at')
+          .eq('inspection_id', insp.id)
+          .order('created_at', { ascending: false });
+        inspectionDbMedia = fallbackMedia || [];
+      } else if (media) {
+        // Remover campo profiles da resposta
+        inspectionDbMedia = media.map(m => ({
+          storage_path: (m as any).storage_path,
+          uploaded_by: (m as any).uploaded_by,
+          created_at: (m as any).created_at,
+        }));
       }
     }
 
-    // Passo 3: Unificar as duas listas de mídia usando um Map para evitar duplicatas
-    const mediaMap = new Map<string, any>();
-
-    // Adiciona primeiro a mídia do DB (que pode ter mais metadados como 'uploaded_by')
-    inspectionDbMedia.forEach(item => mediaMap.set(item.storage_path, item));
-
-    // Adiciona a mídia do storage, apenas se não existir ainda
-    allStorageMedia.forEach(item => {
-      if (!mediaMap.has(item.storage_path)) {
-        // Adiciona um item básico, usando a data de criação do storage
-        mediaMap.set(item.storage_path, {
-          storage_path: item.storage_path,
-          created_at: item.created_at,
-          uploaded_by: null,
-        });
-      }
-    });
-
-    const combinedMedia = Array.from(mediaMap.values());
-
-    // --- FIM DA LÓGICA DE MÍDIA ---
-
     // Se não encontramos nem inspeção nem mídia, retornamos nulo
-    if (!insp && combinedMedia.length === 0) {
+    if (!insp && inspectionDbMedia.length === 0) {
       return null;
     }
 
@@ -160,7 +122,7 @@ export class VehicleRepository {
     return {
       ...(insp || { id: vehicleId }), // Usa o ID do veículo se não houver inspeção
       services: services,
-      media: combinedMedia,
+      media: inspectionDbMedia,
     } as InspectionRecord;
   }
 }

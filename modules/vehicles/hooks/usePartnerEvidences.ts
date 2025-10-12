@@ -20,12 +20,14 @@ export function usePartnerEvidences(vehicleId?: string, inspectionId?: string) {
   useEffect(() => {
     let active = true;
     async function load() {
-      if (!vehicleId || !inspectionId) return;
+      if (!vehicleId) return;
       setLoading(true);
       setError(null);
       try {
+        const q = new URLSearchParams({ vehicle_id: vehicleId });
+        if (inspectionId) q.set('inspection_id', inspectionId);
         const resp = await get<{ success: boolean; evidences?: PartnerEvidence[]; error?: string }>(
-          `/api/vehicle-partner-evidences?vehicle_id=${vehicleId}&inspection_id=${inspectionId}`
+          `/api/vehicle-partner-evidences?${q.toString()}`
         );
         if (!resp.ok || !resp.data?.success) {
           throw new Error(resp.data?.error || `Erro ao carregar evidências (${resp.status})`);

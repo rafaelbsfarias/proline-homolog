@@ -258,7 +258,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         )}
 
         {/* Evidências do Parceiro (agrupadas por categoria) */}
-        {inspection?.id && (
+        {vehicle?.id && (
           <div className={`${styles.card} ${styles.fullWidthCard}`}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>

@@ -43,12 +43,28 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       .select('category, required, notes')
       .eq('inspection_id', inspection.id);
 
-    // Get media for the inspection
-    const { data: media } = await supabase
+    // Get media for the inspection (somente especialista)
+    let media: { storage_path: string; uploaded_by: string; created_at: string }[] | null = null;
+    const { data: mediaWithRole, error: mediaRoleError } = await supabase
       .from('inspection_media')
-      .select('storage_path, uploaded_by, created_at')
+      .select('storage_path, uploaded_by, created_at, profiles!inner(role)')
       .eq('inspection_id', inspection.id)
+      .eq('profiles.role', 'specialist')
       .order('created_at', { ascending: false });
+    if (mediaRoleError) {
+      const { data: fallback } = await supabase
+        .from('inspection_media')
+        .select('storage_path, uploaded_by, created_at')
+        .eq('inspection_id', inspection.id)
+        .order('created_at', { ascending: false });
+      media = fallback as any;
+    } else {
+      media = (mediaWithRole || []).map(m => ({
+        storage_path: (m as any).storage_path,
+        uploaded_by: (m as any).uploaded_by,
+        created_at: (m as any).created_at,
+      }));
+    }
 
     return NextResponse.json({
       success: true,

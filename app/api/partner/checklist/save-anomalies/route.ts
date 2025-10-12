@@ -155,7 +155,8 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
           photoFiles,
           {
             bucket: 'vehicle-media',
-            folder: `anomalies/${inspection_id}/${vehicle_id}`,
+            // Padrão unificado: <vehicle_id>/<partner_id>/anomalias
+            folder: `${vehicle_id}/${partnerId}/anomalias`,
             allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
             maxSizeBytes: 10 * 1024 * 1024, // 10MB por foto
             cacheControl: '3600',

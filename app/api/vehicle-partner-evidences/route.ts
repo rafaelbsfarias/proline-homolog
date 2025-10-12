@@ -17,9 +17,9 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     const inspectionId = searchParams.get('inspection_id');
     const vehicleId = searchParams.get('vehicle_id');
 
-    if (!inspectionId || !vehicleId) {
+    if (!vehicleId) {
       return NextResponse.json(
-        { success: false, error: 'inspection_id e vehicle_id são obrigatórios' },
+        { success: false, error: 'vehicle_id é obrigatório' },
         { status: 400 }
       );
     }
@@ -32,11 +32,14 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data, error } = await supabase
+    let query = supabase
       .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
       .select('item_key, storage_path')
-      .eq('inspection_id', inspectionId)
       .eq('vehicle_id', vehicleId);
+    if (inspectionId) {
+      query = query.eq('inspection_id', inspectionId);
+    }
+    const { data, error } = await query;
 
     if (error) {
       logger.error('db_fetch_evidences_error', { error: error.message });
@@ -74,20 +77,23 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     );
 
     // Carregar anomalias (evidências livres) e gerar URLs assinadas
-    const { data: anomalies, error: anomaliesError } = await supabase
+    let anomaliesQuery = supabase
       .from('vehicle_anomalies')
       .select('description, photos')
-      .eq('inspection_id', inspectionId)
       .eq('vehicle_id', vehicleId)
       .order('created_at', { ascending: true });
+    if (inspectionId) {
+      anomaliesQuery = anomaliesQuery.eq('inspection_id', inspectionId);
+    }
+    const { data: anomalies, error: anomaliesError } = await anomaliesQuery;
 
     if (anomaliesError) {
       logger.warn('anomalies_fetch_error', { error: anomaliesError.message });
     }
 
     logger.info('anomalies_loaded', {
-      inspection_id: inspectionId.substring(0, 8),
-      vehicle_id: vehicleId.substring(0, 8),
+      inspection_id: (inspectionId || '').substring(0, 8),
+      vehicle_id: (vehicleId || '').substring(0, 8),
       count: anomalies?.length || 0,
       has_error: !!anomaliesError,
     });
@@ -158,6 +164,62 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       }
     }
 
+    // 3) Incluir mídias legadas salvas em inspection_media por parceiros (para não perder conteúdo antigo)
+    try {
+      let inspectionIds: string[] = [];
+      if (inspectionId) {
+        inspectionIds = [inspectionId];
+      } else {
+        const { data: inspList } = await supabase
+          .from('inspections')
+          .select('id')
+          .eq('vehicle_id', vehicleId);
+        inspectionIds = (inspList || []).map((r: any) => r.id);
+      }
+
+      if (inspectionIds.length > 0) {
+        const { data: partnerMedia } = await supabase
+          .from('inspection_media')
+          .select('storage_path, uploaded_by, created_at, profiles!inner(role)')
+          .in('inspection_id', inspectionIds)
+          .eq('profiles.role', 'partner')
+          .order('created_at', { ascending: true });
+
+        if (Array.isArray(partnerMedia)) {
+          for (const m of partnerMedia) {
+            try {
+              let path = (m as any).storage_path as string;
+              if (!path) continue;
+              if (path.includes('vehicle-media/')) {
+                const parts = path.split('vehicle-media/');
+                path = parts[parts.length - 1];
+              }
+              if (path.startsWith('/')) path = path.substring(1);
+
+              const { data: signed } = await supabase.storage
+                .from(BUCKETS.VEHICLE_MEDIA)
+                .createSignedUrl(path, 3600);
+              if (!signed) continue;
+
+              const lower = path.toLowerCase();
+              let category = 'Mecânica';
+              if (lower.includes('/anomalias/')) category = 'Pintura/Funilaria';
+              else if (lower.includes('pneu') || lower.includes('tires')) category = 'Pneus';
+
+              anomalyResults.push({
+                item_key: `legacy_media:${path}`,
+                label: 'Evidência do Parceiro',
+                category,
+                url: signed.signedUrl,
+              });
+            } catch {}
+          }
+        }
+      }
+    } catch (legacyErr) {
+      logger.warn('legacy_partner_media_fetch_warning', { e: String(legacyErr) });
+    }
+
     const evidences = [...results.filter(Boolean), ...anomalyResults] as Array<{
       item_key: string;
       label: string;
@@ -166,8 +228,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     }>;
 
     logger.info('evidences_returned', {
-      inspection_id: inspectionId.substring(0, 8),
-      vehicle_id: vehicleId.substring(0, 8),
+      inspection_id: (inspectionId || '').substring(0, 8),
+      vehicle_id: (vehicleId || '').substring(0, 8),
       checklist_evidences: results.filter(Boolean).length,
       anomaly_evidences: anomalyResults.length,
       total: evidences.length,

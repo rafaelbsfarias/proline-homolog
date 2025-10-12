@@ -198,21 +198,7 @@ async function saveVehicleChecklistHandler(req: AuthenticatedRequest) {
       }
     }
 
-    // Insert media references if provided
-    const media = (body.mediaPaths || []).filter(Boolean).map(path => ({
-      inspection_id: inspectionId,
-      storage_path: path,
-      uploaded_by: req.user.id,
-    }));
-
-    if (media.length > 0) {
-      const { error: mediaError } = await supabase.from('inspection_media').insert(media);
-
-      if (mediaError) {
-        logger.error('db_error_insert_media', { requestId, error: mediaError.message });
-        return NextResponse.json({ error: 'Erro ao registrar mídias' }, { status: 500 });
-      }
-    }
+    // Removido: não inserir mais mídias de parceiros em inspection_media
 
     // Update vehicle status to EM_ANALISE if not already
     if (vehicle.status !== VehicleStatus.EM_ANALISE) {
