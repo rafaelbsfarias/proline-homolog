@@ -13,7 +13,9 @@ export const GET = withAdminAuth(
 
       const { data, error } = await admin
         .from('partner_services')
-        .select('id, name, description, price, is_active, created_at')
+        .select(
+          'id, name, description, price, is_active, review_status, review_feedback, review_requested_at, created_at'
+        )
         .eq('partner_id', partnerId)
         .order('created_at', { ascending: false });
 

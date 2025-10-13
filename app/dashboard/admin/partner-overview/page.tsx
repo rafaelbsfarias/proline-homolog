@@ -79,8 +79,8 @@ export default function PartnerOverviewPage() {
         setQuoteDetails({ quote: data.quote, items: data.items || [] });
         setDetailsOpen(true);
       }
-    } catch (err) {
-      console.error('Error loading quote details:', err);
+    } catch {
+      // Error handled silently
     }
   }, []);
 
@@ -100,8 +100,8 @@ export default function PartnerOverviewPage() {
         setSelectedQuoteForReview({ quote: data.quote, items: data.items || [] });
         setReviewModalOpen(true);
       }
-    } catch (err) {
-      console.error('Error loading quote for review:', err);
+    } catch {
+      // Error handled silently
     }
   }, []);
 
@@ -115,8 +115,8 @@ export default function PartnerOverviewPage() {
     setVehicleIdForChecklist(null);
   }, []);
 
-  const handleToggleService = useCallback(
-    async (serviceId: string, nextActive: boolean) => {
+  const handleRequestServiceReview = useCallback(
+    async (serviceId: string, feedback: string) => {
       try {
         const {
           data: { session },
@@ -127,13 +127,19 @@ export default function PartnerOverviewPage() {
             'Content-Type': 'application/json',
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({ is_active: nextActive }),
+          body: JSON.stringify({
+            action: 'request_review',
+            review_feedback: feedback,
+          }),
         });
-        if (resp.ok) {
-          await refetch(); // Reload data after toggle
+
+        if (!resp.ok) {
+          throw new Error('Failed to request review');
         }
-      } catch (err) {
-        console.error('Error toggling service:', err);
+
+        await refetch(); // Reload data after review request
+      } catch {
+        throw new Error('Error requesting service review');
       }
     },
     [partnerId, refetch]
@@ -175,12 +181,9 @@ export default function PartnerOverviewPage() {
           setReviewModalOpen(false);
           setSelectedQuoteForReview(null);
           await refetch(); // Reload data after review
-        } else {
-          const errorData = await resp.json();
-          console.error('Error reviewing quote:', errorData?.error || 'Unknown error');
         }
-      } catch (err) {
-        console.error('Error submitting review:', err);
+      } catch {
+        // Error handled silently
       }
     },
     [selectedQuoteForReview, refetch]
@@ -266,7 +269,7 @@ export default function PartnerOverviewPage() {
           status={serviceFilters.status}
           onQueryChange={serviceFilters.setQuery}
           onStatusChange={serviceFilters.setStatus}
-          onToggle={handleToggleService}
+          onRequestReview={handleRequestServiceReview}
         />
       </main>
 

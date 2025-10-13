@@ -113,6 +113,9 @@ export interface Service {
   description: string | null;
   price: number | null;
   is_active: boolean;
+  review_status: 'approved' | 'pending_review' | 'in_revision';
+  review_feedback: string | null;
+  review_requested_at: string | null;
   created_at: string;
 }
 

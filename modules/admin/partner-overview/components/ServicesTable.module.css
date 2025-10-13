@@ -156,3 +156,157 @@
 .btnDanger:hover {
   background-color: #b91c1c;
 }
+
+.btnWarning {
+  background-color: #f59e0b;
+  color: #fff;
+}
+
+.btnWarning:hover {
+  background-color: #d97706;
+}
+
+.btnPrimary {
+  background-color: #3498db;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+}
+
+.btnPrimary:hover {
+  background-color: #2980b9;
+}
+
+.btnPrimary:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 10px 20px;
+  font-size: 0.875rem;
+}
+
+.btnSecondary:hover {
+  background-color: #e5e7eb;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.reviewBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: help;
+}
+
+.reviewApproved {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.reviewPending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.reviewInRevision {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.reviewModal {
+  padding: 4px;
+}
+
+.serviceInfo {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.serviceInfo h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.125rem;
+  color: #072e4c;
+}
+
+.serviceDescription {
+  margin: 4px 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.servicePrice {
+  margin: 8px 0 0 0;
+  font-weight: 500;
+  color: #072e4c;
+  font-size: 0.875rem;
+}
+
+.feedbackSection {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.label strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.helperText {
+  display: block;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus {
+  border-color: #3498db;
+}
+
+.textarea:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
