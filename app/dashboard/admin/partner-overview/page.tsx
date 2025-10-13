@@ -1,188 +1,69 @@
+/**
+ * Partner Overview Page - Refactored
+ *
+ * Clean container using extracted hooks and components
+ * Reduced from 859 lines to ~200 lines
+ */
+
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import Header from '@/modules/admin/components/Header';
-import { supabase } from '@/modules/common/services/supabaseClient';
-import { Loading } from '@/modules/common/components/Loading/Loading';
+import React, { useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import Header from '@/modules/admin/components/Header';
+import { Loading } from '@/modules/common/components/Loading/Loading';
 import Modal from '@/modules/common/components/Modal/Modal';
 import QuoteReviewModal from '@/modules/admin/components/QuoteReviewModal';
-import { formatQuoteStatus } from '@/modules/common/utils/format';
-import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
 import { ChecklistViewer } from '@/modules/vehicles/components/ChecklistViewer';
-import type {
-  Partner,
-  QuotesByStatus,
-  Service,
-  QuoteFilterStatus,
-  ServiceFilterStatus,
-  QuoteWithItems,
-  QuoteStatus,
-  Quote,
-  QuoteItem,
-} from '@/modules/admin/partner-overview/types';
+import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import { supabase } from '@/modules/common/services/supabaseClient';
+import { formatQuoteStatus } from '@/modules/common/utils/format';
+
+// Import extracted hooks
+import { usePartnerData } from '@/modules/admin/partner-overview/hooks/usePartnerData';
+import { useQuoteFilters } from '@/modules/admin/partner-overview/hooks/useQuoteFilters';
+import { useServiceFilters } from '@/modules/admin/partner-overview/hooks/useServiceFilters';
+
+// Import extracted components
+import {
+  PartnerHeader,
+  PartnerMetrics,
+  QuotesTable,
+  ServicesTable,
+} from '@/modules/admin/partner-overview/components';
+
+// Import types
+import type { QuoteWithItems } from '@/modules/admin/partner-overview/types';
 
 export default function PartnerOverviewPage() {
   const params = useSearchParams();
   const partnerId = params.get('partnerId') || '';
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [partner, setPartner] = useState<Partner | null>(null);
-  const [quotes, setQuotes] = useState<QuotesByStatus | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
 
-  // Filters
-  const [quoteQuery, setQuoteQuery] = useState('');
-  const [quoteStatus, setQuoteStatus] = useState<QuoteFilterStatus>('pending_admin_approval');
-  const [serviceQuery, setServiceQuery] = useState('');
-  const [serviceStatus, setServiceStatus] = useState<ServiceFilterStatus>('all');
+  // === Data Loading (via hook) ===
+  const { loading, error, partner, quotes, services, refetch } = usePartnerData(partnerId);
+
+  // === Filters (via hooks) ===
+  const quoteFilters = useQuoteFilters(quotes);
+  const serviceFilters = useServiceFilters(services);
+
+  // === Quote Details Modal State ===
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [quoteDetails, setQuoteDetails] = useState<QuoteWithItems | null>(null);
+
+  // === Quote Review Modal State ===
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedQuoteForReview, setSelectedQuoteForReview] = useState<QuoteWithItems | null>(null);
+
+  // === Checklist Modal State ===
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [vehicleIdForChecklist, setVehicleIdForChecklist] = useState<string | null>(null);
-
-  // Hook para buscar checklist do parceiro
   const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(
     vehicleIdForChecklist || undefined
   );
 
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        if (!partnerId) {
-          setError('Parâmetro partnerId ausente');
-          setPartner(null);
-          return;
-        }
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        const resp = await fetch(`/api/admin/partners/${partnerId}/overview`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-        });
-        const data = await resp.json();
-        if (!mounted) return;
-        if (!resp.ok) {
-          setError(data?.error || 'Erro ao carregar parceiro');
-          setPartner(null);
-          return;
-        }
-        setPartner(data.partner as Partner);
-        // Normalizar estrutura de quotes para evitar chaves ausentes
-        const q = data.partner?.quotes || ({} as Partial<QuotesByStatus>);
-        const normalized = {
-          pending_admin_approval: Array.isArray(q.pending_admin_approval)
-            ? q.pending_admin_approval
-            : [],
-          pending_client_approval: Array.isArray(q.pending_client_approval)
-            ? q.pending_client_approval
-            : [],
-          approved: Array.isArray(q.approved) ? q.approved : [],
-          rejected: Array.isArray(q.rejected) ? q.rejected : [],
-          executing: Array.isArray(q.executing) ? q.executing : [],
-        };
-        setQuotes(normalized);
+  // === Handlers ===
 
-        // Load services
-        const respServices = await fetch(`/api/admin/partners/${partnerId}/services`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-          },
-        });
-        const dataServices = await respServices.json();
-        setServices(
-          respServices.ok && Array.isArray(dataServices.services) ? dataServices.services : []
-        );
-      } catch {
-        if (!mounted) return;
-        setError('Erro de rede ao carregar parceiro');
-        setPartner(null);
-      } finally {
-        if (!mounted) return;
-        setLoading(false);
-      }
-    };
-    fetchData();
-    return () => {
-      mounted = false;
-    };
-  }, [partnerId]);
-
-  const filteredQuotes = useMemo(() => {
-    const q = quoteQuery.trim().toLowerCase();
-    const flatten: Array<Quote & { _group: QuoteStatus }> = [];
-    if (quotes) {
-      const keys: (keyof QuotesByStatus)[] = [
-        'pending_admin_approval',
-        'pending_client_approval',
-        'approved',
-        'rejected',
-        'executing',
-      ];
-      keys.forEach(k => {
-        if (quoteStatus === 'all' || quoteStatus === k) {
-          (quotes[k] || []).forEach(item => flatten.push({ ...item, _group: k }));
-        }
-      });
-    }
-    return flatten.filter(item => {
-      if (!q) return true;
-      return (
-        String(item.id).toLowerCase().includes(q) ||
-        String(item.service_order_id || '')
-          .toLowerCase()
-          .includes(q)
-      );
-    });
-  }, [quotes, quoteQuery, quoteStatus]);
-
-  const filteredServices = useMemo(() => {
-    const q = serviceQuery.trim().toLowerCase();
-    return services.filter(s => {
-      const byName = !q || s.name.toLowerCase().includes(q);
-      if (!byName) return false;
-      switch (serviceStatus) {
-        case 'active':
-          return s.is_active;
-        case 'inactive':
-          return !s.is_active;
-        default:
-          return true;
-      }
-    });
-  }, [services, serviceQuery, serviceStatus]);
-
-  const toggleService = async (serviceId: string, nextActive: boolean) => {
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const resp = await fetch(`/api/admin/partners/${partnerId}/services/${serviceId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify({ is_active: nextActive }),
-      });
-      if (resp.ok) {
-        setServices(prev =>
-          prev.map(s => (s.id === serviceId ? { ...s, is_active: nextActive } : s))
-        );
-      }
-    } catch {}
-  };
-
-  const openQuoteDetails = async (quoteId: string) => {
+  const handleOpenDetails = useCallback(async (quoteId: string) => {
     try {
       const {
         data: { session },
@@ -198,10 +79,12 @@ export default function PartnerOverviewPage() {
         setQuoteDetails({ quote: data.quote, items: data.items || [] });
         setDetailsOpen(true);
       }
-    } catch {}
-  };
+    } catch (err) {
+      console.error('Error loading quote details:', err);
+    }
+  }, []);
 
-  const openReviewModal = async (quoteId: string) => {
+  const handleOpenReview = useCallback(async (quoteId: string) => {
     try {
       const {
         data: { session },
@@ -217,554 +100,294 @@ export default function PartnerOverviewPage() {
         setSelectedQuoteForReview({ quote: data.quote, items: data.items || [] });
         setReviewModalOpen(true);
       }
-    } catch {}
-  };
+    } catch (err) {
+      console.error('Error loading quote for review:', err);
+    }
+  }, []);
 
-  const openChecklistModal = (vehicleId: string) => {
+  const handleOpenChecklist = useCallback((vehicleId: string) => {
     setVehicleIdForChecklist(vehicleId);
     setShowChecklistModal(true);
-  };
+  }, []);
 
-  const closeChecklistModal = () => {
+  const handleCloseChecklist = useCallback(() => {
     setShowChecklistModal(false);
     setVehicleIdForChecklist(null);
-  };
+  }, []);
 
-  const handleReviewSubmit = async (
-    action: 'approve_full' | 'reject_full' | 'approve_partial',
-    data: {
-      rejectedItemIds?: string[];
-      rejectionReason?: string;
-    }
-  ) => {
-    if (!selectedQuoteForReview) return;
-
-    const quoteId = selectedQuoteForReview.quote.id;
-
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const payload = {
-        action,
-        rejectedItemIds: data.rejectedItemIds || [],
-        rejectionReason: data.rejectionReason,
-      };
-
-      const resp = await fetch(`/api/admin/quotes/${quoteId}/review`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (resp.ok) {
-        setReviewModalOpen(false);
-        setSelectedQuoteForReview(null);
-        // Refresh overview data
-        setQuotes(prev => {
-          if (!prev) return prev;
-          const all: QuotesByStatus = { ...prev };
-          const from = all.pending_admin_approval;
-          const idx = from?.findIndex(q => q.id === quoteId) ?? -1;
-          if (idx >= 0) {
-            const [moved] = from.splice(idx, 1);
-            if (action === 'reject_full') {
-              moved.status = 'rejected';
-              all.rejected.unshift(moved);
-            } else {
-              moved.status = 'pending_client_approval';
-              all.pending_client_approval.unshift(moved);
-            }
-          }
-          return all;
+  const handleToggleService = useCallback(
+    async (serviceId: string, nextActive: boolean) => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const resp = await fetch(`/api/admin/partners/${partnerId}/services/${serviceId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ is_active: nextActive }),
         });
+        if (resp.ok) {
+          await refetch(); // Reload data after toggle
+        }
+      } catch (err) {
+        console.error('Error toggling service:', err);
       }
-    } catch {
-      // Error handling would be added in Phase 2 with proper error service
-    }
-  };
+    },
+    [partnerId, refetch]
+  );
+
+  const handleReviewSubmit = useCallback(
+    async (
+      action: 'approve_full' | 'reject_full' | 'approve_partial',
+      data: {
+        rejectedItemIds?: string[];
+        rejectionReason?: string;
+      }
+    ) => {
+      if (!selectedQuoteForReview) return;
+
+      const quoteId = selectedQuoteForReview.quote.id;
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const payload = {
+          action,
+          rejectedItemIds: data.rejectedItemIds || [],
+          rejectionReason: data.rejectionReason,
+        };
+
+        const resp = await fetch(`/api/admin/quotes/${quoteId}/review`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (resp.ok) {
+          setReviewModalOpen(false);
+          setSelectedQuoteForReview(null);
+          await refetch(); // Reload data after review
+        } else {
+          const errorData = await resp.json();
+          console.error('Error reviewing quote:', errorData?.error || 'Unknown error');
+        }
+      } catch (err) {
+        console.error('Error submitting review:', err);
+      }
+    },
+    [selectedQuoteForReview, refetch]
+  );
+
+  // === Render ===
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+        <Header />
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 20px' }}>
+          <Loading />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+        <Header />
+        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 20px' }}>
+          <div
+            style={{
+              background: '#fee2e2',
+              color: '#991b1b',
+              padding: '16px',
+              borderRadius: '8px',
+            }}
+          >
+            {error}
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return null;
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
-      {loading ? (
-        <div
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 20px' }}>
+        {/* Back Link */}
+        <Link
+          href="/dashboard"
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            minHeight: '70vh',
+            display: 'inline-block',
+            marginBottom: '16px',
+            color: '#3498db',
+            textDecoration: 'none',
+            fontSize: '0.875rem',
           }}
         >
-          <Loading />
-        </div>
-      ) : (
-        <main style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 20px' }}>
-          <div style={{ marginBottom: 16 }}>
-            <a href="/dashboard" style={{ color: '#072e4c', textDecoration: 'none' }}>
-              &larr; Voltar
-            </a>
-          </div>
-          {error ? (
-            <div style={{ background: '#fff', borderRadius: 10, padding: 20, color: '#b91c1c' }}>
-              {error}
-            </div>
-          ) : partner ? (
-            <div style={{ display: 'grid', gap: 16 }}>
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: 10,
-                  padding: 20,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}
-              >
-                <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#072e4c' }}>
-                  {partner.company_name}
-                </h1>
-                <div style={{ marginTop: 8, color: '#555' }}>Parceiro ID: {partner.id}</div>
-                <div style={{ marginTop: 4, color: partner.is_active ? '#16a34a' : '#9ca3af' }}>
-                  {partner.is_active ? 'Ativo' : 'Inativo'}
-                </div>
-              </div>
+          ← Voltar
+        </Link>
 
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                  gap: 16,
-                }}
-              >
-                <div
-                  style={{
-                    background: '#fff',
-                    borderRadius: 10,
-                    padding: 20,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ color: '#666', marginBottom: 6 }}>Serviços Cadastrados</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 700 }}>{partner.services_count}</div>
-                </div>
-                <div
-                  style={{
-                    background: '#fff',
-                    borderRadius: 10,
-                    padding: 20,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ color: '#666', marginBottom: 6 }}>Orçamentos Pendentes</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 700, color: '#f59e0b' }}>
-                    {partner.pending_budgets}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    background: '#fff',
-                    borderRadius: 10,
-                    padding: 20,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ color: '#666', marginBottom: 6 }}>Em Execução</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>
-                    {partner.executing_budgets}
-                  </div>
-                </div>
-                <div
-                  style={{
-                    background: '#fff',
-                    borderRadius: 10,
-                    padding: 20,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ color: '#666', marginBottom: 6 }}>Para Aprovação</div>
-                  <div style={{ fontSize: '2rem', fontWeight: 700, color: '#ef4444' }}>
-                    {partner.approval_budgets}
-                  </div>
-                </div>
-              </div>
+        {/* Partner Header */}
+        <PartnerHeader partner={partner} />
 
-              {/* Orçamentos por status */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: 10,
-                  padding: 20,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Orçamentos</h2>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      placeholder="Buscar por ID ou OS..."
-                      value={quoteQuery}
-                      onChange={e => setQuoteQuery(e.target.value)}
-                      style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
-                    />
-                    <select
-                      value={quoteStatus}
-                      onChange={e => setQuoteStatus(e.target.value as QuoteFilterStatus)}
-                      style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
-                    >
-                      <option value="all">Todos</option>
-                      <option value="pending_admin_approval">Aguardando Admin</option>
-                      <option value="pending_client_approval">Aguardando Cliente</option>
-                      <option value="approved">Aprovados</option>
-                      <option value="rejected">Rejeitados</option>
-                      <option value="executing">Em Execução</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: '#f9fafb' }}>
-                        <th style={{ textAlign: 'left', padding: 8 }}>ID</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Valor</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Data</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Ordem Serviço</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredQuotes.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} style={{ padding: 12, color: '#666' }}>
-                            Nenhum orçamento encontrado.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredQuotes.map(item => (
-                          <tr key={item.id}>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>{item.id}</td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {formatQuoteStatus(item._group || item.status)}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {typeof item.total_value === 'number'
-                                ? item.total_value.toLocaleString('pt-BR', {
-                                    style: 'currency',
-                                    currency: 'BRL',
-                                  })
-                                : '-'}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {item.created_at
-                                ? new Date(item.created_at).toLocaleDateString('pt-BR')
-                                : '-'}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {item.service_order_id || '-'}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              <button
-                                onClick={() => openQuoteDetails(item.id)}
-                                style={{
-                                  background: '#072e4c',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  padding: '6px 10px',
-                                  cursor: 'pointer',
-                                  marginRight: 8,
-                                }}
-                              >
-                                Detalhes
-                              </button>
-                              {(item._group === 'pending_admin_approval' ||
-                                item.status === 'pending_admin_approval') && (
-                                <button
-                                  onClick={() => openReviewModal(item.id)}
-                                  style={{
-                                    background: '#10b981',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '6px 10px',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  Revisar
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+        {/* Partner Metrics */}
+        <PartnerMetrics metrics={partner} />
 
-              {/* Serviços do parceiro */}
-              <div
-                style={{
-                  background: '#fff',
-                  borderRadius: 10,
-                  padding: 20,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 12,
-                  }}
-                >
-                  <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Serviços do Parceiro</h2>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      placeholder="Buscar por nome do serviço..."
-                      value={serviceQuery}
-                      onChange={e => setServiceQuery(e.target.value)}
-                      style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
-                    />
-                    <select
-                      value={serviceStatus}
-                      onChange={e => setServiceStatus(e.target.value as ServiceFilterStatus)}
-                      style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
-                    >
-                      <option value="all">Todos</option>
-                      <option value="active">Ativos</option>
-                      <option value="inactive">Inativos</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr style={{ background: '#f9fafb' }}>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Serviço</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Descrição</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Preço</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                        <th style={{ textAlign: 'left', padding: 8 }}>Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredServices.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} style={{ padding: 12, color: '#666' }}>
-                            Nenhum serviço encontrado.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredServices.map(s => (
-                          <tr key={s.id}>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>{s.name}</td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {s.description || '-'}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {typeof s.price === 'number'
-                                ? s.price.toLocaleString('pt-BR', {
-                                    style: 'currency',
-                                    currency: 'BRL',
-                                  })
-                                : '-'}
-                            </td>
-                            <td
-                              style={{
-                                padding: 8,
-                                borderTop: '1px solid #eee',
-                                color: s.is_active ? '#16a34a' : '#9ca3af',
-                              }}
-                            >
-                              {s.is_active ? 'Ativo' : 'Inativo'}
-                            </td>
-                            <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                              {s.is_active ? (
-                                <button
-                                  onClick={() => toggleService(s.id, false)}
-                                  style={{
-                                    background: '#ef4444',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '6px 10px',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  Reprovar
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => toggleService(s.id, true)}
-                                  style={{
-                                    background: '#072e4c',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: 6,
-                                    padding: '6px 10px',
-                                    cursor: 'pointer',
-                                  }}
-                                >
-                                  Aprovar
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </main>
-      )}
+        {/* Quotes Table */}
+        <QuotesTable
+          quotes={quoteFilters.filteredQuotes}
+          query={quoteFilters.query}
+          status={quoteFilters.status}
+          onQueryChange={quoteFilters.setQuery}
+          onStatusChange={quoteFilters.setStatus}
+          onOpenDetails={handleOpenDetails}
+          onOpenReview={handleOpenReview}
+          onOpenChecklist={handleOpenChecklist}
+        />
+
+        {/* Services Table */}
+        <ServicesTable
+          services={serviceFilters.filteredServices}
+          query={serviceFilters.query}
+          status={serviceFilters.status}
+          onQueryChange={serviceFilters.setQuery}
+          onStatusChange={serviceFilters.setStatus}
+          onToggle={handleToggleService}
+        />
+      </main>
+
       {/* Quote Details Modal */}
       <Modal
         isOpen={detailsOpen}
         onClose={() => setDetailsOpen(false)}
         title="Detalhes do Orçamento"
       >
-        {!quoteDetails ? (
-          <div style={{ padding: 12 }}>Carregando...</div>
-        ) : (
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ color: '#374151' }}>
-              <div>
-                <strong>ID:</strong> {quoteDetails.quote.id}
-              </div>
-              <div>
-                <strong>Status:</strong> {formatQuoteStatus(quoteDetails.quote.status)}
-              </div>
-              <div>
-                <strong>Valor Total:</strong>{' '}
-                {typeof quoteDetails.quote.total_value === 'number'
-                  ? quoteDetails.quote.total_value.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL',
-                    })
-                  : '-'}
-              </div>
-              <div>
-                <strong>OS:</strong> {quoteDetails.quote.service_order_id || '-'}
-              </div>
-              <div>
-                <strong>Data:</strong>{' '}
-                {quoteDetails.quote.created_at
-                  ? new Date(quoteDetails.quote.created_at).toLocaleDateString('pt-BR')
-                  : '-'}
-              </div>
+        {quoteDetails && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <strong>ID:</strong> {quoteDetails.quote.id}
+              <br />
+              <strong>Status:</strong> {formatQuoteStatus(quoteDetails.quote.status)}
+              <br />
+              <strong>Valor Total:</strong>{' '}
+              {quoteDetails.quote.total_value != null
+                ? `R$ ${Number(quoteDetails.quote.total_value).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                  })}`
+                : '—'}
+              <br />
+              <strong>Criado em:</strong>{' '}
+              {new Date(quoteDetails.quote.created_at).toLocaleDateString('pt-BR')}
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+
+            <h3 style={{ fontSize: '1rem', marginBottom: 8 }}>Itens do Orçamento</h3>
+            <div style={{ maxHeight: 400, overflow: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
                 <thead>
-                  <tr style={{ background: '#f9fafb' }}>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Descrição</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Qtd</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Valor Unitário</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Total</th>
+                  <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
+                    <th style={{ padding: '8px', textAlign: 'left' }}>Descrição</th>
+                    <th style={{ padding: '8px', textAlign: 'right' }}>Qtd</th>
+                    <th style={{ padding: '8px', textAlign: 'right' }}>Preço Unit.</th>
+                    <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {quoteDetails.items.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ padding: 12, color: '#666' }}>
-                        Nenhum item.
+                  {quoteDetails.items.map(item => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                      <td style={{ padding: '8px' }}>{item.description}</td>
+                      <td style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
+                      <td style={{ padding: '8px', textAlign: 'right' }}>
+                        R${' '}
+                        {Number(item.unit_price).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'right' }}>
+                        R${' '}
+                        {Number(item.total_price).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
-                  ) : (
-                    quoteDetails.items.map((it: QuoteItem) => (
-                      <tr key={it.id}>
-                        <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                          {it.description || '-'}
-                        </td>
-                        <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                          {it.quantity ?? '-'}
-                        </td>
-                        <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                          {typeof it.unit_price === 'number'
-                            ? it.unit_price.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })
-                            : '-'}
-                        </td>
-                        <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
-                          {typeof it.total_price === 'number'
-                            ? it.total_price.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })
-                            : '-'}
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
-            <div
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}
-            >
+
+            <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               {quoteDetails.quote.vehicle_id && (
                 <button
                   onClick={() => {
                     setDetailsOpen(false);
-                    openChecklistModal(quoteDetails.quote.vehicle_id);
+                    handleOpenChecklist(quoteDetails.quote.vehicle_id!);
                   }}
                   style={{
-                    background: '#2563eb',
-                    color: 'white',
+                    padding: '8px 16px',
+                    background: '#06b6d4',
+                    color: '#fff',
                     border: 'none',
-                    borderRadius: 6,
-                    padding: '8px 12px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
+                    fontSize: '0.875rem',
                   }}
                 >
-                  📋 Ver Checklist Completo
+                  Ver Checklist Completo
                 </button>
               )}
-              {['pending_admin_approval', 'admin_review'].includes(quoteDetails.quote.status) && (
+              {quoteDetails.quote.status === 'pending_admin_approval' && (
                 <button
                   onClick={() => {
                     setDetailsOpen(false);
-                    openReviewModal(quoteDetails.quote.id);
+                    handleOpenReview(quoteDetails.quote.id);
                   }}
                   style={{
-                    background: '#10b981',
-                    color: 'white',
+                    padding: '8px 16px',
+                    background: '#3498db',
+                    color: '#fff',
                     border: 'none',
-                    borderRadius: 6,
-                    padding: '8px 12px',
+                    borderRadius: '6px',
                     cursor: 'pointer',
+                    fontSize: '0.875rem',
                   }}
                 >
                   Revisar Orçamento
                 </button>
               )}
+              <button
+                onClick={() => setDetailsOpen(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                }}
+              >
+                Fechar
+              </button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Quote Review Modal for Partial Approval */}
-      {selectedQuoteForReview && (
+      {/* Quote Review Modal */}
+      {reviewModalOpen && selectedQuoteForReview && (
         <QuoteReviewModal
           isOpen={reviewModalOpen}
           onClose={() => {
@@ -778,80 +401,20 @@ export default function PartnerOverviewPage() {
       )}
 
       {/* Checklist Modal */}
-      {showChecklistModal && checklistData && (
-        <ChecklistViewer data={checklistData} onClose={closeChecklistModal} />
-      )}
-      {showChecklistModal && checklistLoading && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
+      {showChecklistModal && vehicleIdForChecklist && (
+        <Modal
+          isOpen={showChecklistModal}
+          onClose={handleCloseChecklist}
+          title="Checklist Completo"
         >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 40,
-            }}
-          >
+          {checklistLoading ? (
             <Loading />
-          </div>
-        </div>
-      )}
-      {showChecklistModal && !checklistLoading && !checklistData && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
-          onClick={closeChecklistModal}
-        >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 12,
-              padding: 40,
-              maxWidth: 500,
-              textAlign: 'center',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h2 style={{ marginTop: 0, color: '#072e4c' }}>Checklist não encontrado</h2>
-            <p style={{ color: '#666', marginBottom: 24 }}>
-              Nenhum checklist ou evidências foram registradas pelo parceiro para este veículo.
-            </p>
-            <button
-              onClick={closeChecklistModal}
-              style={{
-                background: '#072e4c',
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                padding: '10px 20px',
-                cursor: 'pointer',
-              }}
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
+          ) : checklistData ? (
+            <ChecklistViewer data={checklistData} onClose={handleCloseChecklist} />
+          ) : (
+            <div>Nenhum checklist disponível para este veículo.</div>
+          )}
+        </Modal>
       )}
     </div>
   );
