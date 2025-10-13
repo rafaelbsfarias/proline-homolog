@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { withClientAuth } from '@/modules/common/utils/authMiddleware';
+import { withPartnerAuth } from '@/modules/common/utils/authMiddleware';
 import { createClient } from '@/lib/supabase/server';
 import { getLogger } from '@/modules/logger';
 
@@ -47,7 +47,7 @@ interface ItemWithEvidences {
   }>;
 }
 
-export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
+export const GET = withPartnerAuth(async (req: AuthenticatedRequest) => {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');

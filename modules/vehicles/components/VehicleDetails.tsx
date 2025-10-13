@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 import { ChecklistViewer } from './modals/ChecklistViewer';
 import ChecklistReadOnlyViewer from './modals/ChecklistReadOnlyViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
@@ -132,27 +131,34 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
     <main className={styles.main}>
       {/* Header */}
       <div className={styles.header}>
-        <IconTextButton
-          onClick={() => router.back()}
-          title="Voltar"
-          icon={<LuArrowLeft size={20} />}
-          className="mr-4"
-        >
-          Voltar
-        </IconTextButton>
-        <h1 className={styles.title}>Detalhes do Veículo</h1>
-        <p className={styles.subtitle}>
-          {vehicle.brand} {vehicle.model} • {vehicle.plate}
-        </p>
+        <div className={styles.headerTop}>
+          <IconTextButton
+            onClick={() => router.back()}
+            title="Voltar"
+            icon={<LuArrowLeft size={20} />}
+            className="mr-4"
+          >
+            Voltar
+          </IconTextButton>
+        </div>
+        <div className={styles.headerContent}>
+          <div>
+            <h1 className={styles.title}>Detalhes do Veículo</h1>
+            <p className={styles.subtitle}>
+              {vehicle.brand} {vehicle.model} • {vehicle.plate}
+            </p>
+          </div>
+          {aggregatedEvidenceUrls.length > 0 && (
+            <button onClick={openAggregatedEvidences} className={styles.evidenceButton}>
+              Ver Evidências ({aggregatedEvidenceUrls.length})
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Sections Grid */}
       <div className={styles.gridContainer}>
-        <VehicleBasicInfo
-          vehicle={vehicle}
-          onViewEvidences={openAggregatedEvidences}
-          mediaCount={aggregatedEvidenceUrls.length}
-        />
+        <VehicleBasicInfo vehicle={vehicle} />
 
         <BudgetPhaseSection
           vehicleId={vehicle.id}

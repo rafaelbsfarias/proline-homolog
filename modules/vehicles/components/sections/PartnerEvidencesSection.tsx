@@ -37,8 +37,10 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
   onOpenStaticChecklist,
   onOpenDynamicChecklist,
 }) => {
+  // Mostrar botões somente quando houver checklist realmente realizado.
+  const availableCategories = (checklistCategories || []).filter(c => c.has_anomalies);
   const hasAnyEvidence =
-    checklistData || Object.keys(evidenceByCategory).length > 0 || checklistCategories.length > 0;
+    !!checklistData || Object.keys(evidenceByCategory).length > 0 || availableCategories.length > 0;
 
   if (!hasAnyEvidence) return null;
 
@@ -58,8 +60,8 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
       {/* Botões Checklist Dinâmico (Por Categoria) */}
       {categoriesLoading ? (
         <span className={styles.loadingText}>Carregando categorias...</span>
-      ) : checklistCategories.length > 0 ? (
-        checklistCategories.map(cat => (
+      ) : availableCategories.length > 0 ? (
+        availableCategories.map(cat => (
           <button
             key={`${cat.partner_id}-${cat.category}`}
             onClick={() => onOpenDynamicChecklist(cat.category)}
