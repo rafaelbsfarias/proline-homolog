@@ -38,6 +38,27 @@ const BudgetPhaseSection: React.FC<Props> = ({
     [events]
   );
 
+  const executionStartedEvents = useMemo(
+    () =>
+      events
+        .filter(e => e.type === 'EXECUTION_STARTED')
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [events]
+  );
+
+  const serviceCompletedEvents = useMemo(
+    () =>
+      events
+        .filter(e => e.type === 'SERVICE_COMPLETED')
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [events]
+  );
+
+  const executionCompleted = useMemo(
+    () => events.find(e => e.type === 'EXECUTION_COMPLETED') || null,
+    [events]
+  );
+
   const approvedTitle = useMemo(() => {
     if (!budgetApproved) return null;
     const raw = budgetApproved.title?.trim() || '';
@@ -122,6 +143,37 @@ const BudgetPhaseSection: React.FC<Props> = ({
             color={TIMELINE_COLORS.GREEN}
             title={approvedTitle || 'Orçamento Aprovado'}
             date={formatDateBR(budgetApproved.date)}
+          />
+        )}
+
+        {/* 7. Execução Iniciada - pode haver múltiplas categorias */}
+        {executionStartedEvents.map(ev => (
+          <Item
+            key={ev.id}
+            color={TIMELINE_COLORS.ORANGE}
+            title={
+              ev.meta?.partner_service ? `Em Execução - ${ev.meta.partner_service}` : 'Em Execução'
+            }
+            date={formatDateBR(ev.date)}
+          />
+        ))}
+
+        {/* 8. Serviços Concluídos - cada serviço individual */}
+        {serviceCompletedEvents.map(ev => (
+          <Item
+            key={ev.id}
+            color={TIMELINE_COLORS.BLUE}
+            title={ev.title}
+            date={formatDateBR(ev.date)}
+          />
+        ))}
+
+        {/* 9. Execução Finalizada - CONDICIONAL */}
+        {executionCompleted && (
+          <Item
+            color={TIMELINE_COLORS.GREEN}
+            title="Execução Finalizada"
+            date={formatDateBR(executionCompleted.date)}
           />
         )}
       </div>
