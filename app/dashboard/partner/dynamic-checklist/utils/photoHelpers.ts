@@ -16,9 +16,3 @@ export const getPhotoPreviewUrl = (photo: File | string): string => {
 export const getPhotoType = (photo: File | string): 'new' | 'saved' => {
   return isFilePhoto(photo) ? 'new' : 'saved';
 };
-
-export const cleanupPhotoUrl = (url: string) => {
-  if (url.startsWith('blob:')) {
-    URL.revokeObjectURL(url);
-  }
-};
