@@ -48,7 +48,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
       setRescheduleOpenFor(null);
       setNewDateIso('');
       setFeedback({ type: 'success', msg: 'Solicitação de nova data enviada.' });
-      await reload();
     } else {
       setFeedback({ type: 'error', msg: 'Falha ao enviar a nova data.' });
     }
@@ -61,7 +60,6 @@ const VehicleCollectionSection: React.FC<VehicleCollectionSectionProps> = ({ onL
     const ok = await approveAll();
     if (ok) {
       setFeedback({ type: 'success', msg: 'Coleta confirmada com sucesso.' });
-      await reload();
     } else {
       setFeedback({ type: 'error', msg: 'Não foi possível confirmar a coleta.' });
     }

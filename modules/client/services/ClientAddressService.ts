@@ -144,12 +144,35 @@ export class ClientAddressService {
       is_main_address,
     });
 
+    const supabase = this.supabaseService.getAdminClient();
+
+    // Check for duplicate address
+    const { data: existingAddress, error: existingError } = await supabase
+      .from('addresses')
+      .select('id')
+      .eq('profile_id', clientId)
+      .eq('street', payload.street)
+      .eq('number', payload.number)
+      .eq('neighborhood', payload.neighborhood)
+      .eq('city', payload.city)
+      .eq('state', payload.state)
+      .eq('zip_code', payload.zip_code)
+      .is('complement', payload.complement)
+      .limit(1);
+
+    if (existingError) {
+      throw new DatabaseError(`Erro ao verificar endereço existente: ${existingError.message}`);
+    }
+
+    if (existingAddress && existingAddress.length > 0) {
+      throw new ValidationError('Este ponto de coleta já está cadastrado.');
+    }
+
     // If set as main, clear existing main first to avoid unique index conflicts
     if (is_main_address) {
       await this.clearMainAddress(clientId);
     }
 
-    const supabase = this.supabaseService.getAdminClient();
     const { data: inserted, error: insertError } = await supabase
       .from('addresses')
       .insert(payload)

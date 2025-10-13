@@ -98,7 +98,7 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Editar ponto de coleta"
+        title="Adicionar ponto de coleta"
         size="md"
         showCloseButton
       >

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import CollectionRequestsModal from './CollectionRequestsModal';
 import AddSpecialistToClientModal from './AddSpecialistToClientModal';
@@ -46,16 +46,14 @@ const DataPanel: React.FC<DataPanelProps> = ({ onLoadingChange }) => {
   useEffect(() => {
     onLoadingChange?.(loading);
   }, [loading, onLoadingChange]);
-  useEffect(() => {
-    let isMounted = true;
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      // Use aggregated endpoint with vehicle counts + collection requests summary
+
+  const fetchClients = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
       const response = await get<ClientsWithCollectionSummaryResponse>(
         '/api/admin/clients-with-collection-summary'
       );
-      if (!isMounted) return;
       if (response.ok && response.data?.success) {
         const sorted = [...(response.data.clients || [])].sort((a, b) => {
           const ac = a.collection_requests_count ?? 0;
@@ -69,13 +67,16 @@ const DataPanel: React.FC<DataPanelProps> = ({ onLoadingChange }) => {
       } else {
         setError(response.data?.error || response.error || 'Erro ao buscar dados');
       }
+    } catch (e) {
+      setError('Erro ao buscar dados');
+    } finally {
       setLoading(false);
     }
-    fetchData();
-    return () => {
-      isMounted = false;
-    };
   }, [get]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   return (
     <div className={containerStyles.dataPanelOuter}>
@@ -185,7 +186,10 @@ const DataPanel: React.FC<DataPanelProps> = ({ onLoadingChange }) => {
         clientId={selectedClientForSpecialistModal?.id || ''}
         clientName={selectedClientForSpecialistModal?.full_name || ''}
         onClose={() => setSpecialistModalOpen(false)}
-        onSuccess={() => setSpecialistModalOpen(false)}
+        onSuccess={() => {
+          fetchClients();
+          setSpecialistModalOpen(false);
+        }}
       />
       <CollectionRequestsModal
         isOpen={collectionModalOpen}

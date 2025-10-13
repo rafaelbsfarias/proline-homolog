@@ -9,6 +9,7 @@ import MessageModal from '@/modules/common/components/MessageModal/MessageModal'
 import './ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
 import PendingQuotesCard from '@/modules/client/components/PendingQuotes/PendingQuotesCard';
+import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import ApprovedQuotesCard from '@/modules/client/components/ApprovedQuotes/ApprovedQuotesCard';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
@@ -22,10 +23,10 @@ const ClientDashboard: React.FC = () => {
   const [userName, setUserName] = useState('');
   const { profileData, userId, loading } = useUserProfile();
   const { accepted, loadingAcceptance, acceptContract } = useContractAcceptance(userId);
+  const { addresses, collectPoints, refetch: refetchAddresses } = useAddresses();
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
-  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
-  const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -57,15 +58,23 @@ const ClientDashboard: React.FC = () => {
   }
 
   const [showOverallLoader, setShowOverallLoader] = useState(true);
+  const [initialLoadFinished, setInitialLoadFinished] = useState(false);
 
   useEffect(() => {
-    if (loading || (accepted && isComponentLoading)) {
-      setShowOverallLoader(true);
-    } else {
-      const timeout = setTimeout(() => setShowOverallLoader(false), 300);
-      return () => clearTimeout(timeout);
+    // Only show the overall loader on the initial load cycle.
+    if (!initialLoadFinished) {
+      if (loading || (accepted && isComponentLoading)) {
+        setShowOverallLoader(true);
+      } else {
+        // This marks the end of the initial load.
+        const timeout = setTimeout(() => {
+          setShowOverallLoader(false);
+          setInitialLoadFinished(true);
+        }, 300);
+        return () => clearTimeout(timeout);
+      }
     }
-  }, [loading, accepted, isComponentLoading]);
+  }, [loading, accepted, isComponentLoading, initialLoadFinished]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -116,8 +125,9 @@ const ClientDashboard: React.FC = () => {
 
             <div className="dashboard-counter">
               <VehicleCounter
-                key={refreshVehicleCounter}
                 onLoadingChange={setVehicleCounterLoading}
+                addresses={addresses}
+                collectPoints={collectPoints}
               />
             </div>
 
@@ -139,13 +149,14 @@ const ClientDashboard: React.FC = () => {
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
-        onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
+        onSuccess={refetchAddresses}
       />
       <ClientCollectPointModal
         isOpen={showAddCollectPointModal}
         onClose={() => setShowAddCollectPointModal(false)}
         onSuccess={() => {
           setShowAddCollectPointModal(false);
+          refetchAddresses();
         }}
       />
       <ForceChangePasswordModal

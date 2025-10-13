@@ -3,6 +3,7 @@ import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/util
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ClientAddressService } from '@/modules/client/services/ClientAddressService';
 import { getLogger } from '@/modules/logger';
+import { ValidationError, DatabaseError } from '@/modules/common/errors';
 
 const logger = getLogger('api:client:create-address');
 const addressService = new ClientAddressService();
@@ -42,10 +43,7 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           .filter(Boolean)
           .join(', '),
       });
-      return NextResponse.json(
-        { error: 'Campos obrigatórios não informados.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Campos obrigatórios não informados.' }, { status: 400 });
     }
 
     const clientId = req.user.id;
@@ -93,14 +91,24 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       },
     });
   } catch (error: unknown) {
-    logger.error('unhandled_error', {
+    logger.error('api_error', {
       userId: req.user.id.slice(0, 8),
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
+
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    }
+
+    if (error instanceof DatabaseError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+
     return NextResponse.json(
       {
-        error: 'Erro interno do servidor.',
+        success: false,
+        message: 'Erro interno do servidor.',
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }

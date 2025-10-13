@@ -38,7 +38,7 @@ export function useClientCollectionSummary(options?: UseClientCollectionSummaryO
       setLoading(false);
       onLoadingChange?.(false);
     }
-  }, [get]);
+  }, [get, onLoadingChange]);
 
   useEffect(() => {
     reload();

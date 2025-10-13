@@ -156,10 +156,10 @@ export default function VehicleItemRow(props: Props) {
             title={
               !canClientModify(vehicle.status)
                 ? 'Não editável neste status'
-                : 'Editar ponto de coleta'
+                : 'Adicionar ponto de coleta'
             }
           >
-            Editar ponto de coleta
+            Adicionar ponto de coleta
           </SolidButton>
         </div>
       </div>

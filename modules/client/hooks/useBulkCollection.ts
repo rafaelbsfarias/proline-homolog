@@ -67,6 +67,14 @@ export const useBulkCollection = ({ onSuccess }: UseBulkCollectionProps) => {
     [post, onSuccess, refetch]
   );
 
+  const openModalAndRefetch = useCallback(
+    (method: Method) => {
+      refetch();
+      setModalOpen(method);
+    },
+    [refetch]
+  );
+
   return {
     loading,
     error,
@@ -80,7 +88,7 @@ export const useBulkCollection = ({ onSuccess }: UseBulkCollectionProps) => {
     eta,
     setEta,
     modalOpen,
-    openModal: setModalOpen,
+    openModal: openModalAndRefetch,
     closeModal: () => setModalOpen(null),
     handleApply,
   };
