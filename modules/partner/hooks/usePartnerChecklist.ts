@@ -50,6 +50,12 @@ export interface AnomalyEvidence {
   id: string;
   description: string;
   photos: (File | string)[]; // Pode ser File (novo upload) ou string (URL do banco)
+  partRequest?: {
+    partName: string;
+    partDescription?: string;
+    quantity: number;
+    estimatedPrice?: number;
+  };
 }
 
 export interface PartnerChecklistForm {
@@ -556,6 +562,13 @@ export function usePartnerChecklist() {
       }
 
       const loadedAnomalies = response.data.data || [];
+
+      logger.info('anomalies_loaded_from_api', {
+        count: loadedAnomalies.length,
+        has_part_requests: loadedAnomalies.some((a: AnomalyEvidence) => a.partRequest),
+        sample: loadedAnomalies[0],
+      });
+
       // Sempre atualizar o estado, mesmo que vazio
       setAnomaliesData(
         loadedAnomalies.length > 0 ? loadedAnomalies : [{ id: '1', description: '', photos: [] }]
@@ -626,6 +639,7 @@ export function usePartnerChecklist() {
           return {
             description: anomaly.description,
             photos: photoRefs,
+            partRequest: anomaly.partRequest,
           };
         });
 

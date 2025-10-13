@@ -13,6 +13,12 @@ interface AnomalyEvidence {
   id: string;
   description: string;
   photos: (File | string)[]; // Pode ser File (novo upload) ou string (URL do banco)
+  partRequest?: {
+    partName: string;
+    partDescription?: string;
+    quantity: number;
+    estimatedPrice?: number;
+  };
 }
 
 const DynamicChecklistPage = () => {
@@ -33,10 +39,32 @@ const DynamicChecklistPage = () => {
   const [localAnomalies, setLocalAnomalies] = useState<AnomalyEvidence[]>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Estado para modal de solicitação de peças
+  const [partRequestModal, setPartRequestModal] = useState<{
+    isOpen: boolean;
+    anomalyId: string | null;
+    partName: string;
+    partDescription: string;
+    quantity: number;
+    estimatedPrice: string;
+  }>({
+    isOpen: false,
+    anomalyId: null,
+    partName: '',
+    partDescription: '',
+    quantity: 1,
+    estimatedPrice: '',
+  });
+
   // Atualizar estado local quando as anomalias do hook mudarem (somente na primeira carga)
   useEffect(() => {
     // Sincronizar apenas quando carregar pela primeira vez
     if (!hasInitialized && !loading) {
+      logger.debug('initializing_anomalies', {
+        anomalies_count: anomalies.length,
+        has_part_requests: anomalies.some(a => a.partRequest),
+        sample_anomaly: anomalies[0],
+      });
       setLocalAnomalies(anomalies);
       setHasInitialized(true);
     }
@@ -96,6 +124,68 @@ const DynamicChecklistPage = () => {
         }
         return anomaly;
       })
+    );
+  };
+
+  const openPartRequestModal = (anomalyId: string) => {
+    const anomaly = localAnomalies.find(a => a.id === anomalyId);
+    setPartRequestModal({
+      isOpen: true,
+      anomalyId,
+      partName: anomaly?.partRequest?.partName || '',
+      partDescription: anomaly?.partRequest?.partDescription || '',
+      quantity: anomaly?.partRequest?.quantity || 1,
+      estimatedPrice: anomaly?.partRequest?.estimatedPrice?.toString() || '',
+    });
+  };
+
+  const closePartRequestModal = () => {
+    setPartRequestModal({
+      isOpen: false,
+      anomalyId: null,
+      partName: '',
+      partDescription: '',
+      quantity: 1,
+      estimatedPrice: '',
+    });
+  };
+
+  const savePartRequest = () => {
+    if (!partRequestModal.anomalyId || !partRequestModal.partName.trim()) {
+      return;
+    }
+
+    setLocalAnomalies(prev =>
+      prev.map(anomaly =>
+        anomaly.id === partRequestModal.anomalyId
+          ? {
+              ...anomaly,
+              partRequest: {
+                partName: partRequestModal.partName,
+                partDescription: partRequestModal.partDescription,
+                quantity: partRequestModal.quantity,
+                estimatedPrice: partRequestModal.estimatedPrice
+                  ? parseFloat(partRequestModal.estimatedPrice)
+                  : undefined,
+              },
+            }
+          : anomaly
+      )
+    );
+
+    closePartRequestModal();
+  };
+
+  const removePartRequest = (anomalyId: string) => {
+    setLocalAnomalies(prev =>
+      prev.map(anomaly =>
+        anomaly.id === anomalyId
+          ? {
+              ...anomaly,
+              partRequest: undefined,
+            }
+          : anomaly
+      )
     );
   };
 
@@ -554,9 +644,312 @@ const DynamicChecklistPage = () => {
                   verde já foram salvas.
                 </p>
               </div>
+
+              {/* Part Request Section */}
+              <div
+                style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #e2e8f0' }}
+              >
+                {anomaly.partRequest ? (
+                  <div
+                    style={{
+                      background: '#eff6ff',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: '8px',
+                      padding: '16px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'start',
+                        marginBottom: '12px',
+                      }}
+                    >
+                      <h4
+                        style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#1e40af' }}
+                      >
+                        🔧 Solicitação de Peça
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => removePartRequest(anomaly.id)}
+                        style={{
+                          background: '#dc2626',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Remover
+                      </button>
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#1e3a8a' }}>
+                      <p style={{ margin: '4px 0' }}>
+                        <strong>Peça:</strong> {anomaly.partRequest.partName}
+                      </p>
+                      {anomaly.partRequest.partDescription && (
+                        <p style={{ margin: '4px 0' }}>
+                          <strong>Descrição:</strong> {anomaly.partRequest.partDescription}
+                        </p>
+                      )}
+                      <p style={{ margin: '4px 0' }}>
+                        <strong>Quantidade:</strong> {anomaly.partRequest.quantity}
+                      </p>
+                      {anomaly.partRequest.estimatedPrice && (
+                        <p style={{ margin: '4px 0' }}>
+                          <strong>Preço Estimado:</strong> R${' '}
+                          {anomaly.partRequest.estimatedPrice.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openPartRequestModal(anomaly.id)}
+                      style={{
+                        marginTop: '12px',
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                      }}
+                    >
+                      Editar Solicitação
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openPartRequestModal(anomaly.id)}
+                    style={{
+                      width: '100%',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '12px 16px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    🛒 Solicitar Compra de Peças
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
+
+        {/* Part Request Modal */}
+        {partRequestModal.isOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '20px',
+            }}
+            onClick={closePartRequestModal}
+          >
+            <div
+              style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '24px',
+                maxWidth: '500px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <h3
+                style={{
+                  margin: '0 0 20px 0',
+                  fontSize: '1.25rem',
+                  fontWeight: '600',
+                  color: '#111827',
+                }}
+              >
+                Solicitar Compra de Peças
+              </h3>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Nome da Peça *
+                </label>
+                <input
+                  type="text"
+                  value={partRequestModal.partName}
+                  onChange={e =>
+                    setPartRequestModal(prev => ({ ...prev, partName: e.target.value }))
+                  }
+                  placeholder="Ex: Pastilha de freio dianteira"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  value={partRequestModal.partDescription}
+                  onChange={e =>
+                    setPartRequestModal(prev => ({ ...prev, partDescription: e.target.value }))
+                  }
+                  placeholder="Especificações, marca sugerida, etc."
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    resize: 'vertical',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Quantidade *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={partRequestModal.quantity}
+                  onChange={e =>
+                    setPartRequestModal(prev => ({
+                      ...prev,
+                      quantity: parseInt(e.target.value) || 1,
+                    }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label
+                  style={{
+                    display: 'block',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '8px',
+                  }}
+                >
+                  Preço Estimado (opcional)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={partRequestModal.estimatedPrice}
+                  onChange={e =>
+                    setPartRequestModal(prev => ({ ...prev, estimatedPrice: e.target.value }))
+                  }
+                  placeholder="0.00"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={closePartRequestModal}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={savePartRequest}
+                  disabled={!partRequestModal.partName.trim()}
+                  style={{
+                    padding: '10px 20px',
+                    background: partRequestModal.partName.trim() ? '#10b981' : '#9ca3af',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    cursor: partRequestModal.partName.trim() ? 'pointer' : 'not-allowed',
+                    fontWeight: '500',
+                  }}
+                >
+                  Salvar Solicitação
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         {error && (

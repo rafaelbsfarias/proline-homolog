@@ -32,16 +32,22 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
     const vehicle_id = formData.get('vehicle_id') as string;
     const anomaliesJson = formData.get('anomalies') as string;
 
-    // Validar entrada
-    const validation = SaveAnomaliesSchema.safeParse({
-      inspection_id,
-      quote_id,
+    // Converter null para undefined para validação Zod
+    const validationInput = {
+      inspection_id: inspection_id || undefined,
+      quote_id: quote_id || undefined,
       vehicle_id,
       anomalies: anomaliesJson,
-    });
+    };
+
+    // Validar entrada
+    const validation = SaveAnomaliesSchema.safeParse(validationInput);
 
     if (!validation.success) {
-      logger.warn('validation_error', { errors: validation.error.errors });
+      logger.warn('validation_error', {
+        errors: validation.error.errors,
+        input: validationInput,
+      });
       return NextResponse.json(
         { success: false, error: 'Dados inválidos', details: validation.error.errors },
         { status: 400 }
@@ -213,6 +219,8 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         // Adicionar quote_id (novo) ou inspection_id (legacy)
         ...(quote_id ? { quote_id } : {}),
         ...(inspection_id ? { inspection_id } : {}),
+        // Manter referência da solicitação de peça para processar depois
+        partRequest: anomaly.partRequest,
       });
     }
 
@@ -250,7 +258,10 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
     if (processedAnomalies.length > 0) {
       const { data, error: insertError } = await supabase
         .from('vehicle_anomalies')
-        .insert(processedAnomalies)
+        .insert(
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          processedAnomalies.map(({ partRequest, ...anomaly }) => anomaly) // Remove partRequest antes de inserir
+        )
         .select('*');
 
       if (insertError) {
@@ -271,6 +282,51 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         quote_id,
         vehicle_id,
       });
+
+      // Salvar solicitações de peças associadas
+      const partRequestsToInsert = [];
+      for (let i = 0; i < processedAnomalies.length; i++) {
+        const anomaly = processedAnomalies[i];
+        const savedAnomaly = data[i];
+
+        if (anomaly.partRequest && savedAnomaly) {
+          partRequestsToInsert.push({
+            anomaly_id: savedAnomaly.id,
+            vehicle_id: vehicle_id,
+            partner_id: partnerId,
+            part_name: anomaly.partRequest.partName,
+            part_description: anomaly.partRequest.partDescription || null,
+            quantity: anomaly.partRequest.quantity,
+            estimated_price: anomaly.partRequest.estimatedPrice || null,
+            status: 'pending',
+          });
+        }
+      }
+
+      // Remover solicitações de peças existentes para estas anomalias
+      if (data.length > 0) {
+        const anomalyIds = data.map(a => a.id);
+        await supabase.from('part_requests').delete().in('anomaly_id', anomalyIds);
+      }
+
+      // Inserir novas solicitações de peças
+      if (partRequestsToInsert.length > 0) {
+        const { error: partRequestError } = await supabase
+          .from('part_requests')
+          .insert(partRequestsToInsert);
+
+        if (partRequestError) {
+          logger.error('insert_part_requests_error', {
+            error: partRequestError.message,
+            count: partRequestsToInsert.length,
+          });
+          // Não falhar a requisição - anomalias já foram salvas
+        } else {
+          logger.info('part_requests_saved_successfully', {
+            count: partRequestsToInsert.length,
+          });
+        }
+      }
 
       // Atualizar status do veículo para "Fase Orçamentaria"
       const { data: statusUpdateData, error: statusUpdateError } = await supabase.rpc(

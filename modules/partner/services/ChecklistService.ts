@@ -542,7 +542,19 @@ export class ChecklistService {
       // Buscar anomalias existentes
       let anomaliesQuery = this.supabase
         .from('vehicle_anomalies')
-        .select('*')
+        .select(
+          `
+          *,
+          part_requests (
+            id,
+            part_name,
+            part_description,
+            quantity,
+            estimated_price,
+            status
+          )
+        `
+        )
         .eq('vehicle_id', vehicle_id);
 
       // Usar quote_id se disponível, senão inspection_id
@@ -629,6 +641,16 @@ export class ChecklistService {
             id: anomaly.id,
             description: anomaly.description,
             photos: signedPhotos,
+            partRequest: anomaly.part_requests?.[0]
+              ? {
+                  partName: anomaly.part_requests[0].part_name,
+                  partDescription: anomaly.part_requests[0].part_description || undefined,
+                  quantity: anomaly.part_requests[0].quantity,
+                  estimatedPrice: anomaly.part_requests[0].estimated_price
+                    ? parseFloat(anomaly.part_requests[0].estimated_price)
+                    : undefined,
+                }
+              : undefined,
           };
         })
       );

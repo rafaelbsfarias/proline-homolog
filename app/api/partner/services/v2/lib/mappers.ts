@@ -57,7 +57,7 @@ export function mapPartnerServiceToResponse(service: PartnerService) {
     name: service.name.value,
     price: service.price.value,
     description: service.description.value,
-    category: null, // TODO: Adicionar suporte a categoria quando campo existir no banco
+    category: null, // A Fazer: Adicionar suporte a categoria quando campo existir no banco
     isActive: service.isActive,
     createdAt: service.createdAt,
     updatedAt: service.updatedAt,

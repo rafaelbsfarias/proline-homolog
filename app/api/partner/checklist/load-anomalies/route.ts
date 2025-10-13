@@ -15,6 +15,7 @@ const LoadAnomaliesSchema = z
   })
   .refine(data => data.inspection_id || data.quote_id, {
     message: 'inspection_id ou quote_id deve ser fornecido',
+    path: ['inspection_id', 'quote_id'],
   });
 
 export const runtime = 'nodejs';
@@ -24,9 +25,18 @@ export const revalidate = 0;
 async function loadAnomaliesHandler(req: AuthenticatedRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const inspection_id = searchParams.get('inspection_id') || null;
-    const quote_id = searchParams.get('quote_id') || null;
-    const vehicle_id = searchParams.get('vehicle_id');
+    const inspection_id = searchParams.get('inspection_id') || undefined;
+    const quote_id = searchParams.get('quote_id') || undefined;
+    const vehicle_id = searchParams.get('vehicle_id') || undefined;
+
+    logger.info('load_anomalies_request', {
+      inspection_id,
+      quote_id,
+      vehicle_id,
+      has_inspection_id: !!inspection_id,
+      has_quote_id: !!quote_id,
+      has_vehicle_id: !!vehicle_id,
+    });
 
     // Validação com Zod
     const validation = LoadAnomaliesSchema.safeParse({
@@ -36,6 +46,10 @@ async function loadAnomaliesHandler(req: AuthenticatedRequest) {
     });
 
     if (!validation.success) {
+      logger.error('validation_failed', {
+        errors: validation.error.errors,
+        input: { inspection_id, quote_id, vehicle_id },
+      });
       return NextResponse.json(
         {
           success: false,
@@ -68,8 +82,23 @@ async function loadAnomaliesHandler(req: AuthenticatedRequest) {
     );
 
     if (!result.success) {
+      logger.error('load_anomalies_service_error', {
+        error: result.error,
+        inspection_id: validInspectionId,
+        quote_id: validQuoteId,
+        vehicle_id: validVehicleId,
+      });
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
+
+    logger.info('load_anomalies_success', {
+      count: result.data?.length || 0,
+      has_part_requests: result.data?.some(a => a.partRequest) || false,
+      sample_anomaly: result.data?.[0],
+      inspection_id: validInspectionId,
+      quote_id: validQuoteId,
+      vehicle_id: validVehicleId,
+    });
 
     return NextResponse.json({
       success: true,
