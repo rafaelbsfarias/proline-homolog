@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
@@ -30,6 +30,7 @@ import { InspectionObservationsSection } from './sections/InspectionObservations
 import { VehicleDetailsProps } from '../types/VehicleDetailsTypes';
 
 import styles from './VehicleDetails.module.css';
+import { ImageLightbox } from './modals/ImageLightbox';
 
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
@@ -43,13 +44,50 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   const { loadChecklist, loading: loadingDynamicChecklist } = useDynamicChecklistLoader();
 
   // Data Hooks
-  const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
+  const { grouped: partnerEvidenceByCategory, evidences: partnerEvidences } = usePartnerEvidences(
+    vehicle?.id,
+    inspection?.id
+  );
   const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
   const { evidences: executionEvidences, loading: executionLoading } = useExecutionEvidences(
     vehicle?.id
   );
   const { categories: checklistCategories, loading: categoriesLoading } =
     usePartnerChecklistCategories(vehicle?.id, inspection?.id);
+
+  // Aggregated evidences (specialist + partner + execution)
+  const aggregatedEvidenceUrls = useMemo(() => {
+    const urls: string[] = [];
+    // 1) Specialist inspection media
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    (inspection?.media || []).forEach(img => {
+      const url =
+        (mediaUrls && mediaUrls[img.storage_path]) ||
+        (supabaseUrl
+          ? `${supabaseUrl}/storage/v1/object/public/vehicle-media/${img.storage_path}`
+          : '');
+      if (url) urls.push(url);
+    });
+    // 2) Partner evidences
+    (partnerEvidences || []).forEach(ev => {
+      if (ev.url) urls.push(ev.url);
+    });
+    // 3) Execution evidences
+    (executionEvidences || []).forEach(group => {
+      (group.evidences || []).forEach(e => {
+        if (e.image_url) urls.push(e.image_url);
+      });
+    });
+    // Deduplicate while preserving order
+    const seen = new Set<string>();
+    return urls.filter(u => (seen.has(u) ? false : (seen.add(u), true)));
+  }, [inspection?.media, mediaUrls, partnerEvidences, executionEvidences]);
+
+  const [aggLightboxOpen, setAggLightboxOpen] = useState(false);
+
+  const openAggregatedEvidences = () => {
+    if (aggregatedEvidenceUrls.length > 0) setAggLightboxOpen(true);
+  };
 
   // Handlers
   const handleLoadDynamicChecklist = async (category: string) => {
@@ -112,8 +150,8 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       <div className={styles.gridContainer}>
         <VehicleBasicInfo
           vehicle={vehicle}
-          onViewEvidences={modalState.imageViewer.open}
-          mediaCount={inspection?.media?.length || 0}
+          onViewEvidences={openAggregatedEvidences}
+          mediaCount={aggregatedEvidenceUrls.length}
         />
 
         <BudgetPhaseSection
@@ -145,13 +183,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       </div>
 
       {/* Modals */}
-      {inspection?.media && inspection.media.length > 0 && (
-        <ImageViewerModal
-          isOpen={modalState.imageViewer.isOpen}
-          onClose={modalState.imageViewer.close}
-          images={inspection.media}
-          mediaUrls={mediaUrls}
-          vehiclePlate={vehicle?.plate || ''}
+      {/* Aggregated evidences lightbox */}
+      {aggLightboxOpen && aggregatedEvidenceUrls.length > 0 && (
+        <ImageLightbox
+          isOpen={aggLightboxOpen}
+          images={aggregatedEvidenceUrls}
+          startIndex={0}
+          onClose={() => setAggLightboxOpen(false)}
         />
       )}
 
