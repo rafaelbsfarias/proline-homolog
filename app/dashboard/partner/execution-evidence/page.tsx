@@ -382,6 +382,44 @@ function ExecutionEvidenceContent() {
         return;
       }
 
+      // VALIDAÇÃO: Verificar se todos os serviços têm pelo menos uma evidência
+      const servicesWithoutEvidences = services.filter(service => service.evidences.length === 0);
+
+      if (servicesWithoutEvidences.length > 0) {
+        const serviceNames = servicesWithoutEvidences.map(s => `"${s.description}"`).join(', ');
+
+        showToast(
+          `❌ Não é possível finalizar: os seguintes serviços não possuem evidências: ${serviceNames}`,
+          'error'
+        );
+        logger.warn('finalize_blocked_missing_evidences', {
+          servicesWithoutEvidences: servicesWithoutEvidences.map(s => ({
+            id: s.id,
+            description: s.description,
+          })),
+        });
+        return;
+      }
+
+      // VALIDAÇÃO: Verificar se todos os serviços estão concluídos
+      const servicesNotCompleted = services.filter(service => !service.completed_at);
+
+      if (servicesNotCompleted.length > 0) {
+        const serviceNames = servicesNotCompleted.map(s => `"${s.description}"`).join(', ');
+
+        showToast(
+          `❌ Não é possível finalizar: os seguintes serviços não foram marcados como concluídos: ${serviceNames}`,
+          'error'
+        );
+        logger.warn('finalize_blocked_services_not_completed', {
+          servicesNotCompleted: servicesNotCompleted.map(s => ({
+            id: s.id,
+            description: s.description,
+          })),
+        });
+        return;
+      }
+
       // Salvar evidências primeiro
       await handleSave();
 
@@ -535,6 +573,30 @@ function ExecutionEvidenceContent() {
             >
               {serviceIndex + 1}. {service.description}
             </h3>
+
+            {/* Alerta se serviço não tem evidências */}
+            {!service.completed_at && service.evidences.length === 0 && (
+              <div
+                style={{
+                  background: '#fef3c7',
+                  border: '1px solid #fbbf24',
+                  color: '#92400e',
+                  padding: '12px 16px',
+                  borderRadius: 6,
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: '14px',
+                }}
+              >
+                <span style={{ fontSize: '18px' }}>⚠️</span>
+                <span>
+                  <strong>Atenção:</strong> Este serviço precisa de pelo menos uma evidência antes
+                  da finalização
+                </span>
+              </div>
+            )}
 
             {!service.completed_at && (
               <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -708,26 +770,65 @@ function ExecutionEvidenceContent() {
             <FaSave size={16} />
             {saving ? 'Salvando...' : 'Salvar Progresso'}
           </button>
-          <button
-            onClick={handleFinalize}
-            disabled={saving}
-            style={{
-              padding: '12px 24px',
-              background: saving ? '#ccc' : '#072e4c',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '16px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <FaCheck size={16} />
-            {saving ? 'Finalizando...' : 'Finalizar Execução'}
-          </button>
+
+          {(() => {
+            const servicesWithoutEvidences = services.filter(s => s.evidences.length === 0);
+            const servicesNotCompleted = services.filter(s => !s.completed_at);
+            const canFinalize =
+              servicesWithoutEvidences.length === 0 && servicesNotCompleted.length === 0;
+
+            let tooltipMessage = '';
+            if (servicesWithoutEvidences.length > 0) {
+              tooltipMessage = `${servicesWithoutEvidences.length} serviço(s) sem evidências`;
+            } else if (servicesNotCompleted.length > 0) {
+              tooltipMessage = `${servicesNotCompleted.length} serviço(s) não concluído(s)`;
+            }
+
+            return (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button
+                  onClick={handleFinalize}
+                  disabled={saving || !canFinalize}
+                  title={!canFinalize ? tooltipMessage : 'Finalizar execução do orçamento'}
+                  style={{
+                    padding: '12px 24px',
+                    background: saving || !canFinalize ? '#ccc' : '#072e4c',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: saving || !canFinalize ? 'not-allowed' : 'pointer',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    opacity: !canFinalize ? 0.6 : 1,
+                  }}
+                >
+                  <FaCheck size={16} />
+                  {saving ? 'Finalizando...' : 'Finalizar Execução'}
+                </button>
+                {!canFinalize && !saving && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: '-30px',
+                      right: 0,
+                      background: '#ef4444',
+                      color: 'white',
+                      padding: '6px 12px',
+                      borderRadius: 6,
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    ⚠️ {tooltipMessage}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </main>
 
