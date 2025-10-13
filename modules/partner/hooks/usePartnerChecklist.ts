@@ -56,67 +56,67 @@ export interface PartnerChecklistForm {
   date: string;
   odometer: string;
   fuelLevel: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
-  // Grupos de Inspeção baseados no CHECK LIST.xlsx
-  clutch: 'ok' | 'attention' | 'critical'; // Embreagem - Conjunto
+  // Grupos de Inspeção baseados no CHECK LIST.xlsx (apenas ok/nok)
+  clutch: 'ok' | 'nok'; // Embreagem - Conjunto
   clutchNotes: string;
-  sparkPlugs: 'ok' | 'attention' | 'critical'; // Vela de Ignição
+  sparkPlugs: 'ok' | 'nok'; // Vela de Ignição
   sparkPlugsNotes: string;
-  belts: 'ok' | 'attention' | 'critical'; // Correia Dentada/Auxiliar
+  belts: 'ok' | 'nok'; // Correia Dentada/Auxiliar
   beltsNotes: string;
-  radiator: 'ok' | 'attention' | 'critical'; // Radiador (Arrefecimento) - Verificar vazamentos inferiores
+  radiator: 'ok' | 'nok'; // Radiador (Arrefecimento) - Verificar vazamentos inferiores
   radiatorNotes: string;
-  frontShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Dianteiro
+  frontShocks: 'ok' | 'nok'; // Amortecedor Dianteiro
   frontShocksNotes: string;
-  rearShocks: 'ok' | 'attention' | 'critical'; // Amortecedor Traseiro
+  rearShocks: 'ok' | 'nok'; // Amortecedor Traseiro
   rearShocksNotes: string;
-  suspension: 'ok' | 'attention' | 'critical'; // Suspensão
+  suspension: 'ok' | 'nok'; // Suspensão
   suspensionNotes: string;
-  tires: 'ok' | 'attention' | 'critical'; // Pneus
+  tires: 'ok' | 'nok'; // Pneus
   tiresNotes: string;
-  brakePads: 'ok' | 'attention' | 'critical'; // Pastilha de Freio
+  brakePads: 'ok' | 'nok'; // Pastilha de Freio
   brakePadsNotes: string;
-  brakeDiscs: 'ok' | 'attention' | 'critical'; // Disco de Freio
+  brakeDiscs: 'ok' | 'nok'; // Disco de Freio
   brakeDiscsNotes: string;
-  engine: 'ok' | 'attention' | 'critical'; // Motor
+  engine: 'ok' | 'nok'; // Motor
   engineNotes: string;
-  steeringBox: 'ok' | 'attention' | 'critical'; // Caixa de Direção
+  steeringBox: 'ok' | 'nok'; // Caixa de Direção
   steeringBoxNotes: string;
-  electricSteeringBox: 'ok' | 'attention' | 'critical'; // Caixa Direção Elétrica - Verificar folga
+  electricSteeringBox: 'ok' | 'nok'; // Caixa Direção Elétrica - Verificar folga
   electricSteeringBoxNotes: string;
-  exhaust: 'ok' | 'attention' | 'critical'; // Sistema de Escape - Checar vazamento/sinistros/alinhamento
+  exhaust: 'ok' | 'nok'; // Sistema de Escape - Checar vazamento/sinistros/alinhamento
   exhaustNotes: string;
-  fluids: 'ok' | 'attention' | 'critical'; // Fluidos - Checar níveis
+  fluids: 'ok' | 'nok'; // Fluidos - Checar níveis
   fluidsNotes: string;
-  airConditioning: 'ok' | 'attention' | 'critical'; // Ar Condicionado - Checar se está congelando
+  airConditioning: 'ok' | 'nok'; // Ar Condicionado - Checar se está congelando
   airConditioningNotes: string;
-  airConditioningCompressor: 'ok' | 'attention' | 'critical'; // Compressor Ar Condicionado - Checar se está atracando
+  airConditioningCompressor: 'ok' | 'nok'; // Compressor Ar Condicionado - Checar se está atracando
   airConditioningCompressorNotes: string;
-  airConditioningCleaning: 'ok' | 'attention' | 'critical'; // Limpeza Ar Condicionado - Checar fluxo de ar (filtro de cabine)
+  airConditioningCleaning: 'ok' | 'nok'; // Limpeza Ar Condicionado - Checar fluxo de ar (filtro de cabine)
   airConditioningCleaningNotes: string;
   // Itens individuais do Acionamento Elétrico
-  electricalActuationGlass: 'ok' | 'attention' | 'critical'; // VIDRO
+  electricalActuationGlass: 'ok' | 'nok'; // VIDRO
   electricalActuationGlassNotes: string;
-  electricalActuationMirror: 'ok' | 'attention' | 'critical'; // RETROVISOR
+  electricalActuationMirror: 'ok' | 'nok'; // RETROVISOR
   electricalActuationMirrorNotes: string;
-  electricalActuationSocket: 'ok' | 'attention' | 'critical'; // TOMADA 12V
+  electricalActuationSocket: 'ok' | 'nok'; // TOMADA 12V
   electricalActuationSocketNotes: string;
-  electricalActuationLock: 'ok' | 'attention' | 'critical'; // TRAVA
+  electricalActuationLock: 'ok' | 'nok'; // TRAVA
   electricalActuationLockNotes: string;
-  electricalActuationTrunk: 'ok' | 'attention' | 'critical'; // PORTA MALA
+  electricalActuationTrunk: 'ok' | 'nok'; // PORTA MALA
   electricalActuationTrunkNotes: string;
-  electricalActuationWiper: 'ok' | 'attention' | 'critical'; // LIMPADOR
+  electricalActuationWiper: 'ok' | 'nok'; // LIMPADOR
   electricalActuationWiperNotes: string;
-  electricalActuationKey: 'ok' | 'attention' | 'critical'; // CHAVE
+  electricalActuationKey: 'ok' | 'nok'; // CHAVE
   electricalActuationKeyNotes: string;
-  electricalActuationAlarm: 'ok' | 'attention' | 'critical'; // ALARME
+  electricalActuationAlarm: 'ok' | 'nok'; // ALARME
   electricalActuationAlarmNotes: string;
-  electricalActuationInteriorLight: 'ok' | 'attention' | 'critical'; // LUZ INTERNA
+  electricalActuationInteriorLight: 'ok' | 'nok'; // LUZ INTERNA
   electricalActuationInteriorLightNotes: string;
-  dashboardPanel: 'ok' | 'attention' | 'critical'; // Painel de Instrumentos - Checar luzes do painel
+  dashboardPanel: 'ok' | 'nok'; // Painel de Instrumentos - Checar luzes do painel
   dashboardPanelNotes: string;
-  lights: 'ok' | 'attention' | 'critical'; // Lâmpadas - Checar funcionamento
+  lights: 'ok' | 'nok'; // Lâmpadas - Checar funcionamento
   lightsNotes: string;
-  battery: 'ok' | 'attention' | 'critical'; // Bateria
+  battery: 'ok' | 'nok'; // Bateria
   batteryNotes: string;
   observations: string;
 }

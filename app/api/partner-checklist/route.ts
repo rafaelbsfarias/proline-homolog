@@ -58,8 +58,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
     const supabase = await createClient();
 
-    // 1. Buscar qual parceiro trabalhou no veículo (via quotes aprovados)
-    const { data: quote, error: quoteError } = await supabase
+    // 1. Tentar buscar parceiro via quotes aprovados (cenário ideal)
+    const { data: quote } = await supabase
       .from('quotes')
       .select(
         `
@@ -76,26 +76,42 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (quoteError || !quote || !quote.partners) {
-      logger.warn('partner_not_found', { vehicleId: vehicleId.slice(0, 8) });
-      return NextResponse.json(
-        { error: 'Nenhum parceiro encontrado para este veículo' },
-        { status: 404 }
-      );
+    if (quote && quote.partners) {
+      // partners é um array, pegar o primeiro
+      const partnerData = Array.isArray(quote.partners) ? quote.partners[0] : quote.partners;
+      const partner: Partner = partnerData as Partner;
+
+      // 2. Detectar tipo e buscar dados apropriados
+      if (partner.partner_type === 'mechanic') {
+        return getMechanicsChecklist(supabase, vehicleId, partner);
+      } else {
+        return getAnomaliesChecklist(supabase, vehicleId, partner);
+      }
     }
 
-    // partners é um array, pegar o primeiro
-    const partnerData = Array.isArray(quote.partners) ? quote.partners[0] : quote.partners;
-    const partner: Partner = partnerData as Partner;
+    // 2. Se não encontrou via quotes, buscar diretamente nos checklists/anomalias (dados legados)
+    logger.info('trying_legacy_lookup', { vehicleId: vehicleId.slice(0, 8) });
 
-    // 2. Detectar tipo e buscar dados apropriados
-    if (partner.partner_type === 'mechanic') {
-      return getMechanicsChecklist(supabase, vehicleId, partner);
-    } else {
-      return getAnomaliesChecklist(supabase, vehicleId, partner);
+    // Tentar buscar checklist de mecânica
+    const mechanicsResult = await getMechanicsChecklistDirect(supabase, vehicleId);
+    if (mechanicsResult) {
+      return mechanicsResult;
     }
+
+    // Tentar buscar anomalias
+    const anomaliesResult = await getAnomaliesChecklistDirect(supabase, vehicleId);
+    if (anomaliesResult) {
+      return anomaliesResult;
+    }
+
+    // Nenhum dado encontrado
+    logger.warn('no_partner_data_found', { vehicleId: vehicleId.slice(0, 8) });
+    return NextResponse.json(
+      { error: 'Nenhum parceiro encontrado para este veículo' },
+      { status: 404 }
+    );
   } catch (error) {
     logger.error('error_fetching_partner_checklist', { error });
     return NextResponse.json({ error: 'Erro ao buscar checklist do parceiro' }, { status: 500 });
@@ -345,4 +361,206 @@ function groupItemsByCategory(items: ItemWithEvidences[]): Record<string, ItemWi
   });
 
   return grouped;
+}
+
+/**
+ * Busca checklist de mecânica diretamente (sem quote - dados legados com inspection_id)
+ */
+async function getMechanicsChecklistDirect(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  vehicleId: string
+): Promise<NextResponse | null> {
+  try {
+    // Buscar checklist principal
+    const { data: checklist, error: checklistError } = await supabase
+      .from('mechanics_checklist')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (checklistError || !checklist) {
+      return null;
+    }
+
+    // Buscar itens do checklist (por inspection_id ou quote_id)
+    let itemsQuery = supabase
+      .from('mechanics_checklist_items')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (checklist.quote_id) {
+      itemsQuery = itemsQuery.eq('quote_id', checklist.quote_id);
+    } else if (checklist.inspection_id) {
+      itemsQuery = itemsQuery.eq('inspection_id', checklist.inspection_id);
+    } else {
+      return null; // Sem identificador válido
+    }
+
+    const { data: items, error: itemsError } = await itemsQuery;
+
+    if (itemsError) {
+      logger.error('error_fetching_items_direct', { error: itemsError });
+      return null;
+    }
+
+    // Buscar evidências
+    let evidencesQuery = supabase.from('mechanics_checklist_evidences').select('*');
+
+    if (checklist.quote_id) {
+      evidencesQuery = evidencesQuery.eq('quote_id', checklist.quote_id);
+    } else if (checklist.inspection_id) {
+      evidencesQuery = evidencesQuery.eq('inspection_id', checklist.inspection_id);
+    }
+
+    const { data: evidences, error: evidencesError } = await evidencesQuery;
+
+    if (evidencesError) {
+      logger.error('error_fetching_evidences_direct', { error: evidencesError });
+      return null;
+    }
+
+    // Gerar signed URLs para as evidências
+    const evidencesWithUrls = await Promise.all(
+      ((evidences as EvidenceRow[]) || []).map(async evidence => {
+        try {
+          const { data: urlData } = await supabase.storage
+            .from('vehicle-media')
+            .createSignedUrl(evidence.storage_path, 3600);
+
+          return {
+            id: evidence.id,
+            checklist_item_id: evidence.checklist_item_id || '',
+            media_url: urlData?.signedUrl || '',
+            description: evidence.description || '',
+          };
+        } catch {
+          logger.warn('error_generating_signed_url', { evidenceId: evidence.id });
+          return {
+            id: evidence.id,
+            checklist_item_id: evidence.checklist_item_id || '',
+            media_url: '',
+            description: evidence.description || '',
+          };
+        }
+      })
+    );
+
+    // Agrupar itens com suas evidências
+    const itemsWithEvidences: ItemWithEvidences[] = ((items as ChecklistItemRow[]) || []).map(
+      item => ({
+        id: item.id,
+        item_key: item.item_key,
+        item_status: item.item_status,
+        item_notes: item.item_notes,
+        evidences: evidencesWithUrls.filter(ev => ev.checklist_item_id === item.id),
+      })
+    );
+
+    // Agrupar por categoria
+    const itemsByCategory = groupItemsByCategory(itemsWithEvidences);
+
+    logger.info('mechanics_checklist_found_direct', {
+      vehicleId: vehicleId.slice(0, 8),
+      itemsCount: itemsWithEvidences.length,
+    });
+
+    return NextResponse.json({
+      type: 'mechanics',
+      checklist: {
+        id: checklist.id,
+        vehicle_id: checklist.vehicle_id,
+        partner: {
+          id: 'unknown',
+          name: 'Mecânica',
+          type: 'mechanic',
+        },
+        status: checklist.status,
+        notes: checklist.notes,
+        created_at: checklist.created_at,
+      },
+      itemsByCategory,
+      stats: {
+        totalItems: itemsWithEvidences.length,
+      },
+    });
+  } catch (error) {
+    logger.error('error_in_get_mechanics_checklist_direct', { error });
+    return null;
+  }
+}
+
+/**
+ * Busca anomalias diretamente (sem quote - dados legados)
+ */
+async function getAnomaliesChecklistDirect(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  vehicleId: string
+): Promise<NextResponse | null> {
+  try {
+    // Buscar anomalias do veículo
+    const { data: anomalies, error: anomaliesError } = await supabase
+      .from('vehicle_anomalies')
+      .select('*')
+      .eq('vehicle_id', vehicleId)
+      .order('created_at', { ascending: false });
+
+    if (anomaliesError || !anomalies || anomalies.length === 0) {
+      return null;
+    }
+
+    // Gerar signed URLs para as fotos
+    const anomaliesWithUrls = await Promise.all(
+      ((anomalies as AnomalyRow[]) || []).map(async anomaly => {
+        const photosWithUrls = await Promise.all(
+          (anomaly.photos || []).map(async (photoPath: string) => {
+            try {
+              const { data: urlData } = await supabase.storage
+                .from('vehicle-media')
+                .createSignedUrl(photoPath, 3600);
+
+              return urlData?.signedUrl || '';
+            } catch {
+              logger.warn('error_generating_signed_url_for_photo', { photoPath });
+              return '';
+            }
+          })
+        );
+
+        return {
+          id: anomaly.id,
+          description: anomaly.description,
+          photos: photosWithUrls.filter(url => url !== ''),
+          severity: anomaly.severity || 'medium',
+          status: anomaly.status || 'pending',
+          created_at: anomaly.created_at,
+        };
+      })
+    );
+
+    logger.info('anomalies_found_direct', {
+      vehicleId: vehicleId.slice(0, 8),
+      count: anomaliesWithUrls.length,
+    });
+
+    return NextResponse.json({
+      type: 'anomalies',
+      checklist: {
+        vehicle_id: vehicleId,
+        partner: {
+          id: 'unknown',
+          name: 'Parceiro',
+          type: 'other',
+        },
+      },
+      anomalies: anomaliesWithUrls,
+      stats: {
+        totalAnomalies: anomaliesWithUrls.length,
+      },
+    });
+  } catch (error) {
+    logger.error('error_in_get_anomalies_checklist_direct', { error });
+    return null;
+  }
 }

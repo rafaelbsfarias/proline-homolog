@@ -18,9 +18,9 @@ export const CHECKLIST_STATUS = {
 } as const;
 
 /**
- * Status legados aceitos (compatibilidade)
+ * Status legados aceitos (compatibilidade com dados antigos)
  *
- * Mapeamento de valores antigos para o sistema binário atual
+ * Mapeamento de valores antigos para o sistema binário atual (ok/nok)
  */
 export const LEGACY_STATUS_MAP: Record<
   string,
@@ -29,18 +29,11 @@ export const LEGACY_STATUS_MAP: Record<
   ok: CHECKLIST_STATUS.OK,
   good: CHECKLIST_STATUS.OK,
   nok: CHECKLIST_STATUS.NOK,
-  attention: CHECKLIST_STATUS.NOK,
   poor: CHECKLIST_STATUS.NOK,
   regular: CHECKLIST_STATUS.NOK,
+  // Status legados que eram usados antes (não mais utilizados):
+  attention: CHECKLIST_STATUS.NOK,
   critical: CHECKLIST_STATUS.NOK,
-} as const;
-
-/**
- * Status de apresentação para UI (frontend)
- */
-export const UI_STATUS = {
-  OK: 'ok',
-  ATTENTION: 'attention',
 } as const;
 
 /**
@@ -54,5 +47,4 @@ export const WORKFLOW_STATUS = {
 } as const;
 
 export type ChecklistStatus = (typeof CHECKLIST_STATUS)[keyof typeof CHECKLIST_STATUS];
-export type UIStatus = (typeof UI_STATUS)[keyof typeof UI_STATUS];
 export type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS];

@@ -6,10 +6,15 @@ import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:load');
 
-// Schema de validação
-const LoadChecklistSchema = z.object({
-  inspectionId: z.string().uuid('inspectionId deve ser um UUID válido'),
-});
+// Schema de validação - aceita inspection_id (legacy) OU quote_id (novo)
+const LoadChecklistSchema = z
+  .object({
+    inspectionId: z.string().uuid('inspectionId deve ser um UUID válido').optional(),
+    quoteId: z.string().uuid('quoteId deve ser um UUID válido').optional(),
+  })
+  .refine(data => data.inspectionId || data.quoteId, {
+    message: 'inspectionId ou quoteId deve ser fornecido',
+  });
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,17 +37,18 @@ async function loadChecklistHandler(req: AuthenticatedRequest) {
       );
     }
 
-    const { inspectionId } = validation.data;
+    const { inspectionId, quoteId } = validation.data;
     const checklistService = ChecklistService.getInstance();
 
     // Carrega checklist com evidências e itens formatados
-    const result = await checklistService.loadChecklistWithDetails(inspectionId);
+    // Passa ambos IDs, service decidirá qual usar
+    const result = await checklistService.loadChecklistWithDetails(inspectionId, quoteId);
 
     if (!result.success) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
     }
 
-    logger.info('load_ok', { inspection_id: inspectionId });
+    logger.info('load_ok', { inspection_id: inspectionId, quote_id: quoteId });
     return NextResponse.json({ ok: true, data: result.data });
   } catch (e) {
     const error = e as Error;

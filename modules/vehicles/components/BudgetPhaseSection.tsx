@@ -38,6 +38,24 @@ const BudgetPhaseSection: React.FC<Props> = ({
     [events]
   );
 
+  const approvedTitle = useMemo(() => {
+    if (!budgetApproved) return null;
+    const raw = budgetApproved.title?.trim() || '';
+    // Se já vier com categoria no título, usar como está
+    if (/^Orçamento Aprovado\s*-\s*/i.test(raw)) return raw;
+
+    // Caso contrário, tentar inferir da única fase iniciada
+    if (budgetStartedEvents.length === 1) {
+      const started = budgetStartedEvents[0]?.title || '';
+      const m = started.match(/Fase Orçamentária Iniciada\s*-\s*(.+)$/i);
+      const category = m?.[1]?.trim();
+      if (category) return `Orçamento Aprovado - ${category}`;
+    }
+
+    // Fallback
+    return 'Orçamento Aprovado';
+  }, [budgetApproved, budgetStartedEvents]);
+
   // Exibe a timeline completa (legada) nesta nova seção
   // Se o evento de orçamentação não existir ainda, mostra os demais itens mesmo assim
 
@@ -102,7 +120,7 @@ const BudgetPhaseSection: React.FC<Props> = ({
         {budgetApproved && (
           <Item
             color={TIMELINE_COLORS.GREEN}
-            title="Orçamento Aprovado"
+            title={approvedTitle || 'Orçamento Aprovado'}
             date={formatDateBR(budgetApproved.date)}
           />
         )}

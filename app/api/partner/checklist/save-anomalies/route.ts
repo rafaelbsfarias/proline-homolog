@@ -8,11 +8,17 @@ import { z } from 'zod';
 const logger = getLogger('api:partner:checklist:save-anomalies');
 
 // Validação do FormData
-const SaveAnomaliesSchema = z.object({
-  inspection_id: z.string().uuid('ID da inspeção inválido'),
-  vehicle_id: z.string().uuid('ID do veículo inválido'),
-  anomalies: z.string().min(1, 'anomalies é obrigatório'),
-});
+const SaveAnomaliesSchema = z
+  .object({
+    inspection_id: z.string().uuid('ID da inspeção inválido').optional(), // Agora opcional (legacy)
+    quote_id: z.string().uuid('ID do quote inválido').optional(), // Novo campo
+    vehicle_id: z.string().uuid('ID do veículo inválido'),
+    anomalies: z.string().min(1, 'anomalies é obrigatório'),
+  })
+  .refine(data => data.inspection_id || data.quote_id, {
+    message: 'É necessário fornecer inspection_id (legacy) ou quote_id',
+    path: ['inspection_id', 'quote_id'],
+  });
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,13 +27,15 @@ export const revalidate = 0;
 async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResponse> {
   try {
     const formData = await req.formData();
-    const inspection_id = formData.get('inspection_id') as string;
+    const inspection_id = formData.get('inspection_id') as string | null;
+    const quote_id = formData.get('quote_id') as string | null;
     const vehicle_id = formData.get('vehicle_id') as string;
     const anomaliesJson = formData.get('anomalies') as string;
 
     // Validar entrada
     const validation = SaveAnomaliesSchema.safeParse({
       inspection_id,
+      quote_id,
       vehicle_id,
       anomalies: anomaliesJson,
     });
@@ -63,6 +71,7 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
 
     logger.info('save_anomalies_start', {
       inspection_id,
+      quote_id,
       vehicle_id,
       anomalies_count: anomalies.length,
     });
@@ -198,10 +207,12 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
       });
 
       processedAnomalies.push({
-        inspection_id,
         vehicle_id,
         description,
         photos: allPhotoPaths,
+        // Adicionar quote_id (novo) ou inspection_id (legacy)
+        ...(quote_id ? { quote_id } : {}),
+        ...(inspection_id ? { inspection_id } : {}),
       });
     }
 
@@ -210,17 +221,23 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
       total_received: anomalies.length,
     });
 
-    // Remover anomalias existentes para este inspection_id e vehicle_id
-    const { error: deleteError } = await supabase
-      .from('vehicle_anomalies')
-      .delete()
-      .eq('inspection_id', inspection_id)
-      .eq('vehicle_id', vehicle_id);
+    // Remover anomalias existentes para este vehicle_id e quote_id ou inspection_id
+    let deleteQuery = supabase.from('vehicle_anomalies').delete().eq('vehicle_id', vehicle_id);
+
+    // Usar quote_id se disponível (novo), senão inspection_id (legacy)
+    if (quote_id) {
+      deleteQuery = deleteQuery.eq('quote_id', quote_id);
+    } else if (inspection_id) {
+      deleteQuery = deleteQuery.eq('inspection_id', inspection_id);
+    }
+
+    const { error: deleteError } = await deleteQuery;
 
     if (deleteError) {
       logger.error('delete_existing_anomalies_error', {
         error: deleteError.message,
         inspection_id,
+        quote_id,
         vehicle_id,
       });
       return NextResponse.json(
@@ -251,6 +268,7 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
       logger.info('anomalies_saved_successfully', {
         count: processedAnomalies.length,
         inspection_id,
+        quote_id,
         vehicle_id,
       });
 

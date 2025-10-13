@@ -5,7 +5,7 @@ import ImageCaptureInput from '@/modules/common/components/ImageCaptureInput';
 import { EVIDENCE_KEYS, EvidenceKey } from '../../hooks/usePartnerChecklist';
 import Lightbox from '@/modules/common/components/Lightbox/Lightbox';
 
-type InspectionStatus = 'ok' | 'attention' | 'critical';
+type InspectionStatus = 'ok' | 'nok';
 
 interface InspectionItem {
   key: keyof Pick<
@@ -471,9 +471,7 @@ const PartnerChecklistGroups: React.FC<Props> = ({
     switch (status) {
       case 'ok':
         return 'OK';
-      case 'attention':
-        return 'NOK';
-      case 'critical':
+      case 'nok':
         return 'NOK';
       default:
         return '';
@@ -553,16 +551,14 @@ const PartnerChecklistGroups: React.FC<Props> = ({
                         <span className={styles.radioText}>OK</span>
                       </label>
                       <label
-                        className={`${styles.radioLabel} ${values[item.key] === 'attention' || values[item.key] === 'critical' ? styles.radioLabelNok : ''}`}
+                        className={`${styles.radioLabel} ${values[item.key] === 'nok' ? styles.radioLabelNok : ''}`}
                       >
                         <input
                           type="radio"
                           name={`${item.key}_nok`}
                           value="nok"
-                          checked={
-                            values[item.key] === 'attention' || values[item.key] === 'critical'
-                          }
-                          onChange={() => onChange(item.key, 'attention')}
+                          checked={values[item.key] === 'nok'}
+                          onChange={() => onChange(item.key, 'nok')}
                           className={styles.radioInput}
                         />
                         <span className={styles.radioText}>NOK</span>

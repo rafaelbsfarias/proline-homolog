@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { getLogger } from '@/modules/logger';
-import { supabase } from '@/modules/common/services/supabaseClient';
 
 interface VehicleDetailsData {
   id: string;
@@ -41,24 +40,9 @@ interface InspectionData {
   }>;
 }
 
-interface VehicleHistoryEntry {
-  id: string;
-  vehicle_id: string;
-  status: string;
-  prevision_date: string | null;
-  end_date: string | null;
-  created_at: string;
-}
-
 interface InspectionResponse {
   success: boolean;
   inspection?: InspectionData;
-  error?: string;
-}
-
-interface VehicleHistoryResponse {
-  success: boolean;
-  history?: VehicleHistoryEntry[];
   error?: string;
 }
 
@@ -71,7 +55,6 @@ export const useVehicleDetails = (
 
   const [vehicle, setVehicle] = useState<VehicleDetailsData | null>(null);
   const [inspection, setInspection] = useState<InspectionData | null>(null);
-  const [vehicleHistory, setVehicleHistory] = useState<VehicleHistoryEntry[]>([]);
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -156,33 +139,6 @@ export const useVehicleDetails = (
             fetchMediaUrls(inspectionData.media);
           }
         }
-        // Buscar histórico do veículo (não falhar se der erro)
-        try {
-          const historyResp = await get<VehicleHistoryResponse>(
-            `/api/${role}/vehicle-history?vehicleId=${vehicleId}`
-          );
-
-          logger.info('Vehicle History Response', {
-            ok: historyResp.ok,
-            status: historyResp.status,
-            success: historyResp.data?.success,
-            historyCount: historyResp.data?.history?.length,
-          });
-
-          if (historyResp.ok && historyResp.data?.success && historyResp.data.history) {
-            logger.info('Setting vehicle history', { count: historyResp.data.history.length });
-            setVehicleHistory(historyResp.data.history);
-          } else {
-            logger.warn('History response not ok or no data', {
-              ok: historyResp.ok,
-              success: historyResp.data?.success,
-              hasHistory: !!historyResp.data?.history,
-            });
-          }
-        } catch (historyError) {
-          // Log mas não falhar a request principal
-          logger.error('Failed to fetch vehicle history', { error: historyError });
-        }
       } catch (err) {
         logger.error('Error fetching vehicle details:', err);
         setError(err instanceof Error ? err.message : 'Erro ao carregar dados do veículo');
@@ -196,49 +152,5 @@ export const useVehicleDetails = (
     }
   }, [vehicleId, get, role]);
 
-  // Realtime: atualizar timeline quando houver INSERT em vehicle_history para este veículo
-  useEffect(() => {
-    if (!vehicleId) return;
-
-    const channel = supabase
-      .channel(`vehicle_history:${vehicleId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'vehicle_history',
-          filter: `vehicle_id=eq.${vehicleId}`,
-        },
-        payload => {
-          try {
-            const newEntry = payload.new as unknown as VehicleHistoryEntry;
-            if (!newEntry?.id) return;
-            setVehicleHistory(prev => {
-              // evitar duplicação
-              if (prev.some(h => h.id === newEntry.id)) return prev;
-              const next = [...prev, newEntry];
-              // ordenar por created_at asc
-              next.sort(
-                (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              );
-              return next;
-            });
-          } catch (err) {
-            logger.warn('realtime_payload_parse_error', { err });
-          }
-        }
-      )
-      .subscribe(status => {
-        logger.info('realtime_sub_status', { channel: 'vehicle_history', status });
-      });
-
-    return () => {
-      try {
-        supabase.removeChannel(channel);
-      } catch {}
-    };
-  }, [vehicleId]);
-
-  return { vehicle, inspection, vehicleHistory, mediaUrls, loading, error };
+  return { vehicle, inspection, mediaUrls, loading, error };
 };

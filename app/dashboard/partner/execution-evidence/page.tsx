@@ -6,6 +6,8 @@ import Header from '@/modules/admin/components/Header';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { FaCamera, FaTrash, FaCheck, FaSave } from 'react-icons/fa';
+import { getLogger } from '@/modules/logger';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 type QuoteItem = {
   id: string;
@@ -31,6 +33,8 @@ function ExecutionEvidenceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const quoteId = searchParams.get('quoteId');
+  const logger = getLogger('partner:execution-evidence');
+  const { get } = useAuthenticatedFetch();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +58,7 @@ function ExecutionEvidenceContent() {
 
   useEffect(() => {
     if (!quoteId) {
+      logger.warn('missing_quote_id');
       showToast('ID do orçamento não fornecido', 'error');
       router.push('/dashboard');
       return;
@@ -66,51 +71,71 @@ function ExecutionEvidenceContent() {
     try {
       setLoading(true);
 
-      // Buscar informações do veículo
-      const { data: quoteData } = await supabase
-        .from('quotes')
-        .select(
-          `
-          service_orders (
-            vehicles (
-              license_plate,
-              brand,
-              model
-            )
-          )
-        `
-        )
-        .eq('id', quoteId)
-        .single();
-
-      if (quoteData?.service_orders) {
-        const serviceOrder = quoteData.service_orders as {
-          vehicles: { license_plate: string; brand: string; model: string };
-        };
-        const vehicle = serviceOrder.vehicles;
-        setVehicleInfo({
-          plate: vehicle?.license_plate || '',
-          brand: vehicle?.brand || '',
-          model: vehicle?.model || '',
+      // Buscar dados consolidados usando API interna (usa Admin client e valida aprovação)
+      logger.info('load_service_order_start', { quoteId });
+      const resp = await get<{ ok: boolean; serviceOrder?: unknown; error?: string }>(
+        `/api/partner/service-order/${quoteId}`,
+        { requireAuth: true }
+      );
+      if (!resp.ok) {
+        logger.error('load_service_order_failed', {
+          status: resp.status,
+          error: resp.error,
+          quoteId,
         });
+        showToast(resp.error || 'Falha ao carregar ordem de serviço', 'error');
+        setServices([]);
+        return;
+      }
+      const json = resp.data || {};
+      logger.debug('load_service_order_response', { keys: Object.keys((json as any) || {}) });
+      const serviceOrder = (json as any)?.serviceOrder as
+        | {
+            vehicle: { plate: string; brand: string; model: string };
+            items: { id: string; description: string; quantity: number }[];
+          }
+        | undefined;
+
+      if (!serviceOrder) {
+        logger.info('no_items_in_service_order');
+        setServices([]);
+        showToast('Nenhum serviço encontrado neste orçamento', 'info');
+        return;
       }
 
-      // Buscar itens do orçamento
-      const { data: items, error: itemsError } = await supabase
-        .from('quote_items')
-        .select('*')
-        .eq('quote_id', quoteId)
-        .order('created_at', { ascending: true });
+      // Veículo
+      setVehicleInfo({
+        plate: serviceOrder.vehicle?.plate || '',
+        brand: serviceOrder.vehicle?.brand || '',
+        model: serviceOrder.vehicle?.model || '',
+      });
 
-      if (itemsError) throw itemsError;
+      // Itens do orçamento
+      const items = serviceOrder.items || [];
+      logger.info('items_loaded', { count: items.length });
 
       // Buscar evidências existentes
-      const { data: existingEvidences, error: evidencesError } = await supabase
-        .from('execution_evidences')
-        .select('*')
-        .in('quote_item_id', items?.map(i => i.id) || []);
-
-      if (evidencesError) throw evidencesError;
+      let existingEvidences: Evidence[] | null = null;
+      if (items && items.length > 0) {
+        const { data: evs, error: evidencesError } = await supabase
+          .from('execution_evidences')
+          .select('*')
+          .in(
+            'quote_item_id',
+            items.map((i: { id: string }) => i.id)
+          );
+        if (evidencesError) {
+          logger.warn('existing_evidences_fetch_error', {
+            message: (evidencesError as any)?.message,
+          });
+          existingEvidences = [];
+        } else {
+          existingEvidences = evs as unknown as Evidence[];
+          logger.info('existing_evidences_loaded', { count: existingEvidences?.length || 0 });
+        }
+      } else {
+        existingEvidences = [];
+      }
 
       // Mapear evidências por item
       const evidencesByItem = new Map<string, Evidence[]>();
@@ -128,23 +153,24 @@ function ExecutionEvidenceContent() {
       });
 
       // Combinar dados
-      const servicesWithEvidences: ServiceWithEvidences[] =
-        items?.map(item => ({
-          id: item.id,
-          description: item.description || '',
-          quantity: item.quantity || 0,
-          unit_price: item.unit_price || 0,
-          total_price: item.total_price || 0,
-          evidences: evidencesByItem.get(item.id) || [],
-        })) || [];
+      const servicesWithEvidences: ServiceWithEvidences[] = (items || []).map((item: any) => ({
+        id: item.id,
+        description: item.description || '',
+        quantity: item.quantity || 0,
+        unit_price: Number(item.unit_price ?? 0),
+        total_price: Number(item.total_price ?? 0),
+        evidences: evidencesByItem.get(item.id) || [],
+      }));
 
       setServices(servicesWithEvidences);
+      logger.info('services_ready', { count: servicesWithEvidences.length });
 
       // Log para debug
       if (servicesWithEvidences.length === 0) {
         showToast('Nenhum serviço encontrado neste orçamento', 'info');
       }
-    } catch {
+    } catch (e) {
+      logger.error('load_quote_data_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao carregar dados do orçamento', 'error');
     } finally {
       setLoading(false);
@@ -153,10 +179,12 @@ function ExecutionEvidenceContent() {
 
   const handleImageUpload = async (serviceId: string, file: File) => {
     try {
+      logger.info('upload_image_start', { serviceId, size: file.size, type: file.type });
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
+        logger.warn('upload_image_no_user');
         showToast('Usuário não autenticado', 'error');
         return;
       }
@@ -195,7 +223,9 @@ function ExecutionEvidenceContent() {
       );
 
       showToast('Imagem carregada com sucesso', 'success');
-    } catch {
+      logger.info('upload_image_success', { serviceId });
+    } catch (e) {
+      logger.error('upload_image_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao fazer upload da imagem', 'error');
     }
   };
@@ -235,39 +265,45 @@ function ExecutionEvidenceContent() {
   const handleSave = async () => {
     try {
       setSaving(true);
+      logger.info('save_evidences_start');
 
-      // Coletar todas as evidências
+      // Coletar todas as evidências (estado atual substitui completamente no banco)
       const allEvidences = services.flatMap(service =>
         service.evidences.map(ev => ({
           quote_item_id: service.id,
           image_url: ev.image_url,
           description: ev.description || null,
-          quote_id: quoteId,
         }))
       );
+      logger.info('save_evidences_prepared', { count: allEvidences.length });
 
-      // Deletar evidências antigas
-      const { error: deleteError } = await supabase
+      // Deletar evidências antigas somente dos itens deste orçamento
+      const itemIds = services.map(s => s.id);
+      const { error: delErr } = await supabase
         .from('execution_evidences')
         .delete()
-        .in(
-          'quote_item_id',
-          services.map(s => s.id)
-        );
-
-      if (deleteError) throw deleteError;
+        .in('quote_item_id', itemIds);
+      if (delErr) {
+        logger.error('delete_old_evidences_error', { error: delErr.message });
+        showToast('Erro ao limpar evidências antigas', 'error');
+        return;
+      }
+      logger.info('delete_old_evidences_success', { count: itemIds.length });
 
       // Inserir novas evidências
       if (allEvidences.length > 0) {
-        const { error: insertError } = await supabase
-          .from('execution_evidences')
-          .insert(allEvidences);
-
-        if (insertError) throw insertError;
+        const { error: insErr } = await supabase.from('execution_evidences').insert(allEvidences);
+        if (insErr) {
+          logger.error('insert_evidences_error', { error: insErr.message });
+          showToast('Erro ao salvar evidências', 'error');
+          return;
+        }
       }
 
       showToast('Evidências salvas com sucesso', 'success');
-    } catch {
+      logger.info('save_evidences_success');
+    } catch (e) {
+      logger.error('save_evidences_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao salvar evidências', 'error');
     } finally {
       setSaving(false);
@@ -277,6 +313,7 @@ function ExecutionEvidenceContent() {
   const handleFinalize = async () => {
     try {
       setSaving(true);
+      logger.info('finalize_execution_start');
 
       // Salvar primeiro
       await handleSave();
@@ -291,8 +328,12 @@ function ExecutionEvidenceContent() {
       if (error) throw error;
 
       showToast('Checklist de execução finalizado com sucesso!', 'success');
+      logger.info('finalize_execution_success');
       setTimeout(() => router.push('/dashboard'), 2000);
-    } catch {
+    } catch (e) {
+      logger.error('finalize_execution_error', {
+        error: e instanceof Error ? e.message : String(e),
+      });
       showToast('Erro ao finalizar checklist', 'error');
     } finally {
       setSaving(false);

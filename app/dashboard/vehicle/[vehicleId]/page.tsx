@@ -7,7 +7,6 @@ import { useAuth } from '@/modules/common/services/AuthProvider';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleDetails from '@/modules/vehicles/components/VehicleDetails';
 import { useVehicleDetails } from '@/modules/vehicles/hooks/useVehicleDetails';
-import BudgetPhaseSection from '@/modules/vehicles/components/BudgetPhaseSection';
 
 const UnifiedVehicleDetailsPage = () => {
   const params = useParams();
@@ -24,10 +23,7 @@ const UnifiedVehicleDetailsPage = () => {
           ? 'partner'
           : 'specialist';
 
-  const { vehicle, inspection, vehicleHistory, mediaUrls, loading, error } = useVehicleDetails(
-    role,
-    vehicleId
-  );
+  const { vehicle, inspection, mediaUrls, loading, error } = useVehicleDetails(role, vehicleId);
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
@@ -41,7 +37,6 @@ const UnifiedVehicleDetailsPage = () => {
             <VehicleDetails
               vehicle={vehicle}
               inspection={inspection}
-              vehicleHistory={vehicleHistory}
               mediaUrls={mediaUrls}
               loading={loading}
               error={error}

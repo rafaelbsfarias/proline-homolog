@@ -3,7 +3,6 @@ import { TABLES, BUCKETS } from '@/modules/common/constants/database';
 import {
   CHECKLIST_STATUS,
   LEGACY_STATUS_MAP,
-  UI_STATUS,
   WORKFLOW_STATUS,
 } from '@/modules/partner/constants/checklist';
 import { getLogger } from '@/modules/logger';
@@ -390,17 +389,32 @@ export class ChecklistService {
 
   /**
    * Carrega checklist completo com evidências e itens formatados para UI
+   * Suporta inspection_id (legacy) ou quote_id (novo)
    *
-   * @param inspection_id - ID da inspeção
+   * @param inspection_id - ID da inspeção (opcional, para backward compatibility)
+   * @param quote_id - ID do orçamento (opcional, novo padrão)
    */
-  public async loadChecklistWithDetails(inspection_id: string) {
+  public async loadChecklistWithDetails(inspection_id?: string | null, quote_id?: string | null) {
     try {
-      // 1) Carregar mechanics_checklist por inspection_id
-      const { data: checklist, error: checklistError } = await this.supabase
-        .from(TABLES.MECHANICS_CHECKLIST)
-        .select('*')
-        .eq('inspection_id', inspection_id)
-        .single();
+      // Validar que pelo menos um ID foi fornecido
+      if (!inspection_id && !quote_id) {
+        return {
+          success: false,
+          error: 'inspection_id ou quote_id deve ser fornecido',
+        };
+      }
+
+      // 1) Carregar mechanics_checklist por inspection_id ou quote_id
+      let checklistQuery = this.supabase.from(TABLES.MECHANICS_CHECKLIST).select('*');
+
+      // Usar quote_id se disponível, senão inspection_id
+      if (quote_id) {
+        checklistQuery = checklistQuery.eq('quote_id', quote_id);
+      } else if (inspection_id) {
+        checklistQuery = checklistQuery.eq('inspection_id', inspection_id);
+      }
+
+      const { data: checklist, error: checklistError } = await checklistQuery.single();
 
       if (checklistError && checklistError.code !== 'PGRST116') {
         logger.error('load_checklist_error', { error: checklistError.message });
@@ -408,10 +422,17 @@ export class ChecklistService {
       }
 
       // 2) Carregar evidências e gerar URLs públicas
-      const { data: evidences, error: evError } = await this.supabase
+      let evidencesQuery = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-        .select('item_key, storage_path')
-        .eq('inspection_id', inspection_id);
+        .select('item_key, storage_path');
+
+      if (quote_id) {
+        evidencesQuery = evidencesQuery.eq('quote_id', quote_id);
+      } else if (inspection_id) {
+        evidencesQuery = evidencesQuery.eq('inspection_id', inspection_id);
+      }
+
+      const { data: evidences, error: evError } = await evidencesQuery;
 
       if (evError) {
         logger.error('load_evidences_error', { error: evError.message });
@@ -436,11 +457,18 @@ export class ChecklistService {
         }
       }
 
-      // 3) Carregar itens por inspeção e montar objeto para UI
-      const { data: items, error: itemsError } = await this.supabase
+      // 3) Carregar itens por inspeção/quote e montar objeto para UI
+      let itemsQuery = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_ITEMS)
-        .select('item_key, item_status, item_notes')
-        .eq('inspection_id', inspection_id);
+        .select('item_key, item_status, item_notes');
+
+      if (quote_id) {
+        itemsQuery = itemsQuery.eq('quote_id', quote_id);
+      } else if (inspection_id) {
+        itemsQuery = itemsQuery.eq('inspection_id', inspection_id);
+      }
+
+      const { data: items, error: itemsError } = await itemsQuery;
 
       if (itemsError) {
         logger.error('load_items_error', { error: itemsError.message });
@@ -466,6 +494,7 @@ export class ChecklistService {
 
       logger.info('load_checklist_with_details_ok', {
         inspection_id,
+        quote_id,
         hasChecklist: !!checklist,
         itemsCount: Array.isArray(items) ? items.length : 0,
         evidencesCount: Array.isArray(evidences) ? evidences.length : 0,
@@ -487,35 +516,51 @@ export class ChecklistService {
   }
 
   /**
-   * Converte status do DB para formato da UI
+   * Converte status do DB para formato da UI (ok/nok apenas)
    */
-  private toFrontStatus(db?: string): (typeof UI_STATUS)[keyof typeof UI_STATUS] {
+  private toFrontStatus(db?: string): ChecklistStatus {
     const s = (db || '').toLowerCase();
-    if (s === CHECKLIST_STATUS.OK) return UI_STATUS.OK;
-    if (s === CHECKLIST_STATUS.NOK) return UI_STATUS.ATTENTION;
-    return UI_STATUS.OK;
+    if (s === CHECKLIST_STATUS.OK) return CHECKLIST_STATUS.OK;
+    // Qualquer outro valor é considerado 'nok'
+    return CHECKLIST_STATUS.NOK;
   }
 
   /**
    * Carrega anomalias com URLs assinadas para as fotos
+   * Suporta inspection_id (legacy) ou quote_id (novo)
    *
-   * @param inspection_id - ID da inspeção
+   * @param inspection_id - ID da inspeção (opcional)
    * @param vehicle_id - ID do veículo
+   * @param quote_id - ID do orçamento (opcional)
    */
-  public async loadAnomaliesWithSignedUrls(inspection_id: string, vehicle_id: string) {
+  public async loadAnomaliesWithSignedUrls(
+    inspection_id: string | null,
+    vehicle_id: string,
+    quote_id?: string | null
+  ) {
     try {
       // Buscar anomalias existentes
-      const { data: anomalies, error: anomaliesError } = await this.supabase
+      let anomaliesQuery = this.supabase
         .from('vehicle_anomalies')
         .select('*')
-        .eq('inspection_id', inspection_id)
-        .eq('vehicle_id', vehicle_id)
-        .order('created_at', { ascending: true });
+        .eq('vehicle_id', vehicle_id);
+
+      // Usar quote_id se disponível, senão inspection_id
+      if (quote_id) {
+        anomaliesQuery = anomaliesQuery.eq('quote_id', quote_id);
+      } else if (inspection_id) {
+        anomaliesQuery = anomaliesQuery.eq('inspection_id', inspection_id);
+      }
+
+      anomaliesQuery = anomaliesQuery.order('created_at', { ascending: true });
+
+      const { data: anomalies, error: anomaliesError } = await anomaliesQuery;
 
       if (anomaliesError) {
         logger.error('load_anomalies_error', {
           error: anomaliesError.message,
           inspection_id,
+          quote_id,
           vehicle_id,
         });
         return { success: false, error: 'Erro ao carregar anomalias' };
@@ -524,6 +569,7 @@ export class ChecklistService {
       logger.info('anomalies_loaded_successfully', {
         count: anomalies?.length || 0,
         inspection_id,
+        quote_id,
         vehicle_id,
         sample_photos: anomalies?.[0]?.photos,
       });
