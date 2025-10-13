@@ -167,7 +167,7 @@ const DelegateServicesModal: React.FC<DelegateServicesModalProps> = ({
         inspection_id: string;
         service_order_id?: string;
         partner_id?: string;
-        quoteStatus?: 'pending_admin_approval' | 'queued';
+        quoteStatus?: 'pending_partner' | 'queued' | 'pending_admin_approval';
         message?: string;
       }
 

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createClient as createServerSupabase } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getLogger } from '@/modules/logger';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import {
   getBudgetStartedEvents,
   getBudgetApprovedEvents,
+  getExecutionStartedEvents,
+  getServiceCompletedEvents,
+  getExecutionCompletedEvents,
 } from '@/modules/vehicles/timeline/VehicleTimelineService';
 import type { TimelineEvent } from '@/modules/vehicles/timeline/types';
 
@@ -30,14 +32,23 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Timeline unificada: incluir eventos de orçamentação iniciada e aprovada
-    const [budgetEvents, approvedEvents] = await Promise.all([
-      getBudgetStartedEvents(supabase, vehicleId, logger),
-      getBudgetApprovedEvents(supabase, vehicleId, logger),
-    ]);
-    const events: TimelineEvent[] = [...budgetEvents, ...approvedEvents].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
+    // Timeline unificada: incluir todos os eventos
+    const [budgetEvents, approvedEvents, executionEvents, serviceEvents, completedEvents] =
+      await Promise.all([
+        getBudgetStartedEvents(supabase, vehicleId, logger),
+        getBudgetApprovedEvents(supabase, vehicleId, logger),
+        getExecutionStartedEvents(supabase, vehicleId, logger),
+        getServiceCompletedEvents(supabase, vehicleId, logger),
+        getExecutionCompletedEvents(supabase, vehicleId, logger),
+      ]);
+
+    const events: TimelineEvent[] = [
+      ...budgetEvents,
+      ...approvedEvents,
+      ...executionEvents,
+      ...serviceEvents,
+      ...completedEvents,
+    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return NextResponse.json({ success: true, events });
   } catch (e) {

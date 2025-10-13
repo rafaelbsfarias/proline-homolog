@@ -399,12 +399,16 @@ const PartnerDashboard = () => {
                 <div style={{ fontSize: '0.875rem', color: '#666' }}>Em Análise</div>
               </div>
               <div
+                onClick={() => router.push('/dashboard/partner/approved')}
+                role="button"
+                title="Ver orçamentos aprovados"
                 style={{
                   background: '#fff',
                   borderRadius: 8,
                   padding: '16px',
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   textAlign: 'center',
+                  cursor: 'pointer',
                 }}
               >
                 <div

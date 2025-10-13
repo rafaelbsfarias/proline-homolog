@@ -31,16 +31,32 @@
 - [Modal](components/Modal.md) - Documentação do componente de Modal reutilizável.
 - [Botões](components/Buttons.md) - Documentação dos componentes de botão (SolidButton e OutlineButton).
 
-## 3. Diretrizes do Projeto
+## 3. Refatoração e Dívida Técnica
+
+### 3.1 Partner Overview Refactoring 🔥 NOVO
+- [📖 Índice da Refatoração](refactoring/README.md) - Portal principal da refatoração
+- [⚠️ **Avisos Importantes**](refactoring/IMPORTANT_WARNINGS.md) - **LEIA PRIMEIRO** - Padrões obrigatórios e anti-patterns
+- [📊 Resumo Executivo](refactoring/EXECUTIVE_SUMMARY.md) - Overview para decisão rápida (5 min)
+- [📋 Plano Completo](refactoring/PARTNER_OVERVIEW_REFACTORING_PLAN.md) - Análise detalhada e arquitetura DDD (20 min)
+- [💻 Exemplos de Implementação](refactoring/PARTNER_OVERVIEW_IMPLEMENTATION_EXAMPLES.md) - Código pronto para usar
+- [⚡ Quick Start](refactoring/QUICK_START_REFACTORING.md) - Guia prático passo a passo
+- [📚 Índice Completo](refactoring/INDEX.md) - Navegação, FAQ e glossário
+
+**Status:** ⏳ Aguardando aprovação  
+**Prioridade:** 🔴 ALTA - Arquivo com 899 linhas violando múltiplos princípios  
+**Impacto:** -80% no tamanho do arquivo, +500% em testabilidade  
+**Abordagem:** ✅ Incremental (8-12h) recomendada | ⏳ DDD completo (15-22h) opcional
+
+## 4. Diretrizes do Projeto
 
 - [Instruções de Desenvolvimento](DEVELOPMENT_INSTRUCTIONS.md) - Princípios e diretrizes do projeto
 
-## 4. Documentação de Funcionalidades
+## 5. Documentação de Funcionalidades
 
-### 4.1 Visão Geral do Cliente (Admin)
+### 5.1 Visão Geral do Cliente (Admin)
 - [Documento Principal](admin-client-dashboard.md) - Visão geral do cliente no painel administrativo
 
-## 5. Segurança
+## 6. Segurança
 
 - [Auditoria de Autenticação](security/auditoria-autenticacao.md) - Auditoria do sistema de autenticação
 - [Auditoria de Módulos](security/auditoria-lib-modulos.md) - Auditoria de segurança em módulos
@@ -48,12 +64,12 @@
 - [Plano de Ação de Segurança de Rotas](security/plano-acao-seguranca-rotas.md) - Plano de ação para segurança de rotas
 - [Relatório de Rotas Completas](security/relatorio-rotas-completas.md) - Relatório completo de rotas do sistema
 
-## 6. Bugs e Issues Conhecidos
+## 7. Bugs e Issues Conhecidos
 
 - [Índice de Bugs](bugs/indice.md) - Índice completo dos bugs documentados
 - [Erro ao Aceitar Data Proposta pelo Cliente](bugs/admin_accept_proposed_date_bug.md) - Bug crítico na aceitação de datas propostas
 
-## 7. Diagnósticos e Análises Críticas
+## 8. Diagnósticos e Análises Críticas
 
 ### 7.1 Diagnóstico - Finalização de Checklist (CRÍTICO)
 - [📋 README](diagnostic-finalize-checklist/README.md) - Visão geral do problema e hipóteses

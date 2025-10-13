@@ -32,13 +32,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    let query = supabase
+    // Buscar evidências de mecânica por vehicle_id (não filtrar rigidamente por inspection_id
+    // para contemplar registros vinculados a quote_id ou inspeções diferentes/legadas)
+    const query = supabase
       .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
       .select('item_key, storage_path')
       .eq('vehicle_id', vehicleId);
-    if (inspectionId) {
-      query = query.eq('inspection_id', inspectionId);
-    }
     const { data, error } = await query;
 
     if (error) {
@@ -77,14 +76,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     );
 
     // Carregar anomalias (evidências livres) e gerar URLs assinadas
-    let anomaliesQuery = supabase
+    // Buscar anomalias por vehicle_id (sem filtrar por inspection_id para incluir registros de parceiros por quote)
+    const anomaliesQuery = supabase
       .from('vehicle_anomalies')
       .select('description, photos')
       .eq('vehicle_id', vehicleId)
       .order('created_at', { ascending: true });
-    if (inspectionId) {
-      anomaliesQuery = anomaliesQuery.eq('inspection_id', inspectionId);
-    }
     const { data: anomalies, error: anomaliesError } = await anomaliesQuery;
 
     if (anomaliesError) {

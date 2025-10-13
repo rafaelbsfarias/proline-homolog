@@ -22,7 +22,7 @@ async function createServiceOrderAndQuote({
 }: {
   supabase: SupabaseClient;
   delegation: DelegationPayload;
-  quoteStatus: 'pending_admin_approval' | 'queued';
+  quoteStatus: 'pending_partner' | 'queued';
 }) {
   const { inspection_id, service_category_id, partner_id } = delegation;
 
@@ -111,7 +111,9 @@ const handler = async (request: AuthenticatedRequest) => {
         const result = await createServiceOrderAndQuote({
           supabase,
           delegation,
-          quoteStatus: 'pending_admin_approval',
+          // Após delegação pelo admin, a responsabilidade passa ao parceiro:
+          // status inicial deve ser 'pending_partner'.
+          quoteStatus: 'pending_partner',
         });
         results.push(result);
       } catch (e: any) {
@@ -128,7 +130,7 @@ const handler = async (request: AuthenticatedRequest) => {
       const lowestPriority = Math.min(...sequentialDelegations.map(d => d.priority ?? 0));
       for (const delegation of sequentialDelegations) {
         const quoteStatus =
-          (delegation.priority ?? 0) === lowestPriority ? 'pending_admin_approval' : 'queued';
+          (delegation.priority ?? 0) === lowestPriority ? 'pending_partner' : 'queued';
         try {
           const result = await createServiceOrderAndQuote({ supabase, delegation, quoteStatus });
           results.push(result);

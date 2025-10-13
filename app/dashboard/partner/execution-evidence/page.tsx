@@ -15,6 +15,7 @@ type QuoteItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  completed_at?: string | null;
 };
 
 type Evidence = {
@@ -88,11 +89,18 @@ function ExecutionEvidenceContent() {
         return;
       }
       const json = resp.data || {};
-      logger.debug('load_service_order_response', { keys: Object.keys((json as any) || {}) });
-      const serviceOrder = (json as any)?.serviceOrder as
+      logger.debug('load_service_order_response', {
+        keys: Object.keys((json as Record<string, unknown>) || {}),
+      });
+      const serviceOrder = (json as Record<string, unknown>)?.serviceOrder as
         | {
             vehicle: { plate: string; brand: string; model: string };
-            items: { id: string; description: string; quantity: number }[];
+            items: {
+              id: string;
+              description: string;
+              quantity: number;
+              completed_at?: string | null;
+            }[];
             evidences?: Array<{
               id: string;
               quote_item_id: string;
@@ -141,14 +149,24 @@ function ExecutionEvidenceContent() {
       });
 
       // Combinar dados
-      const servicesWithEvidences: ServiceWithEvidences[] = (items || []).map((item: any) => ({
-        id: item.id,
-        description: item.description || '',
-        quantity: item.quantity || 0,
-        unit_price: Number(item.unit_price ?? 0),
-        total_price: Number(item.total_price ?? 0),
-        evidences: evidencesByItem.get(item.id) || [],
-      }));
+      const servicesWithEvidences: ServiceWithEvidences[] = (items || []).map(
+        (item: {
+          id: string;
+          description?: string;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          completed_at?: string | null;
+        }) => ({
+          id: item.id,
+          description: item.description || '',
+          quantity: item.quantity || 0,
+          unit_price: Number(item.unit_price ?? 0),
+          total_price: Number(item.total_price ?? 0),
+          completed_at: item.completed_at,
+          evidences: evidencesByItem.get(item.id) || [],
+        })
+      );
 
       setServices(servicesWithEvidences);
       logger.info('services_ready', { count: servicesWithEvidences.length });
@@ -302,6 +320,58 @@ function ExecutionEvidenceContent() {
     }
   };
 
+  const handleCompleteService = async (serviceId: string, serviceName: string) => {
+    try {
+      setSaving(true);
+      logger.info('complete_service_start', { serviceId, serviceName });
+
+      const response = await post<{
+        ok: boolean;
+        completed_at?: string;
+        all_services_completed?: boolean;
+        error?: string;
+      }>(
+        '/api/partner/complete-service',
+        {
+          quote_id: quoteId,
+          quote_item_id: serviceId,
+        },
+        { requireAuth: true }
+      );
+
+      if (!response.ok || !response.data?.ok) {
+        logger.error('complete_service_api_error', {
+          status: response.status,
+          error: response.error || response.data?.error,
+        });
+        showToast(
+          response.error || response.data?.error || 'Erro ao marcar serviço como concluído',
+          'error'
+        );
+        return;
+      }
+
+      const message = response.data?.all_services_completed
+        ? '✅ Serviço concluído! Todos os serviços foram finalizados.'
+        : `✅ Serviço "${serviceName}" marcado como concluído`;
+
+      showToast(message, 'success');
+      logger.info('complete_service_success', {
+        serviceId,
+        completed_at: response.data?.completed_at,
+        all_completed: response.data?.all_services_completed,
+      });
+
+      // Recarregar dados para atualizar status
+      await loadQuoteData();
+    } catch (e) {
+      logger.error('complete_service_error', { error: e instanceof Error ? e.message : String(e) });
+      showToast('Erro ao marcar serviço como concluído', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleFinalize = async () => {
     try {
       setSaving(true);
@@ -408,43 +478,111 @@ function ExecutionEvidenceContent() {
               padding: 24,
               marginBottom: 24,
               boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              border: service.completed_at ? '2px solid #10b981' : '1px solid #e5e7eb',
+              position: 'relative',
             }}
           >
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, color: '#333' }}>
+            {service.completed_at && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  background: '#10b981',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <FaCheck size={12} />
+                Concluído
+              </div>
+            )}
+
+            <h3
+              style={{
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                marginBottom: 16,
+                color: '#333',
+                paddingRight: 100,
+              }}
+            >
               {serviceIndex + 1}. {service.description}
             </h3>
 
-            <div style={{ marginBottom: 16 }}>
-              <label
-                htmlFor={`upload-${service.id}`}
+            {!service.completed_at && (
+              <div style={{ marginBottom: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
+                <label
+                  htmlFor={`upload-${service.id}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 16px',
+                    background: '#3b82f6',
+                    color: 'white',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                  }}
+                >
+                  <FaCamera size={16} />
+                  Adicionar Foto
+                </label>
+                <input
+                  id={`upload-${service.id}`}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleImageUpload(service.id, file);
+                    }
+                  }}
+                />
+
+                <button
+                  onClick={() => handleCompleteService(service.id, service.description)}
+                  disabled={saving}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 16px',
+                    background: saving ? '#ccc' : '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  }}
+                >
+                  <FaCheck size={16} />
+                  Marcar como Concluído
+                </button>
+              </div>
+            )}
+
+            {service.completed_at && (
+              <p
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '10px 16px',
-                  background: '#3b82f6',
-                  color: 'white',
-                  borderRadius: 6,
-                  cursor: 'pointer',
+                  color: '#10b981',
                   fontSize: '14px',
+                  marginBottom: 16,
+                  fontStyle: 'italic',
                 }}
               >
-                <FaCamera size={16} />
-                Adicionar Foto
-              </label>
-              <input
-                id={`upload-${service.id}`}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleImageUpload(service.id, file);
-                  }
-                }}
-              />
-            </div>
+                ✓ Serviço concluído em {new Date(service.completed_at).toLocaleString('pt-BR')}
+              </p>
+            )}
 
             <div
               style={{
