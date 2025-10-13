@@ -57,8 +57,8 @@ export const VehicleMediaSection: React.FC<VehicleMediaSectionProps> = ({ media,
       {!isExpanded && (
         <div className={styles.collapsedInfo}>
           <p className={styles.collapsedText}>
-            {media.length} {media.length === 1 ? 'evidência' : 'evidências'} disponível
-            {media.length === 1 ? '' : 'is'}
+            {media.length} {media.length === 1 ? 'evidência' : 'evidências'} disponíve
+            {media.length === 1 ? 'l' : 'is'}
           </p>
         </div>
       )}

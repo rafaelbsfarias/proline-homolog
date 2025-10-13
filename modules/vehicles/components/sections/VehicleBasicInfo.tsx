@@ -22,6 +22,8 @@ export const VehicleBasicInfo: React.FC<VehicleBasicInfoProps> = ({ vehicle }) =
         <InfoRow label="Valor FIPE" value={formatCurrency(vehicle.fipe_value)} />
         <InfoRow label="KM Atual" value={vehicle.current_odometer?.toString() || 'N/A'} />
         <InfoRow label="Nível de Combustível" value={translateFuelLevel(vehicle.fuel_level)} />
+        <InfoRow label="Preparação" value={vehicle.preparacao ? 'Sim' : 'Não'} />
+        <InfoRow label="Comercialização" value={vehicle.comercializacao ? 'Sim' : 'Não'} />
         <InfoRow label="Cadastrado em" value={formatDateBR(vehicle.created_at)} />
         <InfoRow label="Previsão de Chegada" value={formatDateBR(vehicle.estimated_arrival_date)} />
       </div>

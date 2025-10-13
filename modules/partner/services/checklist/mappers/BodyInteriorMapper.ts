@@ -18,30 +18,15 @@ export interface BodyInteriorInput {
 }
 
 export interface BodyInteriorOutput {
-  bodywork_condition: ChecklistStatus;
-  bodywork_notes: string | null;
+  // Campos desabilitados por incompatibilidade com o schema atual
+  // bodywork_condition: ChecklistStatus;
+  // bodywork_notes: string | null;
 }
 
 export class BodyInteriorMapper {
-  public static map(input: BodyInteriorInput): BodyInteriorOutput {
-    const bodywork_condition = worstStatus([
-      input.bodywork,
-      input.paint,
-      input.seats,
-      input.carpets,
-      input.dashboard,
-      input.headliner,
-    ]);
-
-    const bodywork_notes = concatNotes([
-      input.bodyworkNotes,
-      input.paintNotes,
-      input.seatsNotes,
-      input.carpetsNotes,
-      input.dashboardNotes,
-      input.headlinerNotes,
-    ]);
-
-    return { bodywork_condition, bodywork_notes };
+  public static map(_input: BodyInteriorInput): BodyInteriorOutput {
+    // Retorna objeto vazio para não enviar colunas inexistentes (bodywork_condition/bodywork_notes)
+    // Evita erro: "Could not find 'bodywork_condition' column in mechanics_checklist"
+    return {} as BodyInteriorOutput;
   }
 }
