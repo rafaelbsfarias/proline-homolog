@@ -34,7 +34,16 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
       <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 16, color: '#333' }}>
         Timeline do Veículo
       </h2>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          maxHeight: '60vh',
+          overflowY: 'auto',
+          paddingRight: 4,
+        }}
+      >
         {/* 1. Veículo Cadastrado - SEMPRE PRIMEIRO */}
         <Item
           color={TIMELINE_COLORS.BLUE}
