@@ -1,60 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import {
-  translateFuelLevel,
-  VEHICLE_CONSTANTS,
-  translateServiceCategory,
-} from '@/app/constants/messages';
-import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
-import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
-import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
-import { useExecutionEvidences } from '@/modules/vehicles/hooks/useExecutionEvidences';
-import { ChecklistViewer } from './ChecklistViewer';
+import { ChecklistViewer } from './modals/ChecklistViewer';
+import ChecklistReadOnlyViewer from './modals/ChecklistReadOnlyViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
-import styles from './VehicleDetails.module.css'; // Importando o CSS Module
 import { LuArrowLeft } from 'react-icons/lu';
 
-// As interfaces permanecem as mesmas
-interface VehicleDetails {
-  id: string;
-  plate: string;
-  brand: string;
-  model: string;
-  year: number;
-  color?: string;
-  status: string;
-  created_at: string;
-  fipe_value?: number;
-  current_odometer?: number;
-  fuel_level?: string;
-  estimated_arrival_date?: string;
-  preparacao?: boolean;
-  comercializacao?: boolean;
-}
+// Hooks
+import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
+import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import { usePartnerChecklistCategories } from '@/modules/vehicles/hooks/usePartnerChecklistCategories';
+import { useExecutionEvidences } from '@/modules/vehicles/hooks/useExecutionEvidences';
+import { useVehicleDetailsState } from '@/modules/vehicles/hooks/useVehicleDetailsState';
+import { useDynamicChecklistLoader } from '@/modules/vehicles/hooks/useDynamicChecklistLoader';
 
-interface InspectionData {
-  id: string;
-  inspection_date: string;
-  odometer: number;
-  fuel_level: string;
-  observations: string;
-  finalized: boolean;
-  services: Array<{ category: string; required: boolean; notes: string }>;
-  media: Array<{ storage_path: string; uploaded_by: string; created_at: string }>;
-}
+// Sections
+import { VehicleBasicInfo } from './sections/VehicleBasicInfo';
+import { VehicleServicesSection } from './sections/VehicleServicesSection';
+import { VehicleMediaSection } from './sections/VehicleMediaSection';
+import { PartnerEvidencesSection } from './sections/PartnerEvidencesSection';
+import { ExecutionEvidencesSection } from './sections/ExecutionEvidencesSection';
+import { InspectionObservationsSection } from './sections/InspectionObservationsSection';
 
-interface VehicleDetailsProps {
-  vehicle: VehicleDetails | null;
-  inspection: InspectionData | null;
-  mediaUrls: Record<string, string>;
-  loading: boolean;
-  error: string | null;
-}
+// Types
+import { VehicleDetailsProps } from '../types/VehicleDetailsTypes';
+
+import styles from './VehicleDetails.module.css';
 
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
@@ -64,26 +39,33 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   error,
 }) => {
   const router = useRouter();
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const modalState = useVehicleDetailsState();
+  const { loadChecklist, loading: loadingDynamicChecklist } = useDynamicChecklistLoader();
+
+  // Data Hooks
   const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
   const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
   const { evidences: executionEvidences, loading: executionLoading } = useExecutionEvidences(
     vehicle?.id
   );
+  const { categories: checklistCategories, loading: categoriesLoading } =
+    usePartnerChecklistCategories(vehicle?.id, inspection?.id);
 
-  const formatCurrency = (value: number | undefined) => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  // Handlers
+  const handleLoadDynamicChecklist = async (category: string) => {
+    if (!vehicle?.id || !inspection?.id) return;
+
+    const anomalies = await loadChecklist(vehicle.id, inspection.id, category);
+    if (anomalies) {
+      modalState.dynamicChecklistModal.open({
+        anomalies,
+        savedAt: new Date().toISOString(),
+        category,
+      });
+    }
   };
 
-  const getStatusLabel = (status: string) => {
-    return (
-      VEHICLE_CONSTANTS.VEHICLE_STATUS[status as keyof typeof VEHICLE_CONSTANTS.VEHICLE_STATUS] ||
-      status
-    );
-  };
-
+  // Loading State
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
@@ -92,6 +74,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
     );
   }
 
+  // Error State
   if (error || !vehicle) {
     return (
       <main className={styles.main}>
@@ -106,8 +89,10 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
     );
   }
 
+  // Main Render
   return (
     <main className={styles.main}>
+      {/* Header */}
       <div className={styles.header}>
         <IconTextButton
           onClick={() => router.back()}
@@ -123,64 +108,14 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         </p>
       </div>
 
+      {/* Sections Grid */}
       <div className={styles.gridContainer}>
-        {/* Informações Básicas */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Informações Básicas</h2>
-            {inspection?.media && inspection.media.length > 0 && (
-              <button onClick={() => setIsImageViewerOpen(true)} className={styles.evidenceButton}>
-                Ver Evidências ({inspection.media.length})
-              </button>
-            )}
-          </div>
-          <div className={styles.infoGrid}>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Placa:</span>
-              <span className={styles.infoValueMonospace}>{vehicle.plate}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Marca:</span>
-              <span>{vehicle.brand}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Modelo:</span>
-              <span>
-                {vehicle.model} ({vehicle.year})
-              </span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Cor:</span>
-              <span>{vehicle.color || 'N/A'}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Status:</span>
-              <span className={styles.statusLabel}>{getStatusLabel(vehicle.status)}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Valor FIPE:</span>
-              <span>{formatCurrency(vehicle.fipe_value)}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>KM Atual:</span>
-              <span>{vehicle.current_odometer || 'N/A'}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Nível de Combustível:</span>
-              <span>{translateFuelLevel(vehicle.fuel_level)}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Cadastrado em:</span>
-              <span>{formatDateBR(vehicle.created_at)}</span>
-            </div>
-            <div className={styles.infoRow}>
-              <span className={styles.infoLabel}>Previsão de Chegada:</span>
-              <span>{formatDateBR(vehicle.estimated_arrival_date)}</span>
-            </div>
-          </div>
-        </div>
+        <VehicleBasicInfo
+          vehicle={vehicle}
+          onViewEvidences={modalState.imageViewer.open}
+          mediaCount={inspection?.media?.length || 0}
+        />
 
-        {/* Timeline (Nova seção substitui a legada) */}
         <BudgetPhaseSection
           vehicleId={vehicle.id}
           createdAt={vehicle.created_at}
@@ -189,277 +124,51 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           inspectionFinalized={inspection?.finalized}
         />
 
-        {/* Serviços Necessários */}
-        {inspection?.services && inspection.services.length > 0 && (
-          <div className={`${styles.card} ${styles.fullWidthCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Serviços Necessários</h2>
-            </div>
-            <div className={styles.servicesGrid}>
-              {inspection.services.map((service, index) => (
-                <div
-                  key={index}
-                  className={`${styles.serviceCard} ${service.required ? styles.serviceCardRequired : ''}`}
-                >
-                  <div className={styles.serviceHeader}>
-                    <span className={styles.serviceCategory}>
-                      {translateServiceCategory(service.category)}
-                    </span>
-                    <span
-                      className={
-                        service.required ? styles.serviceRequiredLabel : styles.serviceOptionalLabel
-                      }
-                    >
-                      {service.required ? 'Necessário' : 'Opcional'}
-                    </span>
-                  </div>
-                  {service.notes && (
-                    <div className={styles.serviceNotes}>
-                      <strong>Observações:</strong> {service.notes}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <VehicleServicesSection services={inspection?.services || []} />
 
-        {/* Fotos do Veículo */}
-        {inspection?.media && inspection.media.length > 0 && (
-          <div className={`${styles.card} ${styles.fullWidthCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Evidências</h2>
-            </div>
-            <div className={styles.mediaGrid}>
-              {inspection.media.map((media, index) => (
-                <div key={index} className={styles.mediaItem}>
-                  <img
-                    src={
-                      mediaUrls[media.storage_path] ||
-                      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`
-                    }
-                    alt={`Foto ${index + 1}`}
-                    className={styles.mediaImg}
-                    onError={e => {
-                      const target = e.target as HTMLImageElement;
-                      if (!target.src.includes('public')) {
-                        target.src = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${media.storage_path}`;
-                      }
-                    }}
-                  />
-                  <div className={styles.mediaDate}>{formatDateBR(media.created_at)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <VehicleMediaSection media={inspection?.media || []} mediaUrls={mediaUrls} />
 
-        {/* Evidências do Parceiro (agrupadas por categoria) */}
-        {/* Só mostrar se houver dados de checklist OU evidências de parceiro */}
-        {vehicle?.id && (checklistData || Object.keys(partnerEvidenceByCategory).length > 0) && (
-          <div className={`${styles.card} ${styles.fullWidthCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>
+        <PartnerEvidencesSection
+          evidenceByCategory={partnerEvidenceByCategory}
+          checklistCategories={checklistCategories}
+          checklistData={checklistData}
+          checklistLoading={checklistLoading}
+          categoriesLoading={categoriesLoading}
+          loadingDynamicChecklist={loadingDynamicChecklist}
+          onOpenStaticChecklist={modalState.checklistModal.open}
+          onOpenDynamicChecklist={handleLoadDynamicChecklist}
+        />
 
-              {/* Botão de Checklist */}
-              {checklistLoading ? (
-                <div
-                  style={{
-                    color: '#6b7280',
-                    fontSize: '0.9rem',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  Carregando checklist...
-                </div>
-              ) : checklistData ? (
-                <button
-                  onClick={() => setShowChecklistModal(true)}
-                  className={styles.checklistButton}
-                  style={{
-                    background: '#2563eb',
-                    color: 'white',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'background 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#1d4ed8')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#2563eb')}
-                >
-                  📋 Ver Checklist Completo
-                </button>
-              ) : null}
-            </div>
-            <div className={styles.mediaGrid}>
-              {Object.keys(partnerEvidenceByCategory).length === 0 && (
-                <div style={{ color: '#666', fontSize: '0.95rem' }}>
-                  Nenhuma evidência enviada pelo parceiro.
-                </div>
-              )}
+        <InspectionObservationsSection observations={inspection?.observations || ''} />
 
-              {Object.entries(partnerEvidenceByCategory).map(([category, items]) => (
-                <div key={category} className={styles.fullWidthCard} style={{ paddingTop: 8 }}>
-                  <h3 style={{ marginBottom: 8, fontWeight: 600, color: '#333' }}>{category}</h3>
-                  <div className={styles.mediaGrid}>
-                    {items.map((ev, idx) => (
-                      <div key={`${ev.item_key}-${idx}`} className={styles.mediaItem}>
-                        <img
-                          src={ev.url}
-                          alt={`Evidência Parceiro - ${ev.label}`}
-                          className={styles.mediaImg}
-                        />
-                        <div className={styles.mediaDate}>{ev.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Observações da Inspeção */}
-        {inspection?.observations && (
-          <div className={`${styles.card} ${styles.fullWidthCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Observações do Especialista</h2>
-            </div>
-            <div className={styles.observationsContainer}>{inspection.observations}</div>
-          </div>
-        )}
-
-        {/* Evidências de Execução (Fotos dos Serviços Realizados) */}
-        {!executionLoading && executionEvidences && executionEvidences.length > 0 && (
-          <div className={`${styles.card} ${styles.fullWidthCard}`}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>Evidências de Execução</h2>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>
-                Fotos dos serviços realizados pelo parceiro
-              </p>
-            </div>
-
-            {executionEvidences.map((service, serviceIndex) => (
-              <div
-                key={serviceIndex}
-                style={{
-                  marginBottom: serviceIndex < executionEvidences.length - 1 ? '32px' : 0,
-                  paddingBottom: serviceIndex < executionEvidences.length - 1 ? '32px' : 0,
-                  borderBottom:
-                    serviceIndex < executionEvidences.length - 1 ? '1px solid #e5e7eb' : 'none',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  <h3 style={{ margin: 0, fontWeight: 600, color: '#333', fontSize: '1.1rem' }}>
-                    {service.serviceName}
-                  </h3>
-                  {service.completed && (
-                    <span
-                      style={{
-                        background: '#10b981',
-                        color: 'white',
-                        padding: '4px 12px',
-                        borderRadius: '12px',
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      ✓ Concluído
-                      {service.completedAt && (
-                        <span style={{ opacity: 0.9, marginLeft: '4px' }}>
-                          • {formatDateBR(service.completedAt)}
-                        </span>
-                      )}
-                    </span>
-                  )}
-                </div>
-
-                {service.evidences.length > 0 ? (
-                  <div className={styles.mediaGrid}>
-                    {service.evidences.map((evidence, evidenceIndex) => (
-                      <div key={evidence.id} className={styles.mediaItem}>
-                        <img
-                          src={evidence.image_url}
-                          alt={`${service.serviceName} - Evidência ${evidenceIndex + 1}`}
-                          className={styles.mediaImg}
-                          onError={e => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
-                        <div className={styles.mediaDate}>
-                          {formatDateBR(evidence.uploaded_at)}
-                          {evidence.description && (
-                            <div
-                              style={{
-                                marginTop: '4px',
-                                fontSize: '0.85rem',
-                                color: '#4b5563',
-                                fontStyle: 'italic',
-                              }}
-                            >
-                              {evidence.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                    Nenhuma evidência registrada para este serviço
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <ExecutionEvidencesSection services={executionEvidences || []} loading={executionLoading} />
       </div>
 
-      {/* Modal de Visualização de Imagens */}
-      {inspection?.media && inspection.media.length > 0 ? (
+      {/* Modals */}
+      {inspection?.media && inspection.media.length > 0 && (
         <ImageViewerModal
-          isOpen={isImageViewerOpen}
-          onClose={() => setIsImageViewerOpen(false)}
+          isOpen={modalState.imageViewer.isOpen}
+          onClose={modalState.imageViewer.close}
           images={inspection.media}
           mediaUrls={mediaUrls}
           vehiclePlate={vehicle?.plate || ''}
         />
-      ) : (
-        isImageViewerOpen && (
-          <div className={styles.modalBackdrop}>
-            <div className={styles.modalContent}>
-              <h3 className={styles.modalTitle}>Nenhuma Imagem Disponível</h3>
-              <p className={styles.modalText}>
-                Este veículo ainda não possui imagens de inspeção cadastradas.
-              </p>
-              <button onClick={() => setIsImageViewerOpen(false)} className={styles.modalButton}>
-                Fechar
-              </button>
-            </div>
-          </div>
-        )
       )}
 
-      {/* Modal de Checklist do Parceiro */}
-      {showChecklistModal && checklistData && (
-        <ChecklistViewer data={checklistData} onClose={() => setShowChecklistModal(false)} />
+      {modalState.checklistModal.isOpen && checklistData && (
+        <ChecklistViewer data={checklistData} onClose={modalState.checklistModal.close} />
+      )}
+
+      {modalState.dynamicChecklistModal.isOpen && modalState.dynamicChecklistModal.data && (
+        <ChecklistReadOnlyViewer
+          data={{
+            items: [],
+            anomalies: modalState.dynamicChecklistModal.data.anomalies,
+            savedAt: modalState.dynamicChecklistModal.data.savedAt,
+          }}
+          partnerCategory={modalState.dynamicChecklistModal.data.category}
+          onClose={modalState.dynamicChecklistModal.close}
+        />
       )}
     </main>
   );

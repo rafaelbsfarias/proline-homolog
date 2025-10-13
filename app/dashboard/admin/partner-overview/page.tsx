@@ -14,7 +14,7 @@ import Header from '@/modules/admin/components/Header';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import Modal from '@/modules/common/components/Modal/Modal';
 import QuoteReviewModal from '@/modules/admin/components/QuoteReviewModal';
-import { ChecklistViewer } from '@/modules/vehicles/components/ChecklistViewer';
+import { ChecklistViewer } from '@/modules/vehicles/components/modals/ChecklistViewer';
 import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { formatQuoteStatus } from '@/modules/common/utils/format';

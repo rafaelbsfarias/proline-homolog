@@ -13,72 +13,14 @@ type Props = {
   inspectionFinalized?: boolean;
 };
 
-function formatDate(date?: string | null) {
-  if (!date) return 'N/A';
-  return new Date(date).toLocaleDateString('pt-BR');
-}
-
-const BudgetPhaseSection: React.FC<Props> = ({
-  vehicleId,
-  createdAt,
-  estimatedArrivalDate,
-  inspectionDate,
-  inspectionFinalized,
-}) => {
+const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
   const { events } = useVehicleTimeline(vehicleId);
-  const budgetStartedEvents = useMemo(
-    () =>
-      events
-        .filter(e => e.type === 'BUDGET_STARTED')
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+
+  // Ordenar todos os eventos por created_at (já vem ordenado do backend, mas garantimos)
+  const sortedEvents = useMemo(
+    () => events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
     [events]
   );
-  const budgetApproved = useMemo(
-    () => events.find(e => e.type === 'BUDGET_APPROVED') || null,
-    [events]
-  );
-
-  const executionStartedEvents = useMemo(
-    () =>
-      events
-        .filter(e => e.type === 'EXECUTION_STARTED')
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [events]
-  );
-
-  const serviceCompletedEvents = useMemo(
-    () =>
-      events
-        .filter(e => e.type === 'SERVICE_COMPLETED')
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [events]
-  );
-
-  const executionCompleted = useMemo(
-    () => events.find(e => e.type === 'EXECUTION_COMPLETED') || null,
-    [events]
-  );
-
-  const approvedTitle = useMemo(() => {
-    if (!budgetApproved) return null;
-    const raw = budgetApproved.title?.trim() || '';
-    // Se já vier com categoria no título, usar como está
-    if (/^Orçamento Aprovado\s*-\s*/i.test(raw)) return raw;
-
-    // Caso contrário, tentar inferir da única fase iniciada
-    if (budgetStartedEvents.length === 1) {
-      const started = budgetStartedEvents[0]?.title || '';
-      const m = started.match(/Fase Orçamentária Iniciada\s*-\s*(.+)$/i);
-      const category = m?.[1]?.trim();
-      if (category) return `Orçamento Aprovado - ${category}`;
-    }
-
-    // Fallback
-    return 'Orçamento Aprovado';
-  }, [budgetApproved, budgetStartedEvents]);
-
-  // Exibe a timeline completa (legada) nesta nova seção
-  // Se o evento de orçamentação não existir ainda, mostra os demais itens mesmo assim
 
   return (
     <div
@@ -93,89 +35,81 @@ const BudgetPhaseSection: React.FC<Props> = ({
         Timeline do Veículo
       </h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {/* 1. Veículo Cadastrado - SEMPRE */}
+        {/* 1. Veículo Cadastrado - SEMPRE PRIMEIRO */}
         <Item
           color={TIMELINE_COLORS.BLUE}
           title="Veículo Cadastrado"
           date={formatDateBR(createdAt)}
         />
 
-        {/* 2. Previsão de Chegada - CONDICIONAL */}
-        {estimatedArrivalDate && (
-          <Item
-            color={TIMELINE_COLORS.ORANGE}
-            title="Previsão de Chegada"
-            date={formatDate(estimatedArrivalDate)}
-          />
-        )}
+        {/* 2. Eventos do vehicle_history - ORDENADOS POR created_at */}
+        {sortedEvents.map(ev => {
+          let color: string = TIMELINE_COLORS.BLUE;
+          let title = ev.title;
+          const titleLower = title.toLowerCase();
 
-        {/* 3. Análise Iniciada - CONDICIONAL */}
-        {inspectionDate && (
-          <Item
-            color={TIMELINE_COLORS.RED}
-            title="Análise Iniciada"
-            date={formatDate(inspectionDate)}
-          />
-        )}
+          // Determinar cor baseado no tipo de evento e no título
+          switch (ev.type) {
+            case 'BUDGET_STARTED':
+              color = TIMELINE_COLORS.ORANGE;
+              break;
+            case 'BUDGET_APPROVED':
+              color = TIMELINE_COLORS.GREEN;
+              // Inferir categoria se necessário
+              const raw = ev.title?.trim() || '';
+              if (!/^Orçamento Aprovado\s*-\s*/i.test(raw)) {
+                const budgetStartedEvs = sortedEvents.filter(e => e.type === 'BUDGET_STARTED');
+                if (budgetStartedEvs.length === 1) {
+                  const started = budgetStartedEvs[0]?.title || '';
+                  const m = started.match(/Fase Orçamentária Iniciada\s*-\s*(.+)$/i);
+                  const category = m?.[1]?.trim();
+                  if (category) title = `Orçamento Aprovado - ${category}`;
+                }
+              }
+              break;
+            case 'EXECUTION_STARTED':
+              color = TIMELINE_COLORS.ORANGE;
+              if (ev.meta?.partner_service) {
+                title = `Em Execução - ${ev.meta.partner_service}`;
+              } else {
+                title = 'Em Execução';
+              }
+              break;
+            case 'SERVICE_COMPLETED':
+              color = TIMELINE_COLORS.BLUE;
+              break;
+            case 'EXECUTION_COMPLETED':
+              color = TIMELINE_COLORS.GREEN;
+              title = 'Execução Finalizada';
+              break;
+            default:
+              // Para eventos que não têm tipo específico, determinar cor pelo título
+              if (titleLower.includes('cadastrado')) {
+                color = TIMELINE_COLORS.BLUE;
+              } else if (titleLower.includes('previsão') || titleLower.includes('previsao')) {
+                color = TIMELINE_COLORS.ORANGE;
+              } else if (titleLower.includes('chegada confirmada')) {
+                color = TIMELINE_COLORS.GREEN;
+              } else if (titleLower.includes('análise') || titleLower.includes('analise')) {
+                if (titleLower.includes('iniciada')) {
+                  color = TIMELINE_COLORS.RED;
+                } else if (titleLower.includes('finalizada')) {
+                  color = TIMELINE_COLORS.GREEN;
+                }
+              } else if (titleLower.includes('aguardando') || titleLower.includes('coleta')) {
+                color = TIMELINE_COLORS.ORANGE;
+              } else if (
+                titleLower.includes('fase orçament') ||
+                titleLower.includes('fase orcament')
+              ) {
+                color = TIMELINE_COLORS.ORANGE;
+              } else if (titleLower.includes('em análise')) {
+                color = TIMELINE_COLORS.ORANGE;
+              }
+          }
 
-        {/* 4. Análise Finalizada - CONDICIONAL */}
-        {inspectionDate && inspectionFinalized && (
-          <Item
-            color={TIMELINE_COLORS.GREEN}
-            title="Análise Finalizada"
-            date={formatDate(inspectionDate)}
-          />
-        )}
-
-        {/* 5. Fase Orçamentária Iniciada - pode haver múltiplas categorias */}
-        {budgetStartedEvents.map(ev => (
-          <Item
-            key={ev.id}
-            color={TIMELINE_COLORS.ORANGE}
-            title={ev.title}
-            date={formatDateBR(ev.date)}
-          />
-        ))}
-
-        {/* 6. Orçamento Aprovado - CONDICIONAL */}
-        {budgetApproved && (
-          <Item
-            color={TIMELINE_COLORS.GREEN}
-            title={approvedTitle || 'Orçamento Aprovado'}
-            date={formatDateBR(budgetApproved.date)}
-          />
-        )}
-
-        {/* 7. Execução Iniciada - pode haver múltiplas categorias */}
-        {executionStartedEvents.map(ev => (
-          <Item
-            key={ev.id}
-            color={TIMELINE_COLORS.ORANGE}
-            title={
-              ev.meta?.partner_service ? `Em Execução - ${ev.meta.partner_service}` : 'Em Execução'
-            }
-            date={formatDateBR(ev.date)}
-          />
-        ))}
-
-        {/* 8. Serviços Concluídos - cada serviço individual */}
-        {serviceCompletedEvents.map(ev => (
-          <Item
-            key={ev.id}
-            color={TIMELINE_COLORS.BLUE}
-            title={ev.title}
-            date={formatDateBR(ev.date)}
-          />
-        ))}
-
-        {/* 9. Execução Finalizada - CONDICIONAL */}
-        {executionCompleted && (
-          <Item
-            color={TIMELINE_COLORS.GREEN}
-            title="Execução Finalizada"
-            date={formatDateBR(executionCompleted.date)}
-          />
-        )}
+          return <Item key={ev.id} color={color} title={title} date={formatDateBR(ev.date)} />;
+        })}
       </div>
     </div>
   );

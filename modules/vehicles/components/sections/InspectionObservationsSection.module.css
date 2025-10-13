@@ -1,0 +1,9 @@
+.container {
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  color: #1f2937;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

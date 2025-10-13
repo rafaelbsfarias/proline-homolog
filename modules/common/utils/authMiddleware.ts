@@ -286,3 +286,61 @@ export function withClientAuth<T extends any[]>(
     }
   };
 }
+
+// withAnyAuth: Aceita qualquer usuário autenticado (admin, specialist ou client)
+export function withAnyAuth<T extends any[]>(
+  handler: (request: AuthenticatedRequest, ...args: T) => Promise<Response>
+) {
+  return async (request: NextRequest, ...args: T): Promise<Response> => {
+    try {
+      const authResult = await verifyAuth(request);
+
+      if (!authResult.isAuthenticated || !authResult.user) {
+        return new Response(JSON.stringify({ error: authResult.error || 'Não autenticado' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Buscar role e profile_id do usuário
+      let userRole = authResult.user.user_metadata?.role;
+      const profileId = authResult.user.id;
+      let fullName = authResult.user.user_metadata?.full_name;
+
+      // Se não encontrou role no metadata, buscar na tabela profiles
+      if (!userRole) {
+        try {
+          const supabase = SupabaseService.getInstance().getClient();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_role, full_name')
+            .eq('id', authResult.user.id)
+            .single();
+
+          if (profile) {
+            userRole = profile.user_role;
+            fullName = profile.full_name || fullName;
+          }
+        } catch {
+          // Silenciar erro
+        }
+      }
+
+      const authenticatedRequest = request as AuthenticatedRequest;
+      authenticatedRequest.user = {
+        id: authResult.user.id,
+        email: authResult.user.email!,
+        role: userRole || 'unknown',
+        profile_id: profileId,
+        full_name: fullName,
+      };
+
+      return handler(authenticatedRequest, ...args);
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Erro interno de autenticação' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  };
+}

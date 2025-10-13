@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
@@ -16,6 +17,7 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 const ClientDashboard: React.FC = () => {
+  const router = useRouter();
   const [checked, setChecked] = useState(false);
   const [userName, setUserName] = useState('');
   const { profileData, userId, loading } = useUserProfile();
@@ -103,6 +105,12 @@ const ClientDashboard: React.FC = () => {
                 className="solidButtonLarge"
               >
                 Adicionar Ponto de Coleta
+              </SolidButton>
+              <SolidButton
+                onClick={() => userId && router.push(`/dashboard/client/${userId}/overview`)}
+                className="solidButtonLarge"
+              >
+                Resumo Financeiro
               </SolidButton>
             </div>
 

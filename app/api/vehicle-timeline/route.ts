@@ -2,13 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getLogger } from '@/modules/logger';
 import { withClientAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import {
-  getBudgetStartedEvents,
-  getBudgetApprovedEvents,
-  getExecutionStartedEvents,
-  getServiceCompletedEvents,
-  getExecutionCompletedEvents,
-} from '@/modules/vehicles/timeline/VehicleTimelineService';
+import { getAllVehicleHistoryEvents } from '@/modules/vehicles/timeline/VehicleTimelineService';
 import type { TimelineEvent } from '@/modules/vehicles/timeline/types';
 
 const logger = getLogger('api:vehicle-timeline');
@@ -32,23 +26,8 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Timeline unificada: incluir todos os eventos
-    const [budgetEvents, approvedEvents, executionEvents, serviceEvents, completedEvents] =
-      await Promise.all([
-        getBudgetStartedEvents(supabase, vehicleId, logger),
-        getBudgetApprovedEvents(supabase, vehicleId, logger),
-        getExecutionStartedEvents(supabase, vehicleId, logger),
-        getServiceCompletedEvents(supabase, vehicleId, logger),
-        getExecutionCompletedEvents(supabase, vehicleId, logger),
-      ]);
-
-    const events: TimelineEvent[] = [
-      ...budgetEvents,
-      ...approvedEvents,
-      ...executionEvents,
-      ...serviceEvents,
-      ...completedEvents,
-    ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Buscar todos os eventos do vehicle_history ordenados por created_at
+    const events: TimelineEvent[] = await getAllVehicleHistoryEvents(supabase, vehicleId, logger);
 
     return NextResponse.json({ success: true, events });
   } catch (e) {

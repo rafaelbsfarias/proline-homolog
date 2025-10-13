@@ -171,3 +171,60 @@ export async function getExecutionCompletedEvents(
   logger?.info?.('timeline_execution_completed_events', { count: events.length });
   return events;
 }
+
+export async function getAllVehicleHistoryEvents(
+  supabase: SupabaseClient,
+  vehicleId: string,
+  logger?: Logger
+): Promise<TimelineEvent[]> {
+  const { data, error } = await supabase
+    .from('vehicle_history')
+    .select('id, vehicle_id, status, partner_service, notes, created_at')
+    .eq('vehicle_id', vehicleId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    logger?.error?.('timeline_all_events_fetch_error', { error: error.message });
+    throw new Error('Erro ao buscar histórico completo do veículo');
+  }
+
+  const events: TimelineEvent[] = (data || []).map(row => {
+    // Determinar o tipo do evento baseado no status
+    let type: TimelineEvent['type'] = 'BUDGET_STARTED';
+
+    const statusLower = row.status.toLowerCase();
+
+    if (statusLower.includes('orçamento aprovado') || statusLower.includes('orcamento aprovado')) {
+      type = 'BUDGET_APPROVED';
+    } else if (
+      statusLower.includes('fase orçamentária iniciada') ||
+      statusLower.includes('fase orcamentaria iniciada')
+    ) {
+      type = 'BUDGET_STARTED';
+    } else if (statusLower === 'em execução') {
+      type = 'EXECUTION_STARTED';
+    } else if (
+      statusLower.includes('serviço concluído') ||
+      statusLower.includes('servico concluido')
+    ) {
+      type = 'SERVICE_COMPLETED';
+    } else if (statusLower === 'finalizado') {
+      type = 'EXECUTION_COMPLETED';
+    }
+
+    return {
+      id: row.id,
+      vehicleId: row.vehicle_id,
+      type,
+      title: row.status,
+      date: row.created_at,
+      meta: {
+        partner_service: row.partner_service,
+        notes: row.notes,
+      },
+    };
+  });
+
+  logger?.info?.('timeline_all_events', { count: events.length });
+  return events;
+}

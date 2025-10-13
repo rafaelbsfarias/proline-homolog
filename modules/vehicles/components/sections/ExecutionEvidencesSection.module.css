@@ -1,0 +1,73 @@
+.subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.serviceSection {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.serviceSection.withBorder {
+  margin-bottom: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.serviceHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.serviceName {
+  margin: 0;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.completedBadge {
+  background: #10b981;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.completedDate {
+  opacity: 0.9;
+  margin-left: 4px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.emptyMessage {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .serviceHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+}

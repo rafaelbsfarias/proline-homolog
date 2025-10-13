@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { PartnerChecklistData } from '../hooks/usePartnerChecklist';
+import type { PartnerChecklistData } from '../../hooks/usePartnerChecklist';
 import { MechanicsChecklistView } from './MechanicsChecklistView';
 import { AnomaliesChecklistView } from './AnomaliesChecklistView';
 import styles from './ChecklistViewer.module.css';
