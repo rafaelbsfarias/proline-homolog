@@ -377,26 +377,46 @@ function ExecutionEvidenceContent() {
       setSaving(true);
       logger.info('finalize_execution_start');
 
-      // Salvar primeiro
+      if (!quoteId) {
+        showToast('ID do orçamento não encontrado', 'error');
+        return;
+      }
+
+      // Salvar evidências primeiro
       await handleSave();
 
-      // Marcar como finalizado
-      const { error } = await supabase.from('execution_checklists').upsert({
-        quote_id: quoteId,
-        status: 'completed',
-        completed_at: new Date().toISOString(),
+      // Finalizar execução via API (atualiza vehicle status e timeline)
+      const response = await post<{
+        ok: boolean;
+        completed_at?: string;
+        vehicle_status?: string;
+        error?: string;
+      }>('/api/partner/finalize-execution', { quote_id: quoteId }, { requireAuth: true });
+
+      if (!response.ok || !response.data?.ok) {
+        logger.error('finalize_execution_api_error', {
+          status: response.status,
+          error: response.error || response.data?.error,
+        });
+        showToast(response.error || response.data?.error || 'Erro ao finalizar execução', 'error');
+        return;
+      }
+
+      showToast(
+        '✅ Execução finalizada com sucesso! Veículo marcado como "Execução Finalizada"',
+        'success'
+      );
+      logger.info('finalize_execution_success', {
+        completed_at: response.data?.completed_at,
+        vehicle_status: response.data?.vehicle_status,
       });
 
-      if (error) throw error;
-
-      showToast('Checklist de execução finalizado com sucesso!', 'success');
-      logger.info('finalize_execution_success');
       setTimeout(() => router.push('/dashboard'), 2000);
     } catch (e) {
       logger.error('finalize_execution_error', {
         error: e instanceof Error ? e.message : String(e),
       });
-      showToast('Erro ao finalizar checklist', 'error');
+      showToast('Erro ao finalizar execução', 'error');
     } finally {
       setSaving(false);
     }
