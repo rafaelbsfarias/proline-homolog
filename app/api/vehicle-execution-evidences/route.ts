@@ -97,7 +97,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Criar mapa de quote_items para fácil acesso
-    const itemsMap = new Map(quoteItems?.map(item => [item.id, item]) || []);
+    type QuoteItem = {
+      id: string;
+      description: string | null;
+      completed_at: string | null;
+    };
+    const itemsMap = new Map<string, QuoteItem>(
+      quoteItems?.map((item: QuoteItem) => [item.id, item]) || []
+    );
 
     // 6. Agrupar evidências por serviço
     const groupedMap = new Map<
@@ -121,7 +128,7 @@ export async function GET(request: NextRequest) {
 
       if (!groupedMap.has(ev.quote_item_id)) {
         groupedMap.set(ev.quote_item_id, {
-          serviceName: item.description,
+          serviceName: item.description || 'Serviço sem nome',
           completed: !!item.completed_at,
           completedAt: item.completed_at,
           evidences: [],
