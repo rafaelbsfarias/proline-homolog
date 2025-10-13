@@ -49,7 +49,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     // 3. Buscar dados do veículo
     const { data: vehicle, error: vehicleError } = await supabase
       .from('vehicles')
-      .select('plate, brand, model, year, color, current_odometer')
+      .select('plate, brand, model, year, color, current_odometer, status')
       .eq('id', serviceOrder.vehicle_id)
       .single();
 
@@ -59,6 +59,58 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
         vehicleId: serviceOrder.vehicle_id,
       });
       return NextResponse.json({ ok: false, error: 'Veículo não encontrado' }, { status: 404 });
+    }
+
+    // 3.1. Buscar categoria do serviço para a timeline
+    const { data: inspectionService } = await supabase
+      .from('service_orders')
+      .select('inspection_services(service_categories(name))')
+      .eq('id', quote.service_order_id)
+      .single();
+
+    const serviceCategory =
+      inspectionService?.inspection_services?.service_categories?.name || 'Serviço';
+
+    // 3.2. Atualizar status do veículo para "Em Execução" se ainda não estiver
+    if (vehicle.status !== 'Em Execução') {
+      const { error: updateError } = await supabase
+        .from('vehicles')
+        .update({ status: 'Em Execução' })
+        .eq('id', serviceOrder.vehicle_id);
+
+      if (updateError) {
+        logger.warn('failed_update_vehicle_status', {
+          error: updateError,
+          vehicleId: serviceOrder.vehicle_id,
+        });
+      } else {
+        logger.info('vehicle_status_updated', {
+          vehicleId: serviceOrder.vehicle_id,
+          oldStatus: vehicle.status,
+          newStatus: 'Em Execução',
+        });
+
+        // 3.3. Adicionar entrada na timeline
+        const { error: historyError } = await supabase.from('vehicle_history').insert({
+          vehicle_id: serviceOrder.vehicle_id,
+          status: 'Em Execução',
+          partner_service: serviceCategory,
+          notes: `Execução Iniciada - ${serviceCategory}`,
+        });
+
+        if (historyError) {
+          logger.warn('failed_insert_vehicle_history', {
+            error: historyError,
+            vehicleId: serviceOrder.vehicle_id,
+          });
+        } else {
+          logger.info('vehicle_history_created', {
+            vehicleId: serviceOrder.vehicle_id,
+            status: 'Em Execução',
+            category: serviceCategory,
+          });
+        }
+      }
     }
 
     // 4. Buscar estimated_days da tabela services
