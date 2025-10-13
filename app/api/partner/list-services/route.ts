@@ -39,7 +39,9 @@ async function listPartnerServices(req: AuthenticatedRequest) {
     // A tabela correta, baseada nas migrações, é `partner_services`
     const { data, error } = await supabase
       .from('partner_services')
-      .select('id, name, description, price, category')
+      .select(
+        'id, name, description, price, category, is_active, review_status, review_feedback, review_requested_at'
+      )
       .eq('partner_id', partnerId)
       .order('created_at', { ascending: false });
 

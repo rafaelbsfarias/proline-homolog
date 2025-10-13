@@ -8,6 +8,10 @@ export interface PartnerService {
   description: string;
   price: number;
   category: string | null; // Categoria é opcional e pode ser nula
+  is_active?: boolean;
+  review_status?: 'approved' | 'pending_review' | 'in_revision';
+  review_feedback?: string | null;
+  review_requested_at?: string | null;
 }
 
 export interface UpdateServiceData {

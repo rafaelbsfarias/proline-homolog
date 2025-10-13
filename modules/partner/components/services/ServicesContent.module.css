@@ -1,0 +1,267 @@
+/* Seção de Revisão */
+.reviewSection {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.reviewHeader {
+  margin-bottom: 24px;
+}
+
+.reviewTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #856404;
+  margin: 0 0 8px 0;
+}
+
+.reviewSubtitle {
+  font-size: 0.875rem;
+  color: #856404;
+  margin: 0;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card de Serviço Pendente */
+.reviewCard {
+  background: #fff;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.reviewCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.serviceName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.reviewBadge {
+  background: #ff9800;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.reviewCardBody {
+  margin-bottom: 16px;
+}
+
+.serviceInfo {
+  margin-bottom: 16px;
+}
+
+.serviceInfo p {
+  margin: 8px 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.serviceInfo strong {
+  color: #333;
+}
+
+/* Seção de Feedback */
+.feedbackSection {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  border-left: 4px solid #ff9800;
+}
+
+.feedbackLabel {
+  display: block;
+  font-size: 0.875rem;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.feedbackText {
+  font-size: 0.875rem;
+  color: #444;
+  line-height: 1.6;
+  margin: 0 0 8px 0;
+  white-space: pre-wrap;
+}
+
+.feedbackDate {
+  font-size: 0.75rem;
+  color: #999;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Ações do Card */
+.reviewCardActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.reviewCardActions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnView {
+  background: #3498db;
+  color: #fff;
+}
+
+.btnView:hover {
+  background: #2980b9;
+}
+
+.btnEdit {
+  background: #16a34a;
+  color: #fff;
+}
+
+.btnEdit:hover {
+  background: #15803d;
+}
+
+.btnDelete {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btnDelete:hover {
+  background: #b91c1c;
+}
+
+/* Modal */
+.modalContent {
+  padding: 8px;
+}
+
+.modalSection {
+  margin-bottom: 24px;
+}
+
+.modalSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.modalSection p {
+  margin: 8px 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.modalSection strong {
+  color: #333;
+}
+
+.feedbackBox {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  border-left: 4px solid #ff9800;
+  font-size: 0.875rem;
+  color: #444;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+
+.modalDate {
+  font-size: 0.75rem;
+  color: #999;
+  font-style: italic;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.btnPrimary {
+  padding: 10px 24px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnPrimary:hover {
+  background: #2980b9;
+}
+
+.btnSecondary {
+  padding: 10px 24px;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnSecondary:hover {
+  background: #e5e7eb;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .reviewCardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .reviewCardActions {
+    flex-direction: column;
+  }
+
+  .reviewCardActions button {
+    width: 100%;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalActions button {
+    width: 100%;
+  }
+}
