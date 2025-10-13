@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
 interface UseClientVehicleStatusesResult {
   statuses: string[];
   loading: boolean;
   error: string | null;
+  refetchStatuses: () => void;
 }
 
 export const useClientVehicleStatuses = (clientId?: string): UseClientVehicleStatusesResult => {
@@ -12,6 +13,12 @@ export const useClientVehicleStatuses = (clientId?: string): UseClientVehicleSta
   const [statuses, setStatuses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  const refetchStatuses = useCallback(() => {
+    setRefetchTrigger(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     const fetchStatuses = async () => {
@@ -40,7 +47,7 @@ export const useClientVehicleStatuses = (clientId?: string): UseClientVehicleSta
     };
 
     fetchStatuses();
-  }, [clientId, get]);
+  }, [clientId, get, refetchTrigger]);
 
-  return { statuses, loading, error };
+  return { statuses, loading, error, refetchStatuses };
 };
