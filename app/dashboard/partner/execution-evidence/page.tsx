@@ -267,6 +267,11 @@ function ExecutionEvidenceContent() {
       setSaving(true);
       logger.info('save_evidences_start');
 
+      if (!quoteId) {
+        showToast('ID do orçamento não encontrado', 'error');
+        return;
+      }
+
       // Coletar todas as evidências (estado atual substitui completamente no banco)
       const allEvidences = services.flatMap(service =>
         service.evidences.map(ev => ({
@@ -277,31 +282,31 @@ function ExecutionEvidenceContent() {
       );
       logger.info('save_evidences_prepared', { count: allEvidences.length });
 
-      // Deletar evidências antigas somente dos itens deste orçamento
-      const itemIds = services.map(s => s.id);
-      const { error: delErr } = await supabase
-        .from('execution_evidences')
-        .delete()
-        .in('quote_item_id', itemIds);
-      if (delErr) {
-        logger.error('delete_old_evidences_error', { error: delErr.message });
-        showToast('Erro ao limpar evidências antigas', 'error');
-        return;
-      }
-      logger.info('delete_old_evidences_success', { count: itemIds.length });
+      // Usar API que usa admin client (bypassa RLS)
+      const response = await fetch('/api/partner/execution-evidences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quote_id: quoteId,
+          evidences: allEvidences,
+        }),
+      });
 
-      // Inserir novas evidências
-      if (allEvidences.length > 0) {
-        const { error: insErr } = await supabase.from('execution_evidences').insert(allEvidences);
-        if (insErr) {
-          logger.error('insert_evidences_error', { error: insErr.message });
-          showToast('Erro ao salvar evidências', 'error');
-          return;
-        }
+      const result = await response.json();
+
+      if (!response.ok || !result.ok) {
+        logger.error('save_evidences_api_error', {
+          status: response.status,
+          error: result.error,
+        });
+        showToast(result.error || 'Erro ao salvar evidências', 'error');
+        return;
       }
 
       showToast('Evidências salvas com sucesso', 'success');
-      logger.info('save_evidences_success');
+      logger.info('save_evidences_success', { inserted: result.inserted });
     } catch (e) {
       logger.error('save_evidences_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao salvar evidências', 'error');
