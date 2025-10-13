@@ -5,7 +5,7 @@
 **Status:** ✅ CORRIGIDO
 
 **Correção Aplicada:** 12/10/2025  
-**Commit:** (pendente)
+**Commit:** `31da646` - "fix: correct checklist items and evidences fetch logic"
 
 ---
 
