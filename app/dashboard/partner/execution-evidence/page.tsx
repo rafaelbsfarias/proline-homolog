@@ -93,6 +93,13 @@ function ExecutionEvidenceContent() {
         | {
             vehicle: { plate: string; brand: string; model: string };
             items: { id: string; description: string; quantity: number }[];
+            evidences?: Array<{
+              id: string;
+              quote_item_id: string;
+              image_url: string;
+              description: string | null;
+              uploaded_at: string;
+            }>;
           }
         | undefined;
 
@@ -114,32 +121,13 @@ function ExecutionEvidenceContent() {
       const items = serviceOrder.items || [];
       logger.info('items_loaded', { count: items.length });
 
-      // Buscar evidências existentes
-      let existingEvidences: Evidence[] | null = null;
-      if (items && items.length > 0) {
-        const { data: evs, error: evidencesError } = await supabase
-          .from('execution_evidences')
-          .select('*')
-          .in(
-            'quote_item_id',
-            items.map((i: { id: string }) => i.id)
-          );
-        if (evidencesError) {
-          logger.warn('existing_evidences_fetch_error', {
-            message: (evidencesError as any)?.message,
-          });
-          existingEvidences = [];
-        } else {
-          existingEvidences = evs as unknown as Evidence[];
-          logger.info('existing_evidences_loaded', { count: existingEvidences?.length || 0 });
-        }
-      } else {
-        existingEvidences = [];
-      }
+      // Evidências existentes (vêm da API agora)
+      const existingEvidences = serviceOrder.evidences || [];
+      logger.info('existing_evidences_loaded', { count: existingEvidences.length });
 
       // Mapear evidências por item
       const evidencesByItem = new Map<string, Evidence[]>();
-      existingEvidences?.forEach(ev => {
+      existingEvidences.forEach(ev => {
         if (!evidencesByItem.has(ev.quote_item_id)) {
           evidencesByItem.set(ev.quote_item_id, []);
         }
@@ -303,6 +291,9 @@ function ExecutionEvidenceContent() {
 
       showToast('Evidências salvas com sucesso', 'success');
       logger.info('save_evidences_success', { inserted: response.data?.inserted });
+
+      // Recarregar dados para mostrar evidências salvas
+      await loadQuoteData();
     } catch (e) {
       logger.error('save_evidences_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao salvar evidências', 'error');

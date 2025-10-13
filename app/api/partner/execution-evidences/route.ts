@@ -84,6 +84,7 @@ async function saveHandler(req: AuthenticatedRequest): Promise<NextResponse> {
     // Inserir novas evidências
     if (filtered.length > 0) {
       const rows = filtered.map(ev => ({
+        quote_id: quote_id,
         quote_item_id: ev.quote_item_id,
         image_url: ev.image_url,
         description: ev.description ?? null,

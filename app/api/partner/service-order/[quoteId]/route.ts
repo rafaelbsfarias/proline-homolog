@@ -86,6 +86,25 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
       );
     }
 
+    // 5.1. Buscar evidências de execução dos itens
+    let evidences: any[] = [];
+    if (items && items.length > 0) {
+      const itemIds = items.map(i => i.id);
+      const { data: evidencesData, error: evidencesError } = await supabase
+        .from('execution_evidences')
+        .select('id, quote_item_id, image_url, description, uploaded_at')
+        .eq('quote_id', quoteId)
+        .in('quote_item_id', itemIds)
+        .order('uploaded_at', { ascending: true });
+
+      if (evidencesError) {
+        logger.warn('failed_fetch_evidences', { error: evidencesError, quoteId });
+      } else {
+        evidences = evidencesData || [];
+        logger.info('evidences_loaded', { count: evidences.length });
+      }
+    }
+
     // 6. Buscar dados do parceiro (auth.users para telefone)
     const { data: partnerUser } = await supabase.auth.admin.getUserById(partnerId);
 
@@ -146,10 +165,16 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
           email: clientUser?.user?.email || 'N/A',
         },
         items: items || [],
+        evidences: evidences,
       },
     };
 
-    logger.info('service_order_fetched', { quoteId, partnerId, itemsCount: items?.length });
+    logger.info('service_order_fetched', {
+      quoteId,
+      partnerId,
+      itemsCount: items?.length,
+      evidencesCount: evidences.length,
+    });
     return NextResponse.json(response);
   } catch (error) {
     logger.error('service_order_unexpected_error', { error });
