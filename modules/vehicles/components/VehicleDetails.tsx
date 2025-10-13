@@ -12,6 +12,7 @@ import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
 import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import { useExecutionEvidences } from '@/modules/vehicles/hooks/useExecutionEvidences';
 import { ChecklistViewer } from './ChecklistViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
@@ -67,6 +68,9 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
   const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
+  const { evidences: executionEvidences, loading: executionLoading } = useExecutionEvidences(
+    vehicle?.id
+  );
 
   const formatCurrency = (value: number | undefined) => {
     if (!value) return 'N/A';
@@ -328,6 +332,102 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
               <h2 className={styles.cardTitle}>Observações do Especialista</h2>
             </div>
             <div className={styles.observationsContainer}>{inspection.observations}</div>
+          </div>
+        )}
+
+        {/* Evidências de Execução (Fotos dos Serviços Realizados) */}
+        {!executionLoading && executionEvidences && executionEvidences.length > 0 && (
+          <div className={`${styles.card} ${styles.fullWidthCard}`}>
+            <div className={styles.cardHeader}>
+              <h2 className={styles.cardTitle}>Evidências de Execução</h2>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>
+                Fotos dos serviços realizados pelo parceiro
+              </p>
+            </div>
+
+            {executionEvidences.map((service, serviceIndex) => (
+              <div
+                key={serviceIndex}
+                style={{
+                  marginBottom: serviceIndex < executionEvidences.length - 1 ? '32px' : 0,
+                  paddingBottom: serviceIndex < executionEvidences.length - 1 ? '32px' : 0,
+                  borderBottom:
+                    serviceIndex < executionEvidences.length - 1 ? '1px solid #e5e7eb' : 'none',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '16px',
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontWeight: 600, color: '#333', fontSize: '1.1rem' }}>
+                    {service.serviceName}
+                  </h3>
+                  {service.completed && (
+                    <span
+                      style={{
+                        background: '#10b981',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      ✓ Concluído
+                      {service.completedAt && (
+                        <span style={{ opacity: 0.9, marginLeft: '4px' }}>
+                          • {formatDateBR(service.completedAt)}
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {service.evidences.length > 0 ? (
+                  <div className={styles.mediaGrid}>
+                    {service.evidences.map((evidence, evidenceIndex) => (
+                      <div key={evidence.id} className={styles.mediaItem}>
+                        <img
+                          src={evidence.image_url}
+                          alt={`${service.serviceName} - Evidência ${evidenceIndex + 1}`}
+                          className={styles.mediaImg}
+                          onError={e => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                        <div className={styles.mediaDate}>
+                          {formatDateBR(evidence.uploaded_at)}
+                          {evidence.description && (
+                            <div
+                              style={{
+                                marginTop: '4px',
+                                fontSize: '0.85rem',
+                                color: '#4b5563',
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              {evidence.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                    Nenhuma evidência registrada para este serviço
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
