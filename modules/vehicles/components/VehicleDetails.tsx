@@ -255,7 +255,19 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           <div className={`${styles.card} ${styles.fullWidthCard}`}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>
-              {checklistData && !checklistLoading && (
+
+              {/* Botão de Checklist - sempre visível */}
+              {checklistLoading ? (
+                <div
+                  style={{
+                    color: '#6b7280',
+                    fontSize: '0.9rem',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  Carregando checklist...
+                </div>
+              ) : checklistData ? (
                 <button
                   onClick={() => setShowChecklistModal(true)}
                   className={styles.checklistButton}
@@ -278,6 +290,16 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
                 >
                   📋 Ver Checklist Completo
                 </button>
+              ) : (
+                <div
+                  style={{
+                    color: '#9ca3af',
+                    fontSize: '0.85rem',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  Checklist não disponível
+                </div>
               )}
             </div>
             <div className={styles.mediaGrid}>
