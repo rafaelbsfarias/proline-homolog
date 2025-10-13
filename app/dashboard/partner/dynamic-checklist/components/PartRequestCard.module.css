@@ -1,0 +1,83 @@
+.addButton {
+  width: 100%;
+  padding: 16px;
+  background: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.card {
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+  margin: 0;
+}
+
+.removeButton {
+  background: transparent;
+  border: none;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.removeButton:hover {
+  color: #b91c1c;
+}
+
+.content {
+  margin-bottom: 12px;
+}
+
+.item {
+  font-size: 13px;
+  color: #374151;
+  margin: 6px 0;
+}
+
+.item strong {
+  color: #111827;
+}
+
+.editButton {
+  width: 100%;
+  padding: 8px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.editButton:hover {
+  background: #2563eb;
+}
