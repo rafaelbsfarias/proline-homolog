@@ -94,6 +94,20 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     // 2. Se não encontrou via quotes, buscar diretamente nos checklists/anomalias (dados legados)
     logger.info('trying_legacy_lookup', { vehicleId: vehicleId.slice(0, 8) });
 
+    // Debug: Verificar se existem itens de checklist para este veículo
+    const { data: debugItems, error: debugError } = await supabase
+      .from('mechanics_checklist_items')
+      .select('id, inspection_id, quote_id')
+      .eq('vehicle_id', vehicleId)
+      .limit(5);
+
+    logger.info('debug_items_check', {
+      vehicleId: vehicleId.slice(0, 8),
+      itemsFound: debugItems?.length || 0,
+      items: debugItems,
+      error: debugError?.message,
+    });
+
     // Tentar buscar checklist de mecânica
     const mechanicsResult = await getMechanicsChecklistDirect(supabase, vehicleId);
     if (mechanicsResult) {
@@ -371,6 +385,8 @@ async function getMechanicsChecklistDirect(
   vehicleId: string
 ): Promise<NextResponse | null> {
   try {
+    logger.info('getMechanicsChecklistDirect_start', { vehicleId: vehicleId.slice(0, 8) });
+
     // Buscar checklist principal
     const { data: checklist, error: checklistError } = await supabase
       .from('mechanics_checklist')
@@ -380,9 +396,115 @@ async function getMechanicsChecklistDirect(
       .limit(1)
       .maybeSingle();
 
-    if (checklistError || !checklist) {
-      return null;
+    logger.info('checklist_lookup', {
+      found: !!checklist,
+      error: checklistError?.message,
+      quote_id: checklist?.quote_id,
+      inspection_id: checklist?.inspection_id,
+    });
+
+    // Se não encontrou checklist principal, tentar buscar pelos itens diretamente
+    if (!checklist) {
+      logger.info('no_main_checklist_trying_items_directly', { vehicleId: vehicleId.slice(0, 8) });
+
+      // Buscar itens que pertencem a este veículo
+      const { data: directItems, error: directItemsError } = await supabase
+        .from('mechanics_checklist_items')
+        .select('*')
+        .eq('vehicle_id', vehicleId)
+        .order('created_at', { ascending: true });
+
+      if (directItemsError) {
+        logger.error('error_fetching_direct_items', { error: directItemsError });
+        return null;
+      }
+
+      if (!directItems || directItems.length === 0) {
+        logger.info('no_items_found_for_vehicle', { vehicleId: vehicleId.slice(0, 8) });
+        return null;
+      }
+
+      logger.info('items_found_directly', { count: directItems.length });
+
+      // Usar o primeiro item para obter o inspection_id ou quote_id
+      const firstItem = directItems[0];
+
+      // Buscar evidências usando o mesmo identificador
+      let evidencesQuery = supabase.from('mechanics_checklist_evidences').select('*');
+
+      if (firstItem.quote_id) {
+        evidencesQuery = evidencesQuery.eq('quote_id', firstItem.quote_id);
+      } else if (firstItem.inspection_id) {
+        evidencesQuery = evidencesQuery.eq('inspection_id', firstItem.inspection_id);
+      }
+
+      const { data: evidences } = await evidencesQuery;
+
+      // Gerar signed URLs
+      const evidencesWithUrls = await Promise.all(
+        ((evidences as EvidenceRow[]) || []).map(async evidence => {
+          try {
+            const { data: urlData } = await supabase.storage
+              .from('vehicle-media')
+              .createSignedUrl(evidence.storage_path, 3600);
+
+            return {
+              id: evidence.id,
+              checklist_item_id: evidence.checklist_item_id || '',
+              media_url: urlData?.signedUrl || '',
+              description: evidence.description || '',
+            };
+          } catch {
+            return {
+              id: evidence.id,
+              checklist_item_id: evidence.checklist_item_id || '',
+              media_url: '',
+              description: evidence.description || '',
+            };
+          }
+        })
+      );
+
+      // Montar resposta sem checklist principal
+      const itemsWithEvidences: ItemWithEvidences[] = (directItems as ChecklistItemRow[]).map(
+        item => ({
+          id: item.id,
+          item_key: item.item_key,
+          item_status: item.item_status,
+          item_notes: item.item_notes,
+          evidences: evidencesWithUrls.filter(ev => ev.checklist_item_id === item.id),
+        })
+      );
+
+      const itemsByCategory = groupItemsByCategory(itemsWithEvidences);
+
+      logger.info('mechanics_checklist_found_via_items', {
+        vehicleId: vehicleId.slice(0, 8),
+        itemsCount: itemsWithEvidences.length,
+      });
+
+      return NextResponse.json({
+        type: 'mechanics',
+        checklist: {
+          id: 'direct-items',
+          vehicle_id: vehicleId,
+          partner: {
+            id: 'unknown',
+            name: 'Mecânica',
+            type: 'mechanic',
+          },
+          status: 'in_progress',
+          notes: null,
+          created_at: firstItem.created_at,
+        },
+        itemsByCategory,
+        stats: {
+          totalItems: itemsWithEvidences.length,
+        },
+      });
     }
+
+    // Continuar com o fluxo normal se encontrou checklist principal...
 
     // Buscar itens do checklist (por inspection_id ou quote_id)
     let itemsQuery = supabase

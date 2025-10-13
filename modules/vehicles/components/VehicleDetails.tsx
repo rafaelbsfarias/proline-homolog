@@ -251,12 +251,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         )}
 
         {/* Evidências do Parceiro (agrupadas por categoria) */}
-        {vehicle?.id && (
+        {/* Só mostrar se houver dados de checklist OU evidências de parceiro */}
+        {vehicle?.id && (checklistData || Object.keys(partnerEvidenceByCategory).length > 0) && (
           <div className={`${styles.card} ${styles.fullWidthCard}`}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>
 
-              {/* Botão de Checklist - sempre visível */}
+              {/* Botão de Checklist */}
               {checklistLoading ? (
                 <div
                   style={{
@@ -290,17 +291,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
                 >
                   📋 Ver Checklist Completo
                 </button>
-              ) : (
-                <div
-                  style={{
-                    color: '#9ca3af',
-                    fontSize: '0.85rem',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  Checklist não disponível
-                </div>
-              )}
+              ) : null}
             </div>
             <div className={styles.mediaGrid}>
               {Object.keys(partnerEvidenceByCategory).length === 0 && (
