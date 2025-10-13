@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './ChecklistViewer.module.css';
+import { ImageLightbox } from './ImageLightbox';
 
 interface ChecklistItem {
   id: string;
@@ -67,12 +68,76 @@ const getItemName = (itemKey: string): string => {
     horn: 'Buzina',
     exhaust: 'Escapamento',
     bodywork: 'Carroceria',
+    // Itens adicionais comuns reportados em inglês
+    airConditioningCleaning: 'Higienização do Ar-Condicionado',
+    airConditioningFilter: 'Filtro do Ar-Condicionado',
+    airConditioningGas: 'Gás do Ar-Condicionado',
+    airConditioningCompressor: 'Compressor do Ar-Condicionado',
+    engine: 'Motor',
+    transmission: 'Transmissão',
+    brakes: 'Freios',
+    suspension: 'Suspensão',
+    steering: 'Direção',
+    electrical: 'Elétrica',
+    cooling: 'Arrefecimento',
+    // Itens solicitados
+    steeringBox: 'Caixa de Direção',
+    SteeringBox: 'Caixa de Direção',
+    electricSteeringBox: 'Caixa de Direção Elétrica',
+    electricalActuationMirror: 'Acionamento Elétrico - Retrovisor',
+    electricalActuationSocket: 'Acionamento Elétrico - Tomada',
+    electricalActuationLock: 'Acionamento Elétrico - Trava',
+    electricalActuationTrunk: 'Acionamento Elétrico - Porta-malas',
+    electricalActuationWiper: 'Acionamento Elétrico - Limpador',
+    electricalActuationKey: 'Acionamento Elétrico - Chave',
+    electricalActuationAlarm: 'Acionamento Elétrico - Alarme',
+    electricalActuation: 'Acionamento Elétrico',
+    electricalActuationGlass: 'Acionamento Elétrico - Vidro',
+    electricalActuationInteriorLight: 'Acionamento Elétrico - Luz Interna',
+    InteriorLight: 'Luz Interna',
+    frontShocks: 'Amortecedores Dianteiros',
+    rearShockselectric: 'Amortecedores Traseiros (Elétrico)',
+    rearShocks: 'Amortecedores Traseiros',
+    fluids: 'Fluidos',
+    airConditioning: 'Ar-Condicionado',
+    dashboardPanel: 'Painel de Instrumentos',
   };
-
   return names[itemKey] || itemKey;
 };
 
+// Helper para traduzir categorias para português
+const getCategoryLabel = (categoryKey: string): string => {
+  const categories: Record<string, string> = {
+    engine: 'Motor',
+    transmission: 'Transmissão',
+    brakes: 'Freios',
+    suspension: 'Suspensão',
+    steering: 'Direção',
+    electrical: 'Elétrica',
+    cooling: 'Arrefecimento',
+    air_conditioning: 'Ar-Condicionado',
+    airConditioning: 'Ar-Condicionado',
+    bodywork: 'Carroceria',
+    exhaust: 'Escapamento',
+    tires: 'Pneus',
+    alignment: 'Alinhamento',
+    lighting: 'Iluminação',
+    wipers: 'Limpadores',
+  };
+  return categories[categoryKey] || categoryKey;
+};
+
 export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ data }) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   return (
     <>
       {/* Header com informações do checklist */}
@@ -93,7 +158,7 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
       {/* Itens agrupados por categoria */}
       {Object.entries(data.itemsByCategory).map(([category, items]) => (
         <div key={category} className={styles.categorySection}>
-          <h3 className={styles.categoryTitle}>{category}</h3>
+          <h3 className={styles.categoryTitle}>{getCategoryLabel(category)}</h3>
 
           {items.map(item => (
             <div key={item.id} className={styles.itemCard}>
@@ -110,16 +175,19 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
 
               {item.evidences.length > 0 && (
                 <div className={styles.evidencesGrid}>
-                  {item.evidences.map(evidence => (
-                    <div key={evidence.id} className={styles.evidenceItem}>
-                      <img
-                        src={evidence.media_url}
-                        alt={evidence.description || 'Evidência'}
-                        className={styles.evidenceImage}
-                        onClick={() => window.open(evidence.media_url, '_blank')}
-                      />
-                    </div>
-                  ))}
+                  {item.evidences.map((evidence, idx) => {
+                    const images = item.evidences.map(e => e.media_url).filter(Boolean);
+                    return (
+                      <div key={evidence.id} className={styles.evidenceItem}>
+                        <img
+                          src={evidence.media_url}
+                          alt={evidence.description || 'Evidência'}
+                          className={styles.evidenceImage}
+                          onClick={() => openLightbox(images, idx)}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -131,6 +199,13 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
       <div className={styles.stats}>
         <p>Total de itens verificados: {data.stats.totalItems}</p>
       </div>
+
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        images={lightboxImages}
+        startIndex={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+      />
     </>
   );
 };
