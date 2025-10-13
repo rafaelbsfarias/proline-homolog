@@ -34,7 +34,7 @@ function ExecutionEvidenceContent() {
   const searchParams = useSearchParams();
   const quoteId = searchParams.get('quoteId');
   const logger = getLogger('partner:execution-evidence');
-  const { get } = useAuthenticatedFetch();
+  const { get, post } = useAuthenticatedFetch();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -282,31 +282,27 @@ function ExecutionEvidenceContent() {
       );
       logger.info('save_evidences_prepared', { count: allEvidences.length });
 
-      // Usar API que usa admin client (bypassa RLS)
-      const response = await fetch('/api/partner/execution-evidences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Usar API que usa admin client (bypassa RLS) com autenticação
+      const response = await post<{ ok: boolean; inserted?: number; error?: string }>(
+        '/api/partner/execution-evidences',
+        {
           quote_id: quoteId,
           evidences: allEvidences,
-        }),
-      });
+        },
+        { requireAuth: true }
+      );
 
-      const result = await response.json();
-
-      if (!response.ok || !result.ok) {
+      if (!response.ok || !response.data?.ok) {
         logger.error('save_evidences_api_error', {
           status: response.status,
-          error: result.error,
+          error: response.error || response.data?.error,
         });
-        showToast(result.error || 'Erro ao salvar evidências', 'error');
+        showToast(response.error || response.data?.error || 'Erro ao salvar evidências', 'error');
         return;
       }
 
       showToast('Evidências salvas com sucesso', 'success');
-      logger.info('save_evidences_success', { inserted: result.inserted });
+      logger.info('save_evidences_success', { inserted: response.data?.inserted });
     } catch (e) {
       logger.error('save_evidences_error', { error: e instanceof Error ? e.message : String(e) });
       showToast('Erro ao salvar evidências', 'error');
