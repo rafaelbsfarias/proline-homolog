@@ -8,7 +8,7 @@ import RowCollectionModal from '../Modals/RowCollectionModal/RowCollectionModal'
 import StatusChips from '../StatusChips/StatusChips';
 import BulkCollectionControls from '../BulkCollectionControls/BulkCollectionControls';
 import { useVehicleManager } from '@/modules/client/hooks/useVehicleManager';
-import { useAddresses } from '@/modules/client/hooks/useAddresses';
+
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
 import type { Vehicle } from '@/modules/client/types';
 import VehicleItemRow from './VehicleItemRow';
@@ -18,12 +18,21 @@ import Pagination from '@/modules/common/components/Pagination/Pagination';
 import VehicleCheckboxFiltersModal from '@/modules/common/components/VehicleCheckboxFiltersModal/VehicleCheckboxFiltersModal';
 import VehicleToolbar from '../VehicleToolbar/VehicleToolbar';
 
+import { AddressItem } from '@/modules/client/types';
+
 interface VehicleCounterProps {
   onRefresh?: () => void;
   onLoadingChange?: (loading: boolean) => void;
+  addresses: AddressItem[];
+  collectPoints: AddressItem[];
 }
 
-export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCounterProps) {
+export default function VehicleCounter({
+  onRefresh,
+  onLoadingChange,
+  addresses,
+  collectPoints,
+}: VehicleCounterProps) {
   const [filterPlate, setFilterPlate] = useState('');
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState<string[]>([]);
@@ -34,7 +43,6 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
-  const { addresses } = useAddresses();
   const { post } = useAuthenticatedFetch();
 
   const pageSize = 10;
@@ -147,7 +155,13 @@ export default function VehicleCounter({ onRefresh, onLoadingChange }: VehicleCo
 
       {showDetails && (
         <div className="vehicles-details" id="vehicles-details">
-          {totalCount > 0 && <BulkCollectionControls onSuccess={refetch} />}
+          {totalCount > 0 && (
+            <BulkCollectionControls
+              onSuccess={refetch}
+              addresses={addresses}
+              collectPoints={collectPoints}
+            />
+          )}
 
           <h4 className="header">Detalhes dos Veículos:</h4>
 

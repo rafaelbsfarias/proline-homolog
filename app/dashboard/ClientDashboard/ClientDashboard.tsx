@@ -8,6 +8,7 @@ import MessageModal from '@/modules/common/components/MessageModal/MessageModal'
 import './ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
 import PendingQuotesCard from '@/modules/client/components/PendingQuotes/PendingQuotesCard';
+import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import ApprovedQuotesCard from '@/modules/client/components/ApprovedQuotes/ApprovedQuotesCard';
 import { useUserProfile } from '@/modules/client/hooks/useUserProfile';
 import { useContractAcceptance } from '@/modules/client/hooks/useContractAcceptance';
@@ -20,11 +21,10 @@ const ClientDashboard: React.FC = () => {
   const [userName, setUserName] = useState('');
   const { profileData, userId, loading } = useUserProfile();
   const { accepted, loadingAcceptance, acceptContract } = useContractAcceptance(userId);
+  const { addresses, collectPoints, refetch: refetchAddresses } = useAddresses();
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
-  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
-  const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
-  const [refreshCollectionSection, setRefreshCollectionSection] = useState(0);
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -117,16 +117,14 @@ const ClientDashboard: React.FC = () => {
 
             <div className="dashboard-counter">
               <VehicleCounter
-                key={refreshVehicleCounter}
                 onLoadingChange={setVehicleCounterLoading}
+                addresses={addresses}
+                collectPoints={collectPoints}
               />
             </div>
 
             <div className="dashboard-counter">
-              <VehicleCollectionSection
-                key={refreshCollectionSection}
-                onLoadingChange={setCollectionSectionLoading}
-              />
+              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
             </div>
 
             <div className="dashboard-counter">
@@ -143,14 +141,14 @@ const ClientDashboard: React.FC = () => {
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
-        onSuccess={() => setRefreshVehicleCounter(k => k + 1)}
+        onSuccess={refetchAddresses}
       />
       <ClientCollectPointModal
         isOpen={showAddCollectPointModal}
         onClose={() => setShowAddCollectPointModal(false)}
         onSuccess={() => {
           setShowAddCollectPointModal(false);
-          setRefreshCollectionSection(k => k + 1);
+          refetchAddresses();
         }}
       />
       <ForceChangePasswordModal

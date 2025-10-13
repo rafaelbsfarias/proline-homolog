@@ -1,5 +1,7 @@
-import React from 'react';
-import { useBulkCollection } from '@/modules/client/hooks/useBulkCollection';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import type { Method, Vehicle } from '@/modules/client/types';
+
 import styles from './BulkCollectionControls.module.css';
 import Radio from '@/modules/common/components/Radio/Radio';
 import Select from '@/modules/common/components/Select/Select';
@@ -7,25 +9,73 @@ import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton
 import BulkCollectionModal from '../Modals/BulkCollectionModal/BulkCollectionModal';
 import { makeLocalIsoDate } from '@/modules/client/utils/date';
 
+import { AddressItem } from '@/modules/client/types';
+
 interface Props {
   onSuccess: () => void;
+  addresses: AddressItem[];
+  collectPoints: AddressItem[];
 }
 
-export default function BulkCollectionControls({ onSuccess }: Props) {
-  const {
-    loading,
-    allVehicles,
-    addresses,
-    statusCounts,
-    method,
-    setMethod,
-    addressId,
-    setAddressId,
-    modalOpen,
-    openModal,
-    closeModal,
-    handleApply,
-  } = useBulkCollection({ onSuccess });
+export default function BulkCollectionControls({ onSuccess, addresses, collectPoints }: Props) {
+  const { get, post } = useAuthenticatedFetch();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [method, setMethod] = useState<Method>('collect_point');
+  const [addressId, setAddressId] = useState('');
+  const [eta, setEta] = useState('');
+  const [modalOpen, setModalOpen] = useState<Method | null>(null);
+
+  const refetch = useCallback(() => {
+    const fetchInfo = async () => {
+      setLoading(true);
+      try {
+        const response = await get<any>('/api/client/bulk-collection-info');
+        if (response.ok && response.data) {
+          setAllVehicles(response.data.vehicles || []);
+          setStatusCounts(response.data.statusCounts || {});
+        } else {
+          setError(response.error || 'Erro ao buscar informações para coleta em lote.');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro de rede.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInfo();
+  }, [get]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  const handleApply = useCallback(
+    async (payload: {
+      method: Method;
+      vehicleIds: string[];
+      addressId?: string;
+      estimated_arrival_date?: string;
+    }) => {
+      const resp = await post('/api/client/set-vehicles-collection', payload);
+      if (!resp.ok) throw new Error(resp.error || 'Erro ao aplicar alterações em lote.');
+      if (onSuccess) {
+        onSuccess();
+      }
+      refetch(); // Refetch data after applying changes
+    },
+    [post, onSuccess, refetch]
+  );
+
+  const openModal = (method: Method) => {
+    setModalOpen(method);
+  };
+
+  const closeModal = () => {
+    setModalOpen(null);
+  };
 
   const addressOptions = (addresses || [])
     .filter(a => a.is_collect_point)
