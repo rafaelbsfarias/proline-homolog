@@ -24,6 +24,7 @@ const ClientDashboard: React.FC = () => {
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false); // Added state for password change modal
   const [refreshVehicleCounter, setRefreshVehicleCounter] = useState(0);
+  const [refreshCollectionSection, setRefreshCollectionSection] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -55,15 +56,23 @@ const ClientDashboard: React.FC = () => {
   }
 
   const [showOverallLoader, setShowOverallLoader] = useState(true);
+  const [initialLoadFinished, setInitialLoadFinished] = useState(false);
 
   useEffect(() => {
-    if (loading || (accepted && isComponentLoading)) {
-      setShowOverallLoader(true);
-    } else {
-      const timeout = setTimeout(() => setShowOverallLoader(false), 300);
-      return () => clearTimeout(timeout);
+    // Only show the overall loader on the initial load cycle.
+    if (!initialLoadFinished) {
+      if (loading || (accepted && isComponentLoading)) {
+        setShowOverallLoader(true);
+      } else {
+        // This marks the end of the initial load.
+        const timeout = setTimeout(() => {
+          setShowOverallLoader(false);
+          setInitialLoadFinished(true);
+        }, 300);
+        return () => clearTimeout(timeout);
+      }
     }
-  }, [loading, accepted, isComponentLoading]);
+  }, [loading, accepted, isComponentLoading, initialLoadFinished]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
@@ -114,7 +123,10 @@ const ClientDashboard: React.FC = () => {
             </div>
 
             <div className="dashboard-counter">
-              <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+              <VehicleCollectionSection
+                key={refreshCollectionSection}
+                onLoadingChange={setCollectionSectionLoading}
+              />
             </div>
 
             <div className="dashboard-counter">
@@ -138,6 +150,7 @@ const ClientDashboard: React.FC = () => {
         onClose={() => setShowAddCollectPointModal(false)}
         onSuccess={() => {
           setShowAddCollectPointModal(false);
+          setRefreshCollectionSection(k => k + 1);
         }}
       />
       <ForceChangePasswordModal
