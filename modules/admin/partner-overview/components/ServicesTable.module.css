@@ -1,0 +1,158 @@
+.section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #072e4c;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #3498db;
+}
+
+.statusSelect {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.statusSelect:focus {
+  border-color: #3498db;
+}
+
+.emptyState {
+  padding: 40px;
+  text-align: center;
+  color: #999;
+  font-size: 0.875rem;
+}
+
+.tableContainer {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table thead tr {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.table th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.table td {
+  padding: 12px;
+  color: #4b5563;
+}
+
+.cellName {
+  font-weight: 500;
+  color: #072e4c;
+}
+
+.cellDescription {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.textMuted {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.statusActive {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusInactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btnSuccess {
+  background-color: #16a34a;
+  color: #fff;
+}
+
+.btnSuccess:hover {
+  background-color: #15803d;
+}
+
+.btnDanger {
+  background-color: #dc2626;
+  color: #fff;
+}
+
+.btnDanger:hover {
+  background-color: #b91c1c;
+}

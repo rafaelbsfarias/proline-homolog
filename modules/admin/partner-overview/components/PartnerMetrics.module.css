@@ -1,0 +1,38 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid #3498db;
+}
+
+.cardWarning {
+  border-left-color: #f59e0b;
+}
+
+.cardSuccess {
+  border-left-color: #16a34a;
+}
+
+.cardDanger {
+  border-left-color: #dc2626;
+}
+
+.cardLabel {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.cardValue {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #072e4c;
+}
