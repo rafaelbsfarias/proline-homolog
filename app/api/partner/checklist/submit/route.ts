@@ -4,7 +4,6 @@ import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/uti
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ChecklistService } from '@/modules/partner/services/ChecklistService';
 import { z } from 'zod';
-import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const logger = getLogger('api:partner:checklist:submit');
 
@@ -125,15 +124,6 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
             });
           }
         }
-      }
-
-      // Atualizar status do veículo para Fase Orçamentária
-      const { error: statusError } = await supabase
-        .from('vehicles')
-        .update({ status: VehicleStatus.FASE_ORCAMENTARIA })
-        .eq('id', checklistData.vehicle_id);
-      if (statusError) {
-        logger.warn('vehicle_status_update_failed', { error: statusError.message });
       }
     } catch (timelineError) {
       logger.error('timeline_or_status_update_error', {
