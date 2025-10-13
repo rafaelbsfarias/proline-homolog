@@ -72,6 +72,8 @@ async function generateVehicles() {
         color: randomColor,
         year: randomYear,
         status: 'AGUARDANDO DEFINIÇÃO DE COLETA',
+        preparacao: Math.random() < 0.5,
+        comercializacao: Math.random() < 0.5,
       });
     }
 

@@ -30,36 +30,42 @@ const categoryPartners = [
     email: 'mecanica@parceiro.com',
     companyName: 'Oficina Mecânica ProLine',
     categoryName: 'Mecânica',
+    type: 'preparacao',
   },
   {
     key: 'body_paint',
     email: 'pintura@parceiro.com',
     companyName: 'Funilaria e Pintura ProLine',
     categoryName: 'Funilaria/Pintura',
+    type: 'preparacao',
   },
   {
     key: 'washing',
     email: 'lavagem@parceiro.com',
     companyName: 'Lavagem ProLine',
     categoryName: 'Lavagem',
+    type: 'preparacao',
   },
   {
     key: 'tires',
     email: 'pneus@parceiro.com',
     companyName: 'Pneus ProLine',
     categoryName: 'Pneus',
+    type: 'preparacao',
   },
   {
     key: 'loja',
     email: 'loja@parceiro.com',
     companyName: 'Loja de Peças ProLine',
     categoryName: 'Loja',
+    type: 'comercializacao',
   },
   {
     key: 'patio_atacado',
     email: 'patio@parceiro.com',
     companyName: 'Pátio Atacado ProLine',
     categoryName: 'Pátio Atacado',
+    type: 'comercializacao',
   },
 ];
 
@@ -160,6 +166,18 @@ async function createPartnerForCategory(categoryConfig) {
       console.log(`❌ Categoria ${key} não encontrada`);
       return;
     }
+
+    // Add this block to update the type in service_categories
+    const { error: updateTypeError } = await supabase
+      .from('service_categories')
+      .update({ type: categoryConfig.type })
+      .eq('id', serviceCategory.id);
+
+    if (updateTypeError) {
+      console.log(`❌ Erro ao atualizar tipo para categoria ${key}:`, updateTypeError.message);
+      return;
+    }
+    console.log(`✅ Tipo '${categoryConfig.type}' atualizado para categoria ${categoryName}`);
 
     const { error: associationError } = await supabase.from('partners_service_categories').upsert(
       {
