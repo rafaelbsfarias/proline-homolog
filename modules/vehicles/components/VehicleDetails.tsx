@@ -11,6 +11,8 @@ import {
 import { formatDateBR } from '@/modules/client/utils/date';
 import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
 import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
+import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import { ChecklistViewer } from './ChecklistViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import styles from './VehicleDetails.module.css'; // Importando o CSS Module
@@ -45,19 +47,9 @@ interface InspectionData {
   media: Array<{ storage_path: string; uploaded_by: string; created_at: string }>;
 }
 
-interface VehicleHistoryEntry {
-  id: string;
-  vehicle_id: string;
-  status: string;
-  prevision_date: string | null;
-  end_date: string | null;
-  created_at: string;
-}
-
 interface VehicleDetailsProps {
   vehicle: VehicleDetails | null;
   inspection: InspectionData | null;
-  vehicleHistory: VehicleHistoryEntry[];
   mediaUrls: Record<string, string>;
   loading: boolean;
   error: string | null;
@@ -66,14 +58,15 @@ interface VehicleDetailsProps {
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
   inspection,
-  vehicleHistory,
   mediaUrls,
   loading,
   error,
 }) => {
   const router = useRouter();
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
   const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
+  const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
 
   const formatCurrency = (value: number | undefined) => {
     if (!value) return 'N/A';
@@ -262,6 +255,30 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           <div className={`${styles.card} ${styles.fullWidthCard}`}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardTitle}>Evidências do Parceiro</h2>
+              {checklistData && !checklistLoading && (
+                <button
+                  onClick={() => setShowChecklistModal(true)}
+                  className={styles.checklistButton}
+                  style={{
+                    background: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#1d4ed8')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#2563eb')}
+                >
+                  📋 Ver Checklist Completo
+                </button>
+              )}
             </div>
             <div className={styles.mediaGrid}>
               {Object.keys(partnerEvidenceByCategory).length === 0 && (
@@ -325,6 +342,11 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
             </div>
           </div>
         )
+      )}
+
+      {/* Modal de Checklist do Parceiro */}
+      {showChecklistModal && checklistData && (
+        <ChecklistViewer data={checklistData} onClose={() => setShowChecklistModal(false)} />
       )}
     </main>
   );
