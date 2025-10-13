@@ -44,10 +44,12 @@ export const useClientVehicles = (
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<Record<string, boolean>>({});
 
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
   const totalPages = useMemo(() => Math.ceil(totalCount / PAGE_SIZE), [totalCount]);
 
   const refetch = useCallback(() => {
-    setCurrentPage(1); // Always refetch from page 1
+    setRefetchTrigger(prev => prev + 1);
   }, []);
 
   const updateVehicleStatus = (vehicleId: string, newStatus: string) => {
@@ -145,7 +147,7 @@ export const useClientVehicles = (
     };
 
     fetchVehicles();
-  }, [clientId, currentPage, get, filters]);
+  }, [clientId, currentPage, get, filters, refetchTrigger]);
 
   return {
     vehicles,

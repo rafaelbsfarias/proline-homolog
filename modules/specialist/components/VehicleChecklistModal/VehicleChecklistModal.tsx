@@ -578,6 +578,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
                   onSaved && onSaved();
                   onFinalized && onFinalized();
                 } catch {}
+                handleClose(); // Close modal after successful finalization
               } catch (err) {
                 const msg = err instanceof Error ? err.message : 'Erro ao finalizar checklist.';
                 setError(msg);
