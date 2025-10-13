@@ -22,21 +22,37 @@ export const PATCH = withAdminAuth(
 
       // Action: Request Review
       if (body.action === 'request_review') {
+        logger.info('review_request_received', {
+          serviceId,
+          partnerId,
+          feedbackLength: body.review_feedback?.length,
+          adminId: req.user.id,
+        });
+
         if (!body.review_feedback || body.review_feedback.trim() === '') {
+          logger.warn('review_feedback_empty', { serviceId, partnerId });
           return NextResponse.json({ error: 'Feedback de revisão é obrigatório' }, { status: 400 });
         }
 
-        const { error } = await admin
+        const updateData = {
+          review_status: 'pending_review',
+          review_feedback: body.review_feedback,
+          review_requested_at: new Date().toISOString(),
+          review_requested_by: req.user.id,
+        };
+
+        logger.info('updating_service_review', {
+          serviceId,
+          partnerId,
+          updateData,
+        });
+
+        const { data, error } = await admin
           .from('partner_services')
-          .update({
-            review_status: 'pending_review',
-            review_feedback: body.review_feedback,
-            review_requested_at: new Date().toISOString(),
-            review_requested_by: req.user.id,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', serviceId)
-          .eq('partner_id', partnerId);
+          .eq('partner_id', partnerId)
+          .select();
 
         if (error) {
           logger.error('failed_request_review', {
@@ -48,13 +64,14 @@ export const PATCH = withAdminAuth(
           return NextResponse.json({ error: 'Erro ao solicitar revisão' }, { status: 500 });
         }
 
-        logger.info('review_requested', {
+        logger.info('review_requested_success', {
           serviceId,
           partnerId,
           adminId: req.user.id,
+          updatedRows: data?.length,
         });
 
-        return NextResponse.json({ success: true, action: 'review_requested' });
+        return NextResponse.json({ success: true, action: 'review_requested', data });
       }
 
       // Action: Toggle Active (legacy support)

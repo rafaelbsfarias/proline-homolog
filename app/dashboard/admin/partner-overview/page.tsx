@@ -121,25 +121,31 @@ export default function PartnerOverviewPage() {
         const {
           data: { session },
         } = await supabase.auth.getSession();
-        const resp = await fetch(`/api/admin/partners/${partnerId}/services/${serviceId}`, {
+
+        const url = `/api/admin/partners/${partnerId}/services/${serviceId}`;
+        const payload = {
+          action: 'request_review',
+          review_feedback: feedback,
+        };
+
+        const resp = await fetch(url, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({
-            action: 'request_review',
-            review_feedback: feedback,
-          }),
+          body: JSON.stringify(payload),
         });
 
+        const responseData = await resp.json();
+
         if (!resp.ok) {
-          throw new Error('Failed to request review');
+          throw new Error(responseData.error || 'Failed to request review');
         }
 
         await refetch(); // Reload data after review request
-      } catch {
-        throw new Error('Error requesting service review');
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Error requesting service review');
       }
     },
     [partnerId, refetch]
