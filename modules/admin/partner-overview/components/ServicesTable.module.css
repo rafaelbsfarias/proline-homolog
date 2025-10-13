@@ -222,6 +222,16 @@
   color: #3730a3;
 }
 
+.reviewRejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.reviewPendingApproval {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
 .reviewModal {
   padding: 4px;
 }

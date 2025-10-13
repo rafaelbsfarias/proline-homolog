@@ -12,8 +12,13 @@ export class SupabasePartnerServiceRepository implements PartnerServiceRepositor
   private readonly logger = getLogger('SupabasePartnerServiceRepository');
   private readonly supabase: SupabaseClient;
 
-  constructor(private readonly supabaseService: SupabaseService) {
-    this.supabase = supabaseService.getClient();
+  constructor(
+    private readonly supabaseService: SupabaseService,
+    supabaseClient?: SupabaseClient
+  ) {
+    // Se um cliente específico for fornecido (ex: com token de autenticação), usar ele
+    // Caso contrário, usar o cliente padrão do service
+    this.supabase = supabaseClient || supabaseService.getClient();
   }
 
   /**
@@ -34,7 +39,9 @@ export class SupabasePartnerServiceRepository implements PartnerServiceRepositor
         price: service.price.value,
         is_active: service.isActive,
         created_at: service.createdAt.toISOString(),
-        updated_at: new Date().toISOString(),
+        // Quando o serviço é editado, marcar como pendente de aprovação
+        review_status: 'pending_approval',
+        review_requested_at: new Date().toISOString(),
       };
 
       const { data: result, error } = await this.supabase
@@ -519,7 +526,6 @@ export class SupabasePartnerServiceRepository implements PartnerServiceRepositor
     price: number;
     is_active: boolean;
     created_at: string;
-    updated_at: string;
   }): PartnerService {
     const reconstructResult = PartnerService.reconstruct({
       id: data.id,
@@ -528,7 +534,7 @@ export class SupabasePartnerServiceRepository implements PartnerServiceRepositor
       description: data.description || '',
       price: data.price,
       createdAt: new Date(data.created_at),
-      updatedAt: new Date(data.updated_at),
+      updatedAt: new Date(data.created_at), // Usar created_at como fallback já que updated_at não existe
       isActive: data.is_active,
     });
 

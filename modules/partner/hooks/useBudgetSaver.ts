@@ -11,6 +11,7 @@ interface BudgetItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  estimatedDays?: number;
 }
 
 interface Budget {
@@ -110,6 +111,7 @@ export const useBudgetSaver = (): UseBudgetSaverReturn => {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
+          estimatedDays: item.estimatedDays,
         })),
       };
 

@@ -20,6 +20,8 @@ interface ServicesTableProps {
   onQueryChange: (query: string) => void;
   onStatusChange: (status: ServiceFilterStatus) => void;
   onRequestReview: (serviceId: string, feedback: string) => Promise<void>;
+  onApproveService?: (serviceId: string) => Promise<void>;
+  onRejectService?: (serviceId: string, feedback: string) => Promise<void>;
 }
 
 const STATUS_LABELS: Record<ServiceFilterStatus, string> = {
@@ -31,6 +33,8 @@ const STATUS_LABELS: Record<ServiceFilterStatus, string> = {
 const REVIEW_STATUS_LABELS: Record<string, string> = {
   approved: 'Aprovado',
   pending_review: 'Aguardando Revisão',
+  pending_approval: 'Aguardando Aprovação',
+  rejected: 'Rejeitado',
   in_revision: 'Em Revisão',
 };
 
@@ -41,10 +45,14 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
   onQueryChange,
   onStatusChange,
   onRequestReview,
+  onApproveService,
+  onRejectService,
 }) => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [reviewFeedback, setReviewFeedback] = useState('');
+  const [rejectFeedback, setRejectFeedback] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,6 +83,57 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
       handleCloseReviewModal();
     } catch {
       setError('Erro ao solicitar revisão. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleOpenRejectModal = (service: Service) => {
+    setSelectedService(service);
+    setRejectFeedback('');
+    setError(null);
+    setRejectModalOpen(true);
+  };
+
+  const handleCloseRejectModal = () => {
+    setRejectModalOpen(false);
+    setSelectedService(null);
+    setRejectFeedback('');
+    setError(null);
+  };
+
+  const handleApprove = async (service: Service) => {
+    if (!onApproveService) return;
+
+    // Show native confirmation (bypassing ESLint rule for admin action)
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Confirma aprovação do serviço "${service.name}"?`)) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await onApproveService(service.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao aprovar serviço. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSubmitReject = async () => {
+    if (!selectedService || !rejectFeedback.trim() || !onRejectService) {
+      setError('Por favor, informe o motivo da rejeição.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onRejectService(selectedService.id, rejectFeedback);
+      handleCloseRejectModal();
+    } catch {
+      setError('Erro ao rejeitar serviço. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -152,7 +211,11 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
                           ? styles.reviewApproved
                           : service.review_status === 'pending_review'
                             ? styles.reviewPending
-                            : styles.reviewInRevision
+                            : service.review_status === 'pending_approval'
+                              ? styles.reviewPendingApproval
+                              : service.review_status === 'rejected'
+                                ? styles.reviewRejected
+                                : styles.reviewInRevision
                       }`}
                       title={service.review_feedback || undefined}
                     >
@@ -162,13 +225,39 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
                   <td>{new Date(service.created_at).toLocaleDateString('pt-BR')}</td>
                   <td>
                     <div className={styles.actionButtons}>
+                      {/* Botão Solicitar Revisão - sempre disponível */}
                       <button
                         onClick={() => handleOpenReviewModal(service)}
                         className={`${styles.btn} ${styles.btnWarning}`}
                         title="Solicitar revisão do serviço"
+                        disabled={submitting}
                       >
                         Revisão
                       </button>
+
+                      {/* Botão Aprovar - apenas para pending_approval */}
+                      {service.review_status === 'pending_approval' && onApproveService && (
+                        <button
+                          onClick={() => handleApprove(service)}
+                          className={`${styles.btn} ${styles.btnSuccess}`}
+                          title="Aprovar serviço"
+                          disabled={submitting}
+                        >
+                          Aprovar
+                        </button>
+                      )}
+
+                      {/* Botão Rejeitar - apenas para pending_approval */}
+                      {service.review_status === 'pending_approval' && onRejectService && (
+                        <button
+                          onClick={() => handleOpenRejectModal(service)}
+                          className={`${styles.btn} ${styles.btnDanger}`}
+                          title="Rejeitar serviço"
+                          disabled={submitting}
+                        >
+                          Rejeitar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -234,6 +323,64 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
                 disabled={submitting || !reviewFeedback.trim()}
               >
                 {submitting ? 'Enviando...' : 'Solicitar Revisão'}
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal isOpen={rejectModalOpen} onClose={handleCloseRejectModal} title="Rejeitar Serviço">
+        {selectedService && (
+          <div className={styles.reviewModal}>
+            <div className={styles.serviceInfo}>
+              <h3>{selectedService.name}</h3>
+              <p className={styles.serviceDescription}>
+                {selectedService.description || 'Sem descrição'}
+              </p>
+              <p className={styles.servicePrice}>
+                Preço atual:{' '}
+                {selectedService.price != null
+                  ? `R$ ${Number(selectedService.price).toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}`
+                  : 'Não informado'}
+              </p>
+            </div>
+
+            <div className={styles.feedbackSection}>
+              <label htmlFor="rejectFeedback" className={styles.label}>
+                <strong>Motivo da rejeição</strong>
+                <span className={styles.helperText}>
+                  Informe por que este serviço não pode ser aprovado
+                </span>
+              </label>
+              <textarea
+                id="rejectFeedback"
+                value={rejectFeedback}
+                onChange={e => setRejectFeedback(e.target.value)}
+                placeholder="Ex: O serviço não está alinhado com a política da empresa"
+                className={styles.textarea}
+                rows={4}
+                disabled={submitting}
+              />
+              {error && <div className={styles.errorMessage}>{error}</div>}
+            </div>
+
+            <div className={styles.modalActions}>
+              <button
+                onClick={handleCloseRejectModal}
+                className={`${styles.btn} ${styles.btnSecondary}`}
+                disabled={submitting}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmitReject}
+                className={`${styles.btn} ${styles.btnDanger}`}
+                disabled={submitting || !rejectFeedback.trim()}
+              >
+                {submitting ? 'Rejeitando...' : 'Rejeitar Serviço'}
               </button>
             </div>
           </div>

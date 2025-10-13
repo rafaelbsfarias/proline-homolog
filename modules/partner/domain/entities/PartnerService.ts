@@ -428,7 +428,10 @@ export class PartnerService {
       descriptionSummary: this._description.summary,
       partnerId: this._partnerId,
       createdAt: this._createdAt.toISOString(),
-      updatedAt: this._updatedAt.toISOString(),
+      updatedAt:
+        this._updatedAt instanceof Date && !isNaN(this._updatedAt.getTime())
+          ? this._updatedAt.toISOString()
+          : null,
       isActive: this._isActive,
     };
   }

@@ -7,11 +7,14 @@ export interface PartnerService {
   name: string;
   description: string;
   price: number;
-  category: string | null; // Categoria é opcional e pode ser nula
-  is_active?: boolean;
-  review_status?: 'approved' | 'pending_review' | 'in_revision';
-  review_feedback?: string | null;
-  review_requested_at?: string | null;
+  category?: string | null; // Categoria é opcional e pode ser nula
+  isActive?: boolean; // Mudado de is_active para isActive (camelCase)
+  reviewStatus?: 'approved' | 'pending_review' | 'in_revision'; // Mudado de review_status
+  reviewFeedback?: string | null; // Mudado de review_feedback
+  reviewRequestedAt?: string | null; // Mudado de review_requested_at
+  partnerId?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface UpdateServiceData {
@@ -33,13 +36,39 @@ export function usePartnerServices() {
     setLoading(true);
     setError(null);
     try {
-      const response = await authenticatedFetch('/api/partner/list-services');
-      if (response.data) {
-        setServices(response.data as PartnerService[]);
+      const response = await authenticatedFetch('/api/partner/services/v2');
+
+      if (response.ok && response.data) {
+        // authenticatedFetch retorna: { data: <json completo da API>, ok, status }
+        // API V2 retorna: { success: true, data: { items: [], pagination: {} } }
+        const apiResponse = response.data as {
+          success: boolean;
+          data: {
+            items: PartnerService[];
+            pagination: {
+              page: number;
+              limit: number;
+              total: number;
+              totalPages: number;
+            };
+          };
+        };
+
+        // Acessar items dentro de data.data
+        if (apiResponse.success && apiResponse.data?.items) {
+          const items = apiResponse.data.items;
+          setServices(Array.isArray(items) ? items : []);
+        } else {
+          setServices([]);
+        }
+      } else {
+        setError(response.error || 'Erro ao buscar serviços');
+        setServices([]);
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Ocorreu um erro desconhecido';
       setError(errorMessage);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -48,7 +77,7 @@ export function usePartnerServices() {
   const updateService = useCallback(
     async (serviceId: string, data: UpdateServiceData) => {
       try {
-        const response = await authenticatedFetch(`/api/partner/services/${serviceId}`, {
+        const response = await authenticatedFetch(`/api/partner/services/v2/${serviceId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -79,7 +108,7 @@ export function usePartnerServices() {
   const deleteService = useCallback(
     async (serviceId: string) => {
       try {
-        const response = await authenticatedFetch(`/api/partner/services/${serviceId}`, {
+        const response = await authenticatedFetch(`/api/partner/services/v2/${serviceId}`, {
           method: 'DELETE',
         });
 

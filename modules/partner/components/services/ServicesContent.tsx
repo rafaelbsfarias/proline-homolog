@@ -26,7 +26,7 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
   const [selectedService, setSelectedService] = useState<PartnerService | null>(null);
 
   // Separar serviços pendentes de revisão
-  const pendingReviewServices = services.filter(s => s.review_status === 'pending_review');
+  const pendingReviewServices = services.filter(s => s.reviewStatus === 'pending_review');
 
   const handleViewReview = (service: PartnerService) => {
     setSelectedService(service);
@@ -97,11 +97,10 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
 
                   <div className={styles.feedbackSection}>
                     <strong className={styles.feedbackLabel}>📝 Feedback do Administrador:</strong>
-                    <p className={styles.feedbackText}>{service.review_feedback}</p>
-                    {service.review_requested_at && (
+                    <p className={styles.feedbackText}>{service.reviewFeedback}</p>
+                    {service.reviewRequestedAt && (
                       <p className={styles.feedbackDate}>
-                        Solicitado em:{' '}
-                        {new Date(service.review_requested_at).toLocaleString('pt-BR')}
+                        Solicitado em: {new Date(service.reviewRequestedAt).toLocaleString('pt-BR')}
                       </p>
                     )}
                   </div>
@@ -179,11 +178,11 @@ const ServicesContent: React.FC<ServicesContentProps> = ({
 
             <div className={styles.modalSection}>
               <h3 className={styles.modalSectionTitle}>Feedback do Administrador</h3>
-              <div className={styles.feedbackBox}>{selectedService.review_feedback}</div>
-              {selectedService.review_requested_at && (
+              <div className={styles.feedbackBox}>{selectedService.reviewFeedback}</div>
+              {selectedService.reviewRequestedAt && (
                 <p className={styles.modalDate}>
                   Solicitado em:{' '}
-                  {new Date(selectedService.review_requested_at).toLocaleString('pt-BR')}
+                  {new Date(selectedService.reviewRequestedAt).toLocaleString('pt-BR')}
                 </p>
               )}
             </div>

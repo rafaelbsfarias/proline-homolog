@@ -151,6 +151,77 @@ export default function PartnerOverviewPage() {
     [partnerId, refetch]
   );
 
+  const handleApproveService = useCallback(
+    async (serviceId: string) => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const url = `/api/admin/partners/${partnerId}/services/${serviceId}`;
+        const payload = {
+          action: 'approve',
+        };
+
+        const resp = await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const responseData = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(responseData.error || 'Failed to approve service');
+        }
+
+        await refetch(); // Reload data after approval
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Error approving service');
+      }
+    },
+    [partnerId, refetch]
+  );
+
+  const handleRejectService = useCallback(
+    async (serviceId: string, feedback: string) => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const url = `/api/admin/partners/${partnerId}/services/${serviceId}`;
+        const payload = {
+          action: 'reject',
+          review_feedback: feedback,
+        };
+
+        const resp = await fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const responseData = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(responseData.error || 'Failed to reject service');
+        }
+
+        await refetch(); // Reload data after rejection
+      } catch (error) {
+        throw new Error(error instanceof Error ? error.message : 'Error rejecting service');
+      }
+    },
+    [partnerId, refetch]
+  );
+
   const handleReviewSubmit = useCallback(
     async (
       action: 'approve_full' | 'reject_full' | 'approve_partial',
@@ -276,6 +347,8 @@ export default function PartnerOverviewPage() {
           onQueryChange={serviceFilters.setQuery}
           onStatusChange={serviceFilters.setStatus}
           onRequestReview={handleRequestServiceReview}
+          onApproveService={handleApproveService}
+          onRejectService={handleRejectService}
         />
       </main>
 

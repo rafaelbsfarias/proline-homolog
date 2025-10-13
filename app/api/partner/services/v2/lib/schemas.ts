@@ -44,6 +44,7 @@ export const UpdateServiceSchema = z.object({
     .max(500, 'Descrição deve ter no máximo 500 caracteres')
     .trim()
     .optional(),
+  isActive: z.boolean().optional(),
 });
 
 // Schema para busca de serviços

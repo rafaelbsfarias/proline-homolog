@@ -15,6 +15,7 @@ const BudgetItemSchema = z.object({
   quantity: z.number().positive('Quantidade deve ser positiva'),
   unitPrice: z.number().nonnegative('Preço unitário deve ser não-negativo'),
   totalPrice: z.number().nonnegative('Preço total deve ser não-negativo'),
+  estimatedDays: z.number().positive('Dias estimados devem ser positivos').optional(),
 });
 
 const SaveBudgetSchema = z.object({
@@ -102,6 +103,7 @@ async function saveBudgetHandler(req: AuthenticatedRequest): Promise<NextRespons
       quantity: item.quantity,
       unit_price: item.unitPrice,
       total_price: item.totalPrice,
+      estimated_days: item.estimatedDays || null,
       created_at: new Date().toISOString(),
     }));
 

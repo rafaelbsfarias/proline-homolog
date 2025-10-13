@@ -14,6 +14,7 @@ interface BudgetSummaryProps {
     vehicleYear?: number
   ) => void;
   onQuantityChange: (serviceId: string, quantity: number) => void;
+  onEstimatedDaysChange: (serviceId: string, estimatedDays: number | undefined) => void;
   onRemoveService: (serviceId: string) => void;
   onSave: () => void;
   onClear: () => void;
@@ -26,6 +27,7 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
   budget,
   onBudgetInfoChange,
   onQuantityChange,
+  onEstimatedDaysChange,
   onRemoveService,
   onSave,
   onClear,
@@ -228,9 +230,47 @@ const BudgetSummary: React.FC<BudgetSummaryProps> = ({
                       fontSize: '14px',
                       fontWeight: '600',
                       color: '#28a745',
+                      marginBottom: '8px',
                     }}
                   >
                     Total: R$ {item.totalPrice.toFixed(2)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <label
+                      style={{
+                        fontSize: '12px',
+                        color: '#666',
+                        fontWeight: '500',
+                      }}
+                    >
+                      📅 Prazo:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Dias"
+                      value={item.estimatedDays || ''}
+                      onChange={e => {
+                        const value = e.target.value;
+                        onEstimatedDaysChange(
+                          item.service.id,
+                          value ? parseInt(value, 10) : undefined
+                        );
+                      }}
+                      style={{
+                        width: '60px',
+                        padding: '4px 8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        outline: 'none',
+                      }}
+                      onFocus={e => (e.target.style.borderColor = '#007bff')}
+                      onBlur={e => (e.target.style.borderColor = '#ddd')}
+                    />
+                    <span style={{ fontSize: '12px', color: '#999' }}>
+                      {item.estimatedDays === 1 ? 'dia' : 'dias'}
+                    </span>
                   </div>
                 </div>
 

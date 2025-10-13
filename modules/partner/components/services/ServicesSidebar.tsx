@@ -20,6 +20,8 @@ const ServicesSidebar: React.FC<ServicesSidebarProps> = ({
 
   // Filtrar serviços baseado no termo de pesquisa
   const filteredServices = useMemo(() => {
+    // Garantir que services é um array válido
+    if (!Array.isArray(services)) return [];
     if (!searchTerm) return services;
 
     return services.filter(

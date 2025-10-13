@@ -132,7 +132,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
       }
     }
 
-    // 4. Buscar estimated_days da tabela services
+    // 4. Buscar estimated_days da tabela services (máximo ou soma)
     const { data: serviceData } = await supabase
       .from('services')
       .select('estimated_days')
@@ -142,10 +142,10 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
 
     const estimatedDays = serviceData?.estimated_days || 0;
 
-    // 5. Buscar itens do orçamento (sem preços)
+    // 5. Buscar itens do orçamento com preços e prazos estimados
     const { data: items, error: itemsError } = await supabase
       .from('quote_items')
-      .select('id, description, quantity, completed_at')
+      .select('id, description, quantity, unit_price, estimated_days, completed_at')
       .eq('quote_id', quoteId)
       .order('description', { ascending: true });
 
@@ -158,7 +158,13 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     }
 
     // 5.1. Buscar evidências de execução dos itens
-    let evidences: any[] = [];
+    let evidences: Array<{
+      id: string;
+      quote_item_id: string;
+      image_url: string;
+      description: string | null;
+      uploaded_at: string;
+    }> = [];
     if (items && items.length > 0) {
       const itemIds = items.map(i => i.id);
       const { data: evidencesData, error: evidencesError } = await supabase
@@ -206,12 +212,38 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     }
 
     // 8. Montar resposta
+    // Calcular o prazo total estimado (soma de todos os estimated_days dos itens)
+    const totalEstimatedDays = (items || []).reduce((total, item) => {
+      return total + (item.estimated_days || 0);
+    }, 0);
+
+    // Calcular data de impressão e data estimada de conclusão
+    const printDate = new Date();
+    const startDate = new Date(printDate);
+    startDate.setHours(startDate.getHours() + 24); // Início após 24h
+
+    // Adicionar dias úteis (considerando apenas dias da semana)
+    let daysToAdd = totalEstimatedDays || estimatedDays;
+    const currentDate = new Date(startDate);
+
+    while (daysToAdd > 0) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      const dayOfWeek = currentDate.getDay();
+      // Pular fins de semana (0 = domingo, 6 = sábado)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysToAdd--;
+      }
+    }
+
     const response = {
       ok: true,
       serviceOrder: {
         id: quote.id,
         created_at: quote.created_at,
-        estimated_days: estimatedDays,
+        print_date: printDate.toISOString(),
+        start_date: startDate.toISOString(),
+        estimated_completion_date: currentDate.toISOString(),
+        estimated_days: totalEstimatedDays || estimatedDays,
         status: quote.status,
         vehicle: {
           plate: vehicle.plate,

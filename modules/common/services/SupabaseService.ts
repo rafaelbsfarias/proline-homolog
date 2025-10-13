@@ -61,6 +61,29 @@ export class SupabaseService {
     return this.adminClient;
   }
 
+  /**
+   * Cria cliente com token de usuário autenticado
+   * Usado quando é necessário respeitar RLS policies
+   */
+  createAuthenticatedClient(accessToken: string) {
+    const client = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      }
+    );
+    return client;
+  }
+
   static validateEnvironment(): boolean {
     const required = [
       'NEXT_PUBLIC_SUPABASE_URL',

@@ -7,12 +7,14 @@ import EditServiceModal from '@/modules/partner/components/services/EditServiceM
 import {
   usePartnerServices,
   type PartnerService,
+  type UpdateServiceData,
 } from '@/modules/partner/hooks/usePartnerServices';
 import { useEditServiceModal } from '@/modules/partner/hooks/useEditServiceModal';
 
 const ServicesPage = () => {
   // Usar hook real para buscar dados do banco
-  const { services, loading, error, updateService, deleteService } = usePartnerServices();
+  const { services, loading, error, updateService, deleteService, reloadServices } =
+    usePartnerServices();
 
   const { editingService, isModalOpen, updateLoading, openModal, closeModal } =
     useEditServiceModal();
@@ -36,20 +38,14 @@ const ServicesPage = () => {
     }
   };
 
-  const onSave = async () => {
-    if (editingService) {
-      try {
-        await updateService(editingService.id, {
-          name: editingService.name,
-          description: editingService.description,
-          price: editingService.price,
-          category: editingService.category || '',
-        });
-        closeModal();
-        setOperationError(null); // Limpar erro anterior
-      } catch {
-        setOperationError('Erro ao salvar serviço. Tente novamente.');
-      }
+  const onSave = async (serviceId: string, data: UpdateServiceData) => {
+    try {
+      await updateService(serviceId, data);
+      await reloadServices(); // Recarrega lista após atualizar
+      closeModal();
+      setOperationError(null); // Limpar erro anterior
+    } catch {
+      setOperationError('Erro ao salvar serviço. Tente novamente.');
     }
   };
 

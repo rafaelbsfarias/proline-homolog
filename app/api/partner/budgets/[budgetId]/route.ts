@@ -28,6 +28,7 @@ interface BudgetItemResponse {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  estimatedDays?: number;
 }
 
 interface BudgetItem {
@@ -36,6 +37,7 @@ interface BudgetItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  estimatedDays?: number; // optional: estimated completion days
 }
 
 interface UpdateBudgetRequest {
@@ -177,6 +179,7 @@ async function getBudgetHandler(
         unit_price,
         total_price,
         description,
+        estimated_days,
         created_at
       `
       )
@@ -200,6 +203,7 @@ async function getBudgetHandler(
         unit_price: number;
         total_price: number;
         description: string | null;
+        estimated_days: number | null;
       }) => ({
         id: item.id,
         serviceId: item.service_id,
@@ -207,6 +211,7 @@ async function getBudgetHandler(
         quantity: item.quantity,
         unitPrice: parseFloat(item.unit_price.toString()),
         totalPrice: parseFloat(item.total_price.toString()),
+        estimatedDays: item.estimated_days || undefined,
       })
     );
 
@@ -387,6 +392,7 @@ async function updateBudgetHandler(
         unit_price: item.unitPrice,
         total_price: item.totalPrice,
         description: item.description || null,
+        estimated_days: item.estimatedDays || null,
         created_at: new Date().toISOString(),
       };
 

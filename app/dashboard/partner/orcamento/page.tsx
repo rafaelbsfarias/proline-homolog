@@ -22,6 +22,7 @@ const OrcamentoPage = () => {
     addService,
     removeService,
     updateQuantity,
+    updateEstimatedDays,
     updateBudgetInfo,
     clearBudget,
     loadBudgetFromData,
@@ -48,6 +49,10 @@ const OrcamentoPage = () => {
 
   const handleQuantityChange = (serviceId: string, quantity: number) => {
     updateQuantity(serviceId, quantity);
+  };
+
+  const handleEstimatedDaysChange = (serviceId: string, estimatedDays: number | undefined) => {
+    updateEstimatedDays(serviceId, estimatedDays);
   };
 
   const handleRemoveService = (serviceId: string) => {
@@ -117,6 +122,7 @@ const OrcamentoPage = () => {
               budget={budget}
               onBudgetInfoChange={handleBudgetInfoChange}
               onQuantityChange={handleQuantityChange}
+              onEstimatedDaysChange={handleEstimatedDaysChange}
               onRemoveService={handleRemoveService}
               onSave={handleSaveBudget}
               onClear={handleClearBudget}

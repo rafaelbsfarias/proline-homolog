@@ -8,6 +8,9 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 interface ServiceOrderData {
   id: string;
   created_at: string;
+  print_date: string;
+  start_date: string;
+  estimated_completion_date: string;
   estimated_days: number;
   status: string;
   vehicle: {
@@ -32,6 +35,8 @@ interface ServiceOrderData {
     id: string;
     description: string;
     quantity: number;
+    unit_price: number;
+    estimated_days?: number;
   }>;
 }
 
@@ -81,6 +86,16 @@ export default function ServiceOrderPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   if (loading) return <Loading />;
@@ -194,67 +209,53 @@ export default function ServiceOrderPage() {
               OS Nº: {data.id.slice(0, 8).toUpperCase()}
             </p>
             <p style={{ margin: '4px 0 0 0', color: '#7f8c8d', fontSize: '14px' }}>
-              Data de Emissão: {formatDate(data.created_at)}
+              Data de Emissão: {formatDateTime(data.print_date)}
             </p>
           </div>
 
-          {/* Informações em 2 colunas */}
+          {/* Informações de Prazo */}
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '30px',
               marginBottom: '30px',
+              background: '#e8f4f8',
+              padding: '20px',
+              borderRadius: '8px',
+              border: '2px solid #3498db',
             }}
           >
-            {/* Dados do Parceiro */}
-            <div>
-              <h3
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#2c3e50',
-                  marginBottom: '12px',
-                  borderBottom: '2px solid #ecf0f1',
-                  paddingBottom: '8px',
-                }}
-              >
-                PRESTADOR DE SERVIÇO
-              </h3>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>Empresa:</strong> {data.partner.company_name}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>Responsável:</strong> {data.partner.contact_name}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>Telefone:</strong> {data.partner.phone}
-              </p>
-            </div>
-
-            {/* Dados do Cliente */}
-            <div>
-              <h3
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  color: '#2c3e50',
-                  marginBottom: '12px',
-                  borderBottom: '2px solid #ecf0f1',
-                  paddingBottom: '8px',
-                }}
-              >
-                CLIENTE
-              </h3>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>Nome:</strong> {data.client.name}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>Telefone:</strong> {data.client.phone}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '14px' }}>
-                <strong>E-mail:</strong> {data.client.email}
-              </p>
+            <h3
+              style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#2c3e50',
+                marginBottom: '12px',
+              }}
+            >
+              ⏰ PRAZOS DO SERVIÇO
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#7f8c8d' }}>
+                  <strong>Início da Execução:</strong>
+                </p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#2c3e50' }}>
+                  {formatDateTime(data.start_date)}
+                </p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#e74c3c' }}>
+                  (Máximo 24 horas após impressão)
+                </p>
+              </div>
+              <div>
+                <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#7f8c8d' }}>
+                  <strong>Conclusão Estimada:</strong>
+                </p>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: '#27ae60' }}>
+                  {formatDate(data.estimated_completion_date)}
+                </p>
+                <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#7f8c8d' }}>
+                  ({data.estimated_days} {data.estimated_days === 1 ? 'dia útil' : 'dias úteis'})
+                </p>
+              </div>
             </div>
           </div>
 
@@ -325,6 +326,7 @@ export default function ServiceOrderPage() {
                       textAlign: 'left',
                       fontSize: '14px',
                       borderBottom: '2px solid #2c3e50',
+                      width: '50px',
                     }}
                   >
                     Item
@@ -345,10 +347,32 @@ export default function ServiceOrderPage() {
                       textAlign: 'center',
                       fontSize: '14px',
                       borderBottom: '2px solid #2c3e50',
-                      width: '100px',
+                      width: '80px',
                     }}
                   >
                     Qtd.
+                  </th>
+                  <th
+                    style={{
+                      padding: '12px',
+                      textAlign: 'right',
+                      fontSize: '14px',
+                      borderBottom: '2px solid #2c3e50',
+                      width: '120px',
+                    }}
+                  >
+                    Valor Unit.
+                  </th>
+                  <th
+                    style={{
+                      padding: '12px',
+                      textAlign: 'center',
+                      fontSize: '14px',
+                      borderBottom: '2px solid #2c3e50',
+                      width: '100px',
+                    }}
+                  >
+                    Prazo
                   </th>
                 </tr>
               </thead>
@@ -383,58 +407,37 @@ export default function ServiceOrderPage() {
                     >
                       {item.quantity}
                     </td>
+                    <td
+                      style={{
+                        padding: '12px',
+                        fontSize: '14px',
+                        textAlign: 'right',
+                        borderBottom: '1px solid #ecf0f1',
+                        fontWeight: '500',
+                      }}
+                    >
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(item.unit_price)}
+                    </td>
+                    <td
+                      style={{
+                        padding: '12px',
+                        fontSize: '13px',
+                        textAlign: 'center',
+                        borderBottom: '1px solid #ecf0f1',
+                        color: '#7f8c8d',
+                      }}
+                    >
+                      {item.estimated_days
+                        ? `${item.estimated_days} ${item.estimated_days === 1 ? 'dia' : 'dias'}`
+                        : '-'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Prazo de Conclusão */}
-          <div
-            style={{
-              marginBottom: '40px',
-              background: '#fff3cd',
-              padding: '16px',
-              borderRadius: '8px',
-              border: '2px solid #ffc107',
-            }}
-          >
-            <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#856404' }}>
-              ⏱ Prazo Estimado de Conclusão:{' '}
-              <span style={{ fontSize: '20px', color: '#ff6b6b' }}>{data.estimated_days}</span> dias
-              úteis
-            </p>
-          </div>
-
-          {/* Assinaturas */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '40px',
-              marginTop: '60px',
-            }}
-          >
-            <div
-              style={{ borderTop: '2px solid #2c3e50', paddingTop: '12px', textAlign: 'center' }}
-            >
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-                Responsável pelo Serviço
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#7f8c8d' }}>
-                {data.partner.company_name}
-              </p>
-            </div>
-            <div
-              style={{ borderTop: '2px solid #2c3e50', paddingTop: '12px', textAlign: 'center' }}
-            >
-              <p style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-                Cliente / Autorização
-              </p>
-              <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#7f8c8d' }}>
-                {data.client.name}
-              </p>
-            </div>
           </div>
 
           {/* Rodapé */}
@@ -451,7 +454,7 @@ export default function ServiceOrderPage() {
             <p style={{ margin: 0 }}>
               Este documento é uma ordem de serviço gerada automaticamente pelo sistema.
             </p>
-            <p style={{ margin: '4px 0 0 0' }}>Emitido em: {new Date().toLocaleString('pt-BR')}</p>
+            <p style={{ margin: '4px 0 0 0' }}>Impresso em: {formatDateTime(data.print_date)}</p>
           </div>
         </div>
       </div>

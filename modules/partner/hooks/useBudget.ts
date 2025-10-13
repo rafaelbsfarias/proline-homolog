@@ -6,6 +6,7 @@ export interface BudgetItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  estimatedDays?: number;
 }
 
 export interface Budget {
@@ -28,6 +29,7 @@ interface QuoteDataItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  estimatedDays?: number;
 }
 
 interface QuoteData {
@@ -133,6 +135,26 @@ export function useBudget() {
     [removeService]
   );
 
+  const updateEstimatedDays = useCallback(
+    (serviceId: string, estimatedDays: number | undefined) => {
+      setBudget(prev => {
+        const updatedItems = prev.items.map(item =>
+          item.service.id === serviceId
+            ? {
+                ...item,
+                estimatedDays,
+              }
+            : item
+        );
+        return {
+          ...prev,
+          items: updatedItems,
+        };
+      });
+    },
+    []
+  );
+
   const updateBudgetInfo = useCallback(
     (
       name: string,
@@ -210,6 +232,7 @@ export function useBudget() {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         totalPrice: item.totalPrice,
+        estimatedDays: item.estimatedDays,
       }));
 
       return {
@@ -257,6 +280,7 @@ export function useBudget() {
     addService,
     removeService,
     updateQuantity,
+    updateEstimatedDays,
     updateBudgetInfo,
     clearBudget,
     isServiceSelected,

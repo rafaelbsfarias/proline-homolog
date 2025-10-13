@@ -15,18 +15,6 @@ import {
 } from '@/modules/common/http/errorHandlers';
 import { UpdateServiceSchema } from '../lib/schemas';
 
-// Instância do Application Service (singleton pattern)
-let applicationService: PartnerServiceApplicationServiceImpl | null = null;
-
-function getApplicationService(): PartnerServiceApplicationServiceImpl {
-  if (!applicationService) {
-    const supabaseService = SupabaseService.getInstance();
-    const repository = new SupabasePartnerServiceRepository(supabaseService);
-    applicationService = new PartnerServiceApplicationServiceImpl(repository);
-  }
-  return applicationService;
-}
-
 // Mapeamento de entidade PartnerService para resposta HTTP
 function mapPartnerServiceToResponse(service: {
   id: string;
@@ -91,7 +79,27 @@ async function getServiceHandler(
     const { serviceId, error } = await validateServiceId(context);
     if (error) return error;
 
-    const service = getApplicationService();
+    // Obter token do header Authorization
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autenticação não encontrado' },
+        { status: 401 }
+      );
+    }
+
+    // Criar cliente Supabase autenticado com token do usuário (para RLS)
+    const supabaseService = SupabaseService.getInstance();
+    const authenticatedClient = supabaseService.createAuthenticatedClient(token);
+
+    // Criar repositório com cliente autenticado
+    const repository = new SupabasePartnerServiceRepository(supabaseService, authenticatedClient);
+
+    // Criar Application Service com repositório autenticado
+    const service = new PartnerServiceApplicationServiceImpl(repository);
+
     const result = await service.getServiceById(serviceId);
 
     if (!result.success) {
@@ -135,21 +143,47 @@ async function updateServiceHandler(
     // Parse do corpo da requisição
     const body = await req.json();
 
-    // Validar dados usando Zod
-    const validationResult = UpdateServiceSchema.safeParse(body);
+    // Validar dados usando Zod com o serviceId
+    const validationResult = UpdateServiceSchema.safeParse({
+      ...body,
+      id: serviceId, // Garantir que o id seja o da URL
+    });
+
     if (!validationResult.success) {
       return handleValidationError(validationResult.error);
     }
 
-    // Adicionar ID do serviço
-    const validatedData = {
-      ...validationResult.data,
-      id: serviceId,
-    };
+    // Obter token do header Authorization
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
 
-    // Executar caso de uso através do Application Service
-    const service = getApplicationService();
-    const result = await service.updateService(validatedData);
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autenticação não encontrado' },
+        { status: 401 }
+      );
+    }
+
+    // Criar cliente Supabase autenticado com token do usuário (para RLS)
+    const supabaseService = SupabaseService.getInstance();
+    const authenticatedClient = supabaseService.createAuthenticatedClient(token);
+
+    // Criar repositório com cliente autenticado
+    const repository = new SupabasePartnerServiceRepository(supabaseService, authenticatedClient);
+
+    // Criar Application Service com repositório autenticado
+    const service = new PartnerServiceApplicationServiceImpl(repository);
+
+    // validationResult.data tem id garantido porque passamos no safeParse
+    const result = await service.updateService(
+      validationResult.data as {
+        id: string;
+        name?: string;
+        price?: number;
+        description?: string;
+        isActive?: boolean;
+      }
+    );
 
     // Retornar resposta mapeada
     return handleServiceResult(result);
@@ -170,7 +204,27 @@ async function deleteServiceHandler(
     const { serviceId, error } = await validateServiceId(context);
     if (error) return error;
 
-    const service = getApplicationService();
+    // Obter token do header Authorization
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autenticação não encontrado' },
+        { status: 401 }
+      );
+    }
+
+    // Criar cliente Supabase autenticado com token do usuário (para RLS)
+    const supabaseService = SupabaseService.getInstance();
+    const authenticatedClient = supabaseService.createAuthenticatedClient(token);
+
+    // Criar repositório com cliente autenticado
+    const repository = new SupabasePartnerServiceRepository(supabaseService, authenticatedClient);
+
+    // Criar Application Service com repositório autenticado
+    const service = new PartnerServiceApplicationServiceImpl(repository);
+
     const result = await service.deactivateService(serviceId);
 
     return handleServiceResult(result);

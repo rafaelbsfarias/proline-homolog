@@ -57,9 +57,14 @@ export function mapPartnerServiceToResponse(service: PartnerService) {
     name: service.name.value,
     price: service.price.value,
     description: service.description.value,
+    category: null, // TODO: Adicionar suporte a categoria quando campo existir no banco
     isActive: service.isActive,
     createdAt: service.createdAt,
     updatedAt: service.updatedAt,
+    // Campos de review serão preenchidos posteriormente no endpoint
+    reviewStatus: undefined as string | undefined,
+    reviewFeedback: undefined as string | null | undefined,
+    reviewRequestedAt: undefined as string | null | undefined,
   };
 }
 

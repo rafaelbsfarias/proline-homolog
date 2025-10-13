@@ -92,8 +92,27 @@ async function getServicesHandler(req: AuthenticatedRequest): Promise<NextRespon
       partnerId: req.user.id,
     };
 
-    // Executar caso de uso através do Application Service
-    const service = getApplicationService();
+    // Obter token do header Authorization
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Token de autenticação não encontrado' },
+        { status: 401 }
+      );
+    }
+
+    // Criar cliente Supabase autenticado com token do usuário (para RLS)
+    const supabaseService = SupabaseService.getInstance();
+    const authenticatedClient = supabaseService.createAuthenticatedClient(token);
+
+    // Criar repositório com cliente autenticado
+    const repository = new SupabasePartnerServiceRepository(supabaseService, authenticatedClient);
+
+    // Criar Application Service com repositório autenticado
+    const service = new PartnerServiceApplicationServiceImpl(repository);
+
     const result = await service.getServicesByPartner(
       validatedData.partnerId,
       validatedData.name ? { nameFilter: validatedData.name } : undefined,
@@ -107,6 +126,47 @@ async function getServicesHandler(req: AuthenticatedRequest): Promise<NextRespon
 
     // Mapear resposta para formato HTTP
     const servicesResponse = mapPartnerServicesToResponse(result.data.services);
+
+    // Buscar campos de review diretamente do Supabase (não fazem parte da entidade de domínio)
+    const serviceIds = result.data.services.map(s => s.id);
+
+    if (serviceIds.length > 0) {
+      const { data: reviewData } = await authenticatedClient
+        .from('partner_services')
+        .select('id, review_status, review_feedback, review_requested_at')
+        .in('id', serviceIds);
+
+      // Enriquecer resposta com dados de review
+      if (reviewData) {
+        type ReviewData = {
+          id: string;
+          review_status: string | null;
+          review_feedback: string | null;
+          review_requested_at: string | null;
+        };
+
+        const reviewMap = new Map<string, ReviewData>(
+          (reviewData as ReviewData[]).map(r => [r.id, r])
+        );
+
+        servicesResponse.forEach(
+          (s: {
+            id: string;
+            reviewStatus?: string | null;
+            reviewFeedback?: string | null;
+            reviewRequestedAt?: string | null;
+          }) => {
+            const review = reviewMap.get(s.id);
+            if (review) {
+              s.reviewStatus = review.review_status || undefined;
+              s.reviewFeedback = review.review_feedback;
+              s.reviewRequestedAt = review.review_requested_at;
+            }
+          }
+        );
+      }
+    }
+
     const paginatedResponse = mapPaginatedResponse(
       servicesResponse,
       result.data.total,
