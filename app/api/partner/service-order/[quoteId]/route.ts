@@ -90,24 +90,43 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
           newStatus: 'Em Execução',
         });
 
-        // 3.3. Adicionar entrada na timeline
-        const { error: historyError } = await supabase.from('vehicle_history').insert({
-          vehicle_id: serviceOrder.vehicle_id,
-          status: 'Em Execução',
-          partner_service: serviceCategory,
-          notes: `Execução Iniciada - ${serviceCategory}`,
-        });
+        // 3.3. Buscar a entrada mais recente criada pelo trigger
+        const { data: latestHistory } = await supabase
+          .from('vehicle_history')
+          .select('id')
+          .eq('vehicle_id', serviceOrder.vehicle_id)
+          .eq('status', 'Em Execução')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-        if (historyError) {
-          logger.warn('failed_insert_vehicle_history', {
-            error: historyError,
-            vehicleId: serviceOrder.vehicle_id,
-          });
+        // 3.4. Atualizar a entrada com partner_service e notes
+        if (latestHistory?.id) {
+          const { error: historyError } = await supabase
+            .from('vehicle_history')
+            .update({
+              partner_service: serviceCategory,
+              notes: `Execução Iniciada - ${serviceCategory}`,
+            })
+            .eq('id', latestHistory.id);
+
+          if (historyError) {
+            logger.warn('failed_update_vehicle_history', {
+              error: historyError,
+              vehicleId: serviceOrder.vehicle_id,
+              historyId: latestHistory.id,
+            });
+          } else {
+            logger.info('vehicle_history_updated', {
+              vehicleId: serviceOrder.vehicle_id,
+              historyId: latestHistory.id,
+              status: 'Em Execução',
+              category: serviceCategory,
+            });
+          }
         } else {
-          logger.info('vehicle_history_created', {
+          logger.warn('vehicle_history_not_found_after_update', {
             vehicleId: serviceOrder.vehicle_id,
-            status: 'Em Execução',
-            category: serviceCategory,
           });
         }
       }
