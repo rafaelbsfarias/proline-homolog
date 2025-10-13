@@ -8,67 +8,45 @@ import { useSearchParams } from 'next/navigation';
 import Modal from '@/modules/common/components/Modal/Modal';
 import QuoteReviewModal from '@/modules/admin/components/QuoteReviewModal';
 import { formatQuoteStatus } from '@/modules/common/utils/format';
-
-type PartnerSummary = {
-  id: string;
-  company_name: string;
-  services_count: number;
-  pending_budgets: number;
-  executing_budgets: number;
-  approval_budgets: number;
-  is_active?: boolean;
-  quotes?: {
-    pending_admin_approval: any[];
-    pending_client_approval: any[];
-    approved: any[];
-    rejected: any[];
-    executing: any[];
-  };
-};
+import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import { ChecklistViewer } from '@/modules/vehicles/components/ChecklistViewer';
+import type {
+  Partner,
+  QuotesByStatus,
+  Service,
+  QuoteFilterStatus,
+  ServiceFilterStatus,
+  QuoteWithItems,
+  QuoteStatus,
+  Quote,
+  QuoteItem,
+} from '@/modules/admin/partner-overview/types';
 
 export default function PartnerOverviewPage() {
   const params = useSearchParams();
   const partnerId = params.get('partnerId') || '';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [partner, setPartner] = useState<PartnerSummary | null>(null);
-  const [quotes, setQuotes] = useState<{
-    pending_admin_approval: any[];
-    pending_client_approval: any[];
-    approved: any[];
-    rejected: any[];
-    executing: any[];
-  } | null>(null);
-  const [services, setServices] = useState<
-    {
-      id: string;
-      name: string;
-      description: string | null;
-      price: number | null;
-      is_active: boolean;
-      created_at: string;
-    }[]
-  >([]);
+  const [partner, setPartner] = useState<Partner | null>(null);
+  const [quotes, setQuotes] = useState<QuotesByStatus | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
 
   // Filters
   const [quoteQuery, setQuoteQuery] = useState('');
-  const [quoteStatus, setQuoteStatus] = useState<
-    | 'all'
-    | 'pending_admin_approval'
-    | 'pending_client_approval'
-    | 'approved'
-    | 'rejected'
-    | 'executing'
-  >('pending_admin_approval');
+  const [quoteStatus, setQuoteStatus] = useState<QuoteFilterStatus>('pending_admin_approval');
   const [serviceQuery, setServiceQuery] = useState('');
-  const [serviceStatus, setServiceStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [serviceStatus, setServiceStatus] = useState<ServiceFilterStatus>('all');
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [quoteDetails, setQuoteDetails] = useState<null | { quote: any; items: any[] }>(null);
+  const [quoteDetails, setQuoteDetails] = useState<QuoteWithItems | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [selectedQuoteForReview, setSelectedQuoteForReview] = useState<{
-    quote: any;
-    items: any[];
-  } | null>(null);
+  const [selectedQuoteForReview, setSelectedQuoteForReview] = useState<QuoteWithItems | null>(null);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [vehicleIdForChecklist, setVehicleIdForChecklist] = useState<string | null>(null);
+
+  // Hook para buscar checklist do parceiro
+  const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(
+    vehicleIdForChecklist || undefined
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -97,9 +75,9 @@ export default function PartnerOverviewPage() {
           setPartner(null);
           return;
         }
-        setPartner(data.partner as PartnerSummary);
+        setPartner(data.partner as Partner);
         // Normalizar estrutura de quotes para evitar chaves ausentes
-        const q = (data.partner?.quotes || {}) as any;
+        const q = data.partner?.quotes || ({} as Partial<QuotesByStatus>);
         const normalized = {
           pending_admin_approval: Array.isArray(q.pending_admin_approval)
             ? q.pending_admin_approval
@@ -124,7 +102,7 @@ export default function PartnerOverviewPage() {
         setServices(
           respServices.ok && Array.isArray(dataServices.services) ? dataServices.services : []
         );
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setError('Erro de rede ao carregar parceiro');
         setPartner(null);
@@ -141,9 +119,9 @@ export default function PartnerOverviewPage() {
 
   const filteredQuotes = useMemo(() => {
     const q = quoteQuery.trim().toLowerCase();
-    const flatten: any[] = [];
+    const flatten: Array<Quote & { _group: QuoteStatus }> = [];
     if (quotes) {
-      const keys: (keyof NonNullable<typeof quotes>)[] = [
+      const keys: (keyof QuotesByStatus)[] = [
         'pending_admin_approval',
         'pending_client_approval',
         'approved',
@@ -242,6 +220,16 @@ export default function PartnerOverviewPage() {
     } catch {}
   };
 
+  const openChecklistModal = (vehicleId: string) => {
+    setVehicleIdForChecklist(vehicleId);
+    setShowChecklistModal(true);
+  };
+
+  const closeChecklistModal = () => {
+    setShowChecklistModal(false);
+    setVehicleIdForChecklist(null);
+  };
+
   const handleReviewSubmit = async (
     action: 'approve_full' | 'reject_full' | 'approve_partial',
     data: {
@@ -252,7 +240,6 @@ export default function PartnerOverviewPage() {
     if (!selectedQuoteForReview) return;
 
     const quoteId = selectedQuoteForReview.quote.id;
-    console.log('[handleReviewSubmit] Starting review', { action, quoteId, data });
 
     try {
       const {
@@ -265,8 +252,6 @@ export default function PartnerOverviewPage() {
         rejectionReason: data.rejectionReason,
       };
 
-      console.log('[handleReviewSubmit] Sending payload:', payload);
-
       const resp = await fetch(`/api/admin/quotes/${quoteId}/review`, {
         method: 'POST',
         headers: {
@@ -276,37 +261,30 @@ export default function PartnerOverviewPage() {
         body: JSON.stringify(payload),
       });
 
-      const result = await resp.json();
-      console.log('[handleReviewSubmit] Response:', { status: resp.status, result });
-
       if (resp.ok) {
-        console.log('[handleReviewSubmit] Success! Updating UI...');
         setReviewModalOpen(false);
         setSelectedQuoteForReview(null);
         // Refresh overview data
         setQuotes(prev => {
           if (!prev) return prev;
-          const all = { ...prev } as any;
-          const from = all['pending_admin_approval'] as any[];
-          const idx = from?.findIndex((q: any) => q.id === quoteId) ?? -1;
+          const all: QuotesByStatus = { ...prev };
+          const from = all.pending_admin_approval;
+          const idx = from?.findIndex(q => q.id === quoteId) ?? -1;
           if (idx >= 0) {
             const [moved] = from.splice(idx, 1);
             if (action === 'reject_full') {
               moved.status = 'rejected';
-              (all['rejected'] as any[]).unshift(moved);
+              all.rejected.unshift(moved);
             } else {
               moved.status = 'pending_client_approval';
-              (all['pending_client_approval'] as any[]).unshift(moved);
+              all.pending_client_approval.unshift(moved);
             }
           }
-          return { ...all };
+          return all;
         });
-        console.log('[handleReviewSubmit] UI updated successfully');
-      } else {
-        console.error('[handleReviewSubmit] API error:', result);
       }
-    } catch (err) {
-      console.error('[handleReviewSubmit] Exception:', err);
+    } catch {
+      // Error handling would be added in Phase 2 with proper error service
     }
   };
 
@@ -440,7 +418,7 @@ export default function PartnerOverviewPage() {
                     />
                     <select
                       value={quoteStatus}
-                      onChange={e => setQuoteStatus(e.target.value as any)}
+                      onChange={e => setQuoteStatus(e.target.value as QuoteFilterStatus)}
                       style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
                     >
                       <option value="all">Todos</option>
@@ -510,8 +488,7 @@ export default function PartnerOverviewPage() {
                                 Detalhes
                               </button>
                               {(item._group === 'pending_admin_approval' ||
-                                item.status === 'pending_admin_approval' ||
-                                item.status === 'admin_review') && (
+                                item.status === 'pending_admin_approval') && (
                                 <button
                                   onClick={() => openReviewModal(item.id)}
                                   style={{
@@ -562,7 +539,7 @@ export default function PartnerOverviewPage() {
                     />
                     <select
                       value={serviceStatus}
-                      onChange={e => setServiceStatus(e.target.value as any)}
+                      onChange={e => setServiceStatus(e.target.value as ServiceFilterStatus)}
                       style={{ border: '1px solid #e3e3e3', borderRadius: 6, padding: '6px 10px' }}
                     >
                       <option value="all">Todos</option>
@@ -709,7 +686,7 @@ export default function PartnerOverviewPage() {
                       </td>
                     </tr>
                   ) : (
-                    quoteDetails.items.map((it: any) => (
+                    quoteDetails.items.map((it: QuoteItem) => (
                       <tr key={it.id}>
                         <td style={{ padding: 8, borderTop: '1px solid #eee' }}>
                           {it.description || '-'}
@@ -739,8 +716,31 @@ export default function PartnerOverviewPage() {
                 </tbody>
               </table>
             </div>
-            {['pending_admin_approval', 'admin_review'].includes(quoteDetails.quote.status) && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <div
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}
+            >
+              {quoteDetails.quote.vehicle_id && (
+                <button
+                  onClick={() => {
+                    setDetailsOpen(false);
+                    openChecklistModal(quoteDetails.quote.vehicle_id);
+                  }}
+                  style={{
+                    background: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  📋 Ver Checklist Completo
+                </button>
+              )}
+              {['pending_admin_approval', 'admin_review'].includes(quoteDetails.quote.status) && (
                 <button
                   onClick={() => {
                     setDetailsOpen(false);
@@ -757,8 +757,8 @@ export default function PartnerOverviewPage() {
                 >
                   Revisar Orçamento
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -775,6 +775,83 @@ export default function PartnerOverviewPage() {
           items={selectedQuoteForReview.items}
           onReview={handleReviewSubmit}
         />
+      )}
+
+      {/* Checklist Modal */}
+      {showChecklistModal && checklistData && (
+        <ChecklistViewer data={checklistData} onClose={closeChecklistModal} />
+      )}
+      {showChecklistModal && checklistLoading && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 40,
+            }}
+          >
+            <Loading />
+          </div>
+        </div>
+      )}
+      {showChecklistModal && !checklistLoading && !checklistData && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+          onClick={closeChecklistModal}
+        >
+          <div
+            style={{
+              background: 'white',
+              borderRadius: 12,
+              padding: 40,
+              maxWidth: 500,
+              textAlign: 'center',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0, color: '#072e4c' }}>Checklist não encontrado</h2>
+            <p style={{ color: '#666', marginBottom: 24 }}>
+              Nenhum checklist ou evidências foram registradas pelo parceiro para este veículo.
+            </p>
+            <button
+              onClick={closeChecklistModal}
+              style={{
+                background: '#072e4c',
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '10px 20px',
+                cursor: 'pointer',
+              }}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
