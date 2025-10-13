@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { useParams } from 'next/navigation';
 import styles from './page.module.css';
+import Link from 'next/link';
 import Header from '@/modules/admin/components/Header';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -83,10 +84,12 @@ const Page = () => {
     <>
       <Header />
       <div className={styles.container}>
-        <h1 className={styles.title}>Visão geral do cliente</h1>
-        <p className={styles.note}>
-          Defina os valores de coleta por ponto e acompanhe o status geral.
-        </p>
+        <div className={styles.headerRow}>
+          <h1 className={styles.title}>Visão geral do cliente</h1>
+          <Link className={styles.linkButton} href={`/dashboard/client/${clientId}/overview`}>
+            Resumo Financeiro
+          </Link>
+        </div>
 
         {/* 1) Precificação */}
         <CollectionPricingSection

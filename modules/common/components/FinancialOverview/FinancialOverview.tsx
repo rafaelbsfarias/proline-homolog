@@ -1,7 +1,12 @@
 'use client';
 import React, { useMemo } from 'react';
 
-type FinancialItemType = 'vehicle_collection' | 'executed_budget' | 'material_purchase';
+type FinancialItemType =
+  | 'vehicle_collection'
+  | 'executed_budget'
+  | 'material_purchase'
+  | 'operation_fee'
+  | 'parking_fee';
 type ServiceStatus = 'finished' | 'in_progress';
 
 type FinancialItem = {
@@ -30,14 +35,98 @@ function typeLabel(type: FinancialItemType) {
       return 'Orçamento Executado';
     case 'material_purchase':
       return 'Materiais Comprados';
+    case 'operation_fee':
+      return 'Taxa de Operação';
+    case 'parking_fee':
+      return 'Parqueamento';
     default:
       return 'Item';
   }
 }
 
-// Mock simples e determinístico
+type MockVehicle = {
+  plate: string;
+  inPatioAtacado: boolean;
+  enteredAt?: string; // ISO date quando entrou no pátio
+};
+
+type MockClientPricing = {
+  taxaOperacao: number; // valor por veículo
+  parqueamentoDiaria: number; // valor por dia por veículo no pátio_atacado
+};
+
+function getMockClientPricing(clientId?: string): MockClientPricing {
+  // Valores estáticos com leve variação determinística por clientId
+  const base: MockClientPricing = { taxaOperacao: 35, parqueamentoDiaria: 12.5 };
+  if (!clientId) return base;
+  const last = clientId.at(-1);
+  if (last && /[0-9]/.test(last)) {
+    const n = Number(last);
+    return {
+      taxaOperacao: base.taxaOperacao + (n % 3) * 5,
+      parqueamentoDiaria: base.parqueamentoDiaria + (n % 4) * 2,
+    };
+  }
+  if (clientId.endsWith('a')) return { taxaOperacao: 40, parqueamentoDiaria: 15 };
+  return base;
+}
+
+function getMockVehiclesForClient(clientId?: string): MockVehicle[] {
+  // Lista pequena e determinística de veículos "cadastrados" do cliente
+  const base: MockVehicle[] = [
+    { plate: 'ABC1D23', inPatioAtacado: false },
+    { plate: 'EFG4H56', inPatioAtacado: true, enteredAt: daysAgoISO(3) },
+    { plate: 'IJK7L89', inPatioAtacado: true, enteredAt: daysAgoISO(1) },
+  ];
+  if (!clientId) return base;
+  // Varia a quantidade levemente por clientId
+  if (clientId.length % 2 === 0) {
+    return [...base, { plate: 'MNO0P12', inPatioAtacado: false }];
+  }
+  return base;
+}
+
+function daysAgoISO(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
+// Mock simples e determinístico, incluindo taxas de operação e parqueamento
 function getMockItems(clientId?: string): FinancialItem[] {
+  const pricing = getMockClientPricing(clientId);
+  const vehicles = getMockVehiclesForClient(clientId);
+  const totalVehicles = vehicles.length; // "veículos cadastrados"
+
+  // Taxa de operação: taxa por veículo x quantidade de veículos cadastrados
+  const totalTaxaOperacao = pricing.taxaOperacao * totalVehicles;
+
+  // Parqueamento: diária x total de dias de todos veículos no pátio_atacado
+  const vehiclesInPatio = vehicles.filter(v => v.inPatioAtacado && v.enteredAt);
+  const totalDiasPatio = vehiclesInPatio.reduce((sum, v) => {
+    if (!v.enteredAt) return sum;
+    const entered = new Date(v.enteredAt).getTime();
+    const now = Date.now();
+    const diffDays = Math.max(1, Math.ceil((now - entered) / (1000 * 60 * 60 * 24)));
+    return sum + diffDays;
+  }, 0);
+  const totalParqueamento = pricing.parqueamentoDiaria * totalDiasPatio;
+
   const base: FinancialItem[] = [
+    {
+      id: 'fee-op',
+      type: 'operation_fee',
+      description: `Taxa por veículo (${totalVehicles} x ${formatCurrencyBRL(pricing.taxaOperacao)})`,
+      serviceStatus: 'finished',
+      amount: totalTaxaOperacao,
+    },
+    {
+      id: 'fee-park',
+      type: 'parking_fee',
+      description: `Parqueamento (${vehiclesInPatio.length} veículo(s), ${totalDiasPatio} dia(s) no pátio)`,
+      serviceStatus: 'finished',
+      amount: totalParqueamento,
+    },
     {
       id: 'it-1',
       type: 'vehicle_collection',

@@ -16,6 +16,24 @@
   margin-bottom: 18px;
 }
 
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.linkButton {
+  background: #002e4c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
 .sectionTitle {
   font-size: 1.2rem;
   font-weight: 600;
