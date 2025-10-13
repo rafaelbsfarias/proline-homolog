@@ -49,7 +49,7 @@ export function useExecutionEvidences(vehicleId: string | undefined) {
         // 1. Buscar service_order associado ao veículo
         const { data: serviceOrders, error: soError } = await supabase
           .from('service_orders')
-          .select('id, quote_id:quotes(id)')
+          .select('id')
           .eq('vehicle_id', vehicleId)
           .order('created_at', { ascending: false });
 
@@ -65,18 +65,26 @@ export function useExecutionEvidences(vehicleId: string | undefined) {
           return;
         }
 
-        // 2. Pegar o quote_id mais recente (pode haver múltiplos orçamentos)
-        const quoteIds = serviceOrders
-          .map(so => (so.quote_id as unknown as { id: string })?.id)
-          .filter(Boolean);
+        // 2. Buscar quotes associadas aos service_orders
+        const serviceOrderIds = serviceOrders.map(so => so.id);
+        const { data: quotes, error: quotesError } = await supabase
+          .from('quotes')
+          .select('id')
+          .in('service_order_id', serviceOrderIds);
 
-        if (quoteIds.length === 0) {
+        if (quotesError) {
+          logger.error('fetch_quotes_error', { error: quotesError });
+          throw quotesError;
+        }
+
+        if (!quotes || quotes.length === 0) {
           logger.info('no_quotes_found', { vehicleId });
           setEvidences([]);
           setLoading(false);
           return;
         }
 
+        const quoteIds = quotes.map(q => q.id);
         logger.info('quotes_found', { quoteIds, count: quoteIds.length });
 
         // 3. Buscar evidências de execução com informações dos itens

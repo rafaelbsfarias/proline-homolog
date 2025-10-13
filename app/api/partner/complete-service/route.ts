@@ -79,10 +79,21 @@ export async function POST(request: NextRequest) {
     }
 
     // 5. Buscar vehicle_id associado ao quote
+    const { data: quote, error: quoteError } = await supabaseAdmin
+      .from('quotes')
+      .select('service_order_id')
+      .eq('id', quote_id)
+      .single();
+
+    if (quoteError || !quote) {
+      logger.error('quote_not_found', { error: quoteError, quote_id });
+      return NextResponse.json({ ok: false, error: 'Orçamento não encontrado' }, { status: 404 });
+    }
+
     const { data: serviceOrder, error: orderError } = await supabaseAdmin
       .from('service_orders')
       .select('vehicle_id')
-      .eq('quote_id', quote_id)
+      .eq('id', quote.service_order_id)
       .single();
 
     if (orderError || !serviceOrder) {
