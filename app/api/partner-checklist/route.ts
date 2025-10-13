@@ -154,37 +154,60 @@ async function getMechanicsChecklist(
       return NextResponse.json({ error: 'Checklist de mecânica não encontrado' }, { status: 404 });
     }
 
-    // Buscar itens do checklist
-    const { data: items, error: itemsError } = await supabase
+    // Buscar itens do checklist por quote_id (novo) ou inspection_id (legado)
+    let itemsQuery = supabase
       .from('mechanics_checklist_items')
       .select('*')
-      .eq('checklist_id', checklist.id)
       .order('created_at', { ascending: true });
 
+    // Usar quote_id (prioridade), inspection_id (fallback) ou vehicle_id (último recurso)
+    if (checklist.quote_id) {
+      itemsQuery = itemsQuery.eq('quote_id', checklist.quote_id);
+      logger.info('fetching_items_by_quote_id', { quote_id: checklist.quote_id.slice(0, 8) });
+    } else if (checklist.inspection_id) {
+      itemsQuery = itemsQuery.eq('inspection_id', checklist.inspection_id);
+      logger.info('fetching_items_by_inspection_id', {
+        inspection_id: checklist.inspection_id.slice(0, 8),
+      });
+    } else {
+      itemsQuery = itemsQuery.eq('vehicle_id', vehicleId);
+      logger.info('fetching_items_by_vehicle_id_fallback', { vehicle_id: vehicleId.slice(0, 8) });
+    }
+
+    const { data: items, error: itemsError } = await itemsQuery;
+
     if (itemsError) {
+      logger.error('error_fetching_items_invalid_column', {
+        error: itemsError,
+        code: itemsError.code || 'unknown',
+        hint: 'Use quote_id or inspection_id instead of checklist_id',
+      });
       throw itemsError;
     }
 
-    // Buscar evidências de todos os itens
-    const itemIds = (items as ChecklistItemRow[] | null)?.map(item => item.id) || [];
-    let evidences: EvidenceRow[] = [];
+    // Buscar evidências por quote_id ou inspection_id (independente de items)
+    let evidencesQuery = supabase.from('mechanics_checklist_evidences').select('*');
 
-    if (itemIds.length > 0) {
-      const { data: evidencesData, error: evidencesError } = await supabase
-        .from('mechanics_checklist_evidences')
-        .select('*')
-        .in('checklist_item_id', itemIds);
+    if (checklist.quote_id) {
+      evidencesQuery = evidencesQuery.eq('quote_id', checklist.quote_id);
+      logger.info('fetching_evidences_by_quote_id', { quote_id: checklist.quote_id.slice(0, 8) });
+    } else if (checklist.inspection_id) {
+      evidencesQuery = evidencesQuery.eq('inspection_id', checklist.inspection_id);
+      logger.info('fetching_evidences_by_inspection_id', {
+        inspection_id: checklist.inspection_id.slice(0, 8),
+      });
+    }
 
-      if (evidencesError) {
-        throw evidencesError;
-      }
+    const { data: evidences, error: evidencesError } = await evidencesQuery;
 
-      evidences = (evidencesData as EvidenceRow[]) || [];
+    if (evidencesError) {
+      logger.error('error_fetching_evidences', { error: evidencesError });
+      throw evidencesError;
     }
 
     // Gerar signed URLs para as evidências
     const evidencesWithUrls = await Promise.all(
-      evidences.map(async evidence => {
+      ((evidences as EvidenceRow[]) || []).map(async evidence => {
         try {
           const { data: urlData } = await supabase.storage
             .from('vehicle-media')
