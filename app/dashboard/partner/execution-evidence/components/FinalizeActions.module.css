@@ -1,0 +1,67 @@
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+
+.saveButton,
+.finalizeButton {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.saveButton {
+  background: #10b981;
+  color: white;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #059669;
+}
+
+.finalizeButton {
+  background: #072e4c;
+  color: white;
+}
+
+.finalizeButton:hover:not(:disabled) {
+  background: #0a3d63;
+}
+
+.finalizeButton.disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.saveButton:disabled,
+.finalizeButton:disabled {
+  cursor: not-allowed;
+}
+
+.finalizeContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: -30px;
+  right: 0;
+  background: #ef4444;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}

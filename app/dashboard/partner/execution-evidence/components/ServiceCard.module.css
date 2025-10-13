@@ -1,0 +1,43 @@
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.card.completed {
+  border: 2px solid #10b981;
+}
+
+.completedBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #10b981;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #333;
+  padding-right: 100px;
+}
+
+.completedText {
+  color: #10b981;
+  font-size: 14px;
+  margin-bottom: 16px;
+  font-style: italic;
+}

@@ -1,0 +1,52 @@
+.actions {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.uploadButton:hover {
+  background: #2563eb;
+}
+
+.fileInput {
+  display: none;
+}
+
+.completeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.completeButton:hover:not(:disabled) {
+  background: #059669;
+}
+
+.completeButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
