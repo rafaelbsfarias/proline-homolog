@@ -40,44 +40,30 @@
   color: #888;
   cursor: pointer;
 }
-.form label {
-  display: flex;
-  flex-direction: column;
-  font-weight: 500;
-  margin-bottom: 1.1em;
-  color: #222;
-}
+
 .form input,
 .form select {
-  margin-top: 0.3em;
-  padding: 10px 12px;
-  border: 1px solid #cfd8dc;
-  border-radius: 7px;
-  font-size: 1rem;
-  background: #fafbfc;
-  color: #222;
-  outline: none;
-  transition: border 0.2s;
-}
-.form input:focus,
-.form select:focus {
-  border-color: #002e4c;
-}
-.form button[type='submit'] {
-  background: #002e4c;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 1rem;
-  padding: 14px 0;
   margin-top: 8px;
-  cursor: pointer;
-  transition: filter 0.2s;
+  padding: 10px 12px;
+  font-size: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.formGroup.fullWidth {
+  flex: none;
   width: 100%;
-  min-width: 220px;
-  max-width: 340px;
-  align-self: center;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 .form button[type='submit']:hover {
   filter: brightness(1.08);
@@ -91,4 +77,23 @@
   color: #43b04a;
   margin-top: 10px;
   font-size: 0.98rem;
+}
+
+.radioGroupContainer {
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  gap: 15px; /* Increased space between label and radio buttons */
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.radioGroupContainer > div {
+  display: flex;
+  gap: 20px; /* Space between individual radio buttons */
+}
+
+.formLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
 }

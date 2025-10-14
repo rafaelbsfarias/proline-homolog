@@ -57,6 +57,7 @@ async function handleAddPartner(request: AuthenticatedRequest): Promise<Response
       contractValue: z.coerce.number().nonnegative().optional(),
       categoryKey: z.preprocess(v => (v ?? '').toString().trim(), z.string()).optional(),
       newCategoryName: z.preprocess(v => (v ?? '').toString().trim(), z.string()).optional(),
+      newCategoryType: z.enum(['comercializacao', 'preparacao']).optional(),
     });
 
     const parsed = schema.safeParse(normalized);
@@ -91,7 +92,7 @@ async function handleAddPartner(request: AuthenticatedRequest): Promise<Response
     }
 
     // Optional: link category
-    const { categoryKey, newCategoryName } = parsed.data as any;
+    const { categoryKey, newCategoryName, newCategoryType } = parsed.data as any;
     if (categoryKey || newCategoryName) {
       const supabase = SupabaseService.getInstance().getAdminClient();
       let categoryId: string | null = null;
@@ -112,7 +113,7 @@ async function handleAddPartner(request: AuthenticatedRequest): Promise<Response
         else {
           const { data: created } = await supabase
             .from('service_categories')
-            .insert({ key, name: newCategoryName })
+            .insert({ key, name: newCategoryName, type: newCategoryType })
             .select('id')
             .single();
           if (created) categoryId = created.id;

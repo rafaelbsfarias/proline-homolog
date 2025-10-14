@@ -21,7 +21,7 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
   const supabase = SupabaseService.getInstance().getAdminClient();
   const { data, error } = await supabase
     .from('service_categories')
-    .select('id, key, name')
+    .select('id, key, name, type')
     .order('name', { ascending: true });
   if (error) {
     logger.error('Error fetching service categories:', error);
@@ -34,8 +34,12 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
     const nameRaw = (body?.name ?? '').toString().trim();
+    const type = (body?.type ?? '').toString().trim(); // Extract type
     if (!nameRaw || nameRaw.length < 2) {
       return NextResponse.json({ error: 'Nome de categoria inválido' }, { status: 400 });
+    }
+    if (!type || (type !== 'comercializacao' && type !== 'preparacao')) {
+      return NextResponse.json({ error: 'Tipo de categoria inválido' }, { status: 400 });
     }
     const key = slugify(nameRaw);
     const supabase = SupabaseService.getInstance().getAdminClient();
@@ -43,7 +47,7 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
     // If exists, return it
     const { data: existing } = await supabase
       .from('service_categories')
-      .select('id, key, name')
+      .select('id, key, name, type') // Select type here too
       .eq('key', key)
       .maybeSingle();
     if (existing) {
@@ -52,8 +56,8 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     const { data: inserted, error } = await supabase
       .from('service_categories')
-      .insert({ key, name: nameRaw })
-      .select('id, key, name')
+      .insert({ key, name: nameRaw, type }) // Insert type here
+      .select('id, key, name, type') // Select type here too
       .single();
     if (error) {
       logger.error('Error creating service category:', error);

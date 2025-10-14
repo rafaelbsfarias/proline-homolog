@@ -3,7 +3,12 @@ import styles from './AddUserModal.module.css'; // Reutilizando estilos do modal
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { maskCNPJ, maskPhone } from '@/modules/common/utils/maskers';
-import CurrencyInput from '@/modules/common/components/CurrencyInput'; // Import CurrencyInput
+import Radio from '@/modules/common/components/Radio/Radio'; // Import Radio component
+import Input from '@/modules/common/components/Input/Input'; // Import Input componen
+import Modal from '@/modules/common/components/Modal/Modal'; // Import Modal component
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import Select from '@/modules/common/components/Select/Select'; // Import Select component
 
 interface AddPartnerModalProps {
   isOpen: boolean;
@@ -26,6 +31,9 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
   const [catLoading, setCatLoading] = useState(false);
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>('');
   const [newCategoryName, setNewCategoryName] = useState<string>('');
+  const [categoryType, setCategoryType] = useState<'comercializacao' | 'preparacao'>(
+    'comercializacao'
+  ); // New state for category type
   const [contractValue, setContractValue] = useState<number | undefined>(undefined); // Change state type to number | undefined
   const { post, get } = useAuthenticatedFetch();
 
@@ -89,6 +97,7 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
             ? selectedCategoryKey
             : undefined,
         newCategoryName: selectedCategoryKey === '__new__' ? newCategoryName : undefined,
+        newCategoryType: selectedCategoryKey === '__new__' ? categoryType : undefined,
       };
       // Chamada para o endpoint unificado
       const res = await post('/api/admin/add-partner', payload);
@@ -107,90 +116,141 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <button className={styles.closeButton} onClick={onClose}>
-          &times;
-        </button>
-        <h2>Adicionar Parceiro</h2>
-        <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
-          <label>
-            Representante da Empresa
-            <input name="name" value={form.name} onChange={handleChange} required />
-          </label>
-          <label>
-            E-mail
-            <input name="email" type="email" value={form.email} onChange={handleChange} required />
-          </label>
-          <label>
-            CNPJ
-            <input name="cnpj" value={form.cnpj} onChange={handleChange} required maxLength={18} />
-          </label>
-          <label>
-            Razão Social
-            <input name="companyName" value={form.companyName} onChange={handleChange} required />
-          </label>
-          <label>
-            Telefone
-            <input name="phone" value={form.phone} onChange={handleChange} required />
-          </label>
-          <label>
-            Valor do contrato (R$)
-            <CurrencyInput
-              name="contractValue"
-              value={contractValue}
-              onChange={setContractValue}
-              placeholder="0,00"
-              disabled={loading}
-            />
-          </label>
-          <label>
-            Categoria de serviço
-            <select
-              value={selectedCategoryKey}
-              onChange={e => setSelectedCategoryKey(e.target.value)}
-              disabled={catLoading}
-            >
-              <option value="">Selecione uma categoria...</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.key}>
-                  {c.name}
-                </option>
-              ))}
-              <option value="__new__">Adicionar nova categoria...</option>
-            </select>
-          </label>
-          {selectedCategoryKey === '__new__' && (
-            <label>
-              Nova categoria
-              <input
-                name="newCategoryName"
-                value={newCategoryName}
-                onChange={e => setNewCategoryName(e.target.value)}
-                placeholder="Ex.: Funilaria Premium"
-              />
-            </label>
-          )}
-          <button type="submit" disabled={loading}>
-            {loading ? 'Adicionando...' : 'Adicionar Parceiro'}
-          </button>
-          {/* Mensagens de sucesso movidas para modal dedicado */}
-        </form>
-        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
-        {success && (
-          <MessageModal
-            title="Sucesso"
-            message={'Parceiro cadastrado com sucesso!\nUm convite foi enviado por email.'}
-            variant="success"
-            onClose={() => {
-              setSuccess(false);
-              if (onSuccess) onSuccess();
-              onClose();
-            }}
+    <Modal isOpen={isOpen} onClose={onClose} title="Adicionar Parceiro" size="lg">
+      <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
+        <div className={styles.formRow}>
+          <Input
+            id="partnerName"
+            name="name"
+            label="Representante da Empresa"
+            value={form.name}
+            onChange={handleChange}
+            required
           />
+          <Input
+            id="partnerEmail"
+            name="email"
+            label="E-mail"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className={styles.formRow}>
+          <Input
+            id="partnerCnpj"
+            name="cnpj"
+            label="CNPJ"
+            value={form.cnpj}
+            onChange={handleChange}
+            required
+            mask="00.000.000/0000-00"
+          />
+          <Input
+            id="companyName"
+            name="companyName"
+            label="Razão Social"
+            value={form.companyName}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className={styles.formRow}>
+          <Input
+            id="partnerPhone"
+            name="phone"
+            label="Telefone"
+            value={form.phone}
+            onChange={handleChange}
+            required
+            mask="(00) 00000-0000"
+          />
+          <Input
+            id="contractValue"
+            name="contractValue"
+            label="Valor do contrato"
+            value={contractValue}
+            onChange={handleChange}
+            onAccept={(value: number) => setContractValue(value)}
+            mask={Number}
+            placeholder="R$ 0,00"
+            required
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <Select
+            id="serviceCategory"
+            name="serviceCategory"
+            label="Categoria de serviço"
+            value={selectedCategoryKey}
+            onChange={e => setSelectedCategoryKey(e.target.value)}
+            disabled={catLoading}
+            options={[
+              { value: '', label: 'Selecione uma categoria...' },
+              ...categories.map(c => ({ value: c.key, label: c.name })),
+              { value: '__new__', label: 'Adicionar nova categoria...' },
+            ]}
+            placeholder="Selecione uma categoria..."
+          />
+          {/*  <ErrorMessage message={errors.categoryKey} /> */}
+        </div>
+        {selectedCategoryKey === '__new__' && (
+          <>
+            <Input
+              id="newCategoryName"
+              name="newCategoryName"
+              label="Nova categoria"
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+              placeholder="Ex.: Funilaria Premium"
+            />
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Tipo de Categoria:</label>
+              <div className={styles.radioGroupContainer}>
+                <div>
+                  <Radio
+                    name="categoryType"
+                    label="Comercialização"
+                    value="comercializacao"
+                    checked={categoryType === 'comercializacao'}
+                    onChange={() => setCategoryType('comercializacao')}
+                  />
+                  <Radio
+                    name="categoryType"
+                    label="Preparação"
+                    value="preparacao"
+                    checked={categoryType === 'preparacao'}
+                    onChange={() => setCategoryType('preparacao')}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
         )}
-      </div>
-    </div>
+        <div className={styles.formActions}>
+          <OutlineButton onClick={onClose} disabled={loading}>
+            Cancelar
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
+            {loading ? 'Adicionando...' : 'Adicionar Parceiro'}
+          </SolidButton>
+        </div>
+      </form>
+      {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+      {success && (
+        <MessageModal
+          title="Sucesso"
+          message={'Parceiro cadastrado com sucesso!\nUm convite foi enviado por email.'}
+          variant="success"
+          onClose={() => {
+            setSuccess(false);
+            if (onSuccess) onSuccess();
+            onClose();
+          }}
+        />
+      )}
+    </Modal>
   );
 };
 
