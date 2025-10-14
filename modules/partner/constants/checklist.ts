@@ -54,3 +54,9 @@ export const LEGACY_STATUS_MAP: Record<string, 'ok' | 'nok'> = {
   no: 'nok',
   false: 'nok',
 };
+
+// Workflow-level status (checklist lifecycle)
+export const WORKFLOW_STATUS = {
+  DRAFT: 'draft',
+  SUBMITTED: 'submitted',
+} as const;
