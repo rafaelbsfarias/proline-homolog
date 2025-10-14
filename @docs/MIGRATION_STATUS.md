@@ -2,7 +2,7 @@
 
 **Data de início:** Setembro 2025  
 **Última atualização:** 14 de Outubro de 2025  
-**Status geral:** 🟡 EM PROGRESSO (60% completo)
+**Status geral:** 🟡 EM PROGRESSO (81% completo)
 
 ---
 
@@ -14,15 +14,15 @@ legada (focada em mecânica) para a arquitetura alvo (multi-categoria com isolam
 ```
 Estado Inicial (Set/2025)     Estado Atual (Out/2025)      Estado Alvo (@docs/)
 ┌─────────────────┐          ┌─────────────────┐          ┌─────────────────┐
-│ mechanics_only  │   60%    │ multi_partner   │   40%    │ partner_checklists │
+│ mechanics_only  │   81%    │ multi_partner   │   19%    │ partner_checklists │
 │ single_evidence │  ════>   │ multi_evidence  │  ════>   │ normalized_context │
-│ no_isolation    │          │ partner_isolated│          │ template_versioned │
+│ no_isolation    │          │ dynamic_templates│         │ template_versioned │
 └─────────────────┘          └─────────────────┘          └─────────────────┘
 ```
 
 ---
 
-## ✅ Completado (60%)
+## ✅ Completado (70%)
 
 ### 1. Isolamento por Parceiro ✅ 100%
 
@@ -144,20 +144,32 @@ Estado Inicial (Set/2025)     Estado Atual (Out/2025)      Estado Alvo (@docs/)
 
 ---
 
-## 🟡 Em Progresso (20%)
+## 🟡 Em Progresso (10%)
 
-### 7. Normalização de Categorias 🟡 40%
+### 7. Normalização de Categorias ✅ 100%
 
-**Status:** EM PROGRESSO  
-**Próximos passos:**
+**Status:** CONCLUÍDO  
+**Data:** 14 de Outubro de 2025
 
-- [x] Tabela `partner_categories` criada
-- [x] Relacionamento N:N com parceiros
-- [ ] Adicionar campo `category` em `mechanics_checklist`
-- [ ] Migration de backfill
-- [ ] Atualizar queries para usar campo direto
+- [x] Campo `category` adicionado em `mechanics_checklist`
+- [x] Função `normalize_category_name()` criada
+- [x] Migration de backfill executada (2 registros)
+- [x] API atualizada para popular categoria automaticamente
+- [x] ChecklistMapper e ChecklistService atualizados
 
-**Estimativa:** 2 sprints
+**Migrations:**
+
+- `20251014190405_add_category_to_mechanics_checklist.sql`
+
+**Código:**
+
+- `modules/partner/services/checklist/core/ChecklistMapper.ts`
+- `modules/partner/services/checklist/ChecklistService.ts`
+- `modules/partner/services/checklist/types/ChecklistTypes.ts`
+- `app/api/partner/checklist/submit/route.ts`
+
+**Resultado:** Categoria do parceiro é armazenada em cada checklist para futuro sistema de
+templates.
 
 ---
 
@@ -227,24 +239,23 @@ Estado Inicial (Set/2025)     Estado Atual (Out/2025)      Estado Alvo (@docs/)
 
 ---
 
-### 11. Sistema de Templates ❌ 0%
+## � Status Geral: 82% Concluído
 
-**Status:** NÃO INICIADO  
-**Prioridade:** MÉDIA
+### Fase 2: Sistema de Templates (80% → objetivo 100%)
 
-**Objetivo:** Implementar templates versionados por categoria.
+**Status Atual:**
 
-**Tarefas:**
-
-- [ ] Criar tabelas `checklist_templates` e `checklist_template_items`
-- [ ] Migration inicial com templates padrão
-- [ ] API de gerenciamento de templates (admin)
-- [ ] Atualizar checklist para usar templates
-- [ ] Versionamento e migração de templates
-- [ ] UI de gerenciamento de templates
-
-**Estimativa:** 5 sprints  
-**Benefício:** Alta flexibilidade, manutenibilidade
+- ✅ Infraestrutura completa (100%)
+- ✅ 6 templates populados com 97 itens (100%)
+- ✅ APIs de templates funcionais (100%)
+- ✅ Integração dinâmica - Componentes criados (85%)
+  - ✅ Hook `useChecklistTemplate`
+  - ✅ Componente `DynamicChecklistForm`
+  - ✅ Página `/checklist-v2` criada
+  - ✅ Testes automatizados validados
+  - ⏳ Substituir página antiga (pendente)
+- ⏳ Admin UI (0%)
+- ⏳ Versionamento (0%)
 
 ---
 

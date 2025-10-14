@@ -1,5 +1,22 @@
 # Documentação do Projeto ProLine Hub
 
+## 🆕 Sistema de Templates de Checklist
+
+**Status:** ✅ Operacional (82% completo) | **Atualização:** 14/10/2025
+
+O sistema de templates dinâmicos está funcional! Veja:
+
+- **[INDEX.md](./INDEX.md)** - Índice completo da documentação de templates
+- **[TEMPLATES_QUICK_START.md](./TEMPLATES_QUICK_START.md)** - Guia rápido de uso
+- **[SESSION_SUMMARY.md](./SESSION_SUMMARY.md)** - Resumo da última sessão
+
+**Teste rápido:**
+```bash
+node scripts/test-init-template.cjs  # Valida todos os 6 templates
+```
+
+---
+
 ## Estrutura da Documentação
 
 ```

@@ -21,6 +21,7 @@ export interface ChecklistRecord {
   inspection_id: string | null;
   quote_id?: string | null;
   partner_id: string;
+  category?: string | null;
   status: string;
   created_at?: string;
   updated_at: string;

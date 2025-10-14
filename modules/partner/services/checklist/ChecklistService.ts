@@ -53,8 +53,24 @@ export class ChecklistService {
         inspection_id: inspection_id.slice(0, 8),
       });
 
+      // Buscar categoria do parceiro
+      let partnerCategory: string | null = null;
+      try {
+        const { data: partner } = await this.supabase
+          .from('partners')
+          .select('category')
+          .eq('profile_id', partner_id)
+          .single();
+        partnerCategory = partner?.category || null;
+      } catch (error) {
+        logger.warn('failed_to_fetch_partner_category', {
+          partner_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
       // Mapear dados
-      const mapped = ChecklistMapper.toDatabase(data, partner_id);
+      const mapped = ChecklistMapper.toDatabase(data, partner_id, partnerCategory);
 
       // Verificar se já existe
       const existing = await this.repository.findOne({

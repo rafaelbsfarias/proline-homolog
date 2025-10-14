@@ -12,8 +12,15 @@ import { BodyInteriorMapper } from '../mappers/BodyInteriorMapper';
 export class ChecklistMapper {
   /**
    * Mapeia payload do front para schema mechanics_checklist
+   * @param input - Dados do checklist vindos do frontend
+   * @param partnerId - ID do parceiro (usado para category lookup se necessário)
+   * @param partnerCategory - Categoria do parceiro (opcional, otimiza se já disponível)
    */
-  public static toDatabase(input: any, partnerId: string): Partial<ChecklistRecord> {
+  public static toDatabase(
+    input: any,
+    partnerId: string,
+    partnerCategory?: string | null
+  ): Partial<ChecklistRecord> {
     // Mapear cada seção usando mappers especializados
     const motor = MotorMapper.map(input);
     const transmission = TransmissionMapper.map(input);
@@ -29,6 +36,9 @@ export class ChecklistMapper {
       inspection_id: input.inspection_id || null,
       quote_id: input.quote_id || null,
       partner_id: partnerId,
+
+      // Categoria (para template-based checklist future)
+      category: partnerCategory || null,
 
       // Status
       status: input.status || WORKFLOW_STATUS.SUBMITTED,

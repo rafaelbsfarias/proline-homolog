@@ -41,15 +41,16 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
     });
 
     // Buscar categoria do parceiro
-    const { data: partnerCategories, error: categoryError } = await supabase.rpc(
-      'get_partner_categories',
-      { partner_id: partnerId }
-    );
-    if (categoryError) {
-      logger.warn('category_fetch_error', { error: categoryError.message });
-    }
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('category')
+      .eq('profile_id', partnerId)
+      .single();
+
+    const partnerCategory = partner?.category || null;
+
     const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
-    const categoryName = normalizePartnerCategoryName(partnerCategories);
+    const categoryName = normalizePartnerCategoryName(partnerCategory);
 
     // Nota: A criação do registro na timeline "Fase Orçamentária Iniciada"
     // foi movida para /api/partner/checklist/submit para evitar duplicatas.
@@ -97,10 +98,61 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       }
     }
 
+    // Buscar template da categoria
+    let template = null;
+    if (partnerCategory) {
+      const { ChecklistTemplateService } = await import(
+        '@/modules/partner/services/checklist/templates/ChecklistTemplateService'
+      );
+      const templateService = new ChecklistTemplateService(supabase);
+      const normalizedCategory = partnerCategory
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[\/]/g, '_');
+
+      template = await templateService.getActiveTemplateForCategory(normalizedCategory);
+
+      if (template) {
+        logger.info('template_loaded', {
+          category: normalizedCategory,
+          template_id: template.id,
+          items_count: template.items?.length || 0,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Fase orçamentária iniciada com sucesso',
       status: timelineStatus,
+      data: {
+        category: partnerCategory,
+        normalizedCategory: partnerCategory
+          ? partnerCategory
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\s+/g, '_')
+              .replace(/[\/]/g, '_')
+          : null,
+        template: template
+          ? {
+              id: template.id,
+              title: template.title,
+              version: template.version,
+              sections: template.items
+                ? Array.from(new Set(template.items.map(item => item.section))).map(section => ({
+                    section,
+                    items: template
+                      .items!.filter(item => item.section === section)
+                      .sort((a, b) => a.position - b.position),
+                  }))
+                : [],
+            }
+          : null,
+      },
     });
   } catch (error) {
     logger.error('init_checklist_error', {

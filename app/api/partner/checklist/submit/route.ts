@@ -80,8 +80,29 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       });
     }
 
+    // Buscar categoria do parceiro
+    let partnerCategory: string | null = null;
+    try {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('category')
+        .eq('profile_id', partnerId)
+        .single();
+      partnerCategory = partner?.category || null;
+    } catch (error) {
+      logger.warn('failed_to_fetch_partner_category', {
+        partner_id: partnerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     // Mapear dados usando ChecklistService
     const mapped = checklistService.mapChecklistToMechanicsSchema(checklistData, partnerId);
+
+    // Adicionar categoria do parceiro
+    if (partnerCategory) {
+      mapped.category = partnerCategory;
+    }
 
     // Adicionar quote_id se fornecido (nova arquitetura)
     if (checklistData.quote_id) {
@@ -94,11 +115,6 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       quote_id: mapped.quote_id,
       status: mapped.status,
     });
-
-    // Upsert - prioriza quote_id se disponível, senão usa inspection_id (legacy)
-    const conflictKeys = checklistData.quote_id
-      ? 'vehicle_id,quote_id'
-      : 'vehicle_id,inspection_id';
 
     // Segmentação por parceiro: atualizar registro do próprio parceiro, senão inserir
     let existingId: string | null = null;
