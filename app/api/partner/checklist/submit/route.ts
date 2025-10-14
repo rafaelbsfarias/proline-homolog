@@ -49,6 +49,37 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       quote_id: checklistData.quote_id,
     });
 
+    // Access control: garantir que o parceiro tem vínculo com o veículo (via quotes)
+    try {
+      const { data: accessCheck, error: accessError } = await supabase
+        .from('quotes')
+        .select(
+          `
+          id,
+          service_orders!inner(vehicle_id)
+        `
+        )
+        .eq('partner_id', partnerId)
+        .eq('service_orders.vehicle_id', checklistData.vehicle_id)
+        .limit(1);
+
+      if (accessError || !accessCheck || accessCheck.length === 0) {
+        logger.warn('partner_access_denied_submit', {
+          partner_id: partnerId,
+          vehicle_id: checklistData.vehicle_id,
+          error: accessError?.message,
+        });
+        return NextResponse.json(
+          { success: false, error: 'Acesso negado para este veículo' },
+          { status: 403 }
+        );
+      }
+    } catch (ace) {
+      logger.warn('partner_access_check_error', {
+        error: ace instanceof Error ? ace.message : String(ace),
+      });
+    }
+
     // Mapear dados usando ChecklistService
     const mapped = checklistService.mapChecklistToMechanicsSchema(checklistData, partnerId);
 

@@ -42,7 +42,11 @@ async function loadChecklistHandler(req: AuthenticatedRequest) {
 
     // Carrega checklist com evidências e itens formatados
     // Passa ambos IDs, service decidirá qual usar
-    const result = await checklistService.loadChecklistWithDetails(inspectionId, quoteId);
+    const result = await checklistService.loadChecklistWithDetails(
+      inspectionId,
+      quoteId,
+      req.user.id
+    );
 
     if (!result.success) {
       return NextResponse.json({ ok: false, error: result.error }, { status: 500 });

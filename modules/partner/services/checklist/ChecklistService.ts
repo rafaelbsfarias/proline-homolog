@@ -97,13 +97,28 @@ export class ChecklistService {
   /**
    * Carrega checklist completo com evidências e itens
    */
-  public async loadChecklistWithDetails(inspection_id?: string | null, quote_id?: string | null) {
+  public async loadChecklistWithDetails(
+    inspection_id?: string | null,
+    quote_id?: string | null,
+    partner_id?: string
+  ) {
     try {
       const options: LoadChecklistOptions = { inspection_id, quote_id };
 
-      // Carregar em paralelo
-      const [checklist, evidences, items] = await Promise.all([
-        this.repository.findOne(options),
+      // Garantir escopo do parceiro: se partner_id foi informado, validar ownership.
+      // Se não há registro do parceiro, retornar dados vazios para evitar vazamento.
+      let checklist = null as unknown as Awaited<ReturnType<typeof this.repository.findOne>>;
+      if (partner_id) {
+        checklist = await this.repository.findOneForPartner(options, partner_id);
+        if (!checklist) {
+          return { success: true, data: { form: null, evidences: {} } };
+        }
+      } else {
+        checklist = await this.repository.findOne(options);
+      }
+
+      // Carregar itens e evidências somente após validar o escopo
+      const [evidences, items] = await Promise.all([
         this.evidenceService.loadWithSignedUrls(options),
         this.itemService.loadItems(options),
       ]);

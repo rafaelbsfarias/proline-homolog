@@ -220,20 +220,42 @@ async function getMechanicsChecklist(
     const evidencesWithUrls = await Promise.all(
       ((evidences as EvidenceRow[]) || []).map(async evidence => {
         try {
-          const { data: urlData } = await supabase.storage
+          logger.info('attempting_signed_url', {
+            evidenceId: evidence.id.slice(0, 8),
+            item_key: evidence.item_key,
+            storage_path: evidence.storage_path,
+          });
+
+          const { data: urlData, error: urlError } = await supabase.storage
             .from('vehicle-media')
             .createSignedUrl(evidence.storage_path, 3600);
+
+          if (urlError) {
+            logger.error('signed_url_error', {
+              evidenceId: evidence.id.slice(0, 8),
+              error: urlError.message,
+              storage_path: evidence.storage_path,
+            });
+          }
+
+          const signedUrl = urlData?.signedUrl || '';
+          logger.info('signed_url_result', {
+            evidenceId: evidence.id.slice(0, 8),
+            has_url: !!signedUrl,
+            url_length: signedUrl.length,
+          });
 
           return {
             id: evidence.id,
             item_key: evidence.item_key, // Garantir que está presente
-            media_url: urlData?.signedUrl || '',
+            media_url: signedUrl,
             description: evidence.description || '',
           };
-        } catch {
-          logger.warn('error_generating_signed_url', {
+        } catch (err) {
+          logger.error('exception_generating_signed_url', {
             evidenceId: evidence.id.slice(0, 8),
             item_key: evidence.item_key,
+            error: err instanceof Error ? err.message : String(err),
           });
           return {
             id: evidence.id,
@@ -507,9 +529,22 @@ async function getMechanicsChecklistDirect(
       const evidencesWithUrls = await Promise.all(
         ((evidences as EvidenceRow[]) || []).map(async evidence => {
           try {
-            const { data: urlData } = await supabase.storage
+            logger.info('attempting_signed_url_direct', {
+              evidenceId: evidence.id.slice(0, 8),
+              storage_path: evidence.storage_path,
+            });
+
+            const { data: urlData, error: urlError } = await supabase.storage
               .from('vehicle-media')
               .createSignedUrl(evidence.storage_path, 3600);
+
+            if (urlError) {
+              logger.error('signed_url_error_direct', {
+                evidenceId: evidence.id.slice(0, 8),
+                error: urlError.message,
+                storage_path: evidence.storage_path,
+              });
+            }
 
             return {
               id: evidence.id,
@@ -517,7 +552,11 @@ async function getMechanicsChecklistDirect(
               media_url: urlData?.signedUrl || '',
               description: evidence.description || '',
             };
-          } catch {
+          } catch (err) {
+            logger.error('exception_generating_signed_url_direct', {
+              evidenceId: evidence.id.slice(0, 8),
+              error: err instanceof Error ? err.message : String(err),
+            });
             return {
               id: evidence.id,
               item_key: evidence.item_key,
@@ -609,9 +648,22 @@ async function getMechanicsChecklistDirect(
     const evidencesWithUrls = await Promise.all(
       ((evidences as EvidenceRow[]) || []).map(async evidence => {
         try {
-          const { data: urlData } = await supabase.storage
+          logger.info('attempting_signed_url_legacy', {
+            evidenceId: evidence.id.slice(0, 8),
+            storage_path: evidence.storage_path,
+          });
+
+          const { data: urlData, error: urlError } = await supabase.storage
             .from('vehicle-media')
             .createSignedUrl(evidence.storage_path, 3600);
+
+          if (urlError) {
+            logger.error('signed_url_error_legacy', {
+              evidenceId: evidence.id.slice(0, 8),
+              error: urlError.message,
+              storage_path: evidence.storage_path,
+            });
+          }
 
           return {
             id: evidence.id,
@@ -619,8 +671,11 @@ async function getMechanicsChecklistDirect(
             media_url: urlData?.signedUrl || '',
             description: evidence.description || '',
           };
-        } catch {
-          logger.warn('error_generating_signed_url', { evidenceId: evidence.id });
+        } catch (err) {
+          logger.error('exception_generating_signed_url_legacy', {
+            evidenceId: evidence.id.slice(0, 8),
+            error: err instanceof Error ? err.message : String(err),
+          });
           return {
             id: evidence.id,
             item_key: evidence.item_key,

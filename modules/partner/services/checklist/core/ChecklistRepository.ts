@@ -34,6 +34,38 @@ export class ChecklistRepository {
   }
 
   /**
+   * Busca checklist garantindo escopo do parceiro
+   */
+  async findOneForPartner(
+    options: LoadChecklistOptions,
+    partner_id: string
+  ): Promise<ChecklistRecord | null> {
+    try {
+      let query = this.supabase.from(TABLES.MECHANICS_CHECKLIST).select('*');
+      query = applyIdFilters(query, options) as typeof query;
+      // Escopo por parceiro
+      // mechanics_checklist possui coluna partner_id
+      // Garantir que apenas registros do parceiro autenticado sejam retornados
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const withScope = (query as any).eq('partner_id', partner_id);
+
+      const { data, error } = await withScope.maybeSingle();
+
+      if (error) {
+        logger.error('find_one_for_partner_error', { error: error.message });
+        throw error;
+      }
+
+      return data as ChecklistRecord | null;
+    } catch (error) {
+      logger.error('find_one_for_partner_unexpected_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Cria um novo checklist
    */
   async create(data: Partial<ChecklistRecord>): Promise<ChecklistRecord> {
