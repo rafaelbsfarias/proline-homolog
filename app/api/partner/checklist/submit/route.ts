@@ -331,6 +331,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       hasEvidences: !!checklistData.evidences,
       evidencesType: typeof checklistData.evidences,
       evidencesKeys: checklistData.evidences ? Object.keys(checklistData.evidences) : [],
+      evidencesData: checklistData.evidences, // Log completo do payload de evidências
     });
 
     if (checklistData.evidences && typeof checklistData.evidences === 'object') {
@@ -371,28 +372,47 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       logger.debug('evidence_rows_prepared', { count: rows.length, rows });
 
       if (rows.length > 0) {
-        // Remover evidências anteriores deste parceiro neste contexto
-        let evDel = supabase
+        // CORREÇÃO: Não deletar evidências antigas, apenas adicionar novas
+        // O frontend já envia todas as evidências (existentes + novas)
+        // então devemos fazer um upsert baseado em media_url única
+
+        // Primeiro, buscar evidências existentes para este contexto
+        let existingQuery = supabase
           .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-          .delete()
+          .select('media_url')
           .eq('vehicle_id', checklistData.vehicle_id)
           .eq('partner_id', partnerId);
-        if (checklistData.quote_id) evDel = evDel.eq('quote_id', checklistData.quote_id);
+        if (checklistData.quote_id)
+          existingQuery = existingQuery.eq('quote_id', checklistData.quote_id);
         if (checklistData.inspection_id)
-          evDel = evDel.eq('inspection_id', checklistData.inspection_id);
-        const { error: evDelErr } = await evDel;
-        if (evDelErr) {
-          logger.warn('mechanics_checklist_evidences_delete_error', { error: evDelErr.message });
-        }
+          existingQuery = existingQuery.eq('inspection_id', checklistData.inspection_id);
 
-        const { error: evError } = await supabase
-          .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-          .insert(rows);
-        if (evError) {
-          // Não falhar a requisição principal por causa das evidências
-          logger.error('mechanics_checklist_evidences_insert_error', { error: evError.message });
+        const { data: existingEvidences } = await existingQuery;
+        const existingUrls = new Set((existingEvidences || []).map(e => e.media_url));
+
+        // Filtrar apenas evidências que ainda não existem
+        const newRows = rows.filter(row => !existingUrls.has(row.media_url as string));
+
+        logger.debug('evidence_upsert_analysis', {
+          total_in_payload: rows.length,
+          already_exists: rows.length - newRows.length,
+          to_insert: newRows.length,
+        });
+
+        if (newRows.length > 0) {
+          const { error: evError } = await supabase
+            .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
+            .insert(newRows);
+          if (evError) {
+            // Não falhar a requisição principal por causa das evidências
+            logger.error('mechanics_checklist_evidences_insert_error', { error: evError.message });
+          } else {
+            logger.info('mechanics_checklist_evidences_insert_ok', { count: newRows.length });
+          }
         } else {
-          logger.info('mechanics_checklist_evidences_insert_ok', { count: rows.length });
+          logger.info('mechanics_checklist_evidences_no_new', {
+            message: 'Todas as evidências já existem',
+          });
         }
       }
     }
