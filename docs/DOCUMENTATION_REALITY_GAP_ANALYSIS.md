@@ -207,10 +207,10 @@ Apesar do gap, a documentação em `@docs/` é **valiosa como guia de norte** pa
 
 ## 📚 Próximos Passos
 
-- [ ] Criar `@docs/as-is/CURRENT_STATE.md` documentando implementação real
-- [ ] Criar `@docs/MIGRATION_STATUS.md` com progresso da transição
-- [ ] Adicionar WARNING em `@docs/README.md` sobre target vs. current
-- [ ] Documentar decisões arquiteturais em ADRs
+- [x] Criar `@docs/as-is/CURRENT_STATE.md` documentando implementação real ✅
+- [x] Criar `@docs/MIGRATION_STATUS.md` com progresso da transição ✅
+- [x] Adicionar WARNING em `@docs/README.md` sobre target vs. current ✅
+- [ ] Documentar decisões arquiteturais em ADRs (parcial - 4 ADRs em MIGRATION_STATUS.md)
 - [ ] Criar script de validação que compara docs vs. schema real
 - [ ] Atualizar diagramas para mostrar ambos estados (atual + alvo)
 
