@@ -147,9 +147,9 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
           anomalyResults.push({
             item_key: `anomaly:${desc}`,
             label: `Anomalia: ${desc}`,
-            // Por ora, anomalias são agrupadas em Pintura/Funilaria (parceiros de funilaria/pintura)
+            // Por ora, anomalias são agrupadas em Funilaria/Pintura (parceiros de funilaria/pintura)
             // Se surgirem anomalias de outros parceiros, podemos enriquecer a origem e categoria
-            category: 'Pintura/Funilaria',
+            category: 'Funilaria/Pintura',
             url: signed.signedUrl,
           });
         } catch (e) {
@@ -200,7 +200,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
               const lower = path.toLowerCase();
               let category = 'Mecânica';
-              if (lower.includes('/anomalias/')) category = 'Pintura/Funilaria';
+              if (lower.includes('/anomalias/')) category = 'Funilaria/Pintura';
               else if (lower.includes('pneu') || lower.includes('tires')) category = 'Pneus';
 
               anomalyResults.push({

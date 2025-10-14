@@ -11,7 +11,7 @@ export function normalizePartnerCategoryName(categories?: unknown): string {
   const arr = Array.isArray(categories) ? (categories as unknown[]).map(String) : [];
   const normalized = arr.map(c => normalize(String(c)));
 
-  // Pintura/Funilaria
+  // Funilaria/Pintura
   if (
     normalized.some(
       c =>
@@ -21,7 +21,7 @@ export function normalizePartnerCategoryName(categories?: unknown): string {
         c.includes('lataria')
     )
   )
-    return 'Pintura/Funilaria';
+    return 'Funilaria/Pintura';
 
   // Mecânica
   if (normalized.some(c => c.includes('mecan') || c.includes('mechanic'))) return 'Mecânica';

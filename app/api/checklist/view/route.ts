@@ -98,23 +98,27 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       }
     }
 
-    // Buscar anomalias com URLs assinadas
-    const result = await checklistService.loadAnomaliesWithSignedUrls(
+    // Carregar formulário (itens) e anomalias
+    const details = await checklistService.loadChecklistWithDetails(
+      validInspectionId || null,
+      validQuoteId || null
+    );
+    const anomaliesRes = await checklistService.loadAnomaliesWithSignedUrls(
       validInspectionId || null,
       validVehicleId,
       validQuoteId || null
     );
 
-    if (!result.success) {
+    if (!anomaliesRes.success) {
       logger.error('load_anomalies_service_error', {
-        error: result.error,
+        error: anomaliesRes.error,
         vehicle_id: validVehicleId,
       });
-      return NextResponse.json({ success: false, error: result.error }, { status: 500 });
+      return NextResponse.json({ success: false, error: anomaliesRes.error }, { status: 500 });
     }
 
-    // Se partner_category foi especificada, filtrar os dados (futuro: quando tivermos essa info no banco)
-    const filteredData = result.data;
+    const form = details.success ? details.data?.form || {} : {};
+    const filteredData = anomaliesRes.data;
 
     logger.info('view_checklist_success', {
       vehicle_id: validVehicleId,
@@ -124,7 +128,7 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
 
     return NextResponse.json({
       success: true,
-      data: filteredData,
+      data: { form, anomalies: filteredData },
       partner_category: validPartnerCategory,
     });
   } catch (e) {

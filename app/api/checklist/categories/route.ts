@@ -51,7 +51,7 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Buscar anomalias agrupadas por parceiro
+    // Buscar anomalias agrupadas por parceiro e suas categorias
     let query = supabase
       .from('vehicle_anomalies')
       .select(
@@ -60,8 +60,7 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
         partner_id,
         profiles!vehicle_anomalies_partner_id_fkey (
           id,
-          full_name,
-          partner_service
+          full_name
         )
       `
       )
@@ -101,23 +100,52 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
       }
     >();
 
-    anomalies?.forEach(anomaly => {
+    // Para cada anomalia, buscar a categoria do parceiro através do quote/service_order
+    for (const anomaly of anomalies || []) {
       const profile = anomaly.profiles;
-      // profiles pode ser um array ou um objeto único dependendo da query
       const profileData = Array.isArray(profile) ? profile[0] : profile;
 
-      if (profileData && profileData.partner_service) {
-        const key = `${anomaly.partner_id}-${profileData.partner_service}`;
-        if (!categoriesMap.has(key)) {
-          categoriesMap.set(key, {
-            category: profileData.partner_service,
-            partner_id: anomaly.partner_id,
-            partner_name: profileData.full_name || 'Parceiro',
-            has_anomalies: true,
-          });
+      if (!profileData || !anomaly.partner_id) continue;
+
+      // Buscar a categoria do parceiro através do quote e service_order
+      const { data: quoteData } = await supabase
+        .from('quotes')
+        .select(
+          `
+          id,
+          service_orders!inner (
+            id,
+            category_id,
+            service_categories!inner (
+              name
+            )
+          )
+        `
+        )
+        .eq('partner_id', anomaly.partner_id)
+        .eq('service_orders.vehicle_id', validVehicleId)
+        .limit(1)
+        .single();
+
+      if (quoteData && quoteData.service_orders) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const serviceOrder: any = quoteData.service_orders;
+        const categoryName =
+          serviceOrder.service_categories?.name || serviceOrder.service_categories?.[0]?.name;
+
+        if (categoryName) {
+          const key = `${anomaly.partner_id}-${categoryName}`;
+          if (!categoriesMap.has(key)) {
+            categoriesMap.set(key, {
+              category: categoryName,
+              partner_id: anomaly.partner_id,
+              partner_name: profileData.full_name || 'Parceiro',
+              has_anomalies: true,
+            });
+          }
         }
       }
-    });
+    }
 
     const categories = Array.from(categoriesMap.values());
 

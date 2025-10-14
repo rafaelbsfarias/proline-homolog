@@ -9,6 +9,7 @@ export const useVehicleDetailsState = () => {
     anomalies: AnomalyEvidence[];
     savedAt: string;
     category?: string;
+    items?: Array<{ key: string; label: string; type: 'checkbox'; value?: boolean }>;
   } | null>(null);
 
   return {
@@ -25,7 +26,12 @@ export const useVehicleDetailsState = () => {
     dynamicChecklistModal: {
       isOpen: showDynamicChecklistModal,
       data: dynamicChecklistData,
-      open: (data: { anomalies: AnomalyEvidence[]; savedAt: string; category?: string }) => {
+      open: (data: {
+        anomalies: AnomalyEvidence[];
+        savedAt: string;
+        category?: string;
+        items?: Array<{ key: string; label: string; type: 'checkbox'; value?: boolean }>;
+      }) => {
         setDynamicChecklistData(data);
         setShowDynamicChecklistModal(true);
       },

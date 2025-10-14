@@ -54,7 +54,7 @@ const ChecklistReadOnlyViewer: React.FC<ChecklistReadOnlyViewerProps> = ({
         <div className={styles.modalHeader}>
           <div>
             <h2 className={styles.modalTitle}>
-              Checklist do Parceiro {partnerCategory && `- ${partnerCategory}`}
+              Vistoria {partnerCategory && `- ${partnerCategory}`}
             </h2>
             {data.savedAt && (
               <p className={styles.modalSubtitle}>Salvo em: {formatDateBR(data.savedAt)}</p>

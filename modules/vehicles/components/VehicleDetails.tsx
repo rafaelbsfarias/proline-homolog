@@ -92,12 +92,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   const handleLoadDynamicChecklist = async (category: string) => {
     if (!vehicle?.id || !inspection?.id) return;
 
-    const anomalies = await loadChecklist(vehicle.id, inspection.id, category);
-    if (anomalies) {
+    const data = await loadChecklist(vehicle.id, inspection.id, category);
+    if (data) {
       modalState.dynamicChecklistModal.open({
-        anomalies,
+        anomalies: data.anomalies,
         savedAt: new Date().toISOString(),
         category,
+        items: data.items,
       });
     }
   };
@@ -206,7 +207,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       {modalState.dynamicChecklistModal.isOpen && modalState.dynamicChecklistModal.data && (
         <ChecklistReadOnlyViewer
           data={{
-            items: [],
+            items: modalState.dynamicChecklistModal.data.items || [],
             anomalies: modalState.dynamicChecklistModal.data.anomalies,
             savedAt: modalState.dynamicChecklistModal.data.savedAt,
           }}

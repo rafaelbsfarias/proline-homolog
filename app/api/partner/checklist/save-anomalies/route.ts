@@ -214,6 +214,7 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
 
       processedAnomalies.push({
         vehicle_id,
+        partner_id: partnerId, // Adicionar partner_id para identificar quem criou a anomalia
         description,
         photos: allPhotoPaths,
         // Adicionar quote_id (novo) ou inspection_id (legacy)

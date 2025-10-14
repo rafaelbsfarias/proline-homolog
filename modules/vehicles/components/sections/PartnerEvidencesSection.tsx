@@ -68,7 +68,7 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
             disabled={loadingDynamicChecklist}
             className={styles.checklistButtonDynamic}
           >
-            {loadingDynamicChecklist ? 'Carregando...' : `Ver Checklist - ${cat.category}`}
+            {loadingDynamicChecklist ? 'Carregando...' : ` ${cat.category}`}
           </button>
         ))
       ) : (
@@ -78,9 +78,9 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
   );
 
   return (
-    <SectionCard title="Evidências do Parceiro" headerAction={headerAction} fullWidth>
+    <SectionCard title="Vistorias" headerAction={headerAction} fullWidth>
       {Object.keys(evidenceByCategory).length === 0 ? (
-        <p className={styles.emptyMessage}>Nenhuma evidência enviada pelo parceiro.</p>
+        <p className={styles.emptyMessage}></p>
       ) : (
         Object.entries(evidenceByCategory).map(([category, items]) => (
           <div key={category} className={styles.categorySection}>
