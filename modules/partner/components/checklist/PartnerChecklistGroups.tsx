@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { PartnerChecklistForm } from '../../hooks/usePartnerChecklist';
 import styles from './PartnerChecklistGroups.module.css';
-import ImageCaptureInput from '@/modules/common/components/ImageCaptureInput';
 import { EVIDENCE_KEYS, EvidenceKey } from '../../hooks/usePartnerChecklist';
 import Lightbox from '@/modules/common/components/Lightbox/Lightbox';
 import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
@@ -211,9 +210,12 @@ interface Props {
     >,
     value: string | InspectionStatus
   ) => void;
-  evidences: Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
+  evidences: Record<
+    EvidenceKey,
+    Array<{ file?: File; url?: string | null; id?: string }> | undefined
+  >;
   setEvidence: (key: EvidenceKey, file: File) => void;
-  removeEvidence: (key: EvidenceKey) => void;
+  removeEvidence: (key: EvidenceKey, evidenceId: string) => void;
   // Solicitação de peça por item (opcional)
   partRequests?: Partial<Record<EvidenceKey, PartRequest | undefined>>;
   onOpenPartRequestModal?: (itemKey: EvidenceKey, existing?: PartRequest) => void;
@@ -459,7 +461,14 @@ const PartnerChecklistGroups: React.FC<Props> = ({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const evidenceUrls = useMemo(() => {
-    return EVIDENCE_KEYS.map(k => evidences[k]?.url).filter(Boolean) as string[];
+    const urls: string[] = [];
+    EVIDENCE_KEYS.forEach(k => {
+      const items = evidences[k] || [];
+      items.forEach(item => {
+        if (item.url) urls.push(item.url);
+      });
+    });
+    return urls;
   }, [evidences]);
 
   const openLightboxAt = (url?: string) => {
@@ -596,63 +605,58 @@ const PartnerChecklistGroups: React.FC<Props> = ({
                         onRemove={() => onRemovePartRequest?.(evidenceKey)}
                       />
                     </div>
-                    {/* Campo de evidência (imagem) */}
-                    <div
-                      className={styles.evidenceSection}
-                      style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center' }}
-                    >
-                      <ImageCaptureInput
-                        id={`evidence-${item.key}`}
-                        label="Evidência (imagem)"
-                        currentUrl={(evidences[evidenceKey]?.url as string | undefined) || null}
-                        disabled={false}
-                        onChange={file => setEvidence(evidenceKey, file)}
-                        onRemove={() => removeEvidence(evidenceKey)}
-                      />
-                      {evidences[evidenceKey]?.url && (
-                        <div className={styles.evidenceInfo}>
-                          <img
-                            className={styles.evidenceThumb}
-                            src={evidences[evidenceKey]!.url as string}
-                            alt={`${item.label} - evidência`}
-                            onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
-                            style={{
-                              padding: '8px 12px',
-                              background: '#002e4c',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                              fontSize: 14,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Visualizar evidência
-                          </button>
+                    {/* Campo de evidências (múltiplas imagens) */}
+                    <div className={styles.evidenceSection} style={{ marginTop: 12 }}>
+                      <label className="block text-xs font-medium text-gray-700 mb-2">
+                        Evidências (imagens)
+                      </label>
+
+                      {/* Grid de thumbnails existentes */}
+                      {evidences[evidenceKey] && evidences[evidenceKey]!.length > 0 && (
+                        <div className={styles.evidenceGrid}>
+                          {evidences[evidenceKey]!.map(ev => (
+                            <div key={ev.id} className={styles.evidenceItem}>
+                              <div className={styles.thumbnailWrapper}>
+                                <img
+                                  src={ev.url || (ev.file ? URL.createObjectURL(ev.file) : '')}
+                                  alt="Evidência"
+                                  className={styles.thumbnail}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeEvidence(evidenceKey, ev.id!)}
+                                  className={styles.removeButton}
+                                  aria-label="Remover evidência"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <span className={styles.fileName}>
+                                {ev.file?.name || 'evidencia.jpg'}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       )}
-                      {/* Mostrar nome do arquivo salvo para referência */}
-                      {evidences[evidenceKey] && (
-                        <span style={{ fontSize: 12, color: '#374151' }}>
-                          {(() => {
-                            const ev = evidences[evidenceKey];
-                            if (ev?.file?.name) return ev.file.name;
-                            const url = ev?.url || '';
-                            try {
-                              const u = new URL(url);
-                              const dec = decodeURIComponent(u.pathname);
-                              const parts = dec.split('/');
-                              return parts[parts.length - 1] || 'evidencia.jpg';
-                            } catch {
-                              return 'evidencia.jpg';
-                            }
-                          })()}
-                        </span>
-                      )}
+
+                      {/* Input para adicionar nova imagem */}
+                      <input
+                        id={`evidence-${item.key}`}
+                        type="file"
+                        accept="image/*"
+                        {...({
+                          capture: 'environment',
+                        } as React.InputHTMLAttributes<HTMLInputElement>)}
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setEvidence(evidenceKey, file);
+                            e.target.value = ''; // Reset para permitir adicionar a mesma imagem novamente
+                          }
+                        }}
+                        disabled={false}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm file:mr-4 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
                     </div>
                   </div>
                 </div>

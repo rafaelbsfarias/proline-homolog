@@ -50,4 +50,5 @@ export interface LoadChecklistOptions {
   inspection_id?: string | null;
   quote_id?: string | null;
   vehicle_id?: string;
+  partner_id?: string;
 }

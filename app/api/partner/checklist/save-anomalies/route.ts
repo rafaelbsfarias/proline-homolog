@@ -231,7 +231,11 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
     });
 
     // Remover anomalias existentes para este vehicle_id e quote_id ou inspection_id
-    let deleteQuery = supabase.from('vehicle_anomalies').delete().eq('vehicle_id', vehicle_id);
+    let deleteQuery = supabase
+      .from('vehicle_anomalies')
+      .delete()
+      .eq('vehicle_id', vehicle_id)
+      .eq('partner_id', partnerId);
 
     // Usar quote_id se disponível (novo), senão inspection_id (legacy)
     if (quote_id) {
@@ -329,29 +333,14 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         }
       }
 
-      // Atualizar status do veículo para "Fase Orçamentaria"
-      const { data: statusUpdateData, error: statusUpdateError } = await supabase.rpc(
-        'partner_save_checklist_update_vehicle_status',
-        {
-          p_partner_id: partnerId,
-          p_vehicle_id: vehicle_id,
-        }
-      );
+      // Nota: A atualização do status do veículo e criação da entrada na timeline
+      // já foi realizada pela API /api/partner/checklist/submit quando o checklist foi salvo.
+      // Não devemos criar registros duplicados na timeline aqui.
 
-      if (statusUpdateError || !statusUpdateData?.ok) {
-        logger.warn('vehicle_status_update_failed', {
-          error: statusUpdateError?.message || statusUpdateData?.error,
-          vehicle_id,
-          partner_id: partnerId,
-        });
-        // Não falhar a requisição - anomalias já foram salvas
-      } else {
-        logger.info('vehicle_status_updated', {
-          vehicle_id,
-          new_status: statusUpdateData.status,
-          history_entry: statusUpdateData.history_entry,
-        });
-      }
+      logger.info('anomalies_saved_timeline_skipped', {
+        vehicle_id,
+        reason: 'Timeline entry already created by checklist submit endpoint',
+      });
 
       return NextResponse.json({
         success: true,

@@ -118,9 +118,10 @@ export class ChecklistService {
       }
 
       // Carregar itens e evidências somente após validar o escopo
+      // Propagar partner_id nas buscas de itens/evidências
       const [evidences, items] = await Promise.all([
-        this.evidenceService.loadWithSignedUrls(options),
-        this.itemService.loadItems(options),
+        this.evidenceService.loadWithSignedUrls({ ...options, partner_id }),
+        this.itemService.loadItems({ ...options, partner_id }),
       ]);
 
       // Construir formPartial

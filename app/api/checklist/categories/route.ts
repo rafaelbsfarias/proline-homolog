@@ -120,12 +120,12 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
       has_anomalies: boolean;
     }[] = [];
     for (const p of uniquePairs) {
-      let anomaliesQuery = supabase
+      const anomaliesQuery = supabase
         .from('vehicle_anomalies')
         .select('id', { count: 'exact', head: true })
         .eq('vehicle_id', validVehicleId)
         .eq('partner_id', p.partner_id);
-      if (validInspectionId) anomaliesQuery = anomaliesQuery.eq('inspection_id', validInspectionId);
+      // Não filtrar por inspection_id para abarcar anomalias vinculadas por quote_id
       const { count } = await anomaliesQuery;
       categories.push({
         category: p.category,
@@ -133,6 +133,89 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
         partner_name: p.partner_name,
         has_anomalies: (count || 0) > 0,
       });
+    }
+
+    // Complementar: incluir parceiros com anomalias sem quote/service_order
+    const anomaliesPartnersQuery = supabase
+      .from('vehicle_anomalies')
+      .select(
+        `
+        partner_id,
+        profiles!vehicle_anomalies_partner_id_fkey ( id, full_name )
+      `
+      )
+      .eq('vehicle_id', validVehicleId);
+    // Não filtrar por inspection_id aqui; alguns registros usam apenas quote_id
+    const { data: anomalyRows, error: anomalyPartnersError } = await anomaliesPartnersQuery;
+    if (anomalyPartnersError) {
+      logger.warn('anomaly_partners_fetch_error', { error: anomalyPartnersError.message });
+    } else {
+      const existingKeys = new Set(categories.map(c => `${c.partner_id}-${c.category}`));
+      const partnerIds = Array.from(
+        new Set((anomalyRows || []).map((r: any) => r.partner_id).filter(Boolean))
+      ) as string[];
+
+      if (partnerIds.length > 0) {
+        const { data: partnersRows } = await supabase
+          .from('partners')
+          .select('id, name, partner_type')
+          .in('id', partnerIds);
+
+        const typeToCategory = (t?: string) => {
+          switch (t) {
+            case 'mechanic':
+              return 'Mecânica';
+            case 'bodyshop':
+              return 'Funilaria/Pintura';
+            case 'tire_shop':
+              return 'Pneus';
+            case 'car_wash':
+              return 'Lavagem';
+            case 'store':
+              return 'Loja';
+            case 'yard_wholesale':
+              return 'Pátio Atacado';
+            default:
+              return 'Checklist do Parceiro';
+          }
+        };
+
+        const partnerMeta = new Map<string, { name?: string; type?: string }>();
+        (partnersRows || []).forEach((p: any) =>
+          partnerMeta.set(p.id, { name: p.name, type: p.partner_type })
+        );
+
+        // Nome do perfil (fallback)
+        const profileName = new Map<string, string>();
+        (anomalyRows || []).forEach((r: any) => {
+          const prof = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+          if (r.partner_id && prof?.full_name) profileName.set(r.partner_id, prof.full_name);
+        });
+
+        // Criar entradas faltantes
+        for (const pid of partnerIds) {
+          const meta = partnerMeta.get(pid);
+          const categoryName = typeToCategory(meta?.type);
+          const key = `${pid}-${categoryName}`;
+          if (existingKeys.has(key)) continue;
+
+          // Contar anomalias deste parceiro
+          const cntQuery = supabase
+            .from('vehicle_anomalies')
+            .select('id', { count: 'exact', head: true })
+            .eq('vehicle_id', validVehicleId)
+            .eq('partner_id', pid);
+          // Não filtrar por inspection_id aqui; alguns registros usam apenas quote_id
+          const { count: pCount } = await cntQuery;
+
+          categories.push({
+            category: categoryName,
+            partner_id: pid,
+            partner_name: meta?.name || profileName.get(pid) || 'Parceiro',
+            has_anomalies: (pCount || 0) > 0,
+          });
+        }
+      }
     }
 
     logger.info('categories_fetched', {

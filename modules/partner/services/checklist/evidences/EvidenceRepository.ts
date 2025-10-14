@@ -20,6 +20,9 @@ export class EvidenceRepository {
 
       query = applyIdFilters(query, options) as typeof query;
 
+      // Nota: Evidences não possuem partner_id neste schema.
+      // O escopo por parceiro já foi garantido ao selecionar o checklist do parceiro.
+
       const { data, error } = await query;
 
       if (error) {

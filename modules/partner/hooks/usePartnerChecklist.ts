@@ -39,8 +39,17 @@ export const EVIDENCE_KEYS = [
   'battery',
 ] as const;
 export type EvidenceKey = (typeof EVIDENCE_KEYS)[number];
-// Estado para evidências: { [itemKey]: { file?: File, url?: string|null } }
-type EvidenceState = Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
+
+// Tipo para uma evidência individual
+export interface EvidenceItem {
+  file?: File;
+  url?: string | null;
+  id?: string; // ID único para facilitar remoção
+}
+
+// Estado para evidências: { [itemKey]: EvidenceItem[] }
+type EvidenceState = Record<EvidenceKey, EvidenceItem[] | undefined>;
+
 import { useSearchParams } from 'next/navigation';
 import { useToast } from '@/modules/common/components/ToastProvider';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
@@ -221,22 +230,29 @@ export function usePartnerChecklist() {
   const searchParams = useSearchParams();
 
   const [form, setForm] = useState<PartnerChecklistForm>(initialForm);
-  // Evidências por item
-  const emptyEvidenceState = Object.fromEntries(
-    EVIDENCE_KEYS.map(k => [k, undefined])
-  ) as EvidenceState;
+  // Evidências por item (agora múltiplas por item)
+  const emptyEvidenceState = Object.fromEntries(EVIDENCE_KEYS.map(k => [k, []])) as EvidenceState;
   const [evidences, setEvidences] = useState<EvidenceState>(emptyEvidenceState);
-  // Setar evidência (imagem) para um item
+
+  // Adicionar evidência (imagem) para um item
   const setEvidence = (key: EvidenceKey, file: File) => {
-    setEvidences(prev => ({ ...prev, [key]: { file, url: undefined } }));
+    setEvidences(prev => {
+      const existing = prev[key] || [];
+      const newEvidence: EvidenceItem = {
+        file,
+        url: undefined,
+        id: `${Date.now()}-${Math.random()}`, // ID único
+      };
+      return { ...prev, [key]: [...existing, newEvidence] };
+    });
   };
 
-  // Remover evidência de um item
-  const removeEvidence = (key: EvidenceKey) => {
+  // Remover evidência específica de um item (por ID)
+  const removeEvidence = (key: EvidenceKey, evidenceId?: string) => {
     setEvidences(prev => {
-      const copy = { ...prev };
-      delete copy[key];
-      return copy;
+      const existing = prev[key] || [];
+      const filtered = evidenceId ? existing.filter(ev => ev.id !== evidenceId) : [];
+      return { ...prev, [key]: filtered.length > 0 ? filtered : [] };
     });
   };
   const [vehicle, setVehicle] = useState<PartnerVehicleInfo | null>(null);
@@ -360,7 +376,7 @@ export function usePartnerChecklist() {
             fuelLevel: inspectionData.fuel_level,
             observations: inspectionData.observations || '',
           }));
-          // Carregar checklist salvo (valores e evidências)
+          // Carregar checklist salvo (valores e evidências) do próprio parceiro
           try {
             const loadResp = await post<{
               ok: boolean;
@@ -370,7 +386,7 @@ export function usePartnerChecklist() {
               };
             }>(
               '/api/partner/checklist/load',
-              { inspectionId: inspectionData.id },
+              { inspectionId: inspectionData.id, quoteId: quoteId || undefined },
               { requireAuth: true }
             );
             if (loadResp.ok && loadResp.data) {
@@ -379,12 +395,13 @@ export function usePartnerChecklist() {
               if (loadedForm) {
                 setForm(prev => ({ ...prev, ...loadedForm }));
               }
-              // Mapear evidences para o estado com url
-              const newEvidenceState = { ...emptyEvidenceState };
+              // Mapear evidences para o estado com url (como lista)
+              const newEvidenceState = { ...emptyEvidenceState } as EvidenceState;
               for (const key of Object.keys(loadedEvidences)) {
                 if ((EVIDENCE_KEYS as readonly string[]).includes(key)) {
-                  // @ts-ignore - assign url only
-                  newEvidenceState[key as EvidenceKey] = { url: loadedEvidences[key]!.url };
+                  const url = loadedEvidences[key]!.url;
+                  const entry: EvidenceItem = { url, id: `${key}-0` };
+                  newEvidenceState[key as EvidenceKey] = [entry];
                 }
               }
               setEvidences(prev => ({ ...prev, ...newEvidenceState }));
@@ -393,6 +410,34 @@ export function usePartnerChecklist() {
         } else {
           // Se não há inspeção, mas temos vehicle, ainda podemos tentar carregar anomalias
           // usando o vehicleId diretamente (se for o caso)
+          // Também tentar carregar checklist via quoteId se fornecido
+          if (quoteId) {
+            try {
+              const loadResp = await post<{
+                ok: boolean;
+                data?: {
+                  form: Partial<PartnerChecklistForm> | null;
+                  evidences?: Record<string, { url: string }>;
+                };
+              }>('/api/partner/checklist/load', { quoteId }, { requireAuth: true });
+              if (loadResp.ok && loadResp.data) {
+                const loadedForm = loadResp.data.data?.form;
+                const loadedEvidences = loadResp.data.data?.evidences || {};
+                if (loadedForm) {
+                  setForm(prev => ({ ...prev, ...loadedForm }));
+                }
+                const newEvidenceState = { ...emptyEvidenceState } as EvidenceState;
+                for (const key of Object.keys(loadedEvidences)) {
+                  if ((EVIDENCE_KEYS as readonly string[]).includes(key)) {
+                    const url = loadedEvidences[key]!.url;
+                    const entry: EvidenceItem = { url, id: `${key}-0` };
+                    newEvidenceState[key as EvidenceKey] = [entry];
+                  }
+                }
+                setEvidences(prev => ({ ...prev, ...newEvidenceState }));
+              }
+            } catch {}
+          }
         }
 
         // Carregar anomalias se temos vehicle e inspection
@@ -404,7 +449,8 @@ export function usePartnerChecklist() {
               data: AnomalyEvidence[];
               error?: string;
             }>(
-              `/api/partner/checklist/load-anomalies?inspection_id=${inspectionData.id}&vehicle_id=${vehicleData.id}`
+              `/api/partner/checklist/load-anomalies?inspection_id=${inspectionData.id}&vehicle_id=${vehicleData.id}` +
+                (quoteId ? `&quote_id=${quoteId}` : '')
             );
 
             if (anomaliesResponse.ok && anomaliesResponse.data?.success) {
@@ -458,11 +504,16 @@ export function usePartnerChecklist() {
       }
 
       // Upload das evidências através do endpoint server-side (evita RLS no client)
-      const uploadedEvidenceUrls = Object.fromEntries(EVIDENCE_KEYS.map(k => [k, ''])) as Record<
-        EvidenceKey,
-        string
-      >;
-      const hasFiles = EVIDENCE_KEYS.some(k => !!evidences[k]?.file);
+      // Agora suporta múltiplas evidências por item
+      const uploadedEvidenceUrls = Object.fromEntries(
+        EVIDENCE_KEYS.map(k => [k, [] as string[]])
+      ) as Record<EvidenceKey, string[]>;
+
+      const hasFiles = EVIDENCE_KEYS.some(k => {
+        const items = evidences[k] || [];
+        return items.some(item => !!item.file);
+      });
+
       if (hasFiles) {
         const { data: sessionRes } = await supabase.auth.getSession();
         const accessToken = sessionRes.session?.access_token;
@@ -471,26 +522,29 @@ export function usePartnerChecklist() {
         }
 
         for (const key of EVIDENCE_KEYS) {
-          const ev = evidences[key];
-          if (ev?.file) {
-            const form = new FormData();
-            form.append('vehicle_id', vehicle.id);
-            form.append('item_key', key);
-            form.append('file', ev.file);
+          const items = evidences[key] || [];
 
-            const res = await fetch('/api/partner/checklist/upload-evidence', {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-              body: form,
-            });
-            if (!res.ok) {
-              const msg = await res.text();
-              throw new Error(`Erro ao enviar evidência de ${key}: ${msg || res.status}`);
+          for (const ev of items) {
+            if (ev?.file) {
+              const form = new FormData();
+              form.append('vehicle_id', vehicle.id);
+              form.append('item_key', key);
+              form.append('file', ev.file);
+
+              const res = await fetch('/api/partner/checklist/upload-evidence', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                body: form,
+              });
+              if (!res.ok) {
+                const msg = await res.text();
+                throw new Error(`Erro ao enviar evidência de ${key}: ${msg || res.status}`);
+              }
+              const json = await res.json();
+              uploadedEvidenceUrls[key].push(json.storage_path || '');
             }
-            const json = await res.json();
-            uploadedEvidenceUrls[key] = json.storage_path || '';
           }
         }
       }
@@ -513,6 +567,11 @@ export function usePartnerChecklist() {
         vehicle_id: vehicle.id,
         evidences: uploadedEvidenceUrls,
         inspection_id,
+        // Se houver quoteId na URL, enviar também para segmentar corretamente
+        ...(typeof window !== 'undefined' &&
+        new URL(window.location.href).searchParams.get('quoteId')
+          ? { quote_id: new URL(window.location.href).searchParams.get('quoteId')! }
+          : {}),
       };
 
       // PUT para submit (pode ser ajustado para save rascunho se necessário)
@@ -595,6 +654,12 @@ export function usePartnerChecklist() {
         // Criar FormData para enviar arquivos e dados
         const formData = new FormData();
         formData.append('inspection_id', inspection.id);
+        // Se houver quoteId na URL, anexar também
+        const qid =
+          typeof window !== 'undefined'
+            ? new URL(window.location.href).searchParams.get('quoteId')
+            : null;
+        if (qid) formData.append('quote_id', qid);
         formData.append('vehicle_id', vehicle.id);
 
         // Preparar dados das anomalias sem os arquivos (apenas metadados)

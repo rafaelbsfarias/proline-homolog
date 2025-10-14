@@ -100,16 +100,48 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       ? 'vehicle_id,quote_id'
       : 'vehicle_id,inspection_id';
 
-    const { data, error } = await supabase
-      .from('mechanics_checklist')
-      .upsert(mapped, { onConflict: conflictKeys })
-      .select('*');
-
-    if (error) {
-      logger.error('mechanics_checklist_upsert_error', { error: error.message });
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    // Segmentação por parceiro: atualizar registro do próprio parceiro, senão inserir
+    let existingId: string | null = null;
+    {
+      let base = supabase
+        .from('mechanics_checklist')
+        .select('id')
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .eq('partner_id', partnerId)
+        .limit(1);
+      if (checklistData.quote_id) base = base.eq('quote_id', checklistData.quote_id);
+      if (checklistData.inspection_id) base = base.eq('inspection_id', checklistData.inspection_id);
+      const { data: found } = await base.maybeSingle();
+      existingId = found?.id || null;
     }
-    logger.info('mechanics_checklist_upsert_ok', { rows: Array.isArray(data) ? data.length : 0 });
+
+    let mainRow;
+    if (existingId) {
+      const { data: updated, error: updErr } = await supabase
+        .from('mechanics_checklist')
+        .update(mapped)
+        .eq('id', existingId)
+        .select('*')
+        .single();
+      if (updErr) {
+        logger.error('mechanics_checklist_update_error', { error: updErr.message });
+        return NextResponse.json({ success: false, error: updErr.message }, { status: 500 });
+      }
+      mainRow = updated;
+      logger.info('mechanics_checklist_update_ok', { id: existingId });
+    } else {
+      const { data: inserted, error: insErr } = await supabase
+        .from('mechanics_checklist')
+        .insert(mapped)
+        .select('*')
+        .single();
+      if (insErr) {
+        logger.error('mechanics_checklist_insert_error', { error: insErr.message });
+        return NextResponse.json({ success: false, error: insErr.message }, { status: 500 });
+      }
+      mainRow = inserted;
+      logger.info('mechanics_checklist_insert_ok', { id: inserted?.id });
+    }
 
     // Registrar entrada de timeline idempotente e atualizar status do veículo
     try {
@@ -213,6 +245,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
           item_status: mappedStatus,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           item_notes: (checklistData as any)?.[notesKey] || null,
+          partner_id: partnerId,
         };
 
         // Adicionar quote_id (novo) ou inspection_id (legacy)
@@ -231,16 +264,27 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
     logger.debug('mechanics_checklist_items_prepared', { count: itemRows.length });
 
     if (itemRows.length > 0) {
-      // Upsert baseado em quote_id (novo) ou inspection_id (legacy)
-      const itemConflict = checklistData.quote_id ? 'quote_id,item_key' : 'inspection_id,item_key';
+      // Limpar itens anteriores deste parceiro neste contexto
+      let del = supabase
+        .from('mechanics_checklist_items')
+        .delete()
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .eq('partner_id', partnerId);
+      if (checklistData.quote_id) del = del.eq('quote_id', checklistData.quote_id);
+      if (checklistData.inspection_id) del = del.eq('inspection_id', checklistData.inspection_id);
+      const { error: delErr } = await del;
+      if (delErr) {
+        logger.warn('mechanics_checklist_items_delete_error', { error: delErr.message });
+      }
 
       const { error: itemsError } = await supabase
         .from('mechanics_checklist_items')
-        .upsert(itemRows, { onConflict: itemConflict });
+        .insert(itemRows);
       if (itemsError) {
-        logger.error('mechanics_checklist_items_upsert_error', { error: itemsError.message });
+        logger.error('mechanics_checklist_items_insert_error', { error: itemsError.message });
+      } else {
+        logger.info('mechanics_checklist_items_insert_ok', { count: itemRows.length });
       }
-      logger.info('mechanics_checklist_items_upsert_ok', { count: itemRows.length });
     }
 
     // Persistir referências das evidências em tabela separada (uma por item), sem blobs
@@ -253,6 +297,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
             vehicle_id: checklistData.vehicle_id,
             item_key,
             storage_path,
+            partner_id: partnerId,
           };
 
           // Adicionar quote_id (novo) ou inspection_id (legacy)
@@ -267,19 +312,29 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
         });
 
       if (rows.length > 0) {
-        // Upsert baseado em quote_id (novo) ou inspection_id (legacy)
-        const evidenceConflict = checklistData.quote_id
-          ? 'quote_id,item_key'
-          : 'inspection_id,item_key';
+        // Remover evidências anteriores deste parceiro neste contexto
+        let evDel = supabase
+          .from('mechanics_checklist_evidences')
+          .delete()
+          .eq('vehicle_id', checklistData.vehicle_id)
+          .eq('partner_id', partnerId);
+        if (checklistData.quote_id) evDel = evDel.eq('quote_id', checklistData.quote_id);
+        if (checklistData.inspection_id)
+          evDel = evDel.eq('inspection_id', checklistData.inspection_id);
+        const { error: evDelErr } = await evDel;
+        if (evDelErr) {
+          logger.warn('mechanics_checklist_evidences_delete_error', { error: evDelErr.message });
+        }
 
         const { error: evError } = await supabase
           .from('mechanics_checklist_evidences')
-          .upsert(rows, { onConflict: evidenceConflict });
+          .insert(rows);
         if (evError) {
           // Não falhar a requisição principal por causa das evidências
-          logger.error('mechanics_checklist_evidences_upsert_error', { error: evError.message });
+          logger.error('mechanics_checklist_evidences_insert_error', { error: evError.message });
+        } else {
+          logger.info('mechanics_checklist_evidences_insert_ok', { count: rows.length });
         }
-        logger.info('mechanics_checklist_evidences_upsert_ok', { count: rows.length });
       }
     }
 
@@ -323,10 +378,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: Array.isArray(data) && data[0] ? data[0] : mapped,
-    });
+    return NextResponse.json({ success: true, data: mainRow || mapped });
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     logger.error('submit_unexpected_error', { error: error.message });
