@@ -338,6 +338,9 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
                 disabled={loading}
               />
             </div>
+            {(errors.preparacao || errors.comercializacao) && (
+              <ErrorMessage message={errors.preparacao || errors.comercializacao} />
+            )}
           </div>
         </div>
 

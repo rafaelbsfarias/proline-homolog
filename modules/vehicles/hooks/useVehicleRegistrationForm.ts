@@ -22,20 +22,30 @@ export type VehicleFormData = {
 };
 
 // Zod schema
-const vehicleSchema = z.object({
-  plate: z.string().trim().min(1, { message: 'Placa é obrigatória' }),
-  brand: z.string().trim().min(1, { message: 'Marca é obrigatória' }),
-  model: z.string().trim().min(1, { message: 'Modelo é obrigatório' }),
-  color: z.string().trim().min(1, { message: 'Cor é obrigatória' }),
-  year: z.string().regex(/^\d{4}$/, { message: 'Ano inválido' }),
-  clientId: z.string(),
-  fipe_value: z.string().optional(),
-  initialKm: z.string().optional(),
-  observations: z.string().optional(),
-  estimated_arrival_date: z.string().optional(),
-  preparacao: z.boolean(),
-  comercializacao: z.boolean(),
-});
+const vehicleSchema = z
+  .object({
+    plate: z.string().trim().min(1, { message: 'Placa é obrigatória' }),
+    brand: z.string().trim().min(1, { message: 'Marca é obrigatória' }),
+    model: z.string().trim().min(1, { message: 'Modelo é obrigatório' }),
+    color: z.string().trim().min(1, { message: 'Cor é obrigatória' }),
+    year: z.string().regex(/^\d{4}$/, { message: 'Ano inválido' }),
+    clientId: z.string(),
+    fipe_value: z.string().optional(),
+    initialKm: z.string().optional(),
+    observations: z.string().optional(),
+    estimated_arrival_date: z.string().optional(),
+    preparacao: z.boolean(),
+    comercializacao: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.preparacao && !data.comercializacao) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione pelo menos uma finalidade (Preparação ou Comercialização)',
+        path: ['preparacao', 'comercializacao'], // Associate with both fields
+      });
+    }
+  });
 
 interface UseVehicleRegistrationFormProps {
   isOpen: boolean;
