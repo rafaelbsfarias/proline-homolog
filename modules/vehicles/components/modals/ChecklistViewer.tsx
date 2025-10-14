@@ -14,7 +14,7 @@ interface ChecklistViewerProps {
 export const ChecklistViewer: React.FC<ChecklistViewerProps> = ({ data, onClose }) => {
   // Traduzir tipo de parceiro para título
   const getTitle = () => {
-    if (data.type === 'mechanics') return 'Checklist de Mecânica';
+    if (data.type === 'mechanics') return 'Vistoria - Mecânica';
 
     const titles: Record<string, string> = {
       bodyshop: 'Checklist de Funilaria/Pintura',

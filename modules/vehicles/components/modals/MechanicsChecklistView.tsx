@@ -173,23 +173,34 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
 
               {item.item_notes && <p className={styles.itemNotes}>{item.item_notes}</p>}
 
-              {item.evidences.length > 0 && (
-                <div className={styles.evidencesGrid}>
-                  {item.evidences.map((evidence, idx) => {
-                    const images = item.evidences.map(e => e.media_url).filter(Boolean);
-                    return (
-                      <div key={evidence.id} className={styles.evidenceItem}>
-                        <img
-                          src={evidence.media_url}
-                          alt={evidence.description || 'Evidência'}
-                          className={styles.evidenceImage}
-                          onClick={() => openLightbox(images, idx)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Exibir evidências apenas para itens NOK */}
+              {item.item_status === 'nok' &&
+                item.evidences &&
+                item.evidences.some(e => !!e.media_url) && (
+                  <div className={styles.evidencesGrid}>
+                    {item.evidences
+                      .filter(e => !!e.media_url)
+                      .map(evidence => {
+                        const images = item.evidences
+                          .map(e => e.media_url)
+                          .filter((u): u is string => Boolean(u));
+                        const imgIndex = images.indexOf(evidence.media_url);
+                        return (
+                          <div key={evidence.id} className={styles.evidenceItem}>
+                            <img
+                              src={evidence.media_url || undefined}
+                              alt={evidence.description || 'Evidência'}
+                              className={styles.evidenceImage}
+                              onClick={() => openLightbox(images, imgIndex >= 0 ? imgIndex : 0)}
+                            />
+                            {evidence.description && (
+                              <p className={styles.evidenceDescription}>{evidence.description}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
             </div>
           ))}
         </div>

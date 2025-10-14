@@ -87,6 +87,21 @@
   gap: 12px;
 }
 
+.evidenceThumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+.evidenceInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .radioGroup {
   display: flex;
   flex-direction: column;

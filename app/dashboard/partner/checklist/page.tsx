@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import PartnerChecklistGroups from '@/modules/partner/components/checklist/PartnerChecklistGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
+import { usePartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/hooks/usePartRequestModal';
+import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
+import { PartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/components/PartRequestModal';
+import { EVIDENCE_KEYS, type EvidenceKey } from '@/modules/partner/hooks/usePartnerChecklist';
 
 const ChecklistPage = () => {
   const router = useRouter();
@@ -22,6 +26,33 @@ const ChecklistPage = () => {
     setEvidence,
     removeEvidence,
   } = usePartnerChecklist();
+
+  // Solicitações de peças por item do checklist
+  const [itemPartRequests, setItemPartRequests] = useState<
+    Partial<Record<EvidenceKey, PartRequest>>
+  >({});
+  const { modalState, open, close, updateField, buildPartRequest } = usePartRequestModal();
+
+  const handleOpenPartRequestModal = (itemKey: EvidenceKey, existing?: PartRequest) => {
+    open(itemKey, existing);
+  };
+
+  const handleSavePartRequest = () => {
+    const pr = buildPartRequest();
+    if (pr && modalState.anomalyId) {
+      const key = modalState.anomalyId as EvidenceKey;
+      setItemPartRequests(prev => ({ ...prev, [key]: pr }));
+      close();
+    }
+  };
+
+  const handleRemovePartRequest = (itemKey: EvidenceKey) => {
+    setItemPartRequests(prev => {
+      const copy = { ...prev };
+      delete copy[itemKey];
+      return copy;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,6 +303,9 @@ const ChecklistPage = () => {
               evidences={evidences}
               setEvidence={setEvidence}
               removeEvidence={removeEvidence}
+              partRequests={itemPartRequests}
+              onOpenPartRequestModal={handleOpenPartRequestModal}
+              onRemovePartRequest={handleRemovePartRequest}
             />
           </div>
 
@@ -362,6 +396,14 @@ const ChecklistPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Modal de Solicitação de Peças (reaproveitado do dynamic-checklist) */}
+      <PartRequestModal
+        modalState={modalState}
+        onClose={close}
+        onSave={handleSavePartRequest}
+        onUpdateField={updateField}
+      />
     </div>
   );
 };

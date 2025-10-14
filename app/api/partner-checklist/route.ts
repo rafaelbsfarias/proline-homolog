@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
-import { withPartnerAuth } from '@/modules/common/utils/authMiddleware';
+import { withAnyAuth } from '@/modules/common/utils/authMiddleware';
 import { createClient } from '@/lib/supabase/server';
 import { getLogger } from '@/modules/logger';
 
@@ -21,9 +21,10 @@ interface ChecklistItemRow {
 
 interface EvidenceRow {
   id: string;
-  checklist_item_id: string;
+  checklist_item_id?: string | null; // Opcional - não existe na tabela
   storage_path: string;
   description: string | null;
+  item_key: string; // Obrigatório - usado para associar com items
 }
 
 interface AnomalyRow {
@@ -47,7 +48,7 @@ interface ItemWithEvidences {
   }>;
 }
 
-export const GET = withPartnerAuth(async (req: AuthenticatedRequest) => {
+export const GET = withAnyAuth(async (req: AuthenticatedRequest) => {
   try {
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
@@ -205,6 +206,16 @@ async function getMechanicsChecklist(
       throw evidencesError;
     }
 
+    // Log: Evidências buscadas
+    logger.info('evidences_fetched', {
+      count: evidences?.length || 0,
+      sample: evidences?.slice(0, 3).map(e => ({
+        id: (e as EvidenceRow).id?.slice(0, 8),
+        item_key: (e as EvidenceRow).item_key,
+        has_storage_path: !!(e as EvidenceRow).storage_path,
+      })),
+    });
+
     // Gerar signed URLs para as evidências
     const evidencesWithUrls = await Promise.all(
       ((evidences as EvidenceRow[]) || []).map(async evidence => {
@@ -215,21 +226,36 @@ async function getMechanicsChecklist(
 
           return {
             id: evidence.id,
-            checklist_item_id: evidence.checklist_item_id,
+            item_key: evidence.item_key, // Garantir que está presente
             media_url: urlData?.signedUrl || '',
             description: evidence.description || '',
           };
         } catch {
-          logger.warn('error_generating_signed_url', { evidenceId: evidence.id });
+          logger.warn('error_generating_signed_url', {
+            evidenceId: evidence.id.slice(0, 8),
+            item_key: evidence.item_key,
+          });
           return {
             id: evidence.id,
-            checklist_item_id: evidence.checklist_item_id,
+            item_key: evidence.item_key,
             media_url: '',
             description: evidence.description || '',
           };
         }
       })
     );
+
+    // Log: Signed URLs geradas
+    logger.info('signed_urls_generated', {
+      count: evidencesWithUrls.length,
+      with_urls: evidencesWithUrls.filter(e => !!e.media_url).length,
+      sample: evidencesWithUrls.slice(0, 3).map(e => ({
+        id: e.id.slice(0, 8),
+        item_key: e.item_key,
+        has_url: !!e.media_url,
+        url_preview: e.media_url ? e.media_url.slice(0, 50) + '...' : 'empty',
+      })),
+    });
 
     // Agrupar itens com suas evidências por categoria
     const itemsWithEvidences: ItemWithEvidences[] = ((items as ChecklistItemRow[]) || []).map(
@@ -238,9 +264,23 @@ async function getMechanicsChecklist(
         item_key: item.item_key,
         item_status: item.item_status,
         item_notes: item.item_notes,
-        evidences: evidencesWithUrls.filter(ev => ev.checklist_item_id === item.id),
+        evidences: evidencesWithUrls.filter(ev => ev.item_key === item.item_key),
       })
     );
+
+    // Log: Itens NOK com evidências
+    const nokItems = itemsWithEvidences.filter(item => item.item_status === 'nok');
+    if (nokItems.length > 0) {
+      logger.info('nok_items_with_evidences', {
+        count: nokItems.length,
+        sample: nokItems.slice(0, 3).map(item => ({
+          item_key: item.item_key,
+          item_status: item.item_status,
+          evidences_count: item.evidences.length,
+          evidences_have_urls: item.evidences.every(e => !!e.media_url),
+        })),
+      });
+    }
 
     // Agrupar por categoria (baseado no item_key)
     const itemsByCategory = groupItemsByCategory(itemsWithEvidences);
@@ -473,14 +513,14 @@ async function getMechanicsChecklistDirect(
 
             return {
               id: evidence.id,
-              checklist_item_id: evidence.checklist_item_id || '',
+              item_key: evidence.item_key,
               media_url: urlData?.signedUrl || '',
               description: evidence.description || '',
             };
           } catch {
             return {
               id: evidence.id,
-              checklist_item_id: evidence.checklist_item_id || '',
+              item_key: evidence.item_key,
               media_url: '',
               description: evidence.description || '',
             };
@@ -495,10 +535,9 @@ async function getMechanicsChecklistDirect(
           item_key: item.item_key,
           item_status: item.item_status,
           item_notes: item.item_notes,
-          evidences: evidencesWithUrls.filter(ev => ev.checklist_item_id === item.id),
+          evidences: evidencesWithUrls.filter(ev => ev.item_key === item.item_key),
         })
       );
-
       const itemsByCategory = groupItemsByCategory(itemsWithEvidences);
 
       logger.info('mechanics_checklist_found_via_items', {
@@ -576,7 +615,7 @@ async function getMechanicsChecklistDirect(
 
           return {
             id: evidence.id,
-            checklist_item_id: evidence.checklist_item_id || '',
+            item_key: evidence.item_key,
             media_url: urlData?.signedUrl || '',
             description: evidence.description || '',
           };
@@ -584,7 +623,7 @@ async function getMechanicsChecklistDirect(
           logger.warn('error_generating_signed_url', { evidenceId: evidence.id });
           return {
             id: evidence.id,
-            checklist_item_id: evidence.checklist_item_id || '',
+            item_key: evidence.item_key,
             media_url: '',
             description: evidence.description || '',
           };
@@ -599,7 +638,7 @@ async function getMechanicsChecklistDirect(
         item_key: item.item_key,
         item_status: item.item_status,
         item_notes: item.item_notes,
-        evidences: evidencesWithUrls.filter(ev => ev.checklist_item_id === item.id),
+        evidences: evidencesWithUrls.filter(ev => ev.item_key === item.item_key),
       })
     );
 

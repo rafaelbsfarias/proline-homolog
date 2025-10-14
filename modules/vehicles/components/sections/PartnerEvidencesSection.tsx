@@ -1,6 +1,5 @@
 import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
-import { MediaCard } from '../cards/MediaCard';
 import styles from './PartnerEvidencesSection.module.css';
 
 interface PartnerEvidence {
@@ -79,26 +78,15 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
 
   return (
     <SectionCard title="Vistorias" headerAction={headerAction} fullWidth>
-      {Object.keys(evidenceByCategory).length === 0 ? (
-        <p className={styles.emptyMessage}></p>
-      ) : (
-        Object.entries(evidenceByCategory).map(([category, items]) => (
-          <div key={category} className={styles.categorySection}>
-            <h3 className={styles.categoryTitle}>{category}</h3>
-            <div className={styles.grid}>
-              {items.map((ev, idx) => (
-                <MediaCard
-                  key={`${ev.item_key}-${idx}`}
-                  src={ev.url}
-                  alt={`Evidência Parceiro - ${ev.label}`}
-                  date={new Date().toISOString()}
-                  description={ev.label}
-                />
-              ))}
-            </div>
-          </div>
-        ))
-      )}
+      {/* 
+        Não renderizamos mais as evidências diretamente.
+        Agora todas as vistorias são acessadas através dos botões no header:
+        - Mecânica: abre modal com checklist readonly
+        - Funilaria/Pintura, etc: abre modal com anomalias readonly
+      */}
+      <p className={styles.infoMessage}>
+        Clique nos botões acima para visualizar as vistorias realizadas pelos parceiros.
+      </p>
     </SectionCard>
   );
 };

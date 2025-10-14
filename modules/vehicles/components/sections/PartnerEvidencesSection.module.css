@@ -60,6 +60,17 @@
   margin: 0;
 }
 
+.infoMessage {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 16px 0;
+  text-align: center;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
 .categorySection {
   padding-top: 8px;
 }

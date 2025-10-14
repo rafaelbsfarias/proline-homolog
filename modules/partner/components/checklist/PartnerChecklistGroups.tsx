@@ -4,6 +4,8 @@ import styles from './PartnerChecklistGroups.module.css';
 import ImageCaptureInput from '@/modules/common/components/ImageCaptureInput';
 import { EVIDENCE_KEYS, EvidenceKey } from '../../hooks/usePartnerChecklist';
 import Lightbox from '@/modules/common/components/Lightbox/Lightbox';
+import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
+import { PartRequestCard } from '@/app/dashboard/partner/dynamic-checklist/components/PartRequestCard';
 
 type InspectionStatus = 'ok' | 'nok';
 
@@ -212,6 +214,10 @@ interface Props {
   evidences: Record<EvidenceKey, { file?: File; url?: string | null } | undefined>;
   setEvidence: (key: EvidenceKey, file: File) => void;
   removeEvidence: (key: EvidenceKey) => void;
+  // Solicitação de peça por item (opcional)
+  partRequests?: Partial<Record<EvidenceKey, PartRequest | undefined>>;
+  onOpenPartRequestModal?: (itemKey: EvidenceKey, existing?: PartRequest) => void;
+  onRemovePartRequest?: (itemKey: EvidenceKey) => void;
 }
 
 const inspectionItems: InspectionItem[] = [
@@ -446,6 +452,9 @@ const PartnerChecklistGroups: React.FC<Props> = ({
   evidences,
   setEvidence,
   removeEvidence,
+  partRequests,
+  onOpenPartRequestModal,
+  onRemovePartRequest,
 }) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -573,6 +582,20 @@ const PartnerChecklistGroups: React.FC<Props> = ({
                         className={styles.notesTextarea}
                       />
                     </div>
+
+                    {/* Solicitação de Peças */}
+                    <div style={{ marginTop: 12 }}>
+                      <PartRequestCard
+                        partRequest={partRequests?.[evidenceKey]}
+                        onAdd={() =>
+                          onOpenPartRequestModal?.(evidenceKey, partRequests?.[evidenceKey])
+                        }
+                        onEdit={() =>
+                          onOpenPartRequestModal?.(evidenceKey, partRequests?.[evidenceKey])
+                        }
+                        onRemove={() => onRemovePartRequest?.(evidenceKey)}
+                      />
+                    </div>
                     {/* Campo de evidência (imagem) */}
                     <div
                       className={styles.evidenceSection}
@@ -581,45 +604,55 @@ const PartnerChecklistGroups: React.FC<Props> = ({
                       <ImageCaptureInput
                         id={`evidence-${item.key}`}
                         label="Evidência (imagem)"
-                        currentUrl={undefined}
+                        currentUrl={(evidences[evidenceKey]?.url as string | undefined) || null}
                         disabled={false}
                         onChange={file => setEvidence(evidenceKey, file)}
                         onRemove={() => removeEvidence(evidenceKey)}
                       />
                       {evidences[evidenceKey]?.url && (
-                        <button
-                          type="button"
-                          onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
-                          style={{
-                            padding: '8px 12px',
-                            background: '#002e4c',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 6,
-                            cursor: 'pointer',
-                            fontSize: 14,
-                            fontWeight: 600,
-                          }}
-                        >
-                          Visualizar evidência
-                        </button>
+                        <div className={styles.evidenceInfo}>
+                          <img
+                            className={styles.evidenceThumb}
+                            src={evidences[evidenceKey]!.url as string}
+                            alt={`${item.label} - evidência`}
+                            onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => openLightboxAt(evidences[evidenceKey]!.url as string)}
+                            style={{
+                              padding: '8px 12px',
+                              background: '#002e4c',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 6,
+                              cursor: 'pointer',
+                              fontSize: 14,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Visualizar evidência
+                          </button>
+                        </div>
                       )}
-                      {/* Mostrar nome do arquivo, mas sem exibir a imagem inline */}
-                      <span style={{ fontSize: 12, color: '#374151' }}>
-                        {(() => {
-                          const ev = evidences[evidenceKey];
-                          if (ev?.file?.name) return ev.file.name;
-                          const url = ev?.url || '';
-                          try {
-                            const u = new URL(url);
-                            const dec = decodeURIComponent(u.pathname);
-                            const parts = dec.split('/');
-                            return parts[parts.length - 1] || 'evidencia.jpg';
-                          } catch {
-                            return 'evidencia.jpg';
-                          }
-                        })()}
-                      </span>
+                      {/* Mostrar nome do arquivo salvo para referência */}
+                      {evidences[evidenceKey] && (
+                        <span style={{ fontSize: 12, color: '#374151' }}>
+                          {(() => {
+                            const ev = evidences[evidenceKey];
+                            if (ev?.file?.name) return ev.file.name;
+                            const url = ev?.url || '';
+                            try {
+                              const u = new URL(url);
+                              const dec = decodeURIComponent(u.pathname);
+                              const parts = dec.split('/');
+                              return parts[parts.length - 1] || 'evidencia.jpg';
+                            } catch {
+                              return 'evidencia.jpg';
+                            }
+                          })()}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
