@@ -116,7 +116,8 @@ async function loadAnomaliesHandler(req: AuthenticatedRequest) {
     const result = await checklistService.loadAnomaliesWithSignedUrls(
       validInspectionId || null,
       validVehicleId,
-      validQuoteId || null
+      validQuoteId || null,
+      partnerId
     );
 
     if (!result.success) {

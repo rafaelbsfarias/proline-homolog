@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import { ChecklistViewer } from './modals/ChecklistViewer';
 import ChecklistReadOnlyViewer from './modals/ChecklistReadOnlyViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
@@ -11,7 +10,6 @@ import { LuArrowLeft } from 'react-icons/lu';
 
 // Hooks
 import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
-import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
 import { usePartnerChecklistCategories } from '@/modules/vehicles/hooks/usePartnerChecklistCategories';
 import { useExecutionEvidences } from '@/modules/vehicles/hooks/useExecutionEvidences';
 import { useVehicleDetailsState } from '@/modules/vehicles/hooks/useVehicleDetailsState';
@@ -43,11 +41,7 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   const { loadChecklist, loading: loadingDynamicChecklist } = useDynamicChecklistLoader();
 
   // Data Hooks
-  const { grouped: partnerEvidenceByCategory, evidences: partnerEvidences } = usePartnerEvidences(
-    vehicle?.id,
-    inspection?.id
-  );
-  const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
+  const { evidences: partnerEvidences } = usePartnerEvidences(vehicle?.id, inspection?.id);
   const { evidences: executionEvidences, loading: executionLoading } = useExecutionEvidences(
     vehicle?.id
   );
@@ -89,10 +83,14 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   };
 
   // Handlers
-  const handleLoadDynamicChecklist = async (category: string) => {
+  const handleLoadDynamicChecklist = async (
+    args: { category: string; partnerId: string; partnerName?: string } | string
+  ) => {
     if (!vehicle?.id || !inspection?.id) return;
+    const { category, partnerId } =
+      typeof args === 'string' ? { category: args, partnerId: '' } : args;
 
-    const data = await loadChecklist(vehicle.id, inspection.id, category);
+    const data = await loadChecklist(vehicle.id, inspection.id, category, partnerId);
     if (data) {
       modalState.dynamicChecklistModal.open({
         anomalies: data.anomalies,
@@ -174,13 +172,9 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         <VehicleMediaSection media={inspection?.media || []} mediaUrls={mediaUrls} />
 
         <PartnerEvidencesSection
-          evidenceByCategory={partnerEvidenceByCategory}
           checklistCategories={checklistCategories}
-          checklistData={checklistData}
-          checklistLoading={checklistLoading}
           categoriesLoading={categoriesLoading}
           loadingDynamicChecklist={loadingDynamicChecklist}
-          onOpenStaticChecklist={modalState.checklistModal.open}
           onOpenDynamicChecklist={handleLoadDynamicChecklist}
         />
 
@@ -198,10 +192,6 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           startIndex={0}
           onClose={() => setAggLightboxOpen(false)}
         />
-      )}
-
-      {modalState.checklistModal.isOpen && checklistData && (
-        <ChecklistViewer data={checklistData} onClose={modalState.checklistModal.close} />
       )}
 
       {modalState.dynamicChecklistModal.isOpen && modalState.dynamicChecklistModal.data && (

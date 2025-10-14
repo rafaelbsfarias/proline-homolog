@@ -24,7 +24,8 @@ export const useDynamicChecklistLoader = () => {
   const loadChecklist = async (
     vehicleId: string,
     inspectionId: string,
-    category?: string
+    category?: string,
+    partnerId?: string
   ): Promise<DynamicChecklistData | null> => {
     setLoading(true);
     try {
@@ -43,6 +44,8 @@ export const useDynamicChecklistLoader = () => {
 
       // Carregar form + anomalias via endpoint de visualização (qualquer papel)
       const params = new URLSearchParams({ vehicle_id: vehicleId, inspection_id: inspectionId });
+      if (partnerId) params.set('partner_id', partnerId);
+      if (category) params.set('partner_category', category);
       const viewResp = await fetch(`/api/checklist/view?${params.toString()}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

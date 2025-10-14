@@ -21,12 +21,13 @@ export class AnomalyService {
    */
   async loadWithSignedUrls(
     vehicle_id: string,
-    options: LoadChecklistOptions
+    options: LoadChecklistOptions,
+    partner_id?: string
   ): Promise<FormattedAnomaly[]> {
     try {
       logger.info('loading_anomalies', { vehicle_id, ...options });
 
-      const anomalies = await this.repository.findWithPartRequests(vehicle_id, options);
+      const anomalies = await this.repository.findWithPartRequests(vehicle_id, options, partner_id);
 
       logger.info('anomalies_loaded', {
         count: anomalies.length,

@@ -12,6 +12,7 @@ const ViewChecklistSchema = z.object({
   inspection_id: z.string().uuid('inspection_id deve ser um UUID válido').optional(),
   quote_id: z.string().uuid('quote_id deve ser um UUID válido').optional(),
   partner_category: z.string().optional(), // Categoria do parceiro para filtrar
+  partner_id: z.string().uuid('partner_id deve ser um UUID válido').optional(),
 });
 
 export const runtime = 'nodejs';
@@ -25,6 +26,7 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
     const inspection_id = searchParams.get('inspection_id') || undefined;
     const quote_id = searchParams.get('quote_id') || undefined;
     const partner_category = searchParams.get('partner_category') || undefined;
+    const partner_id = searchParams.get('partner_id') || undefined;
 
     logger.info('view_checklist_request', {
       vehicle_id,
@@ -41,12 +43,13 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       inspection_id,
       quote_id,
       partner_category,
+      partner_id,
     });
 
     if (!validation.success) {
       logger.error('validation_failed', {
         errors: validation.error.errors,
-        input: { vehicle_id, inspection_id, quote_id, partner_category },
+        input: { vehicle_id, inspection_id, quote_id, partner_category, partner_id },
       });
       return NextResponse.json(
         {
@@ -63,6 +66,7 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       inspection_id: validInspectionId,
       quote_id: validQuoteId,
       partner_category: validPartnerCategory,
+      partner_id: validPartnerId,
     } = validation.data;
 
     const checklistService = ChecklistService.getInstance();
@@ -101,12 +105,14 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
     // Carregar formulário (itens) e anomalias
     const details = await checklistService.loadChecklistWithDetails(
       validInspectionId || null,
-      validQuoteId || null
+      validQuoteId || null,
+      validPartnerId
     );
     const anomaliesRes = await checklistService.loadAnomaliesWithSignedUrls(
       validInspectionId || null,
       validVehicleId,
-      validQuoteId || null
+      validQuoteId || null,
+      validPartnerId
     );
 
     if (!anomaliesRes.success) {

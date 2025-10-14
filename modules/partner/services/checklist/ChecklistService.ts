@@ -148,11 +148,16 @@ export class ChecklistService {
   public async loadAnomaliesWithSignedUrls(
     inspection_id: string | null,
     vehicle_id: string,
-    quote_id?: string | null
+    quote_id?: string | null,
+    partner_id?: string
   ) {
     try {
       const options: LoadChecklistOptions = { inspection_id, quote_id };
-      const anomalies = await this.anomalyService.loadWithSignedUrls(vehicle_id, options);
+      const anomalies = await this.anomalyService.loadWithSignedUrls(
+        vehicle_id,
+        options,
+        partner_id
+      );
 
       return {
         success: true,

@@ -51,103 +51,89 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Buscar anomalias agrupadas por parceiro e suas categorias
-    let query = supabase
-      .from('vehicle_anomalies')
+    // Buscar parceiros e categorias a partir de quotes + service_orders
+    // e checar se cada parceiro possui anomalias no contexto (inspection opcional)
+    const { data: quotes, error: quotesError } = await supabase
+      .from('quotes')
       .select(
         `
         id,
         partner_id,
-        profiles!vehicle_anomalies_partner_id_fkey (
-          id,
-          full_name
+        partners ( id, name ),
+        service_orders!inner (
+          vehicle_id,
+          service_categories!inner ( name )
         )
       `
       )
-      .eq('vehicle_id', validVehicleId);
+      .eq('service_orders.vehicle_id', validVehicleId);
 
-    if (validInspectionId) {
-      query = query.eq('inspection_id', validInspectionId);
-    }
-
-    const { data: anomalies, error } = await query;
-
-    if (error) {
-      logger.error('fetch_anomalies_error', {
-        error: error.message,
-        code: error.code,
-        details: error.details,
-      });
+    if (quotesError) {
+      logger.error('fetch_quotes_error', { error: quotesError.message });
       return NextResponse.json(
-        { success: false, error: 'Erro ao buscar anomalias' },
+        { success: false, error: 'Erro ao buscar parceiros' },
         { status: 500 }
       );
     }
 
-    logger.info('anomalies_fetched', {
-      anomalies_count: anomalies?.length || 0,
-      vehicle_id: validVehicleId,
-    });
-
-    // Agrupar por parceiro e categoria
-    const categoriesMap = new Map<
-      string,
-      {
-        category: string;
-        partner_id: string;
-        partner_name: string;
-        has_anomalies: boolean;
-      }
-    >();
-
-    // Para cada anomalia, buscar a categoria do parceiro através do quote/service_order
-    for (const anomaly of anomalies || []) {
-      const profile = anomaly.profiles;
-      const profileData = Array.isArray(profile) ? profile[0] : profile;
-
-      if (!profileData || !anomaly.partner_id) continue;
-
-      // Buscar a categoria do parceiro através do quote e service_order
-      const { data: quoteData } = await supabase
-        .from('quotes')
-        .select(
-          `
-          id,
-          service_orders!inner (
-            id,
-            category_id,
-            service_categories!inner (
-              name
-            )
-          )
-        `
-        )
-        .eq('partner_id', anomaly.partner_id)
-        .eq('service_orders.vehicle_id', validVehicleId)
-        .limit(1)
-        .single();
-
-      if (quoteData && quoteData.service_orders) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const serviceOrder: any = quoteData.service_orders;
-        const categoryName =
-          serviceOrder.service_categories?.name || serviceOrder.service_categories?.[0]?.name;
-
-        if (categoryName) {
-          const key = `${anomaly.partner_id}-${categoryName}`;
-          if (!categoriesMap.has(key)) {
-            categoriesMap.set(key, {
-              category: categoryName,
-              partner_id: anomaly.partner_id,
-              partner_name: profileData.full_name || 'Parceiro',
-              has_anomalies: true,
-            });
+    type QuoteRow = {
+      partner_id: string;
+      partners: { id: string; name: string } | { id: string; name: string }[] | null;
+      service_orders:
+        | {
+            service_categories: { name: string } | { name: string }[] | null;
           }
-        }
+        | { service_categories: { name: string } | { name: string }[] | null }[]
+        | null;
+    };
+
+    const partnerCategoryPairs: { partner_id: string; partner_name: string; category: string }[] =
+      [];
+    for (const q of (quotes as QuoteRow[]) || []) {
+      const partner = Array.isArray(q.partners) ? q.partners[0] : q.partners;
+      const so = Array.isArray(q.service_orders) ? q.service_orders[0] : q.service_orders;
+      const cat = so?.service_categories;
+      const categoryName = Array.isArray(cat) ? cat[0]?.name : cat?.name;
+      if (q.partner_id && partner && categoryName) {
+        partnerCategoryPairs.push({
+          partner_id: q.partner_id,
+          partner_name: partner.name || 'Parceiro',
+          category: categoryName,
+        });
       }
     }
 
-    const categories = Array.from(categoriesMap.values());
+    // Remover duplicados (mesmo parceiro+categoria)
+    const seen = new Set<string>();
+    const uniquePairs = partnerCategoryPairs.filter(p => {
+      const key = `${p.partner_id}-${p.category}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Para cada par, checar se existem anomalias do parceiro (define has_anomalies)
+    const categories: {
+      category: string;
+      partner_id: string;
+      partner_name: string;
+      has_anomalies: boolean;
+    }[] = [];
+    for (const p of uniquePairs) {
+      let anomaliesQuery = supabase
+        .from('vehicle_anomalies')
+        .select('id', { count: 'exact', head: true })
+        .eq('vehicle_id', validVehicleId)
+        .eq('partner_id', p.partner_id);
+      if (validInspectionId) anomaliesQuery = anomaliesQuery.eq('inspection_id', validInspectionId);
+      const { count } = await anomaliesQuery;
+      categories.push({
+        category: p.category,
+        partner_id: p.partner_id,
+        partner_name: p.partner_name,
+        has_anomalies: (count || 0) > 0,
+      });
+    }
 
     logger.info('categories_fetched', {
       vehicle_id: validVehicleId,

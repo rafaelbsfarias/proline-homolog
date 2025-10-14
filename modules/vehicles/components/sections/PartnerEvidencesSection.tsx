@@ -2,12 +2,6 @@ import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
 import styles from './PartnerEvidencesSection.module.css';
 
-interface PartnerEvidence {
-  item_key: string;
-  label: string;
-  url: string;
-}
-
 interface ChecklistCategory {
   category: string;
   partner_id: string;
@@ -16,74 +10,55 @@ interface ChecklistCategory {
 }
 
 interface PartnerEvidencesSectionProps {
-  evidenceByCategory: Record<string, PartnerEvidence[]>;
   checklistCategories: ChecklistCategory[];
-  checklistData: unknown;
-  checklistLoading: boolean;
   categoriesLoading: boolean;
   loadingDynamicChecklist: boolean;
-  onOpenStaticChecklist: () => void;
-  onOpenDynamicChecklist: (category: string) => void;
+  onOpenDynamicChecklist: (args: {
+    category: string;
+    partnerId: string;
+    partnerName?: string;
+  }) => void;
 }
 
 export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = ({
-  evidenceByCategory,
   checklistCategories,
-  checklistData,
-  checklistLoading,
   categoriesLoading,
   loadingDynamicChecklist,
-  onOpenStaticChecklist,
   onOpenDynamicChecklist,
 }) => {
   // Mostrar botões somente quando houver checklist realmente realizado.
   const availableCategories = (checklistCategories || []).filter(c => c.has_anomalies);
-  const hasAnyEvidence =
-    !!checklistData || Object.keys(evidenceByCategory).length > 0 || availableCategories.length > 0;
 
-  if (!hasAnyEvidence) return null;
+  if (availableCategories.length === 0) return null;
 
   const headerAction = (
     <div className={styles.buttonGroup}>
-      {/* Botão Checklist Estático (Mecânica) */}
-      {checklistLoading ? (
-        <span className={styles.loadingText}>Carregando checklist...</span>
-      ) : (
-        checklistData && (
-          <button onClick={onOpenStaticChecklist} className={styles.checklistButtonStatic}>
-            Mecânica
-          </button>
-        )
-      )}
-
       {/* Botões Checklist Dinâmico (Por Categoria) */}
       {categoriesLoading ? (
         <span className={styles.loadingText}>Carregando categorias...</span>
-      ) : availableCategories.length > 0 ? (
+      ) : (
         availableCategories.map(cat => (
           <button
             key={`${cat.partner_id}-${cat.category}`}
-            onClick={() => onOpenDynamicChecklist(cat.category)}
+            onClick={() =>
+              onOpenDynamicChecklist({
+                category: cat.category,
+                partnerId: cat.partner_id,
+                partnerName: cat.partner_name,
+              })
+            }
             disabled={loadingDynamicChecklist}
             className={styles.checklistButtonDynamic}
           >
-            {loadingDynamicChecklist ? 'Carregando...' : ` ${cat.category}`}
+            {loadingDynamicChecklist ? 'Carregando...' : `${cat.category} • ${cat.partner_name}`}
           </button>
         ))
-      ) : (
-        <span className={styles.emptyText}>Nenhum checklist dinâmico disponível.</span>
       )}
     </div>
   );
 
   return (
     <SectionCard title="Vistorias" headerAction={headerAction} fullWidth>
-      {/* 
-        Não renderizamos mais as evidências diretamente.
-        Agora todas as vistorias são acessadas através dos botões no header:
-        - Mecânica: abre modal com checklist readonly
-        - Funilaria/Pintura, etc: abre modal com anomalias readonly
-      */}
       <p className={styles.infoMessage}>
         Clique nos botões acima para visualizar as vistorias realizadas pelos parceiros.
       </p>

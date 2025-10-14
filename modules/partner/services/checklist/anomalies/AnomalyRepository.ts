@@ -13,7 +13,8 @@ export class AnomalyRepository {
    */
   async findWithPartRequests(
     vehicle_id: string,
-    options: LoadChecklistOptions
+    options: LoadChecklistOptions,
+    partner_id?: string
   ): Promise<AnomalyRecord[]> {
     try {
       let query = this.supabase
@@ -35,6 +36,12 @@ export class AnomalyRepository {
         .order('created_at', { ascending: true });
 
       query = applyIdFilters(query, options) as typeof query;
+
+      // Restringir por parceiro quando informado
+      if (partner_id) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        query = (query as any).eq('partner_id', partner_id);
+      }
 
       const { data, error } = await query;
 
