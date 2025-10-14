@@ -191,18 +191,7 @@ const SpecialistDashboard = () => {
         onClose={closeChecklist}
         onSaved={() => refetch()}
         onFinalized={() => refetch()}
-        vehicle={
-          selectedVehicle
-            ? {
-                id: selectedVehicle.id,
-                plate: selectedVehicle.plate,
-                brand: selectedVehicle.brand,
-                model: selectedVehicle.model,
-                year: selectedVehicle.year,
-                color: selectedVehicle.color,
-              }
-            : null
-        }
+        vehicle={selectedVehicle}
       />
     </div>
   );

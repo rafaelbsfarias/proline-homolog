@@ -22,10 +22,13 @@ import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton
 
 // duplicate imports removed below
 
+const snakeToCamel = (str: string) =>
+  str.replace(/([-_][a-z])/g, group => group.toUpperCase().replace('-', '').replace('_', ''));
+
 interface VehicleChecklistModalProps {
   isOpen: boolean;
   onClose: () => void;
-  vehicle: VehicleInfo | null;
+  vehicle: (VehicleInfo & { comercializacao?: boolean; preparacao?: boolean }) | null;
   onSaved?: () => void;
   onFinalized?: () => void;
 }
@@ -65,6 +68,49 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   const [success, setSuccess] = useState<string | null>(null);
   const [isFinalized, setIsFinalized] = useState(false);
   const [existingImages, setExistingImages] = useState<{ path: string; url: string }[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<
+    { id: string; key: string; name: string; type: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchServiceCategories = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const response = await fetch('/api/specialist/service-categories', {
+          headers: {
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch service categories');
+        }
+        const data = await response.json();
+        setServiceCategories(data?.categories || []);
+      } catch (error) {
+        showToast('error', 'Não foi possível carregar as categorias de serviço.');
+      }
+    };
+
+    if (isOpen) {
+      fetchServiceCategories();
+    }
+  }, [isOpen, showToast]);
+
+  const displayedServices = useMemo(() => {
+    if (!vehicle) return [];
+
+    return serviceCategories.filter(category => {
+      if (vehicle.comercializacao && category.type === 'comercializacao') {
+        return true;
+      }
+      if (vehicle.preparacao && category.type === 'preparacao') {
+        return true;
+      }
+      return false;
+    });
+  }, [vehicle, serviceCategories]);
 
   // const title = useMemo(() => {
   //   if (!vehicle) return 'Checklist do Veículo';
@@ -350,59 +396,30 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           </div>
 
           {/* Sinalização de serviços necessários por categoria */}
-          <div className={styles.group}>
-            <h4 className={styles.groupTitle}>Serviços necessários</h4>
-            <div className={styles.grid}>
-              <ServiceCategoryField
-                label="Mecânica"
-                checked={form.services.mechanics.required}
-                notes={form.services.mechanics.notes}
-                onToggle={v => setServiceFlag('mechanics', v)}
-                onNotesChange={v => setServiceNotes('mechanics', v)}
-                disabled={isFinalized}
-              />
-              <ServiceCategoryField
-                label="Funilaria/Pintura"
-                checked={form.services.bodyPaint.required}
-                notes={form.services.bodyPaint.notes}
-                onToggle={v => setServiceFlag('bodyPaint', v)}
-                onNotesChange={v => setServiceNotes('bodyPaint', v)}
-                disabled={isFinalized}
-              />
-              <ServiceCategoryField
-                label="Lavagem"
-                checked={form.services.washing.required}
-                notes={form.services.washing.notes}
-                onToggle={v => setServiceFlag('washing', v)}
-                onNotesChange={v => setServiceNotes('washing', v)}
-                disabled={isFinalized}
-              />
-              <ServiceCategoryField
-                label="Pneus"
-                checked={form.services.tires.required}
-                notes={form.services.tires.notes}
-                onToggle={v => setServiceFlag('tires', v)}
-                onNotesChange={v => setServiceNotes('tires', v)}
-                disabled={isFinalized}
-              />
-              <ServiceCategoryField
-                label="Loja"
-                checked={form.services.loja.required}
-                notes={form.services.loja.notes}
-                onToggle={v => setServiceFlag('loja', v)}
-                onNotesChange={v => setServiceNotes('loja', v)}
-                disabled={isFinalized}
-              />
-              <ServiceCategoryField
-                label="Pátio Atacado"
-                checked={form.services.patioAtacado.required}
-                notes={form.services.patioAtacado.notes}
-                onToggle={v => setServiceFlag('patioAtacado', v)}
-                onNotesChange={v => setServiceNotes('patioAtacado', v)}
-                disabled={isFinalized}
-              />
+          {(vehicle?.comercializacao || vehicle?.preparacao) && (
+            <div className={styles.group}>
+              <h4 className={styles.groupTitle}>Serviços necessários</h4>
+              <div className={styles.grid}>
+                {displayedServices.map(category => {
+                  const formKey = snakeToCamel(category.key) as keyof typeof form.services;
+                  if (!form.services[formKey]) {
+                    return null;
+                  }
+                  return (
+                    <ServiceCategoryField
+                      key={category.id}
+                      label={category.name}
+                      checked={form.services[formKey].required}
+                      notes={form.services[formKey].notes}
+                      onToggle={v => setServiceFlag(formKey, v)}
+                      onNotesChange={v => setServiceNotes(formKey, v)}
+                      disabled={isFinalized}
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Upload de fotos (galeria/câmera) */}
           <ImageUpload
