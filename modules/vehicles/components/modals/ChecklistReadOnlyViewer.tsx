@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { formatDateBR } from '@/modules/client/utils/date';
+import { ImageLightbox } from './ImageLightbox';
 import styles from './ChecklistReadOnlyViewer.module.css';
 
 interface AnomalyEvidence {
@@ -43,9 +44,19 @@ const ChecklistReadOnlyViewer: React.FC<ChecklistReadOnlyViewerProps> = ({
   onClose,
   partnerCategory,
 }) => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+
   const formatCurrency = (value?: number) => {
     if (!value) return 'N/A';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
+  const openLightbox = (images: string[], startIndex: number = 0) => {
+    setLightboxImages(images);
+    setLightboxStartIndex(startIndex);
+    setLightboxOpen(true);
   };
 
   return (
@@ -101,6 +112,8 @@ const ChecklistReadOnlyViewer: React.FC<ChecklistReadOnlyViewerProps> = ({
                             src={url}
                             alt={`${item.label} - Foto ${idx + 1}`}
                             className={styles.photoThumbnail}
+                            onClick={() => openLightbox(item.photoUrls || [], idx)}
+                            style={{ cursor: 'pointer' }}
                           />
                         ))}
                       </div>
@@ -137,6 +150,8 @@ const ChecklistReadOnlyViewer: React.FC<ChecklistReadOnlyViewerProps> = ({
                               src={photo}
                               alt={`Anomalia ${index + 1} - Foto ${idx + 1}`}
                               className={styles.photoThumbnail}
+                              onClick={() => openLightbox(anomaly.photos, idx)}
+                              style={{ cursor: 'pointer' }}
                             />
                           ))}
                         </div>
@@ -191,6 +206,16 @@ const ChecklistReadOnlyViewer: React.FC<ChecklistReadOnlyViewerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Lightbox para visualizar imagens em tamanho grande */}
+      {lightboxOpen && (
+        <ImageLightbox
+          isOpen={lightboxOpen}
+          images={lightboxImages}
+          startIndex={lightboxStartIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </div>
   );
 };

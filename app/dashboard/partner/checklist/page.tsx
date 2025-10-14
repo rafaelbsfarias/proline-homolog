@@ -127,7 +127,7 @@ const ChecklistPage = () => {
               margin: 0,
             }}
           >
-            Checklist do Veículo
+            Vistoria do Veículo
           </h1>
         </div>
       </div>
