@@ -75,13 +75,14 @@ export default function ApprovedOverviewPage() {
     if (loadingDetails[vehicleId] || details[vehicleId]) return;
     setLoadingDetails(prev => ({ ...prev, [vehicleId]: true }));
     try {
-      const res = await fetch(`/api/partner-checklist?vehicleId=${vehicleId}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      // MIGRADO: usando nova API POST /api/partner/checklist/load
+      const res = await authenticatedFetch('/api/partner/checklist/load', {
+        method: 'POST',
+        body: JSON.stringify({ quoteId: vehicleId }),
       });
-      const data = await res.json();
-      if (res.ok) {
+
+      if (res.ok && res.data) {
+        const data = res.data as ChecklistMechanics | ChecklistAnomalies;
         if (data.type === 'mechanics') {
           setDetails(prev => ({
             ...prev,
@@ -96,7 +97,7 @@ export default function ApprovedOverviewPage() {
       } else {
         logger.warn('checklist_fetch_error', {
           vehicleId: vehicleId.slice(0, 8),
-          error: data?.error,
+          error: res.error,
         });
         setDetails(prev => ({ ...prev, [vehicleId]: null }));
       }
