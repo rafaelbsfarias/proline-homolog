@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
+import { useChecklistOrchestrator } from '@/modules/partner/hooks/checklist/useChecklistOrchestrator';
 import PartnerChecklistGroups from '@/modules/partner/components/checklist/PartnerChecklistGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
 import { usePartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/hooks/usePartRequestModal';
 import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
 import { PartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/components/PartRequestModal';
-import { type EvidenceKey } from '@/modules/partner/hooks/usePartnerChecklist';
+import { type EvidenceKey } from '@/modules/partner/constants/checklist';
 
 const ChecklistPage = () => {
   const router = useRouter();
@@ -23,9 +23,10 @@ const ChecklistPage = () => {
     setField,
     saveChecklist,
     evidences,
-    setEvidence,
+    addEvidence,
     removeEvidence,
-  } = usePartnerChecklist();
+    partRequests,
+  } = useChecklistOrchestrator();
 
   // Solicitações de peças por item do checklist
   const [itemPartRequests, setItemPartRequests] = useState<
@@ -35,18 +36,10 @@ const ChecklistPage = () => {
 
   // Recuperar part_requests salvos quando o componente montar
   useEffect(() => {
-    const loadedPartRequests = sessionStorage.getItem('loaded_part_requests');
-    if (loadedPartRequests) {
-      try {
-        const parsed = JSON.parse(loadedPartRequests);
-        setItemPartRequests(parsed);
-        // Limpar do sessionStorage após carregar
-        sessionStorage.removeItem('loaded_part_requests');
-      } catch {
-        // Silently fail if parsing fails
-      }
+    if (partRequests && Object.keys(partRequests).length > 0) {
+      setItemPartRequests(partRequests as any);
     }
-  }, []);
+  }, [partRequests]);
 
   const handleOpenPartRequestModal = (itemKey: EvidenceKey, existing?: PartRequest) => {
     open(itemKey, existing);
@@ -316,7 +309,7 @@ const ChecklistPage = () => {
               }}
               onChange={(name, value) => setField(name, value)}
               evidences={evidences}
-              setEvidence={setEvidence}
+              setEvidence={addEvidence}
               removeEvidence={removeEvidence}
               partRequests={itemPartRequests}
               onOpenPartRequestModal={handleOpenPartRequestModal}
