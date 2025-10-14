@@ -6,6 +6,7 @@
 'use client';
 
 export { EVIDENCE_KEYS, type EvidenceKey } from '../constants/checklist';
+export type { PartnerChecklistForm } from '@/modules/partner/types/checklist';
 import { useChecklistOrchestrator } from './checklist/useChecklistOrchestrator';
 
 export function usePartnerChecklist() {

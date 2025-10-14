@@ -21,7 +21,7 @@ export const TABLES = {
   // Checklist Domain
   MECHANICS_CHECKLIST: 'mechanics_checklist',
   MECHANICS_CHECKLIST_ITEMS: 'mechanics_checklist_items',
-  MECHANICS_CHECKLIST_EVIDENCES: 'mechanics_checklist_evidences',
+  MECHANICS_CHECKLIST_EVIDENCES: 'mechanics_checklist_evidences', // Tabela foi renomeada para PLURAL na migration 20251014214504
 
   // Vehicles Domain
   VEHICLE_ANOMALIES: 'vehicle_anomalies',

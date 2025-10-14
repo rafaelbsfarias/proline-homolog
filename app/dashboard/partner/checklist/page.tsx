@@ -37,7 +37,7 @@ const ChecklistPage = () => {
   // Recuperar part_requests salvos quando o componente montar
   useEffect(() => {
     if (partRequests && Object.keys(partRequests).length > 0) {
-      setItemPartRequests(partRequests as any);
+      setItemPartRequests(partRequests as Partial<Record<EvidenceKey, PartRequest>>);
     }
   }, [partRequests]);
 
@@ -65,7 +65,7 @@ const ChecklistPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await saveChecklist();
+      await saveChecklist(itemPartRequests);
       // Após salvar com sucesso, voltar ao dashboard para habilitar edição de orçamento
       router.push('/dashboard');
     } catch {

@@ -14,23 +14,34 @@ export class EvidenceRepository {
    */
   async findByChecklist(options: LoadChecklistOptions): Promise<EvidenceRecord[]> {
     try {
-      let query = this.supabase
+      // Tentar por quote_id; caso vazio e haja inspection_id, tentar fallback
+      const base = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-        .select('item_key, storage_path');
+        .select('item_key, media_url, inspection_id, quote_id');
 
-      query = applyIdFilters(query, options) as typeof query;
+      const tryQuery = async (opts: LoadChecklistOptions) => {
+        let q = base;
+        q = applyIdFilters(q, opts) as typeof q;
+        const { data, error } = await q;
+        if (error) {
+          logger.error('find_by_checklist_error', { error: error.message });
+          throw error;
+        }
+        return (data as EvidenceRecord[]) || [];
+      };
 
-      // Nota: Evidences não possuem partner_id neste schema.
-      // O escopo por parceiro já foi garantido ao selecionar o checklist do parceiro.
-
-      const { data, error } = await query;
-
-      if (error) {
-        logger.error('find_by_checklist_error', { error: error.message });
-        throw error;
+      // Preferir quote_id se existir
+      if (options.quote_id) {
+        const byQuote = await tryQuery({ quote_id: options.quote_id });
+        if (byQuote.length > 0 || !options.inspection_id) return byQuote;
+        // Fallback
+        const byInspection = await tryQuery({ inspection_id: options.inspection_id });
+        return byInspection;
       }
 
-      return (data as EvidenceRecord[]) || [];
+      // Sem quote_id, usar inspection_id
+      const byInspection = await tryQuery({ inspection_id: options.inspection_id });
+      return byInspection;
     } catch (error) {
       logger.error('find_by_checklist_unexpected_error', {
         error: error instanceof Error ? error.message : String(error),

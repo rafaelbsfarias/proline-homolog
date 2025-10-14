@@ -1,85 +1,117 @@
-# Documentação do Projeto ProLine Hub
+# Documentação Unificada - Sistema ProLine Hub
 
-## 🆕 Sistema de Templates de Checklist
+**Última Atualização:** 14 de Outubro de 2025  
+**Status do Sistema:** ✅ Operacional (82% completo)
 
-**Status:** ✅ Operacional (82% completo) | **Atualização:** 14/10/2025
+## 📚 Índice Geral
 
-O sistema de templates dinâmicos está funcional! Veja:
-
-- **[INDEX.md](./INDEX.md)** - Índice completo da documentação de templates
-- **[TEMPLATES_QUICK_START.md](./TEMPLATES_QUICK_START.md)** - Guia rápido de uso
-- **[SESSION_SUMMARY.md](./SESSION_SUMMARY.md)** - Resumo da última sessão
-
-**Teste rápido:**
-```bash
-node scripts/test-init-template.cjs  # Valida todos os 6 templates
-```
+Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLine Hub, agrupando informações por tópicos para facilitar a navegação e o acesso à informação relevante.
 
 ---
 
-## Estrutura da Documentação
+## 🗂️ Estrutura da Documentação
 
-```
-docs/
-├── architecture/          # Documentação de arquitetura técnica
-├── bugs/                 # Tracking de bugs e issues conhecidos
-├── business-flows/       # Fluxos de negócio e processos
-├── components/           # Documentação de componentes React
-├── cypress/              # 🧪 Documentação completa do Cypress E2E
-├── development/         # Documentação de desenvolvimento e refatoração
-├── security/             # Documentação de segurança e auditorias
-├── CYPRESS.md            # 🧪 Atalho para documentação Cypress
-├── DEVELOPMENT_INSTRUCTIONS.md  # Diretrizes de desenvolvimento
-└── indice_geral.md       # Índice completo da documentação
-```
+### [🎯 Visão Geral do Projeto](./migration/target-architecture.md)
+- [Arquitetura Alvo Ideal](./migration/target-architecture.md) - Documentação da arquitetura proposta
+- [Status da Migração](./migration/MIGRATION_STATUS.md) - Progresso atual do projeto
+- [Sistema Atual e Roadmap](./migration/SISTEMA_ATUAL_E_ROADMAP.md) - Estado atual e próximos passos
+- [Análise: Documentação vs. Realidade](./development/DOCUMENTATION_REALITY_GAP_ANALYSIS.md) - Gap entre implementação e documentação
 
-## Visão Geral por Categoria
+### [🏗️ Arquitetura e Modelagem de Dados](./architecture/)
+- [Modelagem de Dados](./architecture/data-model.md) - DDL e relacionamentos
+- [Fluxos e Diagramas](./architecture/flows.md) - Diagramas de sequência e fluxos
+- [Análise de Arquitetura](./architecture/ARCHITECTURE_ANALYSIS.md) - Documento técnico detalhado
+- [Documentos de Arquitetura](./architecture/architecture/) - Documentos complementares
 
-### 🧪 Cypress E2E Testing (`cypress/`)
-Documentação completa para configuração, uso e desenvolvimento de testes end-to-end com Cypress.
+### [🔌 APIs e Integração](./api/)
+- [Especificação de APIs](./api/api-spec.md) - Contratos de API definidos
+- [Documentação de APIs](./api/api_docs/) - Documentos complementares
 
-**📚 Conteúdo:**
-- Guia de configuração completa
-- Exemplos práticos de testes
-- Templates para novos testes
-- Checklist de verificação
-- Troubleshooting e debugging
+### [👥 Business Flows e Requisitos](./business-flows/)
+- [Especificação Funcional](./business-flows/functional-spec.md) - Requisitos funcionais detalhados
+- [Fluxos de Negócio](./business-flows/business-flows/) - Documentos de processos
+- [Features e Funcionalidades](./business-flows/features/) - Documentação de funcionalidades
+- [Coleção de Fluxos](./business-flows/collection-flow-analysis/) - Análises de fluxos
+- [Parceiros](./business-flows/partner/) - Documentos específicos de parceiros
 
-**🚀 Acesso Rápido:**
-- [Página Inicial Cypress](./cypress/README.md)
-- [Guia Rápido (5 min)](./cypress/quick-start.md)
-- [Configuração Completa](./cypress/configuration-guide.md)
+### [🖥️ Componentes e UI/UX](./components/)
+- [UI/UX e Integração](./components/ui-ux.md) - Experiência do usuário
+- [Documentação de Componentes](./components/components/) - Documentos específicos de componentes
 
-### 🏗️ Arquitetura (`architecture/`)
-Documentação técnica da arquitetura do sistema, componentes e decisões de design.
+### [🔐 Segurança e Auditoria](./security/)
+- [Segurança e Permissões](./security/security-permissions.md) - Controles de acesso e segurança
+- [Auditorias](./security/auditoria/) - Documentos de auditoria
+- [Controle de Acesso](./security/security/) - Documentos complementares
 
-### 🐛 Bugs (`bugs/`)
-Tracking de bugs conhecidos, classificação por prioridade e processo de resolução.
+### [⚙️ Desenvolvimento e Processos](./development/)
+- [Instruções de Desenvolvimento](./development/DEVELOPMENT_INSTRUCTIONS.md) - Práticas e padrões
+- [Estado Atual do Sistema](./development/as-is/) - Documentação da implementação atual
+- [Correções e Soluções](./development/fixes/) - Documentos de resolução de problemas
+- [Manutenção](./development/maintenance/) - Documentos de manutenção
+- [Linha do Tempo](./development/timeline/) - Histórico de desenvolvimento
+- [Análise de Timeline](./development/timeline-analysis/) - Análises detalhadas
+- [Documentos de Desenvolvimento](./development/development/) - Documentos complementares
 
-### 💼 Fluxos de Negócio (`business-flows/`)
-Documentação dos processos de negócio, fluxos de aprovação, mudanças e rejeições.
+### [🔄 Migração e Evolução](./migration/)
+- [Plano de Migração](./migration/migration-plan.md) - Estratégia de migração
+- [Roadmap](./migration/roadmap/) - Planejamento e fases
+- [Diagnósticos](./migration/diagnostic-finalize-checklist/) - Análises e diagnósticos
+- [Documentos de Migração](./migration/migration/) - Documentos complementares
 
-### 🔧 Desenvolvimento (`development/`)
-Documentação do processo de desenvolvimento, refatorações e práticas técnicas.
+### [📋 Templates Dinâmicos](./templates/)
+- [Sistema de Templates](./templates/INDEX.md) - Documentação completa do sistema
+- [Guia Rápido](./templates/TEMPLATES_QUICK_START.md) - Início rápido com templates
+- [Relatórios de Integração](./templates/PHASE_2_INTEGRATION_FINAL_REPORT.md) - Detalhes da implementação
+- [Progresso dos Templates](./templates/PHASE_2_TEMPLATES_PROGRESS.md) - Histórico de desenvolvimento
+- [Integração Dinâmica](./templates/PHASE_2_DYNAMIC_INTEGRATION.md) - Documentação técnica
 
-### 🔒 Segurança (`security/`)
-Auditorias de segurança, relatórios e planos de ação para mitigação de riscos.
+### [🔧 Refatoração e Melhorias](./refactoring/)
+- [Planos de Refatoração](./refactoring/refactors/) - Planos e propostas
+- [Refatoração de Parceiros](./refactoring/partner-refactoring/) - Documentos específicos
+- [Refatoração](./refactoring/refactoring/) - Documentos complementares
 
-## Arquivos Principais
+### [🧪 Testes e Qualidade](./testing/)
+- [Cypress E2E](./testing/cypress/) - Documentação completa de testes
+- [Documentação Cypress](./testing/CYPRESS.md) - Guia de testes automatizados
+- [Documentos de Testes](./testing/testing/) - Documentos complementares
 
-- **`DEVELOPMENT_INSTRUCTIONS.md`** - Diretrizes e princípios de desenvolvimento
-- **`indice_geral.md`** - Ponto de entrada para navegação completa da documentação
+---
 
-## Padrões de Documentação
+## 🚀 Comece Aqui
 
+### Para Desenvolvedores
+1. [Instruções de Desenvolvimento](./development/DEVELOPMENT_INSTRUCTIONS.md) - Padrões e práticas
+2. [Sistema Atual e Roadmap](./migration/SISTEMA_ATUAL_E_ROADMAP.md) - Compreensão do estado atual
+3. [Sistema de Templates](./templates/TEMPLATES_QUICK_START.md) - Como implementar novas funcionalidades
+
+### Para Gestão/Produto
+1. [Status da Migração](./migration/MIGRATION_STATUS.md) - Visão executiva do progresso
+2. [Relatório Final de Integração](./templates/PHASE_2_INTEGRATION_FINAL_REPORT.md) - Impacto e métricas
+3. [Análise: Documentação vs. Realidade](./development/DOCUMENTATION_REALITY_GAP_ANALYSIS.md) - Alinhamento entre ideal e implementado
+
+### Para QA/Testes
+1. [Guia Cypress](./testing/CYPRESS.md) - Testes automatizados
+2. [Sistema de Templates - Testes](./templates/TEMPLATES_QUICK_START.md#-testes) - Testes para novas funcionalidades
+
+---
+
+## 📁 Recursos Adicionais
+
+- [Imagens e Recursos Visuais](./images/) - Diagramas, screenshots e imagens
+- [Arquivos de Configuração](./development/tsconfig.json) - Configurações relevantes
+
+---
+
+## 🔄 Atualizações e Contribuições
+
+### Padrões de Documentação
 1. **Nomenclatura**: Todos os arquivos usam `kebab-case` e extensão `.md`
-2. **Estrutura**: Cada diretório possui um `indice.md` para navegação local
+2. **Estrutura**: Cada diretório pode possuir um README para navegação local
 3. **Atualização**: Documentos devem ser mantidos atualizados com as implementações
 4. **Consistência**: Seguir templates padrão quando disponível
 
-## Contribuindo com a Documentação
-
-1. Siga os padrões de nomenclatura e estrutura
-2. Mantenha a documentação atualizada com as mudanças de código
-3. Use índices locais para facilitar a navegação
+### Adicionando Nova Documentação
+1. Identifique a categoria mais apropriada para o conteúdo
+2. Siga os padrões de nomenclatura e estrutura
+3. Atualize este README se necessário para incluir o novo documento
 4. Referencie documentos relacionados quando apropriado

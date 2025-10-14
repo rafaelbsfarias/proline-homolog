@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { supabase } from '@/modules/common/services/supabaseClient';
-import { getLogger } from '@/modules/logger';
 import { EVIDENCE_KEYS, type EvidenceKey } from '@/modules/partner/constants/checklist';
 import type {
   PartnerChecklistForm,
-  EvidenceState,
-  EvidenceItem,
   PartnerVehicleInfo,
   PartnerInspectionInfo,
 } from '@/modules/partner/types/checklist';
@@ -15,14 +12,12 @@ import { useChecklistForm } from './useChecklistForm';
 import { useChecklistEvidences } from './useChecklistEvidences';
 import { useChecklistAnomalies } from './useChecklistAnomalies';
 
-const logger = getLogger('hooks:useChecklistOrchestrator');
-
 export function useChecklistOrchestrator() {
   const { get, post, put } = useAuthenticatedFetch();
   const searchParams = useSearchParams();
 
   const { form, setField, reset } = useChecklistForm();
-  const { evidences, addEvidence, removeEvidence, clear, setFromUrlMap } = useChecklistEvidences();
+  const { evidences, addEvidence, removeEvidence, setFromUrlMap } = useChecklistEvidences();
 
   const [vehicle, setVehicle] = useState<PartnerVehicleInfo | null>(null);
   const [inspection, setInspection] = useState<PartnerInspectionInfo | null>(null);
@@ -76,7 +71,11 @@ export function useChecklistOrchestrator() {
 
         // timeline init
         try {
-          await post('/api/partner/checklist/init', { vehicleId: vehicleData.id, quoteId }, { requireAuth: true });
+          await post(
+            '/api/partner/checklist/init',
+            { vehicleId: vehicleData.id, quoteId },
+            { requireAuth: true }
+          );
         } catch {}
 
         if (inspectionData) {
@@ -93,16 +92,29 @@ export function useChecklistOrchestrator() {
             data?: {
               form: (Partial<PartnerChecklistForm> & { [k: string]: unknown }) | null;
               evidences?: Record<string, { url: string }>;
-              items?: Array<{ item_key: string; item_status: string; item_notes: string; part_request?: unknown }>;
+              items?: Array<{
+                item_key: string;
+                item_status: string;
+                item_notes: string;
+                part_request?: unknown;
+              }>;
             };
-          }>('/api/partner/checklist/load', { inspectionId: inspectionData.id, quoteId }, { requireAuth: true });
+          }>(
+            '/api/partner/checklist/load',
+            { inspectionId: inspectionData.id, quoteId },
+            { requireAuth: true }
+          );
 
           if (loadResp.ok && loadResp.data) {
             const loadedForm = loadResp.data.data?.form || null;
             const loadedEvidences = loadResp.data.data?.evidences || {};
             const loadedItems = loadResp.data.data?.items || [];
             if (loadedForm) {
-              Object.entries(loadedForm).forEach(([k, v]) => setField(k as keyof PartnerChecklistForm, v as any));
+              Object.entries(loadedForm).forEach(([k, v]) => {
+                if (typeof v === 'string') {
+                  setField(k as keyof PartnerChecklistForm, v);
+                }
+              });
             }
             setFromUrlMap(loadedEvidences as Record<string, { url: string }>);
             // As a practical approach, return evidences map via return object rather than fully seeding the internal state.
@@ -116,7 +128,9 @@ export function useChecklistOrchestrator() {
         }
 
         // load anomalies but do not break on failure
-        try { await anomalies.load(); } catch {}
+        try {
+          await anomalies.load();
+        } catch {}
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Erro ao carregar dados do veículo';
         setError(message);
@@ -125,71 +139,97 @@ export function useChecklistOrchestrator() {
       }
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save/submit checklist
-  const saveChecklist = useCallback(async () => {
-    if (!vehicle) throw new Error('Veículo não encontrado');
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date)) throw new Error('Data da inspeção inválida.');
-      if (!form.odometer || Number(form.odometer) < 0) throw new Error('Informe a quilometragem atual válida.');
+  const saveChecklist = useCallback(
+    async (partRequestsData?: Record<string, unknown>) => {
+      if (!vehicle) throw new Error('Veículo não encontrado');
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+      try {
+        if (!form.date || !/\d{4}-\d{2}-\d{2}/.test(form.date))
+          throw new Error('Data da inspeção inválida.');
+        if (!form.odometer || Number(form.odometer) < 0)
+          throw new Error('Informe a quilometragem atual válida.');
 
-      const uploadedEvidenceUrls = Object.fromEntries(EVIDENCE_KEYS.map(k => [k, [] as string[]])) as Record<EvidenceKey, string[]>;
-      const hasFiles = EVIDENCE_KEYS.some(k => (evidences[k] || []).some(item => !!item.file));
-      if (hasFiles) {
-        const { data: sessionRes } = await supabase.auth.getSession();
-        const accessToken = sessionRes.session?.access_token;
-        if (!accessToken) throw new Error('Usuário não autenticado para envio de evidências.');
+        const uploadedEvidenceUrls = Object.fromEntries(
+          EVIDENCE_KEYS.map(k => [k, [] as string[]])
+        ) as Record<EvidenceKey, string[]>;
+
+        // Primeiro, preservar evidências já existentes (que vieram do banco com URLs)
         for (const key of EVIDENCE_KEYS) {
           const items = evidences[key] || [];
           for (const ev of items) {
-            if (ev?.file) {
-              const formData = new FormData();
-              formData.append('vehicle_id', vehicle.id);
-              formData.append('item_key', key);
-              formData.append('file', ev.file);
-              const res = await fetch('/api/partner/checklist/upload-evidence', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${accessToken}` },
-                body: formData,
-              });
-              if (!res.ok) throw new Error(`Erro ao enviar evidência de ${key}`);
-              const json = await res.json();
-              uploadedEvidenceUrls[key].push(json.storage_path || '');
+            // Se já tem URL mas não tem file, é uma evidência que já estava salva
+            if (ev?.url && !ev?.file) {
+              // Extrair o storage_path da URL (remover assinatura)
+              const urlObj = new URL(ev.url);
+              const pathMatch = urlObj.pathname.match(
+                /\/storage\/v1\/object\/sign\/vehicle-media\/(.+)\?/
+              );
+              const storagePath = pathMatch ? pathMatch[1] : ev.url;
+              uploadedEvidenceUrls[key].push(storagePath);
             }
           }
         }
+
+        // Segundo, fazer upload de novos arquivos
+        const hasFiles = EVIDENCE_KEYS.some(k => (evidences[k] || []).some(item => !!item.file));
+        if (hasFiles) {
+          const { data: sessionRes } = await supabase.auth.getSession();
+          const accessToken = sessionRes.session?.access_token;
+          if (!accessToken) throw new Error('Usuário não autenticado para envio de evidências.');
+          for (const key of EVIDENCE_KEYS) {
+            const items = evidences[key] || [];
+            for (const ev of items) {
+              if (ev?.file) {
+                const formData = new FormData();
+                formData.append('vehicle_id', vehicle.id);
+                formData.append('item_key', key);
+                formData.append('file', ev.file);
+                const res = await fetch('/api/partner/checklist/upload-evidence', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${accessToken}` },
+                  body: formData,
+                });
+                if (!res.ok) throw new Error(`Erro ao enviar evidência de ${key}`);
+                const json = await res.json();
+                uploadedEvidenceUrls[key].push(json.storage_path || '');
+              }
+            }
+          }
+        }
+
+        let inspection_id = inspection?.id || inspectionIdRef.current;
+        if (!inspection_id && typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          inspection_id = url.searchParams.get('inspectionId') || undefined;
+        }
+
+        const payload = {
+          ...form,
+          vehicle_id: vehicle.id,
+          evidences: uploadedEvidenceUrls,
+          inspection_id,
+          ...(quoteId ? { quote_id: quoteId } : {}),
+          ...(partRequestsData ? { part_requests: partRequestsData } : {}),
+        } as Record<string, unknown>;
+
+        const resp = await put('/api/partner/checklist/submit', payload, { requireAuth: true });
+        if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar checklist no backend');
+        setSuccess('Checklist salvo com sucesso!');
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Erro ao salvar checklist.';
+        setError(message);
+        throw e;
+      } finally {
+        setSaving(false);
       }
-
-      let inspection_id = inspection?.id || inspectionIdRef.current;
-      if (!inspection_id && typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        inspection_id = url.searchParams.get('inspectionId') || undefined;
-      }
-
-      const payload = {
-        ...form,
-        vehicle_id: vehicle.id,
-        evidences: uploadedEvidenceUrls,
-        inspection_id,
-        ...(quoteId ? { quote_id: quoteId } : {}),
-      } as Record<string, unknown>;
-
-      const resp = await put('/api/partner/checklist/submit', payload, { requireAuth: true });
-      if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar checklist no backend');
-      setSuccess('Checklist salvo com sucesso!');
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Erro ao salvar checklist.';
-      setError(message);
-      throw e;
-    } finally {
-      setSaving(false);
-    }
-  }, [vehicle, form, evidences, inspection?.id, quoteId, put]);
+    },
+    [vehicle, form, evidences, inspection?.id, quoteId, put]
+  );
 
   return {
     // state

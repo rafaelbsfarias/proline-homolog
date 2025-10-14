@@ -48,21 +48,34 @@ export class ChecklistItemService {
    */
   async loadItems(options: LoadChecklistOptions): Promise<any[]> {
     try {
-      let query = this.supabase
+      const base = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_ITEMS)
         .select('item_key, item_status, item_notes, part_request');
 
-      query = applyIdFilters(query, options) as typeof query;
+      const tryQuery = async (opts: LoadChecklistOptions) => {
+        let q = base;
+        q = applyIdFilters(q, opts) as typeof q;
+        const { data, error } = await q;
+        if (error) {
+          logger.error('load_items_error', { error: error.message });
+          return [] as any[];
+        }
+        return (data as any[]) || [];
+      };
+
+      // Prefer quote_id, fallback to inspection_id if empty and both provided
+      let data: any[] = [];
+      if (options.quote_id) {
+        data = await tryQuery({ quote_id: options.quote_id });
+        if (data.length === 0 && options.inspection_id) {
+          data = await tryQuery({ inspection_id: options.inspection_id });
+        }
+      } else if (options.inspection_id) {
+        data = await tryQuery({ inspection_id: options.inspection_id });
+      }
 
       // Nota: Itens não possuem partner_id neste schema.
       // O escopo por parceiro já foi garantido ao selecionar o checklist do parceiro.
-
-      const { data, error } = await query;
-
-      if (error) {
-        logger.error('load_items_error', { error: error.message });
-        return [];
-      }
 
       logger.info('load_items_success', {
         count: data?.length || 0,

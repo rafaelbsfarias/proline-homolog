@@ -3,6 +3,7 @@ import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ChecklistService } from '@/modules/partner/services/ChecklistService';
+import { TABLES } from '@/modules/common/constants/database';
 import { z } from 'zod';
 
 const logger = getLogger('api:partner:checklist:submit');
@@ -272,6 +273,13 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
           row.inspection_id = checklistData.inspection_id;
         }
 
+        // Adicionar part_request se existir para este item
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const partRequest = (checklistData as any)?.part_requests?.[key];
+        if (partRequest) {
+          row.part_request = partRequest;
+        }
+
         return row;
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -304,33 +312,53 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
     }
 
     // Persistir referências das evidências em tabela separada (uma por item), sem blobs
+    logger.debug('evidences_processing_start', {
+      hasEvidences: !!checklistData.evidences,
+      evidencesType: typeof checklistData.evidences,
+      evidencesKeys: checklistData.evidences ? Object.keys(checklistData.evidences) : [],
+    });
+
     if (checklistData.evidences && typeof checklistData.evidences === 'object') {
-      const entries = Object.entries(checklistData.evidences) as [string, string][];
-      const rows = entries
-        .filter(([, path]) => !!path && String(path).trim() !== '')
-        .map(([item_key, storage_path]) => {
-          const row: Record<string, unknown> = {
-            vehicle_id: checklistData.vehicle_id,
-            item_key,
-            storage_path,
-            partner_id: partnerId,
-          };
+      // evidences pode ser: { sparkPlugs: ["path1", "path2"], belts: ["path3"] }
+      // Achatar para uma row por arquivo
+      const rows: Array<Record<string, unknown>> = [];
 
-          // Adicionar quote_id (novo) ou inspection_id (legacy)
-          if (checklistData.quote_id) {
-            row.quote_id = checklistData.quote_id;
-          }
-          if (checklistData.inspection_id) {
-            row.inspection_id = checklistData.inspection_id;
-          }
-
-          return row;
+      Object.entries(checklistData.evidences).forEach(([item_key, paths]) => {
+        logger.debug('processing_evidence_item', {
+          item_key,
+          paths,
+          isArray: Array.isArray(paths),
         });
+        const pathArray = Array.isArray(paths) ? paths : [paths];
+        pathArray.forEach(storage_path => {
+          if (storage_path && String(storage_path).trim() !== '') {
+            const row: Record<string, unknown> = {
+              vehicle_id: checklistData.vehicle_id,
+              item_key,
+              media_url: storage_path, // FIX: tabela consolidada usa media_url (não storage_path)
+              media_type: 'image', // Assumir tipo padrão
+              partner_id: partnerId,
+            };
+
+            // Adicionar quote_id (novo) ou inspection_id (legacy)
+            if (checklistData.quote_id) {
+              row.quote_id = checklistData.quote_id;
+            }
+            if (checklistData.inspection_id) {
+              row.inspection_id = checklistData.inspection_id;
+            }
+
+            rows.push(row);
+          }
+        });
+      });
+
+      logger.debug('evidence_rows_prepared', { count: rows.length, rows });
 
       if (rows.length > 0) {
         // Remover evidências anteriores deste parceiro neste contexto
         let evDel = supabase
-          .from('mechanics_checklist_evidences')
+          .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
           .delete()
           .eq('vehicle_id', checklistData.vehicle_id)
           .eq('partner_id', partnerId);
@@ -343,7 +371,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
         }
 
         const { error: evError } = await supabase
-          .from('mechanics_checklist_evidences')
+          .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
           .insert(rows);
         if (evError) {
           // Não falhar a requisição principal por causa das evidências
