@@ -173,6 +173,23 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
 
               {item.item_notes && <p className={styles.itemNotes}>{item.item_notes}</p>}
 
+              {/* Debug Info - Remover após testar */}
+              {item.item_status === 'nok' && (
+                <div
+                  style={{
+                    fontSize: '11px',
+                    padding: '4px 8px',
+                    background: '#fff3cd',
+                    border: '1px solid #ffc107',
+                    borderRadius: '4px',
+                    marginTop: '8px',
+                  }}
+                >
+                  🔍 Debug: Status={item.item_status} | Evidências={item.evidences?.length || 0} |
+                  Com URL={item.evidences?.filter(e => !!e.media_url).length || 0}
+                </div>
+              )}
+
               {/* Exibir evidências apenas para itens NOK */}
               {item.item_status === 'nok' &&
                 item.evidences &&
@@ -199,6 +216,24 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
                           </div>
                         );
                       })}
+                  </div>
+                )}
+
+              {/* Mensagem se NOK mas sem evidências */}
+              {item.item_status === 'nok' &&
+                (!item.evidences || !item.evidences.some(e => !!e.media_url)) && (
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      padding: '8px',
+                      background: '#f8d7da',
+                      border: '1px solid #f5c6cb',
+                      borderRadius: '4px',
+                      marginTop: '8px',
+                      color: '#721c24',
+                    }}
+                  >
+                    ⚠️ Item marcado como NOK mas sem evidências fotográficas
                   </div>
                 )}
             </div>
