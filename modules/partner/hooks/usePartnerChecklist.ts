@@ -404,8 +404,19 @@ export function usePartnerChecklist() {
               const loadedEvidences = loadResp.data.data?.evidences || {};
               const loadedItems = loadResp.data.data?.items || [];
 
+              logger.info('checklist_data_loaded', {
+                has_form: !!loadedForm,
+                form_keys: loadedForm ? Object.keys(loadedForm).length : 0,
+                evidences_count: Object.keys(loadedEvidences).length,
+                items_count: loadedItems.length,
+                items_with_part_requests: loadedItems.filter(
+                  (i: { part_request?: unknown }) => i.part_request
+                ).length,
+              });
+
               if (loadedForm) {
                 setForm(prev => ({ ...prev, ...loadedForm }));
+                logger.info('form_updated', { keys: Object.keys(loadedForm) });
               }
 
               // Mapear evidences para o estado com url (como lista)
@@ -430,9 +441,18 @@ export function usePartnerChecklist() {
                 }
                 // Armazenar no sessionStorage para a página recuperar
                 if (Object.keys(partRequestsMap).length > 0) {
+                  logger.info('part_requests_saved_to_session', {
+                    count: Object.keys(partRequestsMap).length,
+                  });
                   sessionStorage.setItem('loaded_part_requests', JSON.stringify(partRequestsMap));
                 }
               }
+            } else {
+              logger.warn('load_checklist_failed', {
+                ok: loadResp.ok,
+                has_data: !!loadResp.data,
+                error: loadResp.error,
+              });
             }
           } catch {}
         } else {
@@ -463,8 +483,19 @@ export function usePartnerChecklist() {
                 const loadedEvidences = loadResp.data.data?.evidences || {};
                 const loadedItems = loadResp.data.data?.items || [];
 
+                logger.info('checklist_data_loaded_via_quote', {
+                  has_form: !!loadedForm,
+                  form_keys: loadedForm ? Object.keys(loadedForm).length : 0,
+                  evidences_count: Object.keys(loadedEvidences).length,
+                  items_count: loadedItems.length,
+                  items_with_part_requests: loadedItems.filter(
+                    (i: { part_request?: unknown }) => i.part_request
+                  ).length,
+                });
+
                 if (loadedForm) {
                   setForm(prev => ({ ...prev, ...loadedForm }));
+                  logger.info('form_updated_via_quote', { keys: Object.keys(loadedForm) });
                 }
 
                 const newEvidenceState = { ...emptyEvidenceState } as EvidenceState;
@@ -487,11 +518,24 @@ export function usePartnerChecklist() {
                   }
                   // Armazenar no sessionStorage para a página recuperar
                   if (Object.keys(partRequestsMap).length > 0) {
+                    logger.info('part_requests_saved_to_session_via_quote', {
+                      count: Object.keys(partRequestsMap).length,
+                    });
                     sessionStorage.setItem('loaded_part_requests', JSON.stringify(partRequestsMap));
                   }
                 }
+              } else {
+                logger.warn('load_checklist_via_quote_failed', {
+                  ok: loadResp.ok,
+                  has_data: !!loadResp.data,
+                  error: loadResp.error,
+                });
               }
-            } catch {}
+            } catch (err) {
+              logger.error('load_checklist_via_quote_error', {
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
           }
         }
 
