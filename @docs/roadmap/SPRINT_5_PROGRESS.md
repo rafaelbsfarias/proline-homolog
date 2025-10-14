@@ -132,17 +132,20 @@ node scripts/test-checklist-ui.cjs
 
 ---
 
-## 🔄 Próximos Passos
+## ✅ Implementações Adicionais Completadas
 
 ### A. Estrutura de Upload de Fotos
 
-**Status:** ⏳ Pendente
+**Status:** ✅ Completo
 
-- [ ] Adicionar componente de upload por item do checklist
-- [ ] Preview de imagens antes do upload
-- [ ] Integração com storage (Supabase ou S3)
-- [ ] Limite de tamanho e tipos de arquivo
-- [ ] Estado de upload (loading, success, error)
+- [x] Componente de upload por item do checklist
+- [x] Preview de imagens antes do upload
+- [x] Drag & drop support
+- [x] Limite de tamanho (5MB) e tipos de arquivo (JPG, PNG, WEBP)
+- [x] Estados visuais (uploading, success, error)
+- [x] Upload múltiplo (até 5 fotos por item)
+
+**Arquivo:** `modules/partner/components/checklist/PhotoUpload.tsx`
 
 **Pontos de atenção:**
 

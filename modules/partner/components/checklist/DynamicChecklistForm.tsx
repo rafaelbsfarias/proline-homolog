@@ -1,5 +1,8 @@
 import React from 'react';
 import { useChecklistTemplate } from '@/modules/partner/hooks/useChecklistTemplate';
+import { PhotoUpload } from './PhotoUpload';
+import { ChecklistSkeleton } from './ChecklistSkeleton';
+import { useToast } from '../toast/ToastProvider';
 
 interface DynamicChecklistFormProps {
   vehicleId: string;
@@ -19,6 +22,7 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
   disabled = false,
 }) => {
   const { template, loading, error, category, vehicle } = useChecklistTemplate(vehicleId, quoteId);
+  const toast = useToast();
   const [formData, setFormData] = React.useState<Record<string, unknown>>({
     // Campos básicos de inspeção
     date: new Date().toISOString().split('T')[0],
@@ -27,32 +31,89 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
     observations: '',
   });
   const [submitting, setSubmitting] = React.useState(false);
+  const [validationErrors, setValidationErrors] = React.useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false);
+
+  // Warn before leaving with unsaved changes
+  React.useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   const handleFieldChange = (itemKey: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       [itemKey]: value,
     }));
+    setHasUnsavedChanges(true);
+    setValidationErrors([]);
+  };
+
+  const handlePhotosChange = (itemKey: string, photos: File[]) => {
+    handleFieldChange(`${itemKey}_photos`, photos);
+  };
+
+  const validateForm = (): string[] => {
+    const errors: string[] = [];
+
+    // Validar campos básicos
+    if (!formData.date) {
+      errors.push('Data da inspeção é obrigatória');
+    }
+
+    if (!formData.fuelLevel) {
+      errors.push('Nível de combustível é obrigatório');
+    }
+
+    // Validar itens obrigatórios do template
+    if (template) {
+      template.sections.forEach(section => {
+        section.items.forEach(item => {
+          if (item.is_required && !formData[item.item_key]) {
+            errors.push(`${item.label} é obrigatório`);
+          }
+        });
+      });
+    }
+
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (disabled) return;
+    if (disabled || submitting) return;
+
+    // Validar formulário
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      toast.error(`${errors.length} campo(s) obrigatório(s) não preenchido(s)`);
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await onSubmit(formData);
+      setHasUnsavedChanges(false);
+      toast.success('Checklist salvo com sucesso!');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar checklist');
     } finally {
       setSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-        <span className="ml-3 text-gray-600">Carregando template...</span>
-      </div>
-    );
+    return <ChecklistSkeleton />;
   }
 
   if (error) {
@@ -77,6 +138,35 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Validation Errors */}
+      {validationErrors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div className="flex-1">
+              <p className="text-red-800 font-medium">Por favor, corrija os seguintes erros:</p>
+              <ul className="mt-2 text-sm text-red-600 list-disc list-inside space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Vehicle Information */}
       {vehicle && (
         <div className="bg-white rounded-lg shadow p-6">
@@ -221,29 +311,15 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
                       onChange={e => handleFieldChange(`${item.item_key}_notes`, e.target.value)}
                     />
 
-                    {/* Photo Upload Hint */}
+                    {/* Photo Upload */}
                     {item.allows_photos && (
-                      <div className="mt-2 flex items-center text-xs text-gray-500">
-                        <svg
-                          className="w-4 h-4 mr-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                        Permite até {item.max_photos || 5} foto(s)
+                      <div className="mt-3">
+                        <PhotoUpload
+                          itemKey={item.item_key}
+                          onPhotosChange={photos => handlePhotosChange(item.item_key, photos)}
+                          maxPhotos={item.max_photos || 5}
+                          disabled={disabled || submitting}
+                        />
                       </div>
                     )}
 
