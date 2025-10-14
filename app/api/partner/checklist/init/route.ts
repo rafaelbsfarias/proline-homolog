@@ -40,6 +40,21 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       quoteId: quoteId?.slice(0, 8),
     });
 
+    // Buscar informações do veículo
+    const { data: vehicleData, error: vehicleError } = await supabase
+      .from('vehicles')
+      .select('id, brand, model, year, plate, color, status')
+      .eq('id', vehicleId)
+      .single();
+
+    if (vehicleError || !vehicleData) {
+      logger.error('vehicle_not_found', { vehicleId: vehicleId.slice(0, 8), error: vehicleError });
+      return NextResponse.json(
+        { success: false, error: 'Veículo não encontrado' },
+        { status: 404 }
+      );
+    }
+
     // Buscar categoria do parceiro
     const { data: partner } = await supabase
       .from('partners')
@@ -128,6 +143,15 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       message: 'Fase orçamentária iniciada com sucesso',
       status: timelineStatus,
       data: {
+        vehicle: {
+          id: vehicleData.id,
+          brand: vehicleData.brand,
+          model: vehicleData.model,
+          year: vehicleData.year,
+          plate: vehicleData.plate,
+          color: vehicleData.color,
+          status: vehicleData.status,
+        },
         category: partnerCategory,
         normalizedCategory: partnerCategory
           ? partnerCategory

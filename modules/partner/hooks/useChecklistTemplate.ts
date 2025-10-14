@@ -29,8 +29,19 @@ export interface ChecklistTemplate {
   sections: ChecklistTemplateSection[];
 }
 
+export interface VehicleInfo {
+  id: string;
+  brand: string;
+  model: string;
+  year: number | null;
+  plate: string;
+  color: string | null;
+  status: string;
+}
+
 export interface UseChecklistTemplateResult {
   template: ChecklistTemplate | null;
+  vehicle: VehicleInfo | null;
   loading: boolean;
   error: string | null;
   category: string | null;
@@ -49,6 +60,7 @@ export function useChecklistTemplate(
   quoteId?: string | null
 ): UseChecklistTemplateResult {
   const [template, setTemplate] = useState<ChecklistTemplate | null>(null);
+  const [vehicle, setVehicle] = useState<VehicleInfo | null>(null);
   const [category, setCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +96,7 @@ export function useChecklistTemplate(
       if (data.success && data.data?.template) {
         setTemplate(data.data.template);
         setCategory(data.data.category);
+        setVehicle(data.data.vehicle || null);
 
         logger.info('template_loaded', {
           category: data.data.category,
@@ -96,6 +109,7 @@ export function useChecklistTemplate(
           category: data.data?.category,
         });
         setTemplate(null);
+        setVehicle(data.data?.vehicle || null);
         setCategory(data.data?.category || null);
       }
     } catch (err) {
@@ -113,6 +127,7 @@ export function useChecklistTemplate(
 
   return {
     template,
+    vehicle,
     loading,
     error,
     category,
@@ -180,5 +195,5 @@ export function useChecklistTemplateByCategory(
     fetchTemplate();
   }, [category]);
 
-  return { template, loading, error };
+  return { template, vehicle: null, loading, error };
 }

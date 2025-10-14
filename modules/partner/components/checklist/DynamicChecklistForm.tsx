@@ -18,8 +18,14 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
   onSubmit,
   disabled = false,
 }) => {
-  const { template, loading, error, category } = useChecklistTemplate(vehicleId, quoteId);
-  const [formData, setFormData] = React.useState<Record<string, unknown>>({});
+  const { template, loading, error, category, vehicle } = useChecklistTemplate(vehicleId, quoteId);
+  const [formData, setFormData] = React.useState<Record<string, unknown>>({
+    // Campos básicos de inspeção
+    date: new Date().toISOString().split('T')[0],
+    odometer: '',
+    fuelLevel: 'half',
+    observations: '',
+  });
   const [submitting, setSubmitting] = React.useState(false);
 
   const handleFieldChange = (itemKey: string, value: unknown) => {
@@ -71,7 +77,32 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Vehicle Information */}
+      {vehicle && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações do Veículo</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div>
+              <span className="text-gray-600">Veículo:</span>{' '}
+              <span className="font-medium text-gray-900">
+                {vehicle.brand} {vehicle.model} {vehicle.year ? `(${vehicle.year})` : ''}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600">Placa:</span>{' '}
+              <span className="font-medium text-gray-900">{vehicle.plate}</span>
+            </div>
+            {vehicle.color && (
+              <div>
+                <span className="text-gray-600">Cor:</span>{' '}
+                <span className="font-medium text-gray-900">{vehicle.color}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Template Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-2xl font-bold text-gray-900">{template.title}</h2>
         <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
@@ -80,6 +111,64 @@ export const DynamicChecklistForm: React.FC<DynamicChecklistFormProps> = ({
           <span>Versão: {template.version}</span>
           <span>•</span>
           <span>{template.sections.length} seções</span>
+        </div>
+      </div>
+
+      {/* Inspection Basic Info */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados da Inspeção</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Data da Inspeção <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={(formData.date as string) || ''}
+              onChange={e => handleFieldChange('date', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hodômetro (km)</label>
+            <input
+              type="number"
+              value={(formData.odometer as string) || ''}
+              onChange={e => handleFieldChange('odometer', e.target.value)}
+              placeholder="Ex: 45000"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nível de Combustível <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={(formData.fuelLevel as string) || 'half'}
+              onChange={e => handleFieldChange('fuelLevel', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="empty">Vazio</option>
+              <option value="quarter">1/4</option>
+              <option value="half">1/2</option>
+              <option value="three_quarters">3/4</option>
+              <option value="full">Cheio</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Observações Gerais
+            </label>
+            <textarea
+              value={(formData.observations as string) || ''}
+              onChange={e => handleFieldChange('observations', e.target.value)}
+              placeholder="Observações sobre o veículo..."
+              rows={1}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            />
+          </div>
         </div>
       </div>
 
