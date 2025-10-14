@@ -149,6 +149,7 @@ export class ChecklistService {
         data: {
           form: formPartial,
           evidences,
+          items, // Incluir items completos para acesso aos part_requests
         },
       };
     } catch (error) {

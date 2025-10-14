@@ -376,13 +376,23 @@ export function usePartnerChecklist() {
             fuelLevel: inspectionData.fuel_level,
             observations: inspectionData.observations || '',
           }));
-          // Carregar checklist salvo (valores e evidências) do próprio parceiro
+          // Carregar checklist salvo (valores, evidências e part_requests) do próprio parceiro
           try {
             const loadResp = await post<{
               ok: boolean;
               data?: {
-                form: Partial<PartnerChecklistForm> | null;
+                form:
+                  | (Partial<PartnerChecklistForm> & {
+                      [key: string]: unknown;
+                    })
+                  | null;
                 evidences?: Record<string, { url: string }>;
+                items?: Array<{
+                  item_key: string;
+                  item_status: string;
+                  item_notes: string;
+                  part_request?: unknown;
+                }>;
               };
             }>(
               '/api/partner/checklist/load',
@@ -392,9 +402,12 @@ export function usePartnerChecklist() {
             if (loadResp.ok && loadResp.data) {
               const loadedForm = loadResp.data.data?.form;
               const loadedEvidences = loadResp.data.data?.evidences || {};
+              const loadedItems = loadResp.data.data?.items || [];
+
               if (loadedForm) {
                 setForm(prev => ({ ...prev, ...loadedForm }));
               }
+
               // Mapear evidences para o estado com url (como lista)
               const newEvidenceState = { ...emptyEvidenceState } as EvidenceState;
               for (const key of Object.keys(loadedEvidences)) {
@@ -405,6 +418,21 @@ export function usePartnerChecklist() {
                 }
               }
               setEvidences(prev => ({ ...prev, ...newEvidenceState }));
+
+              // Processar part_requests dos items carregados
+              // Armazenar temporariamente para serem acessados pela página
+              if (loadedItems.length > 0) {
+                const partRequestsMap: Record<string, unknown> = {};
+                for (const item of loadedItems) {
+                  if (item.part_request && item.item_key) {
+                    partRequestsMap[item.item_key] = item.part_request;
+                  }
+                }
+                // Armazenar no sessionStorage para a página recuperar
+                if (Object.keys(partRequestsMap).length > 0) {
+                  sessionStorage.setItem('loaded_part_requests', JSON.stringify(partRequestsMap));
+                }
+              }
             }
           } catch {}
         } else {
@@ -416,16 +444,29 @@ export function usePartnerChecklist() {
               const loadResp = await post<{
                 ok: boolean;
                 data?: {
-                  form: Partial<PartnerChecklistForm> | null;
+                  form:
+                    | (Partial<PartnerChecklistForm> & {
+                        [key: string]: unknown;
+                      })
+                    | null;
                   evidences?: Record<string, { url: string }>;
+                  items?: Array<{
+                    item_key: string;
+                    item_status: string;
+                    item_notes: string;
+                    part_request?: unknown;
+                  }>;
                 };
               }>('/api/partner/checklist/load', { quoteId }, { requireAuth: true });
               if (loadResp.ok && loadResp.data) {
                 const loadedForm = loadResp.data.data?.form;
                 const loadedEvidences = loadResp.data.data?.evidences || {};
+                const loadedItems = loadResp.data.data?.items || [];
+
                 if (loadedForm) {
                   setForm(prev => ({ ...prev, ...loadedForm }));
                 }
+
                 const newEvidenceState = { ...emptyEvidenceState } as EvidenceState;
                 for (const key of Object.keys(loadedEvidences)) {
                   if ((EVIDENCE_KEYS as readonly string[]).includes(key)) {
@@ -435,6 +476,20 @@ export function usePartnerChecklist() {
                   }
                 }
                 setEvidences(prev => ({ ...prev, ...newEvidenceState }));
+
+                // Processar part_requests dos items carregados
+                if (loadedItems.length > 0) {
+                  const partRequestsMap: Record<string, unknown> = {};
+                  for (const item of loadedItems) {
+                    if (item.part_request && item.item_key) {
+                      partRequestsMap[item.item_key] = item.part_request;
+                    }
+                  }
+                  // Armazenar no sessionStorage para a página recuperar
+                  if (Object.keys(partRequestsMap).length > 0) {
+                    sessionStorage.setItem('loaded_part_requests', JSON.stringify(partRequestsMap));
+                  }
+                }
               }
             } catch {}
           }

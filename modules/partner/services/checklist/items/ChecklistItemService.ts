@@ -50,7 +50,7 @@ export class ChecklistItemService {
     try {
       let query = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_ITEMS)
-        .select('item_key, item_status, item_notes');
+        .select('item_key, item_status, item_notes, part_request');
 
       query = applyIdFilters(query, options) as typeof query;
 
@@ -63,6 +63,11 @@ export class ChecklistItemService {
         logger.error('load_items_error', { error: error.message });
         return [];
       }
+
+      logger.info('load_items_success', {
+        count: data?.length || 0,
+        with_part_requests: data?.filter(item => item.part_request).length || 0,
+      });
 
       return data || [];
     } catch (error) {

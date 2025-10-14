@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import PartnerChecklistGroups from '@/modules/partner/components/checklist/PartnerChecklistGroups';
@@ -9,7 +9,7 @@ import InspectionData from '@/modules/partner/components/InspectionData';
 import { usePartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/hooks/usePartRequestModal';
 import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
 import { PartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/components/PartRequestModal';
-import { EVIDENCE_KEYS, type EvidenceKey } from '@/modules/partner/hooks/usePartnerChecklist';
+import { type EvidenceKey } from '@/modules/partner/hooks/usePartnerChecklist';
 
 const ChecklistPage = () => {
   const router = useRouter();
@@ -32,6 +32,21 @@ const ChecklistPage = () => {
     Partial<Record<EvidenceKey, PartRequest>>
   >({});
   const { modalState, open, close, updateField, buildPartRequest } = usePartRequestModal();
+
+  // Recuperar part_requests salvos quando o componente montar
+  useEffect(() => {
+    const loadedPartRequests = sessionStorage.getItem('loaded_part_requests');
+    if (loadedPartRequests) {
+      try {
+        const parsed = JSON.parse(loadedPartRequests);
+        setItemPartRequests(parsed);
+        // Limpar do sessionStorage após carregar
+        sessionStorage.removeItem('loaded_part_requests');
+      } catch {
+        // Silently fail if parsing fails
+      }
+    }
+  }, []);
 
   const handleOpenPartRequestModal = (itemKey: EvidenceKey, existing?: PartRequest) => {
     open(itemKey, existing);
