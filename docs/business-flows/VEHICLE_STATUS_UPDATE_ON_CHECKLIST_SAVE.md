@@ -22,7 +22,7 @@ Garantir que o status do veículo reflita corretamente a fase atual do processo,
 // Atualizar status do veículo para 'FASE ORÇAMENTÁRIA'
 const { error: statusUpdateError } = await supabase
   .from('vehicles')
-  .update({ vehicle_status: 'FASE ORÇAMENTÁRIA' })
+  .update({ status: 'FASE ORÇAMENTÁRIA' })
   .eq('id', checklistData.vehicle_id);
 
 if (statusUpdateError) {
@@ -70,7 +70,7 @@ Execute: `./scripts/test-vehicle-status-update.sh`
 
 1. **Verificar status antes:**
    ```sql
-   SELECT vehicle_status FROM vehicles WHERE id = '<vehicle_id>';
+   SELECT status FROM vehicles WHERE id = '<vehicle_id>';
    ```
 
 2. **Acessar checklist:**
@@ -82,7 +82,7 @@ Execute: `./scripts/test-vehicle-status-update.sh`
 
 4. **Verificar status depois:**
    ```sql
-   SELECT vehicle_status FROM vehicles WHERE id = '<vehicle_id>';
+   SELECT status FROM vehicles WHERE id = '<vehicle_id>';
    -- Deve retornar: 'FASE ORÇAMENTÁRIA'
    ```
 

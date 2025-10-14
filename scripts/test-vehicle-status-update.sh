@@ -17,8 +17,8 @@ echo "📋 1. Status atual do veículo:"
 psql "$DB_URL" -c "
 SELECT 
   v.id,
-  v.vehicle_status,
-  v.updated_at
+  v.status,
+  v.created_at
 FROM vehicles v
 JOIN service_orders so ON v.id = so.vehicle_id
 JOIN quotes q ON so.id = q.service_order_id

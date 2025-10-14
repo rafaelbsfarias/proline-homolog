@@ -208,7 +208,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
         // Atualizar status do veículo para 'FASE ORÇAMENTÁRIA'
         const { error: statusUpdateError } = await supabase
           .from('vehicles')
-          .update({ vehicle_status: 'FASE ORÇAMENTÁRIA' })
+          .update({ status: 'FASE ORÇAMENTÁRIA' })
           .eq('id', checklistData.vehicle_id);
 
         if (statusUpdateError) {
