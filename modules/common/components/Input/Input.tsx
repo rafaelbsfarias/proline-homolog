@@ -10,7 +10,7 @@ interface InputProps {
   name: string;
   label?: string;
   type?: 'text' | 'password' | 'email' | 'tel' | 'number';
-  value: string | number;
+  value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAccept?: (value: any, maskRef: any) => void;
   disabled?: boolean;

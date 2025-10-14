@@ -9,6 +9,7 @@ import Modal from '@/modules/common/components/Modal/Modal'; // Import Modal com
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 import Select from '@/modules/common/components/Select/Select'; // Import Select component
+import CurrencyInput from '@/modules/common/components/CurrencyInput';
 
 interface AddPartnerModalProps {
   isOpen: boolean;
@@ -166,14 +167,12 @@ export const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClos
             required
             mask="(00) 00000-0000"
           />
-          <Input
+          <CurrencyInput
             id="contractValue"
             name="contractValue"
             label="Valor do contrato"
             value={contractValue}
-            onChange={handleChange}
-            onAccept={(value: number) => setContractValue(value)}
-            mask={Number}
+            onChange={setContractValue}
             placeholder="R$ 0,00"
             required
           />
