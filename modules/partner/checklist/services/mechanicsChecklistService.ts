@@ -17,13 +17,13 @@ export async function getMechanicsChecklist(vehicleId: string, partner: Partner)
   if (!checklist) throw new NotFoundError('Checklist de mecânica não encontrado');
 
   const items = await getItemsByContext({
-    quote_id: checklist.quote_id,
-    inspection_id: checklist.inspection_id,
+    quote_id: checklist.quote_id as string | null | undefined,
+    inspection_id: checklist.inspection_id as string | null | undefined,
     vehicle_id: checklist.quote_id || checklist.inspection_id ? undefined : vehicleId,
   });
   const evidences = await getEvidencesByContext({
-    quote_id: checklist.quote_id,
-    inspection_id: checklist.inspection_id,
+    quote_id: checklist.quote_id as string | null | undefined,
+    inspection_id: checklist.inspection_id as string | null | undefined,
   });
   const evidencesWithUrls = await mapEvidencesWithUrls(evidences);
   const itemsWithEvs = mapItemsWithEvidences(items, evidencesWithUrls);
@@ -32,12 +32,12 @@ export async function getMechanicsChecklist(vehicleId: string, partner: Partner)
   return {
     type: 'mechanics' as const,
     checklist: {
-      id: checklist.id,
-      vehicle_id: checklist.vehicle_id,
+      id: checklist.id as string,
+      vehicle_id: checklist.vehicle_id as string,
       partner: { id: partner.id, name: partner.name, type: partner.partner_type },
-      status: checklist.status,
-      notes: checklist.notes,
-      created_at: checklist.created_at,
+      status: checklist.status as string,
+      notes: checklist.notes as string | null,
+      created_at: checklist.created_at as string,
     },
     itemsByCategory,
     stats: { totalItems: itemsWithEvs.length },
@@ -75,12 +75,12 @@ export async function getMechanicsChecklistDirect(vehicleId: string) {
   const checklist = await getLatestChecklistByVehicle(vehicleId);
   if (!checklist) return null;
   const items = await getItemsByContext({
-    quote_id: checklist.quote_id,
-    inspection_id: checklist.inspection_id,
+    quote_id: checklist.quote_id as string | null | undefined,
+    inspection_id: checklist.inspection_id as string | null | undefined,
   });
   const evidences = await getEvidencesByContext({
-    quote_id: checklist.quote_id,
-    inspection_id: checklist.inspection_id,
+    quote_id: checklist.quote_id as string | null | undefined,
+    inspection_id: checklist.inspection_id as string | null | undefined,
   });
   const evidencesWithUrls = await mapEvidencesWithUrls(evidences);
   const itemsWithEvs = mapItemsWithEvidences(items, evidencesWithUrls);
@@ -88,12 +88,12 @@ export async function getMechanicsChecklistDirect(vehicleId: string) {
   return {
     type: 'mechanics' as const,
     checklist: {
-      id: checklist.id,
-      vehicle_id: checklist.vehicle_id,
+      id: checklist.id as string,
+      vehicle_id: checklist.vehicle_id as string,
       partner: { id: 'unknown', name: 'Mecânica', type: 'mechanic' },
-      status: checklist.status,
-      notes: checklist.notes,
-      created_at: checklist.created_at,
+      status: checklist.status as string,
+      notes: checklist.notes as string | null,
+      created_at: checklist.created_at as string,
     },
     itemsByCategory,
     stats: { totalItems: itemsWithEvs.length },
