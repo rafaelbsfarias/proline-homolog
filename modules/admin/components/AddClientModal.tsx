@@ -1,9 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import styles from './AddUserModal.module.css'; // Reutilizando estilos do modal de usuário
+import styles from './AddUserModal.module.css';
+import Modal from '@/modules/common/components/Modal/Modal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import Input from '@/modules/common/components/Input/Input';
+import CurrencyInput from '@/modules/common/components/CurrencyInput';
 import { maskCPF, maskCNPJ, maskPhone } from '@/modules/common/utils/maskers';
-import CurrencyInput from '@/modules/common/components/CurrencyInput'; // Import CurrencyInput
+import Select from '@/modules/common/components/Select/Select';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import { z } from 'zod';
+import ErrorMessage from '@/modules/common/components/ErroMessage/ErrorMessage';
+
+const clientSchema = z.object({
+  name: z.string().min(3, 'O nome precisa ter pelo menos 3 caracteres'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().min(10, 'Telefone inválido'),
+  documentType: z.enum(['CPF', 'CNPJ']),
+  document: z.string().min(11, 'Documento inválido'),
+  parqueamento: z
+    .number({ required_error: 'Parqueamento é obrigatório' })
+    .nonnegative('Parqueamento deve ser positivo'),
+  quilometragem: z
+    .number({ required_error: 'Quilometragem é obrigatória' })
+    .nonnegative('Quilometragem deve ser positiva'),
+  percentualFipe: z.preprocess(
+    val => {
+      if (typeof val === 'string') return Number(val);
+      return val;
+    },
+    z
+      .number({ required_error: 'Percentual FIPE é obrigatório' })
+      .nonnegative('Percentual FIPE inválido')
+  ),
+  taxaOperacao: z
+    .number({ required_error: 'Taxa de Operação é obrigatória' })
+    .nonnegative('Taxa de Operação deve ser positiva'),
+});
+
+type ClientForm = z.infer<typeof clientSchema>;
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -13,45 +48,68 @@ interface AddClientModalProps {
 
 export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { post } = useAuthenticatedFetch();
-  const [form, setForm] = useState({
+
+  const [form, setForm] = useState<ClientForm>({
     name: '',
     email: '',
     phone: '',
     documentType: 'CPF',
     document: '',
-    parqueamento: undefined as number | undefined, // Change type to number | undefined
-    quilometragem: undefined as number | undefined, // Change type to number | undefined
-    percentualFipe: '', // Keep as string for now
-    taxaOperacao: undefined as number | undefined, // Change type to number | undefined
+    parqueamento: undefined,
+    quilometragem: undefined,
+    percentualFipe: 0,
+    taxaOperacao: undefined,
   });
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null); // Estado para a mensagem de erro
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+      setError(null);
+      setSuccess(false);
+      setFieldErrors({});
+    }
+  }, [isOpen]);
 
-  const handleCloseErrorModal = () => {
-    setError(null);
+  const resetForm = () => {
+    setForm({
+      name: '',
+      email: '',
+      phone: '',
+      documentType: 'CPF',
+      document: '',
+      parqueamento: undefined,
+      quilometragem: undefined,
+      percentualFipe: 0,
+      taxaOperacao: undefined,
+    });
+    setFieldErrors({});
   };
 
-  // Máscaras reutilizadas de utils/maskers
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (e.target.name === 'documentType') {
-      setForm({ ...form, documentType: e.target.value, document: '' });
-    } else if (e.target.name === 'document') {
-      setForm({
-        ...form,
-        document: form.documentType === 'CPF' ? maskCPF(e.target.value) : maskCNPJ(e.target.value),
-      });
-    } else if (e.target.name === 'phone') {
-      setForm({ ...form, phone: maskPhone(e.target.value) });
+    const { name, value } = e.target;
+
+    if (name === 'documentType') {
+      setForm(prev => ({ ...prev, documentType: value as 'CPF' | 'CNPJ', document: '' }));
+    } else if (name === 'document') {
+      setForm(prev => ({
+        ...prev,
+        document: form.documentType === 'CPF' ? maskCPF(value) : maskCNPJ(value),
+      }));
+    } else if (name === 'phone') {
+      setForm(prev => ({ ...prev, phone: maskPhone(value) }));
+    } else if (['percentualFipe', 'quilometragem', 'parqueamento', 'taxaOperacao'].includes(name)) {
+      setForm(prev => ({ ...prev, [name]: value === '' ? undefined : Number(value) }));
     } else {
-      setForm({ ...form, [e.target.name]: e.target.value });
+      setForm(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleCurrencyChange = (name: string, value: number | undefined) => {
+  const handleCurrencyChange = (name: keyof ClientForm, value: number | undefined) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -60,144 +118,179 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setFieldErrors({});
+
     try {
-      // Payload para o endpoint unificado /api/admin/create-user
-      const payload = {
-        name: form.name,
-        email: form.email,
-        role: 'client', // Definindo o papel explicitamente
-        phone: form.phone,
-        documentType: form.documentType,
-        document: form.document,
-        parqueamento: form.parqueamento,
-        quilometragem: form.quilometragem,
-        percentualFipe: parseFloat(form.percentualFipe),
-        taxaOperacao: form.taxaOperacao,
-      };
-      // Chamada para o endpoint unificado
-      const res = await post('/api/admin/add-client', payload);
+      const validatedData = clientSchema.parse(form);
+
+      const res = await post('/api/admin/add-client', validatedData);
       if (!res.ok) throw new Error(res.error || 'Erro ao cadastrar cliente');
+
       setSuccess(true);
-      setForm({
-        name: '',
-        email: '',
-        phone: '',
-        documentType: 'CPF',
-        document: '',
-        parqueamento: undefined,
-        quilometragem: undefined,
-        percentualFipe: '',
-        taxaOperacao: undefined,
-      });
-      if (onSuccess) onSuccess();
+      resetForm();
+      onSuccess?.();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      if (err instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        err.errors.forEach(e => {
+          if (e.path[0]) errors[e.path[0] as string] = e.message;
+        });
+        setFieldErrors(errors);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro desconhecido');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCloseErrorModal = () => setError(null);
+
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <button className={styles.closeButton} onClick={onClose}>
-          &times;
-        </button>
-        <h2>Adicionar Cliente</h2>
-        <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
-          <div className={styles.formRow}>
-            <label>
-              Nome completo
-              <input name="name" value={form.name} onChange={handleChange} required />
-            </label>
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-              />
-            </label>
-          </div>
-          <div className={styles.formRow}>
-            <label>
-              Telefone
-              <input name="phone" value={form.phone} onChange={handleChange} required />
-            </label>
-            <label>
-              Tipo de Documento
-              <select
-                name="documentType"
-                value={form.documentType}
-                onChange={handleChange}
-                required
-              >
-                <option value="CPF">CPF</option>
-                <option value="CNPJ">CNPJ</option>
-              </select>
-            </label>
-          </div>
-          <div className={styles.formRow}>
-            <label>
-              {form.documentType}
-              <input
-                name="document"
-                value={form.document}
-                onChange={handleChange}
-                required
-                maxLength={form.documentType === 'CPF' ? 14 : 18}
-              />
-            </label>
-            <label>
-              Parqueamento
-              <CurrencyInput
-                name="parqueamento"
-                value={form.parqueamento}
-                onChange={value => handleCurrencyChange('parqueamento', value)}
-              />
-            </label>
-          </div>
-          <div className={styles.formRow}>
-            <label>
-              Quilometragem
-              <input name="quilometragem" value={form.quilometragem} onChange={handleChange} />
-            </label>
-            <label>
-              Percentual FIPE
-              <input name="percentualFipe" value={form.percentualFipe} onChange={handleChange} />
-            </label>
-          </div>
-          <div className={styles.formRow}>
-            <label>
-              Taxa de Operação
-              <CurrencyInput
-                name="taxaOperacao"
-                value={form.taxaOperacao}
-                onChange={value => handleCurrencyChange('taxaOperacao', value)}
-              />
-            </label>
-          </div>
-          <button type="submit" disabled={loading}>
-            {loading ? 'Cadastrando...' : 'Cadastrar'}
-          </button>
-          {success && (
-            <MessageModal
-              title="Sucesso"
-              message="Cliente cadastrado com sucesso!"
-              variant="success"
-              onClose={() => {
-                setSuccess(false);
-                if (onSuccess) onSuccess();
-                onClose();
-              }}
+    <Modal isOpen={isOpen} onClose={onClose} title="Adicionar Cliente" size="lg">
+      <form onSubmit={handleSubmit} className={styles.form} autoComplete="off">
+        {/* Nome e Email */}
+        <div className={styles.formRow}>
+          <div>
+            <Input
+              id="name"
+              name="name"
+              label="Nome completo"
+              value={form.name}
+              onChange={handleChange}
             />
-          )}
-        </form>
-        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
-      </div>
-    </div>
+            <ErrorMessage message={fieldErrors.name} />
+          </div>
+          <div>
+            <Input
+              id="email"
+              name="email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+            />
+            <ErrorMessage message={fieldErrors.email} />
+          </div>
+        </div>
+
+        {/* Telefone e Tipo de Documento */}
+        <div className={styles.formRow}>
+          <div>
+            <Input
+              id="phone"
+              name="phone"
+              label="Telefone"
+              value={form.phone}
+              onChange={handleChange}
+              mask="(00) 00000-0000"
+            />
+            <ErrorMessage message={fieldErrors.phone} />
+          </div>
+          <div>
+            <Select
+              id="documentType"
+              name="documentType"
+              label="Tipo de Documento"
+              value={form.documentType}
+              onChange={handleChange}
+              options={[
+                { value: 'CPF', label: 'CPF' },
+                { value: 'CNPJ', label: 'CNPJ' },
+              ]}
+              placeholder="Selecione o tipo"
+            />
+          </div>
+        </div>
+
+        {/* Documento e Parqueamento */}
+        <div className={styles.formRow}>
+          <div>
+            <Input
+              id="document"
+              name="document"
+              label={form.documentType}
+              value={form.document}
+              onChange={handleChange}
+              mask={form.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0000-00'}
+            />
+            <ErrorMessage message={fieldErrors.document} />
+          </div>
+          <div>
+            <CurrencyInput
+              name="parqueamento"
+              label="Parqueamento"
+              value={form.parqueamento}
+              onChange={value => handleCurrencyChange('parqueamento', value)}
+            />
+            <ErrorMessage message={fieldErrors.parqueamento} />
+          </div>
+        </div>
+
+        {/* Quilometragem e Percentual FIPE */}
+        <div className={styles.formRow}>
+          <div>
+            <Input
+              id="quilometragem"
+              name="quilometragem"
+              label="Quilometragem"
+              value={form.quilometragem !== undefined ? form.quilometragem.toString() : ''}
+              onChange={handleChange}
+            />
+            <ErrorMessage message={fieldErrors.quilometragem} />
+          </div>
+          <div>
+            <Input
+              id="percentualFipe"
+              name="percentualFipe"
+              label="Percentual FIPE"
+              value={form.percentualFipe !== undefined ? form.percentualFipe.toString() : ''}
+              onChange={handleChange}
+            />
+            <ErrorMessage message={fieldErrors.percentualFipe} />
+          </div>
+        </div>
+
+        {/* Taxa de Operação */}
+        <div className={styles.formRow}>
+          <div>
+            <CurrencyInput
+              name="taxaOperacao"
+              label="Taxa de Operação"
+              value={form.taxaOperacao}
+              onChange={value => handleCurrencyChange('taxaOperacao', value)}
+            />
+            <ErrorMessage message={fieldErrors.taxaOperacao} />
+          </div>
+        </div>
+
+        {/* Ações */}
+        <div className={styles.formActions}>
+          <OutlineButton onClick={onClose} disabled={loading}>
+            Cancelar
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
+            {loading ? 'Adicionando...' : 'Adicionar Cliente'}
+          </SolidButton>
+        </div>
+      </form>
+
+      {success && (
+        <MessageModal
+          title="Sucesso"
+          message="Cliente cadastrado com sucesso!"
+          variant="success"
+          onClose={() => {
+            setSuccess(false);
+            onClose();
+          }}
+        />
+      )}
+
+      {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+    </Modal>
   );
 };
 
