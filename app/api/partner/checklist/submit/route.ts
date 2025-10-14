@@ -204,6 +204,21 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
             });
           }
         }
+
+        // Atualizar status do veículo para 'FASE ORÇAMENTÁRIA'
+        const { error: statusUpdateError } = await supabase
+          .from('vehicles')
+          .update({ vehicle_status: 'FASE ORÇAMENTÁRIA' })
+          .eq('id', checklistData.vehicle_id);
+
+        if (statusUpdateError) {
+          logger.error('vehicle_status_update_error', { error: statusUpdateError.message });
+        } else {
+          logger.info('vehicle_status_updated', {
+            vehicle_id: checklistData.vehicle_id.slice(0, 8),
+            new_status: 'FASE ORÇAMENTÁRIA',
+          });
+        }
       }
     } catch (timelineError) {
       logger.error('timeline_or_status_update_error', {
