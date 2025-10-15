@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import styles from './ChecklistViewer.module.css';
+import React from 'react';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
+import { useLightbox } from '@/modules/vehicles/hooks/useLightbox';
+import styles from './ChecklistView.module.css';
 import { ImageLightbox } from './ImageLightbox';
 
 interface ChecklistItem {
@@ -128,15 +131,14 @@ const getCategoryLabel = (categoryKey: string): string => {
 };
 
 export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ data }) => {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  const openLightbox = (images: string[], index: number) => {
-    setLightboxImages(images);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
+  const {
+    lightboxOpen,
+    lightboxImages,
+    lightboxIndex,
+    openLightbox,
+    closeLightbox,
+    setLightboxIndex,
+  } = useLightbox();
 
   return (
     <>
@@ -250,7 +252,7 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
         isOpen={lightboxOpen}
         images={lightboxImages}
         startIndex={lightboxIndex}
-        onClose={() => setLightboxOpen(false)}
+        onClose={closeLightbox}
       />
     </>
   );

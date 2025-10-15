@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import styles from './ChecklistViewer.module.css';
+import React from 'react';
+import Lightbox from 'yet-another-react-lightbox';
+import 'yet-another-react-lightbox/styles.css';
+import { useLightbox } from '@/modules/vehicles/hooks/useLightbox';
+import styles from './ChecklistView.module.css';
 import { ImageLightbox } from './ImageLightbox';
 
 interface Anomaly {
@@ -47,15 +50,15 @@ function translatePartnerType(type: string): string {
 }
 
 export const AnomaliesChecklistView: React.FC<AnomaliesChecklistViewProps> = ({ data }) => {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const {
+    lightboxOpen,
+    lightboxImages,
+    lightboxIndex,
+    openLightbox,
+    closeLightbox,
+    setLightboxIndex,
+  } = useLightbox();
 
-  const openLightbox = (images: string[], index: number) => {
-    setLightboxImages(images);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
   return (
     <>
       {/* Header com informações do parceiro */}
@@ -117,7 +120,7 @@ export const AnomaliesChecklistView: React.FC<AnomaliesChecklistViewProps> = ({ 
         isOpen={lightboxOpen}
         images={lightboxImages}
         startIndex={lightboxIndex}
-        onClose={() => setLightboxOpen(false)}
+        onClose={closeLightbox}
       />
     </>
   );
