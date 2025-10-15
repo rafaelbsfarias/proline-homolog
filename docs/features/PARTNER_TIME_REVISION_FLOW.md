@@ -28,20 +28,106 @@ Documento de planejamento para implementar a funcionalidade que permite ao **Par
 
 ---
 
-## 📈 Estado Atual da Implementação (15/10/2025)
+## 📈 Estado Atual da Implementação (15/10/2025 - ATUALIZADO)
 
-Esta seção resume o que já foi implementado e o que ainda está pendente.
+> **📊 Relatório Completo**: Veja [TIME_REVISION_IMPLEMENTATION_REPORT.md](./TIME_REVISION_IMPLEMENTATION_REPORT.md) para análise detalhada.
 
-### Backend
-- **APIs de Fluxo Principal:** **Implementadas.**
-  - `POST /api/specialist/quotes/{id}/review-times`: ✅ Funcional.
-  - `PUT /api/partner/quotes/{id}/update-times`: ✅ Funcional (mas precisa de ajuste no fluxo, veja abaixo).
-  - `GET /api/partner/quotes/[quoteId]/revision-details`: ✅ Funcional e refinada para retornar erros mais claros.
-  - `GET /api/partner/quotes/pending-time-revisions`: ✅ Funcional.
+**Progresso Geral**: 🟡 **65% Completo** - Parcialmente Funcional com Bugs Críticos
 
-### Frontend
-- **Componentes de UI:** **Pendente.**
-  - Os componentes visuais descritos neste documento (`PendingTimeRevisionsCard`, `TimeRevisionModal`, etc.) ainda precisam ser criados e integrados.
+### Backend - 80% ✅
+- **APIs de Fluxo Principal:** **Implementadas e Funcionais.**
+  - `POST /api/specialist/quotes/{id}/review-times`: ✅ Funcional - Cria solicitações
+  - `PUT /api/partner/quotes/{id}/update-times`: ✅ Funcional - Atualiza prazos
+  - `GET /api/partner/quotes/[quoteId]/revision-details`: ❌ **BUG CRÍTICO** - Retorna 404 (foreign key incorreto linha 113)
+  - `GET /api/partner/quotes/pending-time-revisions`: ✅ Funcional - Lista revisões
+  - `GET /api/specialist/quotes/pending-time-approval`: ✅ Funcional - Lista para aprovação
+- **Função Transacional**: ✅ `request_quote_time_review` implementada e funcional
+- **Controle de Revisões**: ✅ Limite de 3 revisões implementado via `revision_count`
+
+### Frontend - 65% 🟡
+- **Componentes Parceiro (90% ✅):**
+  - `PendingTimeRevisionsCard`: ✅ Criado e integrado ao dashboard
+  - `TimeRevisionModal`: ✅ Criado com edição de prazos e sugestões
+  - `QuotesInReviewCard`: ✅ Criado e funcional
+  - `usePartnerTimeRevisions`: ✅ Hook completo gerenciando estado
+  - ⚠️ **Bloqueado**: API 404 impede carregamento de dados no modal
+
+- **Componentes Especialista (40% ❌):**
+  - Página `/dashboard/specialist/time-approvals`: ❌ **BUG CRÍTICO**
+    - Mostrando "Itens (0)" ao invés de lista de serviços
+    - Exibindo valores monetários ao invés de prazos estimados
+    - Não mostrando informações de prazos dos serviços
+
+### Database - 100% ✅
+- Tabela `quote_time_reviews` criada
+- Migrations aplicadas (5 migrations)
+- Função `request_quote_time_review` implementada
+- RLS policies configuradas
+- Contador `revision_count` adicionado a `quotes`
+
+### Loop de Revisão - 30% ❌
+- ❌ Especialista NÃO recebe notificação quando parceiro atualiza
+- ❌ Especialista NÃO tem dashboard para re-revisões
+- ❌ Falta API para especialista aprovar prazos atualizados
+- ❌ Loop termina em `admin_review` ao invés de voltar ao especialista
+
+### 🚨 **Bugs Críticos Identificados**
+
+1. **API Partner 404** 🔴
+   - Arquivo: `/app/api/partner/quotes/[quoteId]/revision-details/route.ts`
+   - Linha 113: Foreign key incorreto
+   - Impacto: Modal do parceiro não carrega dados
+
+2. **Interface Especialista Incorreta** 🔴
+   - Arquivo: `/app/dashboard/specialist/time-approvals/page.tsx`
+   - Problema: Mostrando valores monetários ao invés de prazos
+   - Impacto: Especialista não consegue ver/avaliar prazos
+
+3. **Loop Incompleto** 🟡
+   - Especialista não consegue revisar novamente após parceiro atualizar
+   - Falta implementar fluxo de aprovação final
+
+---
+
+## 🚀 Plano de Ação Imediato
+
+### Prioridade 1 - Correções Críticas (1-2 horas) 🔴
+
+1. **Corrigir API Partner 404**
+   ```typescript
+   // Arquivo: /app/api/partner/quotes/[quoteId]/revision-details/route.ts
+   // Linha 113
+   
+   // ❌ Atual (INCORRETO)
+   profiles!quote_time_reviews_specialist_id_fkey (full_name)
+   
+   // ✅ Correto
+   profiles:specialist_id (full_name)
+   ```
+
+2. **Corrigir Interface Especialista**
+   ```typescript
+   // Arquivo: /app/dashboard/specialist/time-approvals/page.tsx
+   
+   // ❌ Atual: Mostrando valores monetários
+   // ✅ Deve mostrar:
+   // - Lista de serviços do orçamento
+   // - Prazo estimado de cada serviço
+   // - Total de serviços
+   // - SEM valores monetários
+   ```
+
+### Prioridade 2 - Completar Loop (2-3 horas) 🟡
+
+3. **Implementar Dashboard Especialista para Re-revisões**
+   - Criar `GET /api/specialist/quotes/pending-review`
+   - Adicionar card "Revisões Pendentes" no dashboard
+   - Exibir orçamentos aguardando nova análise
+
+4. **Implementar Aprovação Final**
+   - Estender `POST /api/specialist/quotes/{id}/review-times`
+   - Adicionar action `'approved'`
+   - Status final: `specialist_time_approved`
 
 ---
 
@@ -524,10 +610,10 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 
 ### Documentação
 
-- [ ] Atualizar `SPECIALIST_TIME_APPROVAL.md` com fluxo completo
+- [x] Documentação consolidada e atualizada
 - [ ] Criar screenshots da interface
-- [ ] Documentar casos de uso
-- [ ] Atualizar diagramas de fluxo
+- [ ] Documentar casos de uso adicionais
+- [x] Diagramas de fluxo criados
 
 ---
 
@@ -625,16 +711,17 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 
 ---
 
-## 📚 Referências
+## 📚 Documentação Relacionada
 
-- [Documento Principal: SPECIALIST_TIME_APPROVAL.md](./SPECIALIST_TIME_APPROVAL.md)
-- [Revisão Técnica: SPECIALIST_TIME_APPROVAL_REVIEW.md](../refactoring/SPECIALIST_TIME_APPROVAL_REVIEW.md)
-- [Sumário Executivo: SPECIALIST_TIME_APPROVAL_SUMMARY.md](../refactoring/SPECIALIST_TIME_APPROVAL_SUMMARY.md)
+- **[📊 Relatório de Implementação](./TIME_REVISION_IMPLEMENTATION_REPORT.md)** - Análise completa do estado atual (65% implementado)
+- **[Resumo Executivo](./TIME_REVISION_FLOW_SUMMARY.md)** - Visão rápida e checklist de pendências
+- **[Controle Detalhado](./TIME_REVISION_FLOW_CONTROL.md)** - Loop completo de revisões e queries SQL
+- **[Diagramas Visuais](./TIME_REVISION_FLOW_DIAGRAM.md)** - Fluxogramas e exemplos com múltiplas revisões
 
 ---
 
 **Data de Criação**: 15/10/2025  
-**Última Atualização**: 15/10/2025  
-**Status**: 📝 Em Planejamento  
-**Próxima Ação**: Revisão e aprovação do plano
-o card
+**Última Atualização**: 15/10/2025 16:00  
+**Status**: � **65% Implementado** - Requer Correções Críticas  
+**Próxima Ação**: Corrigir bugs críticos (API 404 e Interface Especialista)  
+**Estimativa para Conclusão**: 1-2 dias
