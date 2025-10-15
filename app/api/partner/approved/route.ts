@@ -15,13 +15,21 @@ async function handler(req: AuthenticatedRequest) {
     const supabase = SupabaseService.getInstance().getAdminClient();
 
     // 1) Buscar orçamentos aprovados do parceiro (campos simples + vehicle_id direto se existir)
+    // Nota: A aprovação de prazos pelo especialista é PARALELA, não bloqueia a execução
+    // Incluir: 'approved', 'specialist_time_approved', 'specialist_time_revision_requested', 'admin_review'
+    // Todos estes status significam que o orçamento foi aprovado e pode ser executado
     const { data: quotes, error: quotesError } = await supabase
       .from('quotes')
       .select(
         'id, status, total_value, client_approved_at, admin_reviewed_at, partner_id, service_order_id, vehicle_id'
       )
       .eq('partner_id', partnerId)
-      .eq('status', 'approved');
+      .in('status', [
+        'approved',
+        'specialist_time_approved',
+        'specialist_time_revision_requested',
+        'admin_review',
+      ]);
 
     if (quotesError) {
       logger.error('approved_fetch_error', { error: quotesError });

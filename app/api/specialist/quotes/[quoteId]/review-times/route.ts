@@ -33,14 +33,12 @@ async function reviewQuoteTimesHandler(
 
     const supabase = SupabaseService.getInstance().getAdminClient();
 
-    // Buscar o orçamento com informações básicas
+    // Buscar o orçamento com informações básicas + revision_count
     const { data: quote, error: qError } = await supabase
       .from('quotes')
-      .select('id, status, service_order_id')
+      .select('id, status, service_order_id, revision_count')
       .eq('id', quoteId)
       .single();
-
-    console.log('[review-times] Quote lookup:', { quote, qError });
 
     if (qError || !quote) {
       return NextResponse.json(
@@ -56,8 +54,6 @@ async function reviewQuoteTimesHandler(
       .eq('id', quote.service_order_id)
       .single();
 
-    console.log('[review-times] Service order lookup:', { serviceOrder, soError });
-
     if (soError || !serviceOrder) {
       return NextResponse.json(
         { success: false, error: 'Ordem de serviço não encontrada' },
@@ -71,8 +67,6 @@ async function reviewQuoteTimesHandler(
       .select('client_id')
       .eq('id', serviceOrder.vehicle_id)
       .single();
-
-    console.log('[review-times] Vehicle lookup:', { vehicle, vError });
 
     if (vError || !vehicle) {
       return NextResponse.json(
@@ -91,13 +85,6 @@ async function reviewQuoteTimesHandler(
       .eq('specialist_id', req.user.id)
       .single();
 
-    console.log('[review-times] Client specialist lookup:', {
-      clientId,
-      specialistId: req.user.id,
-      clientSpecialist,
-      csError,
-    });
-
     if (csError || !clientSpecialist) {
       return NextResponse.json(
         {
@@ -110,9 +97,24 @@ async function reviewQuoteTimesHandler(
     }
 
     // Verificar se o orçamento está no status correto
-    if (quote.status !== 'approved') {
+    // Aceita 'approved' (primeira análise) ou 'admin_review' (parceiro já atualizou)
+    if (quote.status !== 'approved' && quote.status !== 'admin_review') {
       return NextResponse.json(
         { success: false, error: 'Orçamento não está aguardando aprovação de prazos' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se atingiu o limite de revisões (máximo 3)
+    const currentRevisionCount = quote.revision_count || 0;
+    if (body.action === 'revision_requested' && currentRevisionCount >= 3) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Limite de revisões atingido',
+          message:
+            'Este orçamento já passou por 3 rodadas de revisão. Entre em contato diretamente com o parceiro para ajustes adicionais.',
+        },
         { status: 400 }
       );
     }
@@ -145,10 +147,13 @@ async function reviewQuoteTimesHandler(
         ? 'specialist_time_approved'
         : 'specialist_time_revision_requested';
 
-    const { error: uError } = await supabase
-      .from('quotes')
-      .update({ status: newStatus })
-      .eq('id', quoteId);
+    // Se for revision_requested, incrementar revision_count
+    const updateData: { status: string; revision_count?: number } = { status: newStatus };
+    if (body.action === 'revision_requested') {
+      updateData.revision_count = currentRevisionCount + 1;
+    }
+
+    const { error: uError } = await supabase.from('quotes').update(updateData).eq('id', quoteId);
 
     if (uError) {
       return NextResponse.json(
@@ -161,8 +166,7 @@ async function reviewQuoteTimesHandler(
       success: true,
       data: review,
     });
-  } catch (error) {
-    console.error('Erro interno:', error);
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }

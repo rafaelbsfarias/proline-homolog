@@ -316,8 +316,18 @@ const PartnerDashboard = () => {
   };
 
   const handleViewQuoteDetails = (quoteId: string) => {
-    setSelectedQuoteForRevision(quoteId);
-    setShowTimeRevisionModal(true);
+    // Verificar se o orçamento tem revisão de prazo solicitada
+    const quote = quotesInReview.find(q => q.quote_id === quoteId);
+
+    // Só abre modal se has_time_revision for explicitamente true
+    if (quote?.has_time_revision === true) {
+      // Se tem revisão de prazo, abre o modal de revisão
+      setSelectedQuoteForRevision(quoteId);
+      setShowTimeRevisionModal(true);
+    } else {
+      // Se não tem revisão, redireciona para a página do orçamento
+      router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
+    }
   };
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
     { key: 'vehicle', header: 'Veículo' },
@@ -547,7 +557,6 @@ const PartnerDashboard = () => {
             quotes={quotesInReview}
             loading={loadingInReview}
             onViewDetailsClick={handleViewQuoteDetails}
-            onEditTimesClick={handleReviewClick}
           />
 
           <DataTable<InProgressServiceDisplay>

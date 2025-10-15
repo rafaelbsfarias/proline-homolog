@@ -20,14 +20,12 @@ interface QuotesInReviewCardProps {
   quotes: QuoteInReview[];
   loading: boolean;
   onViewDetailsClick: (quoteId: string) => void;
-  onEditTimesClick?: (quoteId: string) => void;
 }
 
 const QuotesInReviewCard: React.FC<QuotesInReviewCardProps> = ({
   quotes,
   loading,
   onViewDetailsClick,
-  onEditTimesClick,
 }) => {
   // Garantir que quotes é sempre um array
   const safeQuotes = Array.isArray(quotes) ? quotes : [];
@@ -81,10 +79,12 @@ const QuotesInReviewCard: React.FC<QuotesInReviewCardProps> = ({
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>
-            🔍 Orçamentos em Análise
+            Orçamentos em Análise
             <span className={styles.badge}>{safeQuotes.length}</span>
           </h2>
-          <p className={styles.subtitle}>Aguardando aprovação do admin após revisão de prazos</p>
+          <p className={styles.subtitle}>
+            Orçamentos aguardando aprovação do admin ou revisão de prazos
+          </p>
         </div>
       </div>
 
@@ -93,13 +93,12 @@ const QuotesInReviewCard: React.FC<QuotesInReviewCardProps> = ({
           <div key={quote.quote_id} className={styles.item}>
             <div className={styles.itemHeader}>
               <div className={styles.vehicleInfo}>
-                <span className={styles.vehicleIcon}>🚗</span>
                 <span className={styles.plate}>{quote.vehicle_plate}</span>
                 <span className={styles.separator}>|</span>
                 <span className={styles.clientName}>{quote.client_name}</span>
               </div>
               <div className={`${styles.waitingTime} ${getWaitingTimeClass(quote.waiting_days)}`}>
-                ⏱️ {getWaitingTimeText(quote.waiting_days)}
+                {getWaitingTimeText(quote.waiting_days)}
               </div>
             </div>
 
@@ -132,13 +131,11 @@ const QuotesInReviewCard: React.FC<QuotesInReviewCardProps> = ({
 
             {quote.partner_comments && (
               <div className={styles.comments}>
-                <span className={styles.commentsIcon}>💬</span>
                 <span className={styles.commentsText}>{quote.partner_comments}</span>
               </div>
             )}
 
             <div className={styles.statusBanner}>
-              <span className={styles.statusIcon}>⏳</span>
               <span className={styles.statusText}>
                 {quote.has_time_revision
                   ? 'Solicitação de revisão de prazos pelo especialista'
@@ -147,20 +144,16 @@ const QuotesInReviewCard: React.FC<QuotesInReviewCardProps> = ({
             </div>
 
             <div className={styles.actions}>
-              {quote.has_time_revision && onEditTimesClick && (
-                <button
-                  className={styles.detailsButton}
-                  onClick={() => onEditTimesClick(quote.quote_id)}
-                  title="Editar prazos conforme solicitação"
-                >
-                  Editar Prazos
-                </button>
-              )}
               <button
                 className={styles.detailsButton}
                 onClick={() => onViewDetailsClick(quote.quote_id)}
+                title={
+                  quote.has_time_revision
+                    ? 'Revisar e editar prazos solicitados pelo especialista'
+                    : 'Ver detalhes do orçamento'
+                }
               >
-                Ver Detalhes
+                {quote.has_time_revision ? 'Revisar Prazos' : 'Ver Detalhes'}
               </button>
             </div>
           </div>

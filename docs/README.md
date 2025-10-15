@@ -11,8 +11,8 @@ Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLi
 
 ## 🗂️ Estrutura da Documentação
 
-### [🎯 Visão Geral do Projeto](./migration/target-architecture.md)
-- [Arquitetura Alvo Ideal](./migration/target-architecture.md) - Documentação da arquitetura proposta
+### [🎯 Visão Geral do Projeto](./migration/target-architecture/README.md)
+- [Arquitetura Alvo Ideal](./migration/target-architecture/README.md) - Documentação da arquitetura proposta
 - [Status da Migração](./migration/MIGRATION_STATUS.md) - Progresso atual do projeto
 - [Sistema Atual e Roadmap](./migration/SISTEMA_ATUAL_E_ROADMAP.md) - Estado atual e próximos passos
 - [Análise: Documentação vs. Realidade](./development/DOCUMENTATION_REALITY_GAP_ANALYSIS.md) - Gap entre implementação e documentação
@@ -34,6 +34,13 @@ Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLi
 - [Coleção de Fluxos](./business-flows/collection-flow-analysis/) - Análises de fluxos
 - [Parceiros](./business-flows/partner/) - Documentos específicos de parceiros
 
+### [⏱️ Sistema de Revisão de Prazos](./features/)
+- **[📝 Resumo Executivo](./features/TIME_REVISION_FLOW_SUMMARY.md)** - Visão geral rápida e checklist de implementação
+- **[🔧 Controle Detalhado](./features/TIME_REVISION_FLOW_CONTROL.md)** - Documentação técnica completa do fluxo
+- **[📊 Diagramas Visuais](./features/TIME_REVISION_FLOW_DIAGRAM.md)** - Fluxogramas e exemplos práticos
+- **[📋 Planejamento Original](./features/PARTNER_TIME_REVISION_FLOW.md)** - Especificação inicial e UI/UX
+- **Status**: ✅ **Fase 2 Concluída** (parceiro visualiza e ajusta) | ⚠️ **Fase 3 Pendente** (especialista revisa loop)
+
 ### [🖥️ Componentes e UI/UX](./components/)
 - [UI/UX e Integração](./components/ui-ux.md) - Experiência do usuário
 - [Documentação de Componentes](./components/components/) - Documentos específicos de componentes
@@ -54,6 +61,7 @@ Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLi
 
 ### [🔄 Migração e Evolução](./migration/)
 - [Plano de Migração](./migration/migration-plan.md) - Estratégia de migração
+- [Arquitetura Alvo](./migration/target-architecture/) - Documentação da arquitetura ideal
 - [Roadmap](./migration/roadmap/) - Planejamento e fases
 - [Diagnósticos](./migration/diagnostic-finalize-checklist/) - Análises e diagnósticos
 - [Documentos de Migração](./migration/migration/) - Documentos complementares

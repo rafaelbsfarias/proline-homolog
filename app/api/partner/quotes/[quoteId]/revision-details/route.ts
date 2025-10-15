@@ -29,10 +29,10 @@ async function getRevisionDetailsHandler(
     const supabase = SupabaseService.getInstance().getAdminClient();
     const partnerId = req.user.id;
 
-    // Verificar se o orçamento pertence ao parceiro
+    // Verificar se o orçamento pertence ao parceiro e se está no status correto
     const { data: quote, error: quoteError } = await supabase
       .from('quotes')
-      .select('id, partner_id, service_order_id, created_at')
+      .select('id, partner_id, service_order_id, created_at, status')
       .eq('id', quoteId)
       .single();
 
@@ -47,6 +47,16 @@ async function getRevisionDetailsHandler(
       return NextResponse.json(
         { success: false, error: 'Acesso negado a este orçamento' },
         { status: 403 }
+      );
+    }
+
+    if (quote.status !== 'specialist_time_revision_requested') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Orçamento não está aguardando revisão de prazo.',
+        },
+        { status: 400 }
       );
     }
 

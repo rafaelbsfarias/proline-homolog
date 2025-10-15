@@ -1,10 +1,113 @@
 # Fluxo de Revisão de Prazos - Parceiro
 
+> **📖 Documentação Relacionada:**
+> - **[Resumo Executivo](./TIME_REVISION_FLOW_SUMMARY.md)** - Visão rápida, status e checklist
+> - **[Controle Detalhado](./TIME_REVISION_FLOW_CONTROL.md)** - Documentação técnica do loop completo
+> - **[Diagramas Visuais](./TIME_REVISION_FLOW_DIAGRAM.md)** - Fluxogramas e exemplos com múltiplas revisões
+> - **[📑 Índice Geral](../README.md#️-sistema-de-revisão-de-prazos)** - Voltar para documentação principal
+
 ## 📋 Visão Geral
 
 Documento de planejamento para implementar a funcionalidade que permite ao **Parceiro** visualizar solicitações de revisão de prazos feitas pelo **Especialista** e atualizar os prazos do orçamento.
 
+⚠️ **IMPORTANTE**: Este fluxo suporta **múltiplas revisões em loop**. O especialista pode solicitar nova revisão após o parceiro atualizar os prazos. Veja [Controle Detalhado](./TIME_REVISION_FLOW_CONTROL.md#-ciclo-completo-de-múltiplas-revisões) para entender o loop completo.
+
 ---
+
+## 📈 Estado Atual da Implementação (15/10/2025)
+
+Esta seção resume o que já foi implementado e o que ainda está pendente.
+
+### Backend
+- **APIs de Fluxo Principal:** **Implementadas.**
+  - `POST /api/specialist/quotes/{id}/review-times`: ✅ Funcional.
+  - `PUT /api/partner/quotes/{id}/update-times`: ✅ Funcional (mas precisa de ajuste no fluxo, veja abaixo).
+  - `GET /api/partner/quotes/[quoteId]/revision-details`: ✅ Funcional e refinada para retornar erros mais claros.
+  - `GET /api/partner/quotes/pending-time-revisions`: ✅ Funcional.
+
+### Frontend
+- **Componentes de UI:** **Pendente.**
+  - Os componentes visuais descritos neste documento (`PendingTimeRevisionsCard`, `TimeRevisionModal`, etc.) ainda precisam ser criados e integrados.
+
+---
+
+## 🎯 Objetivo Final e Próximos Passos
+
+O objetivo final é criar um ciclo de revisão completo entre o Especialista e o Parceiro.
+
+### 🔄 Comunicação da Revisão do Parceiro para o Especialista (Loop de Revisões)
+
+Conforme solicitado, o fluxo precisa garantir que o especialista seja notificado sobre os ajustes feitos pelo parceiro e possa **revisar novamente**, criando um **loop de revisões**.
+
+**Gap Atual: ❌**
+- A implementação atual do endpoint `PUT .../update-times` move o status do orçamento para `admin_review`, enviando-o para o **Admin**
+- ❌ **Especialista NÃO recebe notificação** quando parceiro atualiza prazos
+- ❌ **Especialista NÃO tem dashboard** para ver orçamentos que precisa revisar novamente
+- ❌ **Não há controle de loops infinitos** (parceiro e especialista podem ficar em ciclo indefinido)
+
+**Solução Completa Necessária:**
+
+#### 1. Backend - Notificação ao Especialista
+```typescript
+// Opção A: Novo status mais claro
+PUT /api/partner/quotes/[quoteId]/update-times
+→ Status: specialist_time_revision_requested → pending_specialist_review
+→ Envia notificação/email ao especialista
+
+// Opção B: Manter status atual mas adicionar notificação
+PUT /api/partner/quotes/[quoteId]/update-times
+→ Status: specialist_time_revision_requested → admin_review
+→ Envia notificação ao especialista via email/push
+```
+
+#### 2. Frontend - Dashboard do Especialista
+```typescript
+// Nova API necessária
+GET /api/specialist/quotes/pending-review
+→ Lista orçamentos em admin_review (após partner_updated)
+→ Especialista vê card "Revisões Pendentes"
+```
+
+#### 3. Fluxo de Aprovação/Rejeição do Especialista
+O especialista visualiza as alterações do parceiro e pode:
+
+**Opção A: Aprovar os novos prazos ✅**
+```typescript
+POST /api/specialist/quotes/[quoteId]/review-times
+Body: { action: 'approved', comments: 'Prazos adequados' }
+→ Status: admin_review → specialist_time_approved
+→ FIM do ciclo de revisões
+```
+
+**Opção B: Solicitar NOVA revisão ♻️ (LOOP)**
+```typescript
+POST /api/specialist/quotes/[quoteId]/review-times
+Body: {
+  action: 'revision_requested',
+  comments: 'Ainda precisam ajustes',
+  revision_requests: { /* novas sugestões */ }
+}
+→ Status: admin_review → specialist_time_revision_requested
+→ VOLTA ao card laranja do parceiro
+→ Inicia NOVO ciclo de revisão
+```
+
+#### 4. Controle de Loop Infinito
+```typescript
+// Adicionar contador de revisões
+ALTER TABLE quotes ADD COLUMN revision_count INTEGER DEFAULT 0;
+
+// Limitar a 3 revisões máximo
+if (revision_count >= 3) {
+  // Bloquear nova revisão
+  // Escalar para admin decidir
+}
+```
+
+> 📖 **Veja documentação completa do loop:** [TIME_REVISION_FLOW_CONTROL.md - Ciclo Completo](./TIME_REVISION_FLOW_CONTROL.md#-ciclo-completo-de-múltiplas-revisões)
+
+---
+
 
 ## 🔄 Fluxo Completo
 
@@ -89,8 +192,8 @@ sequenceDiagram
 │  │ Especialista: João Silva | 3 itens para revisar            │  │
 │  │                                                              │  │
 │  │ [Revisar Prazos] [Ver Detalhes]                            │  │
-│  ├─────────────────────────────────────────────────────────────┤  │
-│  │ � XYZ-5678 | Cliente ABC Ltda                             │  │
+│  ├─────────────────────────────────────────────────────────────┤
+│  │  XYZ-5678 | Cliente ABC Ltda                             │  │
 │  │ Orçamento #12346 | Solicitado: 14/10 10:15                 │  │
 │  │ Especialista: Maria Santos | 2 itens para revisar          │  │
 │  │                                                              │  │
@@ -174,7 +277,7 @@ interface Props {
 │  │ ┌──────────────────────────────────────────────────────────┐  │ │
 │  │ │ Prazo Atual: 10 dias                                      │  │ │
 │  │ │ 💡 Sugestão: 15 dias                                      │  │ │
-│  │ │ � Motivo: "Serviço complexo, pode haver imprevistos"    │  │ │
+│  │ │  Motivo: "Serviço complexo, pode haver imprevistos"    │  │ │
 │  │ │                                                            │  │ │
 │  │ │ Novo Prazo: [10] dias  [Aplicar Sugestão]                │  │ │
 │  │ └──────────────────────────────────────────────────────────┘  │ │
@@ -231,7 +334,7 @@ interface Props {
 │  │ [Revisar Prazos Agora]                                 │   │
 │  ├────────────────────────────────────────────────────────┤   │
 │  │ 📅 10/10/2025 09:00 - Orçamento Enviado               │   │
-│  │ � Parceiro                                            │   │
+│  │  Parceiro                                            │   │
 │  └────────────────────────────────────────────────────────┘   │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
@@ -241,177 +344,24 @@ interface Props {
 
 ## 🔌 APIs Necessárias
 
-### 1. ✅ APIs já Criadas
+### 1. ✅ APIs Criadas e Implementadas
 
 #### `GET /api/partner/quotes/[quoteId]/time-reviews`
 **Status**: ✅ Criada
-**Função**: Buscar histórico de revisões de prazo de um orçamento
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "quote_id": "uuid",
-      "specialist_id": "uuid",
-      "action": "revision_requested",
-      "comments": "Os prazos estão muito curtos...",
-      "revision_requests": {
-        "item-uuid-1": {
-          "suggested_days": 7,
-          "reason": "Considerar tempo de espera de peças"
-        },
-        "item-uuid-2": {
-          "suggested_days": 15,
-          "reason": "Serviço complexo"
-        }
-      },
-      "created_at": "2025-10-15T14:30:00Z",
-      "specialist": {
-        "full_name": "João Silva"
-      }
-    }
-  ]
-}
-```
+**Função**: Buscar histórico de revisões de prazo de um orçamento.
 
 #### `PUT /api/partner/quotes/[quoteId]/update-times`
 **Status**: ✅ Criada
-**Função**: Atualizar prazos dos itens do orçamento
-
-**Request**:
-```json
-{
-  "items": [
-    {
-      "item_id": "uuid",
-      "estimated_days": 7
-    },
-    {
-      "item_id": "uuid",
-      "estimated_days": 15
-    }
-  ],
-  "comments": "Prazos ajustados conforme sugerido"
-}
-```
-
----
-
-### 2. 🆕 APIs a Criar
+**Função**: Atualizar prazos dos itens do orçamento.
 
 #### `GET /api/partner/quotes/pending-time-revisions`
-**Status**: 🆕 A criar
-**Função**: Listar orçamentos com revisão de prazo solicitada (para o card no dashboard)
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "quote_id": "uuid",
-      "quote_number": "12345",
-      "client_name": "Cliente Teste",
-      "vehicle_plate": "ABC-1234",
-      "vehicle_model": "Toyota Corolla",
-      "requested_at": "2025-10-15T14:30:00Z",
-      "specialist_name": "João Silva",
-      "specialist_comments": "Os prazos estão muito curtos...",
-      "items_count": 5,
-      "revision_items_count": 3
-    }
-  ]
-}
-```
-
-**Query SQL**:
-```sql
-SELECT 
-  q.id as quote_id,
-  p.full_name as client_name,
-  v.plate as vehicle_plate,
-  v.model as vehicle_model,
-  qtr.created_at as requested_at,
-  sp.full_name as specialist_name,
-  COUNT(qi.id) as items_count,
-  jsonb_object_keys(qtr.revision_requests) as revision_items_count
-FROM quotes q
-JOIN service_orders so ON q.service_order_id = so.id
-JOIN vehicles v ON so.vehicle_id = v.id
-JOIN clients c ON v.client_id = c.profile_id
-JOIN profiles p ON c.profile_id = p.id
-JOIN quote_time_reviews qtr ON qtr.quote_id = q.id
-JOIN profiles sp ON qtr.specialist_id = sp.id
-LEFT JOIN quote_items qi ON qi.quote_id = q.id
-WHERE q.status = 'specialist_time_revision_requested'
-  AND q.partner_id = $1
-  AND qtr.action = 'revision_requested'
-GROUP BY q.id, p.full_name, v.plate, v.model, qtr.created_at, sp.full_name
-ORDER BY qtr.created_at ASC;
-```
+**Status**: ✅ Criada
+**Função**: Listar orçamentos com revisão de prazo solicitada (para o card no dashboard).
 
 #### `GET /api/partner/quotes/[quoteId]/revision-details`
-**Status**: 🆕 A criar
-**Função**: Buscar detalhes completos para o modal de revisão (quote + items + revision)
+**Status**: ✅ Criada e Refinada
+**Função**: Buscar detalhes completos para o modal de revisão (quote + items + revision). Foi refinada para incluir uma verificação de status do orçamento, retornando um erro 400 se o orçamento não estiver aguardando revisão.
 
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "quote": {
-      "id": "uuid",
-      "quote_number": "12345",
-      "client_name": "Cliente Teste",
-      "vehicle_plate": "ABC-1234",
-      "vehicle_model": "Toyota Corolla",
-      "created_at": "2025-10-10T09:00:00Z"
-    },
-    "revision": {
-      "specialist_name": "João Silva",
-      "requested_at": "2025-10-15T14:30:00Z",
-      "comments": "Os prazos estão muito curtos...",
-      "revision_requests": {
-        "item-uuid-1": {
-          "suggested_days": 7,
-          "reason": "Considerar tempo de espera de peças"
-        },
-        "item-uuid-2": {
-          "suggested_days": 15,
-          "reason": "Serviço complexo"
-        }
-      }
-    },
-    "items": [
-      {
-        "id": "item-uuid-1",
-        "description": "Troca de óleo e filtros",
-        "estimated_days": 5,
-        "has_suggestion": true,
-        "suggested_days": 7,
-        "suggestion_reason": "Considerar tempo de espera de peças"
-      },
-      {
-        "id": "item-uuid-2",
-        "description": "Reparo de suspensão",
-        "estimated_days": 10,
-        "has_suggestion": true,
-        "suggested_days": 15,
-        "suggestion_reason": "Serviço complexo"
-      },
-      {
-        "id": "item-uuid-3",
-        "description": "Alinhamento e balanceamento",
-        "estimated_days": 2,
-        "has_suggestion": false
-      }
-    ]
-  }
-}
-```
 
 ---
 
@@ -527,56 +477,29 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 
 ### Backend
 
-- [ ] Criar API `GET /api/partner/quotes/pending-time-revisions`
+- [x] Criar API `GET /api/partner/quotes/pending-time-revisions`
 - [ ] Criar API `GET /api/partner/quotes/pending-time-revisions/count`
-- [ ] Atualizar API `PUT /api/partner/quotes/[quoteId]/update-times`
-  - [ ] Adicionar validação de status
-  - [ ] Criar registro com action='partner_updated'
-  - [ ] Atualizar status do quote para 'admin_review'
+- [x] Atualizar API `PUT /api/partner/quotes/[quoteId]/update-times`
+  - [x] Adicionar validação de status
+  - [x] Criar registro com action='partner_updated'
+  - [x] Atualizar status do quote para 'admin_review'
 - [ ] Adicionar testes unitários para novas APIs
 
 ### Frontend - Componentes
 
 - [ ] Criar `PendingTimeRevisionsCard.tsx` (card no dashboard)
-  - [ ] Lista compacta de orçamentos pendentes
-  - [ ] Botões de ação em cada item
-  - [ ] Auto-refresh quando dados mudam
 - [ ] Criar `TimeRevisionModal.tsx` (modal de edição)
-  - [ ] Seção de informações do orçamento
-  - [ ] Seção de solicitação do especialista
-  - [ ] Seção de edição de prazos
-  - [ ] Botão "Aplicar Sugestão" por item
-  - [ ] Validação de formulário
 - [ ] Criar `TimeRevisionItemEditor.tsx` (editor individual de item)
-  - [ ] Exibir prazo atual
-  - [ ] Exibir sugestão (se houver)
-  - [ ] Input para novo prazo
-  - [ ] Botão para aplicar sugestão
 - [ ] Criar hook `usePartnerTimeRevisions.ts`
-  - [ ] Fetch de orçamentos pendentes
-  - [ ] Fetch de detalhes de revisão
-  - [ ] Submit de prazos atualizados
 - [ ] Criar `TimeRevisionHistorySection.tsx` (opcional)
-  - [ ] Timeline de revisões
-  - [ ] Integrar na página de detalhes do orçamento
 
 ### Frontend - Integração
 
 - [ ] Integrar `PendingTimeRevisionsCard` no `PartnerDashboard`
-  - [ ] Posicionar no topo, acima de "Orçamentos Pendentes"
-  - [ ] Ocultar quando não há revisões pendentes
 - [ ] Adicionar validações de formulário
-  - [ ] Prazo deve ser número positivo
-  - [ ] Alertar se nenhum prazo foi alterado
 - [ ] Adicionar loading states
-  - [ ] Loading ao carregar lista
-  - [ ] Loading ao salvar alterações
 - [ ] Adicionar error handling
-  - [ ] Toasts de erro/sucesso
-  - [ ] Mensagens de validação
 - [ ] Adicionar confirmação antes de salvar
-  - [ ] Modal "Tem certeza que deseja salvar?"
-  - [ ] Resumo das alterações
 
 ### Testes E2E
 
@@ -598,9 +521,9 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 
 ### Fase 1: MVP (1-2 dias)
 **Backend**:
-- [ ] API `GET /api/partner/quotes/pending-time-revisions`
-- [ ] API `GET /api/partner/quotes/[quoteId]/revision-details`
-- [ ] Atualizar API `PUT /api/partner/quotes/[quoteId]/update-times`
+- [x] API `GET /api/partner/quotes/pending-time-revisions`
+- [x] API `GET /api/partner/quotes/[quoteId]/revision-details`
+- [x] API `PUT /api/partner/quotes/[quoteId]/update-times`
 
 **Frontend**:
 - [ ] Componente `PendingTimeRevisionsCard` no dashboard
@@ -700,3 +623,4 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 **Última Atualização**: 15/10/2025  
 **Status**: 📝 Em Planejamento  
 **Próxima Ação**: Revisão e aprovação do plano
+o card

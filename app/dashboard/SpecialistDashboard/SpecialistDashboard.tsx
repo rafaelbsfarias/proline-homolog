@@ -12,14 +12,21 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
 import SpecialistRequestedPartsCounter from '@/modules/specialist/components/SpecialistRequestedPartsCounter';
 import SpecialistTimeApprovalsCounter from '@/modules/specialist/components/SpecialistTimeApprovalsCounter';
+import PendingReviewsCard from '@/modules/specialist/components/PendingReviewsCard';
+import { useSpecialistPendingReviews } from '@/modules/specialist/hooks/useSpecialistPendingReviews';
+import { useRouter } from 'next/navigation';
 import styles from './SpecialistDashboard.module.css';
 
 const SpecialistDashboard = () => {
   const { showToast } = useToast();
+  const router = useRouter();
   const [userName, setUserName] = useState('');
   const [loadingUser, setLoadingUser] = useState(true);
   const { clients, loading: loadingClients, error: clientsError } = useSpecialistClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+
+  // Hook para revisões pendentes do parceiro
+  const { pendingReviews, loading: loadingReviews } = useSpecialistPendingReviews();
 
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
@@ -84,6 +91,10 @@ const SpecialistDashboard = () => {
     setDateFilter([]);
   }, []);
 
+  const handleReviewClick = (quoteId: string) => {
+    router.push(`/dashboard/specialist/time-approvals?quote=${quoteId}`);
+  };
+
   const filters = useMemo(() => {
     const f: { plate?: string; status?: string[]; dateFilter?: string[] } = {};
     if (filterPlate) f.plate = filterPlate;
@@ -144,6 +155,13 @@ const SpecialistDashboard = () => {
             <SpecialistRequestedPartsCounter />
             <SpecialistTimeApprovalsCounter />
           </div>
+
+          {/* Card de Revisões Pendentes */}
+          <PendingReviewsCard
+            reviews={pendingReviews}
+            loading={loadingReviews}
+            onReviewClick={handleReviewClick}
+          />
 
           <div className={styles.contentWrapper}>
             <h2 className={styles.clientsTitle}>Meus Clientes Associados</h2>
