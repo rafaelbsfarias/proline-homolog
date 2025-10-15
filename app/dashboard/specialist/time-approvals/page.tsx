@@ -9,16 +9,12 @@ import styles from './TimeApprovalsPage.module.css';
 interface QuoteItem {
   id: string;
   description: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
   estimated_days: number;
 }
 
 interface PendingQuote {
   id: string;
   created_at: string;
-  total_value: number;
   status: string;
   partners: {
     company_name: string;
@@ -34,11 +30,17 @@ interface PendingQuote {
   items: QuoteItem[];
 }
 
+interface ReviewData {
+  action: 'approved' | 'revision_requested';
+  comments?: string;
+  revision_requests?: Record<string, { suggested_days: number; reason: string }>;
+}
+
 interface TimeReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   quote: PendingQuote | null;
-  onReview: (action: 'approved' | 'revision_requested', data: any) => Promise<void>;
+  onReview: (action: 'approved' | 'revision_requested', data: ReviewData) => Promise<void>;
 }
 
 function TimeReviewModal({ isOpen, onClose, quote, onReview }: TimeReviewModalProps) {
@@ -54,15 +56,15 @@ function TimeReviewModal({ isOpen, onClose, quote, onReview }: TimeReviewModalPr
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const data = {
+      const data: ReviewData = {
         action,
         comments: comments.trim() || undefined,
         revision_requests: action === 'revision_requested' ? revisionRequests : undefined,
       };
       await onReview(action, data);
       onClose();
-    } catch (error) {
-      console.error('Erro ao enviar revisão:', error);
+    } catch {
+      // Error handled by parent
     } finally {
       setLoading(false);
     }
@@ -97,10 +99,6 @@ function TimeReviewModal({ isOpen, onClose, quote, onReview }: TimeReviewModalPr
           </p>
           <p>
             <strong>Parceiro:</strong> {quote.partners.company_name}
-          </p>
-          <p>
-            <strong>Valor Total:</strong> R${' '}
-            {quote.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
         </div>
 
@@ -183,17 +181,34 @@ function TimeReviewModal({ isOpen, onClose, quote, onReview }: TimeReviewModalPr
   );
 }
 
+interface PendingReview {
+  quote_id: string;
+  quote_number: string;
+  client_name: string;
+  partner_name: string;
+  vehicle_plate: string;
+  vehicle_model: string;
+  updated_at: string;
+  partner_comments: string | null;
+  items_count: number;
+  waiting_days: number;
+  revision_count: number;
+}
+
 export default function TimeApprovalsPage() {
   const router = useRouter();
   const { get, authenticatedFetch } = useAuthenticatedFetch();
   const [quotes, setQuotes] = useState<PendingQuote[]>([]);
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState<PendingQuote | null>(null);
+  const [activeTab, setActiveTab] = useState<'new' | 'reviews'>('new');
 
   useEffect(() => {
     fetchPendingQuotes();
+    fetchPendingReviews();
   }, []);
 
   const fetchPendingQuotes = async () => {
@@ -214,7 +229,20 @@ export default function TimeApprovalsPage() {
     setLoading(false);
   };
 
-  const handleReview = async (action: 'approved' | 'revision_requested', data: any) => {
+  const fetchPendingReviews = async () => {
+    try {
+      const response = await get<{ data: PendingReview[]; error?: string }>(
+        '/api/specialist/quotes/pending-review'
+      );
+      if (response.ok && response.data?.data) {
+        setPendingReviews(response.data.data);
+      }
+    } catch {
+      // Silently fail - não queremos interromper o fluxo principal
+    }
+  };
+
+  const handleReview = async (action: 'approved' | 'revision_requested', data: ReviewData) => {
     if (!selectedQuote) return;
 
     try {
@@ -276,62 +304,129 @@ export default function TimeApprovalsPage() {
         </div>
         <div className={styles.headerContent}>
           <h1 className={styles.title}>Aprovação de Prazos</h1>
-          <p className={styles.subtitle}>
-            {quotes.length} orçamento{quotes.length !== 1 ? 's' : ''} aguardando avaliação de prazos
-          </p>
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tab} ${activeTab === 'new' ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab('new')}
+            >
+              Novas Aprovações ({quotes.length})
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === 'reviews' ? styles.activeTab : ''}`}
+              onClick={() => setActiveTab('reviews')}
+            >
+              Revisões Pendentes ({pendingReviews.length})
+            </button>
+          </div>
         </div>
       </div>
 
       <div className={styles.content}>
-        {quotes.length === 0 ? (
-          <div className={styles.emptyState}>
-            <h2>Nenhum orçamento pendente</h2>
-            <p>Não há orçamentos aguardando avaliação de prazos no momento.</p>
-          </div>
-        ) : (
-          <div className={styles.quotesList}>
-            {quotes.map(quote => (
-              <div key={quote.id} className={styles.quoteCard}>
-                <div className={styles.quoteHeader}>
-                  <div className={styles.quoteInfo}>
-                    <h3>Orçamento #{quote.id.slice(0, 8)}</h3>
-                    <p className={styles.clientInfo}>Cliente: {quote.clients.full_name}</p>
-                    <p className={styles.vehicleInfo}>
-                      Veículo: {quote.vehicles.brand} {quote.vehicles.model} -{' '}
-                      {quote.vehicles.plate}
-                    </p>
-                    <p className={styles.partnerInfo}>Parceiro: {quote.partners.company_name}</p>
-                  </div>
-                  <div className={styles.quoteValue}>
-                    <span className={styles.value}>
-                      R$ {quote.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className={styles.date}>
-                      {new Date(quote.created_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.itemsSummary}>
-                  <h4>Itens ({quote.items.length})</h4>
-                  <div className={styles.itemsList}>
-                    {quote.items.map(item => (
-                      <div key={item.id} className={styles.item}>
-                        <span className={styles.itemDescription}>{item.description}</span>
-                        <span className={styles.itemDays}>{item.estimated_days} dias</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.actions}>
-                  <button onClick={() => openReviewModal(quote)} className={styles.reviewButton}>
-                    Avaliar Prazos
-                  </button>
-                </div>
+        {activeTab === 'new' ? (
+          <>
+            {quotes.length === 0 ? (
+              <div className={styles.emptyState}>
+                <h2>Nenhum orçamento pendente</h2>
+                <p>Não há orçamentos aguardando avaliação inicial de prazos no momento.</p>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className={styles.quotesList}>
+                {quotes.map(quote => (
+                  <div key={quote.id} className={styles.quoteCard}>
+                    <div className={styles.quoteHeader}>
+                      <div className={styles.quoteInfo}>
+                        <h3>Orçamento #{quote.id.slice(0, 8)}</h3>
+                        <p className={styles.clientInfo}>Cliente: {quote.clients.full_name}</p>
+                        <p className={styles.vehicleInfo}>
+                          Veículo: {quote.vehicles.brand} {quote.vehicles.model} -{' '}
+                          {quote.vehicles.plate}
+                        </p>
+                        <p className={styles.partnerInfo}>
+                          Parceiro: {quote.partners.company_name}
+                        </p>
+                      </div>
+                      <div className={styles.quoteValue}>
+                        <span className={styles.date}>
+                          {new Date(quote.created_at).toLocaleDateString('pt-BR')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.itemsSummary}>
+                      <h4>Itens ({quote.items.length})</h4>
+                      <div className={styles.itemsList}>
+                        {quote.items.map(item => (
+                          <div key={item.id} className={styles.item}>
+                            <span className={styles.itemDescription}>{item.description}</span>
+                            <span className={styles.itemDays}>{item.estimated_days} dias</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.actions}>
+                      <button
+                        onClick={() => openReviewModal(quote)}
+                        className={styles.reviewButton}
+                      >
+                        Avaliar Prazos
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {pendingReviews.length === 0 ? (
+              <div className={styles.emptyState}>
+                <h2>Nenhuma revisão pendente</h2>
+                <p>Não há orçamentos aguardando sua re-análise após atualização do parceiro.</p>
+              </div>
+            ) : (
+              <div className={styles.quotesList}>
+                {pendingReviews.map(review => (
+                  <div key={review.quote_id} className={styles.quoteCard}>
+                    <div className={styles.quoteHeader}>
+                      <div className={styles.quoteInfo}>
+                        <h3>Orçamento #{review.quote_number}</h3>
+                        <p className={styles.clientInfo}>Cliente: {review.client_name}</p>
+                        <p className={styles.vehicleInfo}>
+                          Veículo: {review.vehicle_model} - {review.vehicle_plate}
+                        </p>
+                        <p className={styles.partnerInfo}>Parceiro: {review.partner_name}</p>
+                        <p className={styles.revisionInfo}>
+                          🔄 Revisão #{review.revision_count} • Atualizado há {review.waiting_days}{' '}
+                          {review.waiting_days === 1 ? 'dia' : 'dias'}
+                        </p>
+                        {review.partner_comments && (
+                          <p className={styles.comments}>
+                            💬 Parceiro: &quot;{review.partner_comments}&quot;
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className={styles.itemsSummary}>
+                      <h4>Itens atualizados: {review.items_count}</h4>
+                    </div>
+
+                    <div className={styles.actions}>
+                      <button
+                        onClick={() =>
+                          router.push(`/dashboard/specialist/time-approvals/${review.quote_id}`)
+                        }
+                        className={styles.reviewButton}
+                      >
+                        Revisar Prazos Atualizados
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 

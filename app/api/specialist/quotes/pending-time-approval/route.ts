@@ -152,7 +152,7 @@ async function getSpecialistPendingTimeApprovalsHandler(req: AuthenticatedReques
             estimated_days
           `
           )
-          .eq('budget_id', quote.id);
+          .eq('quote_id', quote.id);
 
         return {
           id: quote.id,

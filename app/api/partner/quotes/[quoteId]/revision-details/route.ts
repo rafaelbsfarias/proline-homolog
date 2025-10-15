@@ -10,10 +10,6 @@ interface RevisionRequest {
   reason: string;
 }
 
-interface Profile {
-  full_name: string;
-}
-
 interface QuoteItem {
   id: string;
   description: string;
@@ -94,30 +90,37 @@ async function getRevisionDetailsHandler(
       .single();
 
     // Buscar última revisão solicitada
-    const { data: revision } = await supabase
+    const { data: revision, error: revisionError } = await supabase
       .from('quote_time_reviews')
-      .select(
-        `
-        created_at,
-        comments,
-        revision_requests,
-        specialist_id,
-        profiles!quote_time_reviews_specialist_id_fkey (
-          full_name
-        )
-      `
-      )
+      .select('created_at, comments, revision_requests, specialist_id')
       .eq('quote_id', quoteId)
       .eq('action', 'revision_requested')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    if (!revision) {
+    if (revisionError || !revision) {
       return NextResponse.json(
         { success: false, error: 'Revisão não encontrada' },
         { status: 404 }
       );
+    }
+
+    // Buscar dados do especialista separadamente
+    const { data: specialistData } = await supabase
+      .from('specialists')
+      .select('profile_id')
+      .eq('profile_id', revision.specialist_id)
+      .single();
+
+    let specialistName = 'Especialista não identificado';
+    if (specialistData) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', specialistData.profile_id)
+        .single();
+      specialistName = profile?.full_name || specialistName;
     }
 
     // Buscar itens do orçamento
@@ -150,8 +153,6 @@ async function getRevisionDetailsHandler(
       };
     });
 
-    const specialistProfile = revision.profiles as Profile | null;
-
     const response = {
       quote: {
         id: quote.id,
@@ -162,7 +163,7 @@ async function getRevisionDetailsHandler(
         created_at: quote.created_at,
       },
       revision: {
-        specialist_name: specialistProfile?.full_name || 'Especialista não identificado',
+        specialist_name: specialistName,
         requested_at: revision.created_at,
         comments: revision.comments || '',
         revision_requests: revisionRequests,
