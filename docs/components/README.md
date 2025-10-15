@@ -22,8 +22,8 @@ Styling guidelines, CSS documentation, and design system information.
 UI/UX patterns, interaction guidelines, and workflow documentation.
 
 - **[checklist-patterns.md](./ui-patterns/checklist-patterns.md)** - Checklist-specific UI patterns and workflows
-- **[form-patterns.md](./component-styles/form-patterns.md)** - Form interaction patterns and validation guidelines (to be created)
-- **[responsive-design.md](./component-styles/responsive-design.md)** - Responsive design principles and breakpoints (to be created)
+- **[form-patterns.md](./ui-patterns/form-patterns.md)** - Form interaction patterns and validation guidelines (to be created)
+- **[responsive-design.md](./ui-patterns/responsive-design.md)** - Responsive design principles and breakpoints (to be created)
 
 ### [integration-guides/](./integration-guides/)
 Guides for integrating components into different parts of the application.

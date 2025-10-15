@@ -106,30 +106,6 @@ const SpecialistDashboard = () => {
 
   const { statuses: availableStatuses } = useClientVehicleStatuses(selectedClientId || undefined);
 
-  // Calcular estatísticas para os contadores
-  const stats = useMemo(() => {
-    const totalClients = clients.length;
-    const totalVehicles = selectedClientId ? vehicles.length : 0;
-
-    // Contar veículos por status (apenas se um cliente estiver selecionado)
-    const vehiclesByStatus = selectedClientId
-      ? vehicles.reduce(
-          (acc, vehicle) => {
-            const status = String(vehicle.status || '').toUpperCase();
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        )
-      : {};
-
-    return {
-      totalClients,
-      totalVehicles,
-      vehiclesByStatus,
-    };
-  }, [clients.length, vehicles, selectedClientId]);
-
   useEffect(() => {
     async function fetchUser() {
       const {
@@ -160,46 +136,6 @@ const SpecialistDashboard = () => {
         <main className={styles.main}>
           <h1 className={styles.title}>Painel do Especialista</h1>
           <p className={styles.welcomeMessage}>Bem-vindo, {userName}!</p>
-
-          {/* Contadores */}
-          <div className={styles.statsContainer}>
-            <div className={styles.statCard}>
-              <div className={styles.statNumber}>{stats.totalClients}</div>
-              <div className={styles.statLabel}>Clientes Associados</div>
-            </div>
-
-            {selectedClient && (
-              <>
-                <div className={styles.statCard}>
-                  <div className={styles.statNumber}>{stats.totalVehicles}</div>
-                  <div className={styles.statLabel}>Veículos do Cliente</div>
-                </div>
-
-                {/* Mostrar contadores por status se houver veículos */}
-                {Object.entries(stats.vehiclesByStatus).map(([status, count]) => (
-                  <div key={status} className={styles.statCard}>
-                    <div className={styles.statNumber}>{count}</div>
-                    <div className={styles.statLabel}>
-                      {status === 'AGUARDANDO_CHEGADA' && 'Aguardando Chegada'}
-                      {status === 'CHEGADA_CONFIRMADA' && 'Chegada Confirmada'}
-                      {status === 'EM_ANALISE' && 'Em Análise'}
-                      {status === 'ANALISE_FINALIZADA' && 'Análise Finalizada'}
-                      {status === 'AGUARDANDO_COLETA' && 'Aguardando Coleta'}
-                      {status === 'COLETADO' && 'Coletado'}
-                      {![
-                        'AGUARDANDO_CHEGADA',
-                        'CHEGADA_CONFIRMADA',
-                        'EM_ANALISE',
-                        'ANALISE_FINALIZADA',
-                        'AGUARDANDO_COLETA',
-                        'COLETADO',
-                      ].includes(status) && status}
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
 
           <div className={styles.contentWrapper}>
             <h2 className={styles.clientsTitle}>Meus Clientes Associados</h2>
