@@ -217,6 +217,61 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       logger.warn('legacy_partner_media_fetch_warning', { e: String(legacyErr) });
     }
 
+    // 4) Fallback: listar diretório de evidências no Storage quando há pastas sem registro em tabela
+    //    Ex.: {vehicle_id}/{inspection_id}/evidences/{item_key}/*
+    try {
+      if (inspectionId) {
+        const basePrefix = `${vehicleId}/${inspectionId}/evidences`;
+        const { data: evidenceDirs, error: listDirErr } = await supabase.storage
+          .from(BUCKETS.VEHICLE_MEDIA)
+          .list(basePrefix, { limit: 1000 });
+        if (!listDirErr && Array.isArray(evidenceDirs)) {
+          for (const dir of evidenceDirs) {
+            // Alguns storages retornam arquivos diretamente neste nível; tratar ambos
+            const dirPath = `${basePrefix}/${dir.name}`;
+            const isLikelyFolder = !dir.id; // heurística: se não tem id, é pasta
+
+            if (isLikelyFolder) {
+              const { data: files } = await supabase.storage
+                .from(BUCKETS.VEHICLE_MEDIA)
+                .list(dirPath, { limit: 1000 });
+              for (const file of files || []) {
+                const fullPath = `${dirPath}/${file.name}`;
+                const { data: signed } = await supabase.storage
+                  .from(BUCKETS.VEHICLE_MEDIA)
+                  .createSignedUrl(fullPath, 3600);
+                if (signed?.signedUrl) {
+                  const meta = ITEM_METADATA[dir.name as keyof typeof ITEM_METADATA];
+                  anomalyResults.push({
+                    item_key: dir.name,
+                    label: meta?.label || `Evidência: ${dir.name}`,
+                    category: meta?.category || 'Mecânica',
+                    url: signed.signedUrl,
+                  });
+                }
+              }
+            } else {
+              // É arquivo diretamente em /evidences
+              const fullPath = dirPath; // dir.name aqui é o arquivo
+              const { data: signed } = await supabase.storage
+                .from(BUCKETS.VEHICLE_MEDIA)
+                .createSignedUrl(fullPath, 3600);
+              if (signed?.signedUrl) {
+                anomalyResults.push({
+                  item_key: 'evidences',
+                  label: 'Evidência Mecânica',
+                  category: 'Mecânica',
+                  url: signed.signedUrl,
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (storageListErr) {
+      logger.warn('storage_evidences_fallback_warning', { error: String(storageListErr) });
+    }
+
     const evidences = [...results.filter(Boolean), ...anomalyResults] as Array<{
       item_key: string;
       label: string;

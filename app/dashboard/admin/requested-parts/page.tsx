@@ -62,14 +62,21 @@ const RequestedPartsPage: React.FC = () => {
   // Verificar se o usuário pode ver as colunas de entrega
   const canViewDeliveryColumns = userRole === 'admin' || userRole === 'specialist';
 
+  // Verificar se o usuário pode editar
+  const canEdit = userRole === 'admin' || userRole === 'specialist';
+
   useEffect(() => {
     const fetchPartRequests = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await get<{ data: PartRequest[]; error?: string }>(
-          '/api/admin/part-requests/list'
-        );
+        // Usar API diferente baseada no papel do usuário
+        const apiEndpoint =
+          userRole === 'specialist'
+            ? '/api/specialist/part-requests/list'
+            : '/api/admin/part-requests/list';
+
+        const response = await get<{ data: PartRequest[]; error?: string }>(apiEndpoint);
         if (response.ok && response.data?.data) {
           setPartRequests(response.data.data);
         } else {
@@ -82,7 +89,7 @@ const RequestedPartsPage: React.FC = () => {
     };
 
     fetchPartRequests();
-  }, [get]);
+  }, [get, userRole]);
 
   const formatCurrency = (value: string | null) => {
     if (!value) return 'N/A';
@@ -436,10 +443,12 @@ const RequestedPartsPage: React.FC = () => {
                             Cancelar
                           </button>
                         </div>
-                      ) : (
+                      ) : canEdit ? (
                         <button onClick={() => handleEdit(request)} className={styles.editButton}>
                           Editar
                         </button>
+                      ) : (
+                        <span className={styles.readOnlyText}>Somente leitura</span>
                       )}
                     </td>
                   </tr>

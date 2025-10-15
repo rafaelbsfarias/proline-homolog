@@ -10,6 +10,7 @@ import { useToast } from '@/modules/common/components/ToastProvider';
 import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVehicleStatuses';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
+import SpecialistRequestedPartsCounter from '@/modules/specialist/components/SpecialistRequestedPartsCounter';
 import styles from './SpecialistDashboard.module.css';
 
 const SpecialistDashboard = () => {
@@ -136,6 +137,11 @@ const SpecialistDashboard = () => {
         <main className={styles.main}>
           <h1 className={styles.title}>Painel do Especialista</h1>
           <p className={styles.welcomeMessage}>Bem-vindo, {userName}!</p>
+
+          {/* Contador de peças solicitadas */}
+          <div className={styles.partsCounterContainer}>
+            <SpecialistRequestedPartsCounter />
+          </div>
 
           <div className={styles.contentWrapper}>
             <h2 className={styles.clientsTitle}>Meus Clientes Associados</h2>

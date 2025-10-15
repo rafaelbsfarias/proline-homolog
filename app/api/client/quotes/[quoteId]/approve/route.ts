@@ -120,6 +120,40 @@ export const POST = withClientAuth(
             vehicleId,
             newStatus: VehicleStatus.ORCAMENTO_APROVADO,
           });
+          // Criar entrada detalhada na timeline: "Orçamento Aprovado - {categoria}"
+          try {
+            // Buscar categoria diretamente da service_order (category_id -> service_categories.name)
+            const { data: soMeta } = await admin
+              .from('service_orders')
+              .select('category_id, service_categories(name)')
+              .eq('id', quote.service_order_id)
+              .single();
+
+            const categoryName = (soMeta as any)?.service_categories?.name || 'Geral';
+
+            const historyStatus = `Orçamento Aprovado - ${categoryName}`;
+            await admin.from('vehicle_history').insert({
+              vehicle_id: vehicleId,
+              status: historyStatus,
+              partner_service: categoryName,
+              notes:
+                approvedItemIds && approvedItemIds.length > 0
+                  ? `Itens aprovados: ${approvedItemIds.length}`
+                  : null,
+            });
+
+            logger.info('vehicle_history_client_approval_created', {
+              vehicleId,
+              quoteId,
+              historyStatus,
+            });
+          } catch (vhErr) {
+            logger.warn('vehicle_history_client_approval_failed', {
+              error: vhErr instanceof Error ? vhErr.message : String(vhErr),
+              vehicleId,
+              quoteId,
+            });
+          }
         }
       }
 

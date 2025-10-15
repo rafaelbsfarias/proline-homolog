@@ -309,6 +309,12 @@
   cursor: not-allowed;
 }
 
+.readOnlyText {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.875rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {

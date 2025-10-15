@@ -29,6 +29,12 @@
   margin-bottom: 24px;
 }
 
+.partsCounterContainer {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+}
+
 .contentWrapper {
   background: #fff;
   border-radius: 10px;
