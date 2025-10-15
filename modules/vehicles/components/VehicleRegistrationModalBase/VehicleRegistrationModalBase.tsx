@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import './VehicleRegistrationModal.css';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
-import ClientSearch from '@/modules/common/components/ClientSearch';
 import Input from '@/modules/common/components/Input/Input';
 import Modal from '@/modules/common/components/Modal/Modal';
 import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
@@ -15,6 +14,8 @@ import {
 } from '../../hooks/useVehicleRegistrationForm';
 import Checkbox from '@/modules/common/components/Checkbox/Checkbox';
 import { LuUpload } from 'react-icons/lu';
+import DatePickerBR from '@/modules/common/components/DatePickerBR/DatePickerBR';
+import ClientSearch from '@/modules/common/components/ClientSearch/ClientSearch';
 
 export type Vehicle = {
   id: string;
@@ -193,9 +194,6 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
         {userRole === 'admin' && (
           <div className="form-row">
             <div className="form-group full-width">
-              <label className={`required`} htmlFor="clientId">
-                Cliente
-              </label>
               <ClientSearch
                 selectedClient={selectedClient}
                 onClientSelect={handleClientSelect}
@@ -301,18 +299,26 @@ function VehicleRegistrationModalBase(props: VehicleRegistrationBaseProps) {
               />
               <ErrorMessage message={errors.initialKm} />
             </div>
+
             {userRole === 'admin' && (
-              <div className="form-group">
-                <label htmlFor="estimated_arrival_date">Previsão de Chegada</label>
-                <input
-                  id="estimated_arrival_date"
-                  name="estimated_arrival_date"
-                  type="date"
-                  value={formData.estimated_arrival_date}
-                  onChange={handleInputChange}
-                  disabled={loading}
-                />
-              </div>
+              <DatePickerBR
+                id="estimated_arrival_date"
+                label="Previsão de Chegada"
+                valueIso={formData.estimated_arrival_date}
+                onChangeIso={iso =>
+                  setFormData(prev => ({
+                    ...prev,
+                    estimated_arrival_date: iso,
+                  }))
+                }
+                minIso={new Date().toISOString().split('T')[0]} // bloqueia datas passadas
+                disabledDatesIso={[]} // opcional
+                containerClass="form-group"
+                inputClass="input"
+                buttonClass="calendar-button"
+                placeholder="dd/mm/aaaa"
+                ariaLabel="Selecionar data de chegada"
+              />
             )}
           </div>
         )}

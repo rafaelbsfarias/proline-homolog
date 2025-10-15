@@ -4,10 +4,11 @@
 }
 
 .formGroup label {
-  display: block;
-  margin-bottom: 6px;
-  color: #333;
+  font-size: 0.875rem;
   font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .inputWrapper {
