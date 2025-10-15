@@ -4,6 +4,8 @@ import React from 'react';
 import styles from './PartnersCard.module.css';
 import containerStyles from './PartnersCardContainer.module.css';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import Input from '@/modules/common/components/Input/Input';
+import Select from '@/modules/common/components/Select/Select';
 
 interface PartnerData {
   id: string;
@@ -39,7 +41,6 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
           },
         });
         if (!resp.ok) {
-          // Fallback: mantém lista vazia
           setPartners([]);
           return;
         }
@@ -87,35 +88,32 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
         </div>
 
         {/* Filtros */}
-        <div style={{ display: 'flex', gap: 12, padding: '8px 0 12px 0', alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="Buscar empresa..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            style={{
-              flex: 1,
-              maxWidth: 360,
-              border: '1px solid #e3e3e3',
-              borderRadius: 6,
-              padding: '8px 10px',
-            }}
-          />
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value as typeof filter)}
-            style={{
-              border: '1px solid #e3e3e3',
-              borderRadius: 6,
-              padding: '8px 10px',
-              background: 'white',
-            }}
-          >
-            <option value="all">Todos</option>
-            <option value="pending">Com pendências</option>
-            <option value="executing">Em execução</option>
-            <option value="approval">Para aprovação</option>
-          </select>
+        <div className={styles.filtersContainer}>
+          <div className={styles.searchInput}>
+            <Input
+              id="search"
+              name="search"
+              placeholder="Buscar empresa..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.filterSelect}>
+            <Select
+              id="filter"
+              name="filter"
+              value={filter}
+              onChange={e => setFilter(e.target.value as typeof filter)}
+              options={[
+                { value: 'all', label: 'Todos' },
+                { value: 'pending', label: 'Com pendências' },
+                { value: 'executing', label: 'Em execução' },
+                { value: 'approval', label: 'Para aprovação' },
+              ]}
+              placeholder="Selecione o filtro"
+            />
+          </div>
         </div>
 
         <div className={styles.tableContainer}>
