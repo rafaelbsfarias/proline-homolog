@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
-import styles from './AddUserModal.module.css';
+import Modal from '@/modules/common/components/Modal/Modal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
+import Input from '@/modules/common/components/Input/Input';
+import Select from '@/modules/common/components/Select/Select';
+import { OutlineButton } from '@/modules/common/components/OutlineButton/OutlineButton';
+import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
+import { z } from 'zod';
+import styles from './AddUserModal.module.css';
+import ErrorMessage from '@/modules/common/components/ErroMessage/ErrorMessage';
+
+// Schema Zod
+const userSchema = z.object({
+  name: z.string().min(3, 'O nome precisa ter pelo menos 3 caracteres'),
+  email: z.string().email('Email inválido'),
+  role: z.enum(['admin', 'specialist'], { message: 'Selecione um perfil válido' }),
+});
+
+type UserForm = z.infer<typeof userSchema>;
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -10,20 +26,18 @@ interface AddUserModalProps {
 }
 
 export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [form, setForm] = useState({ name: '', email: '', role: 'admin' });
+  const [form, setForm] = useState<UserForm>({ name: '', email: '', role: 'admin' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const { post } = useAuthenticatedFetch();
 
-  if (!isOpen) return null;
-
-  const handleCloseErrorModal = () => {
-    setError(null);
-  };
+  const handleCloseErrorModal = () => setError(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    setFieldErrors(prev => ({ ...prev, [e.target.name]: '' })); // limpa erro ao digitar
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,72 +45,94 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onS
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setFieldErrors({});
+
     try {
-      // Payload para o endpoint unificado /api/admin/create-user
-      const payload = {
-        name: form.name,
-        email: form.email,
-        role: form.role, // O papel já vem do formulário (admin ou especialista)
-      };
-      const res = await post('/api/admin/create-user', payload);
+      const validatedData = userSchema.parse(form); // valida Zod
+
+      const res = await post('/api/admin/create-user', validatedData);
       if (!res.ok) throw new Error(res.error || 'Erro ao criar usuário');
-      // Mostrar modal de sucesso ao invés de mensagem no rodapé
+
       setSuccess(true);
       setForm({ name: '', email: '', role: 'admin' });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      if (err instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        err.errors.forEach(e => {
+          if (e.path[0]) errors[e.path[0] as string] = e.message;
+        });
+        setFieldErrors(errors);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Erro desconhecido');
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const handleClose = () => {
+    onClose();
+    setForm({ name: '', email: '', role: 'admin' });
+    setError(null);
+    setSuccess(false);
+    setFieldErrors({});
+  };
+
   return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
-        <button className={styles.closeButton} onClick={onClose}>
-          &times;
-        </button>
-        <h2>Adicionar Usuário</h2>
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <label>
-            Nome
-            <input name="name" value={form.name} onChange={handleChange} required />
-          </label>
-          <label>
-            E-mail
-            <input name="email" type="email" value={form.email} onChange={handleChange} required />
-          </label>
-          <label>
-            {/* Campo de senha removido: senha será definida pelo usuário via convite Supabase */}
-          </label>
-          <label>
-            Perfil
-            <select name="role" value={form.role} onChange={handleChange} required>
-              <option value="admin">Administrador</option>
-              <option value="specialist">Especialista</option>
-            </select>
-          </label>
-          <button type="submit" disabled={loading}>
+    <Modal isOpen={isOpen} onClose={onClose} title="Adicionar Usuário" size="sm">
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <Input id="name" name="name" label="Nome" value={form.name} onChange={handleChange} />
+        <ErrorMessage message={fieldErrors.name} />
+
+        <Input
+          id="email"
+          name="email"
+          label="E-mail"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+        />
+        <ErrorMessage message={fieldErrors.email} />
+
+        <Select
+          id="role"
+          name="role"
+          label="Perfil"
+          value={form.role}
+          onChange={handleChange}
+          options={[
+            { value: 'admin', label: 'Administrador' },
+            { value: 'specialist', label: 'Especialista' },
+          ]}
+        />
+        <ErrorMessage message={fieldErrors.role} />
+
+        <div className={styles.formActions}>
+          <OutlineButton onClick={handleClose} disabled={loading}>
+            Cancelar
+          </OutlineButton>
+          <SolidButton type="submit" disabled={loading}>
             {loading ? 'Adicionando...' : 'Adicionar Usuário'}
-          </button>
-          {/* Mensagem de sucesso movida para modal dedicado */}
-        </form>
-        {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
-        {success && (
-          <MessageModal
-            title="Sucesso"
-            message="Usuário criado com sucesso!"
-            variant="success"
-            onClose={() => {
-              setSuccess(false);
-              // Notificar e fechar após confirmação
-              if (onSuccess) onSuccess();
-              onClose();
-            }}
-          />
-        )}
-      </div>
-    </div>
+          </SolidButton>
+        </div>
+      </form>
+
+      {error && <MessageModal message={error} onClose={handleCloseErrorModal} variant="error" />}
+      {success && (
+        <MessageModal
+          title="Sucesso"
+          message="Usuário criado com sucesso!"
+          variant="success"
+          onClose={() => {
+            setSuccess(false);
+            if (onSuccess) onSuccess();
+            onClose();
+          }}
+        />
+      )}
+    </Modal>
   );
 };
 

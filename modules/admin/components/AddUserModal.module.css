@@ -4,6 +4,8 @@
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+
+/* Modal */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -16,6 +18,7 @@
   justify-content: center;
   z-index: 1000;
 }
+
 .modalContent {
   background: #fff;
   border-radius: 12px;
@@ -30,6 +33,7 @@
   flex-direction: column;
   align-items: stretch;
 }
+
 .closeButton {
   position: absolute;
   top: 12px;
@@ -41,13 +45,7 @@
   cursor: pointer;
 }
 
-.form input,
-.form select {
-  margin-top: 8px;
-  padding: 10px 12px;
-  font-size: 1rem;
-}
-
+/* Form Groups */
 .formGroup {
   display: flex;
   flex-direction: column;
@@ -59,41 +57,110 @@
   width: 100%;
 }
 
+/* Buttons e ações */
 .formActions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
 }
+
 .form button[type='submit']:hover {
   filter: brightness(1.08);
 }
+
+/* Mensagens de feedback */
 .error {
   color: #b00020;
   margin-top: 10px;
   font-size: 0.98rem;
 }
+
 .success {
   color: #43b04a;
   margin-top: 10px;
   font-size: 0.98rem;
 }
 
+/* Radio buttons */
 .radioGroupContainer {
   display: flex;
   flex-direction: column; /* Stack children vertically */
-  gap: 15px; /* Increased space between label and radio buttons */
+  gap: 15px; /* Espaço maior entre label e radios */
   margin-top: 10px;
   margin-bottom: 10px;
 }
 
 .radioGroupContainer > div {
   display: flex;
-  gap: 20px; /* Space between individual radio buttons */
+  gap: 20px; /* Espaço entre radios individuais */
 }
 
 .formLabel {
   display: block;
   margin-bottom: 6px;
   color: #333;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 1024px) {
+  .formRow {
+    grid-template-columns: 1fr; /* Uma coluna */
+    gap: 16px;
+  }
+
+  .modalContent {
+    min-width: 90vw;
+    padding: 28px 20px 20px 20px;
+  }
+
+  .formActions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .modalContent {
+    padding: 20px 16px;
+  }
+
+  .formGroup input,
+  .formGroup select,
+  .formGroup textarea {
+    font-size: 0.95rem;
+    padding: 0.75rem 0.9rem;
+  }
+
+  .radioGroupContainer > div {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalContent {
+    padding: 16px 12px;
+  }
+
+  .closeButton {
+    top: 8px;
+    right: 12px;
+    font-size: 1.8rem;
+  }
+
+  .formActions {
+    gap: 8px;
+  }
+
+  .formGroup input,
+  .formGroup select,
+  .formGroup textarea {
+    font-size: 0.9rem;
+    padding: 0.65rem 0.8rem;
+  }
 }
