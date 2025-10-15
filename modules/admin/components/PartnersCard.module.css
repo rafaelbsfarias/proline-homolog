@@ -162,6 +162,41 @@
   color: #002e4c;
 }
 
+/* ===== FILTROS ===== */
+.filtersContainer {
+  display: flex;
+  gap: 12px;
+  padding: 8px 24px 12px 24px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.searchInput {
+  flex: 1; /* ocupa todo espaço disponível */
+}
+
+.searchInput input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #e3e3e3;
+  font-size: 1rem;
+}
+
+.filterSelect {
+  width: 220px; /* fixo à direita */
+}
+
+.filterSelect select {
+  width: 100%;
+  height: 40px; /* mesma altura do input */
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid #e3e3e3;
+  font-size: 1rem;
+}
+
 /* Responsividade */
 @media (max-width: 768px) {
   .cardHeader {
@@ -178,5 +213,16 @@
 
   .partnersTable {
     min-width: 600px;
+  }
+
+  .filtersContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 8px 16px 12px 16px;
+  }
+
+  .filterSelect {
+    width: 100%;
   }
 }
