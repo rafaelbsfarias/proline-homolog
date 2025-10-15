@@ -1,3 +1,17 @@
+## ⚠️ Histórico de Tentativas de Correção
+
+### Tentativa de 15/10/2025 - Correção da Inconsistência de Dados (Frustrada)
+
+-   **Problema Identificado:** A API `GET /api/partner/quotes/.../revision-details` estava retornando erro `404 Not Found`. A investigação apontou que a causa era uma inconsistência nos dados: um orçamento na tabela `quotes` possuía o status `specialist_time_revision_requested`, mas não havia um registro correspondente na tabela `quote_time_reviews` que justificasse esse status. A hipótese foi que a operação de criar o registro de revisão e a de atualizar o status do orçamento não eram atômicas, causando a inconsistência se uma das duas falhasse.
+
+-   **Correção Tentada:**
+    1.  **Criação de Função Transacional:** Foi criada uma nova migração (`..._create_request_quote_time_review_function.sql`) para adicionar uma função no PostgreSQL (`request_quote_time_review`). O objetivo desta função era executar a inserção em `quote_time_reviews` e a atualização em `quotes` como uma única transação atômica, prevenindo a inconsistência. A função também encapsulava a lógica de negócio de contagem e limite de revisões.
+    2.  **Refatoração da API:** A API `POST /api/specialist/quotes/.../review-times` foi refatorada para, no caso de uma solicitação de revisão (`revision_requested`), chamar a nova função transacional no banco de dados em vez de executar as operações separadamente.
+
+-   **Resultado:** **Falha.** Mesmo após a implementação da função transacional e a refatoração da API, o usuário reportou que o problema do erro 404 persistiu, indicando que a causa raiz da inconsistência de dados é outra ou que a correção não foi eficaz no ambiente de teste.
+
+---
+
 # Fluxo de Revisão de Prazos - Parceiro
 
 > **📖 Documentação Relacionada:**

@@ -4,6 +4,7 @@ export interface QuoteItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  started_at?: string | null;
   completed_at?: string | null;
 }
 

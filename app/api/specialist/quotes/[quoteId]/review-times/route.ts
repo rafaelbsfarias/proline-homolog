@@ -105,67 +105,75 @@ async function reviewQuoteTimesHandler(
       );
     }
 
-    // Verificar se atingiu o limite de revisões (máximo 3)
-    const currentRevisionCount = quote.revision_count || 0;
-    if (body.action === 'revision_requested' && currentRevisionCount >= 3) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Limite de revisões atingido',
-          message:
-            'Este orçamento já passou por 3 rodadas de revisão. Entre em contato diretamente com o parceiro para ajustes adicionais.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // Criar o registro de revisão
-    const { data: review, error: rError } = await supabase
-      .from('quote_time_reviews')
-      .insert({
-        quote_id: quoteId,
-        specialist_id: req.user.id,
-        action: body.action,
-        comments: body.comments,
-        reviewed_item_ids: body.reviewed_item_ids,
-        revision_requests: body.revision_requests,
-        created_by: req.user.id,
-      })
-      .select()
-      .single();
-
-    if (rError) {
-      return NextResponse.json(
-        { success: false, error: 'Erro ao salvar revisão' },
-        { status: 500 }
-      );
-    }
-
-    // Atualizar o status do orçamento baseado na ação
-    const newStatus =
-      body.action === 'approved'
-        ? 'specialist_time_approved'
-        : 'specialist_time_revision_requested';
-
-    // Se for revision_requested, incrementar revision_count
-    const updateData: { status: string; revision_count?: number } = { status: newStatus };
     if (body.action === 'revision_requested') {
-      updateData.revision_count = currentRevisionCount + 1;
+      // Use a transactional RPC call to request a revision.
+      // The RPC function handles the revision count check and updates the status.
+      const { error: rpcError } = await supabase.rpc('request_quote_time_review', {
+        p_quote_id: quoteId,
+        p_specialist_id: req.user.id,
+        p_comments: body.comments,
+        p_revision_requests: body.revision_requests,
+        p_reviewed_item_ids: body.reviewed_item_ids,
+      });
+
+      if (rpcError) {
+        // Check for our custom error from the DB function
+        if (rpcError.message.includes('Limite de revisões atingido')) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Limite de revisões atingido',
+              message:
+                'Este orçamento já passou por 3 rodadas de revisão. Entre em contato diretamente com o parceiro para ajustes adicionais.',
+            },
+            { status: 400 }
+          );
+        }
+        return NextResponse.json(
+          { success: false, error: 'Erro ao solicitar revisão', details: rpcError.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Solicitação de revisão enviada com sucesso.',
+      });
+    } else {
+      // Handle 'approved' action
+      const { data: review, error: rError } = await supabase
+        .from('quote_time_reviews')
+        .insert({
+          quote_id: quoteId,
+          specialist_id: req.user.id,
+          action: 'approved',
+          comments: body.comments,
+          created_by: req.user.id,
+        })
+        .select()
+        .single();
+
+      if (rError) {
+        console.error('Failed to create approval review record', rError);
+      }
+
+      const { error: uError } = await supabase
+        .from('quotes')
+        .update({ status: 'approved' })
+        .eq('id', quoteId);
+
+      if (uError) {
+        return NextResponse.json(
+          { success: false, error: 'Erro ao aprovar prazos' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: review,
+      });
     }
-
-    const { error: uError } = await supabase.from('quotes').update(updateData).eq('id', quoteId);
-
-    if (uError) {
-      return NextResponse.json(
-        { success: false, error: 'Erro ao atualizar status do orçamento' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: review,
-    });
   } catch {
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },

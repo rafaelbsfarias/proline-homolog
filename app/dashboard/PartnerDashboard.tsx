@@ -315,17 +315,40 @@ const PartnerDashboard = () => {
     await Promise.all([fetchPendingRevisions(), fetchQuotesInReview()]);
   };
 
-  const handleViewQuoteDetails = (quoteId: string) => {
-    // Verificar se o orçamento tem revisão de prazo solicitada
-    const quote = quotesInReview.find(q => q.quote_id === quoteId);
+  const handleViewQuoteDetails = async (quoteId: string) => {
+    // Verificar o status atual do orçamento antes de abrir o modal
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
 
-    // Só abre modal se has_time_revision for explicitamente true
-    if (quote?.has_time_revision === true) {
-      // Se tem revisão de prazo, abre o modal de revisão
-      setSelectedQuoteForRevision(quoteId);
-      setShowTimeRevisionModal(true);
-    } else {
-      // Se não tem revisão, redireciona para a página do orçamento
+      if (!token) {
+        router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
+        return;
+      }
+
+      const response = await fetch(`/api/partner/quotes/${quoteId}/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Só abre modal se o status ainda for specialist_time_revision_requested
+        if (data.status === 'specialist_time_revision_requested') {
+          setSelectedQuoteForRevision(quoteId);
+          setShowTimeRevisionModal(true);
+        } else {
+          // Se não está mais aguardando revisão, redireciona para a página do orçamento
+          router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
+        }
+      } else {
+        // Se houver erro, redireciona para a página do orçamento
+        router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
+      }
+    } catch {
+      // Em caso de erro, redireciona para a página do orçamento
       router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
     }
   };
