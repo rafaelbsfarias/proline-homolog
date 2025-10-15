@@ -1,6 +1,11 @@
 .label {
-  display: block;
+  /* display: block;
   margin-bottom: 6px;
   color: #333;
+  font-weight: 500; */
+  font-size: 0.875rem;
   font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
 }
