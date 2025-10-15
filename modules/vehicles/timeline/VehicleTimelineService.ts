@@ -189,7 +189,18 @@ export async function getAllVehicleHistoryEvents(
     throw new Error('Erro ao buscar histórico completo do veículo');
   }
 
-  const events: TimelineEvent[] = (data || []).map(row => {
+  // Suprimir apenas a entrada "Orçamento Aprovado Integralmente pelo Administrador" da timeline
+  const normalize = (text: string) =>
+    (text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  const isAdminFullApproval = (status: string) =>
+    normalize(status) === 'orcamento aprovado integralmente pelo administrador';
+
+  const rows = (data || []).filter(row => !isAdminFullApproval(row.status));
+
+  const events: TimelineEvent[] = rows.map(row => {
     // Determinar o tipo do evento baseado no status
     let type: TimelineEvent['type'] = 'BUDGET_STARTED';
 

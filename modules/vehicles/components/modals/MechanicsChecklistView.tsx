@@ -15,6 +15,12 @@ interface ChecklistItem {
     media_url: string;
     description: string;
   }>;
+  part_request?: {
+    partName: string;
+    partDescription?: string;
+    quantity: number;
+    estimatedPrice?: number;
+  };
 }
 
 interface MechanicsChecklistData {
@@ -173,23 +179,6 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
 
               {item.item_notes && <p className={styles.itemNotes}>{item.item_notes}</p>}
 
-              {/* Debug Info - Remover após testar */}
-              {item.item_status === 'nok' && (
-                <div
-                  style={{
-                    fontSize: '11px',
-                    padding: '4px 8px',
-                    background: '#fff3cd',
-                    border: '1px solid #ffc107',
-                    borderRadius: '4px',
-                    marginTop: '8px',
-                  }}
-                >
-                  🔍 Debug: Status={item.item_status} | Evidências={item.evidences?.length || 0} |
-                  Com URL={item.evidences?.filter(e => !!e.media_url).length || 0}
-                </div>
-              )}
-
               {/* Exibir evidências apenas para itens NOK */}
               {item.item_status === 'nok' &&
                 item.evidences &&
@@ -236,6 +225,52 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
                     ⚠️ Item marcado como NOK mas sem evidências fotográficas
                   </div>
                 )}
+
+              {/* Solicitação de peça quando houver */}
+              {item.item_status === 'nok' && item.part_request && (
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '2px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginTop: '10px',
+                  }}
+                >
+                  <strong style={{ display: 'block', color: '#1e40af', marginBottom: '8px' }}>
+                    📦 Solicitação de Peça
+                  </strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Peça: </span>
+                      <span>{item.part_request.partName}</span>
+                    </div>
+                    {item.part_request.quantity != null && (
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Quantidade: </span>
+                        <span>{item.part_request.quantity}</span>
+                      </div>
+                    )}
+                    {item.part_request.partDescription && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontWeight: 600 }}>Descrição: </span>
+                        <span>{item.part_request.partDescription}</span>
+                      </div>
+                    )}
+                    {item.part_request.estimatedPrice != null && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontWeight: 600 }}>Preço Estimado: </span>
+                        <span>
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(item.part_request.estimatedPrice)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

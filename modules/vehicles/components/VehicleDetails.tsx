@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import ChecklistReadOnlyViewer from './modals/ChecklistReadOnlyViewer';
+import { ChecklistViewer } from './modals/ChecklistViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import { LuArrowLeft } from 'react-icons/lu';
@@ -28,6 +29,7 @@ import { VehicleDetailsProps } from '../types/VehicleDetailsTypes';
 
 import styles from './VehicleDetails.module.css';
 import { ImageLightbox } from './modals/ImageLightbox';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
@@ -89,9 +91,54 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       | string
   ) => {
     if (!vehicle?.id || !inspection?.id) return;
-    const { id, category, partnerId } =
-      typeof args === 'string' ? { id: '', category: args, partnerId: '' } : args;
+    const isObj = typeof args !== 'string';
+    const { id, category, partnerId, type } = isObj
+      ? (args as {
+          id: string;
+          category: string;
+          partnerId: string;
+          partnerName?: string;
+          type: string;
+        })
+      : { id: '', category: args as string, partnerId: '', type: '' };
 
+    // Normalização de categoria para detectar mecânica mesmo se type estiver incorreto
+    const normCategory = (category || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const treatAsMechanics =
+      (isObj && type === 'mechanics_checklist') ||
+      normCategory.includes('mecanica') ||
+      normCategory.includes('mechanic');
+
+    // Para mecânica, usar modal específico com itens + evidências + peças
+    if (treatAsMechanics) {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const params = new URLSearchParams({ vehicle_id: vehicle.id });
+        if (inspection?.id) params.set('inspection_id', inspection.id);
+        const res = await fetch(`/api/checklist/mechanics/view?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload) {
+            modalState.partnerChecklistModal.open(payload);
+            return;
+          }
+        }
+      } catch (e) {
+        // Mantemos silêncio para produção; não abrir modal genérico para mecânica
+      }
+      // Não cair no fluxo genérico para mecânica; encerrar aqui
+      return;
+    }
+
+    // Fluxo genérico (ex.: anomalias)
     const data = await loadChecklist(vehicle.id, inspection.id, category, partnerId, id);
     if (data) {
       modalState.dynamicChecklistModal.open({
@@ -205,6 +252,13 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
           }}
           partnerCategory={modalState.dynamicChecklistModal.data.category}
           onClose={modalState.dynamicChecklistModal.close}
+        />
+      )}
+
+      {modalState.partnerChecklistModal.isOpen && modalState.partnerChecklistModal.data && (
+        <ChecklistViewer
+          data={modalState.partnerChecklistModal.data}
+          onClose={modalState.partnerChecklistModal.close}
         />
       )}
     </main>

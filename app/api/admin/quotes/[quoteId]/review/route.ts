@@ -159,13 +159,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
           .single();
 
         if (serviceOrder?.vehicle_id) {
-          // Atualizar status do veículo
-          await supabase
-            .from('vehicles')
-            .update({ status: 'Fase Orçamentaria' })
-            .eq('id', serviceOrder.vehicle_id);
-
-          // Criar entrada no vehicle_history
+          // Criar entrada no vehicle_history (não alterar vehicles.status aqui)
           const historyStatus =
             action === 'approve_full'
               ? 'Orçamento Aprovado Integralmente pelo Administrador'
@@ -177,7 +171,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
             notes: rejectionReason || null,
           });
 
-          logger.info('vehicle_status_updated_after_approval', {
+          logger.info('vehicle_history_created_after_approval', {
             vehicleId: serviceOrder.vehicle_id,
             action,
             historyStatus,

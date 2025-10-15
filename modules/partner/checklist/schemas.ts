@@ -28,6 +28,10 @@ export type ChecklistItemRow = {
   item_key: string;
   item_status: string;
   item_notes: string | null;
+  // JSON com solicitação de peça associada ao item (quando houver)
+  // pode vir em diferentes convenções de chave (partName/part_name, etc.)
+  // por isso mantemos como unknown aqui e normalizamos no mapper
+  part_request?: unknown;
   created_at?: string;
   quote_id?: string | null;
   inspection_id?: string | null;

@@ -29,12 +29,31 @@ export function mapItemsWithEvidences(
   items: ChecklistItemRow[],
   evidencesWithUrls: Awaited<ReturnType<typeof mapEvidencesWithUrls>>
 ) {
+  const normalizePartRequest = (raw: unknown) => {
+    if (!raw || typeof raw !== 'object') return undefined;
+    const obj = raw as Record<string, unknown>;
+    const name = (obj.partName || obj.part_name) as string | undefined;
+    const desc = (obj.partDescription || obj.part_description) as string | undefined;
+    const qty = (obj.quantity ?? obj.qty) as number | string | undefined;
+    const price = (obj.estimatedPrice || obj.estimated_price) as number | string | undefined;
+    const quantity = qty != null ? Number(qty) : undefined;
+    const estimatedPrice = price != null ? Number(price) : undefined;
+    if (!name && !desc && quantity == null && estimatedPrice == null) return undefined;
+    return {
+      partName: name || 'Peça',
+      partDescription: desc,
+      quantity: quantity ?? 1,
+      estimatedPrice: isNaN(Number(estimatedPrice)) ? undefined : (estimatedPrice as number),
+    };
+  };
+
   return (items || []).map(item => ({
     id: item.id,
     item_key: item.item_key,
     item_status: item.item_status,
     item_notes: item.item_notes,
     evidences: evidencesWithUrls.filter(ev => ev.item_key === item.item_key),
+    part_request: normalizePartRequest(item.part_request),
   }));
 }
 

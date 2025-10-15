@@ -8,7 +8,8 @@ import {
   DataPanel,
   VehiclesCounter,
   PartnersCard,
-  PendingChecklistAnalysisCounter, // Import the new component
+  PendingChecklistAnalysisCounter,
+  RequestedPartsCounter, // Add the new component
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
@@ -27,6 +28,7 @@ const AdminDashboard: React.FC = () => {
   const [userLoading, setUserLoading] = useState(true);
   const [pendingRegLoading, setPendingRegLoading] = useState(true);
   const [pendingChecklistLoading, setPendingChecklistLoading] = useState(true); // New loading state
+  const [requestedPartsLoading, setRequestedPartsLoading] = useState(true); // New loading state for requested parts
   const [usersCounterLoading, setUsersCounterLoading] = useState(true);
   const [vehiclesCounterLoading, setVehiclesCounterLoading] = useState(true);
   const [dataPanelLoading, setDataPanelLoading] = useState(true);
@@ -36,6 +38,7 @@ const AdminDashboard: React.FC = () => {
     userLoading ||
     pendingRegLoading ||
     pendingChecklistLoading || // Add to overall loader
+    requestedPartsLoading || // Add requested parts to overall loader
     usersCounterLoading ||
     vehiclesCounterLoading ||
     dataPanelLoading ||
@@ -109,6 +112,7 @@ const AdminDashboard: React.FC = () => {
             <PendingChecklistAnalysisCounter onLoadingChange={setPendingChecklistLoading} />
             <PendingRegistrationsCounter onLoadingChange={setPendingRegLoading} />
             <PendingQuotesCounter onLoadingChange={setPendingRegLoading} />
+            <RequestedPartsCounter onLoadingChange={setRequestedPartsLoading} />
             <VehiclesPendingApprovalCounter onLoadingChange={setVehiclesCounterLoading} />
             <UsersCounter onLoadingChange={setUsersCounterLoading} />
             <VehiclesCounter onLoadingChange={setVehiclesCounterLoading} />

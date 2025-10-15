@@ -8,6 +8,7 @@ const INITIAL_MODAL_STATE: PartRequestModalState = {
   partDescription: '',
   quantity: 1,
   estimatedPrice: '',
+  purchaseLink: '',
 };
 
 export const usePartRequestModal = () => {
@@ -21,6 +22,7 @@ export const usePartRequestModal = () => {
       partDescription: existingRequest?.partDescription || '',
       quantity: existingRequest?.quantity || 1,
       estimatedPrice: existingRequest?.estimatedPrice?.toString() || '',
+      purchaseLink: existingRequest?.purchaseLink || '',
     });
   };
 
@@ -40,6 +42,7 @@ export const usePartRequestModal = () => {
       partDescription: modalState.partDescription,
       quantity: modalState.quantity,
       estimatedPrice: modalState.estimatedPrice ? parseFloat(modalState.estimatedPrice) : undefined,
+      purchaseLink: modalState.purchaseLink || undefined,
     };
   };
 
