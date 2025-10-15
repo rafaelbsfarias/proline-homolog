@@ -250,14 +250,18 @@ sequenceDiagram
 
 ## 📊 Estados do Orçamento
 
-### Estados Relevantes para o Fluxo
+### Estados Relevantes para o Fluxo (ATUALIZADO - 15/10/2025)
 
-| Status | Descrição | Quem Pode Agir |
-|--------|-----------|----------------|
-| `approved` | Aprovado pelo admin, aguardando aprovação de prazo do especialista | Especialista |
-| `specialist_time_revision_requested` | Especialista solicitou revisão dos prazos | Parceiro |
-| `admin_review` | Reenviado para revisão do admin após ajuste | Admin |
-| `specialist_time_approved` | Prazos aprovados pelo especialista (fluxo completo) | - |
+⚠️ **IMPORTANTE**: O fluxo foi ajustado para que o especialista revise os prazos **ANTES** do admin aprovar o orçamento.
+
+| Status | Descrição | Quem Pode Agir | Ordem |
+|--------|-----------|----------------|-------|
+| `pending_specialist_approval` | **NOVO** - Aguardando primeira aprovação de prazos do especialista | Especialista | 1️⃣ |
+| `pending_admin_approval` | Prazos aprovados, aguardando aprovação final do admin | Admin | 2️⃣ |
+| `approved` | Aprovado pelo admin | - | 3️⃣ |
+| `specialist_time_revision_requested` | Especialista solicitou revisão dos prazos | Parceiro | Loop |
+| `admin_review` | Reenviado para revisão do admin após ajuste | Admin | Loop |
+| `specialist_time_approved` | Prazos aprovados pelo especialista (fluxo completo) | - | ✅ |
 
 ---
 

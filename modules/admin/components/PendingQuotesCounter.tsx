@@ -51,7 +51,7 @@ const PendingQuotesCounter: React.FC<PendingQuotesCounterProps> = ({ onLoadingCh
       title="Ver orçamentos pendentes (Admin)"
       onClick={() => router.push('/dashboard/admin/quotes/pending')}
     >
-      Orçamentos pendentes: {count}
+      Orçamentos para Aprovação: {count}
     </span>
   );
 };
