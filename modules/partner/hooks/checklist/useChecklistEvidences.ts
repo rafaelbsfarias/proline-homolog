@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import { EVIDENCE_KEYS, type EvidenceKey } from '@/modules/partner/constants/checklist';
 import type { EvidenceItem, EvidenceState } from '@/modules/partner/types/checklist';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('hooks:checklist-evidences');
 
 export function useChecklistEvidences() {
   const emptyEvidenceState = useMemo(
@@ -32,6 +35,12 @@ export function useChecklistEvidences() {
   const clear = () => setEvidences(emptyEvidenceState);
 
   const setFromUrlMap = (urls: Record<string, { urls: string[] }>) => {
+    logger.info('setFromUrlMap called', {
+      inputKeys: Object.keys(urls),
+      inputSample: Object.entries(urls).slice(0, 2),
+      evidenceKeys: EVIDENCE_KEYS,
+    });
+
     const next: EvidenceState = { ...emptyEvidenceState };
     Object.entries(urls).forEach(([key, value]) => {
       if (!value?.urls || !Array.isArray(value.urls)) return;
@@ -43,6 +52,12 @@ export function useChecklistEvidences() {
         (next as Record<string, EvidenceItem[] | undefined>)[key] = entries;
       }
     });
+
+    logger.info('setFromUrlMap result', {
+      resultKeys: Object.keys(next),
+      resultCounts: Object.fromEntries(Object.entries(next).map(([k, v]) => [k, v?.length || 0])),
+    });
+
     setEvidences(next);
   };
 

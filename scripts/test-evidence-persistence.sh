@@ -21,7 +21,7 @@ read
 
 echo ""
 echo "📊 Referências no banco APÓS salvar:"
-psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c "SELECT item_key, media_url FROM mechanics_checklist_evidences;"
+psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -c "SELECT item_key, storage_path FROM mechanics_checklist_evidences;"
 
 echo ""
 REFS=$(psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -t -c "SELECT COUNT(*) FROM mechanics_checklist_evidences WHERE item_key = 'clutch';")

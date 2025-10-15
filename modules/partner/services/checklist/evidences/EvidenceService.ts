@@ -29,7 +29,7 @@ export class EvidenceService {
       const evidenceMap: EvidenceMap = {};
 
       for (const evidence of evidences) {
-        const url = await this.urlGenerator.generate(evidence.media_url);
+        const url = await this.urlGenerator.generate(evidence.storage_path);
         if (url) {
           if (!evidenceMap[evidence.item_key]) {
             evidenceMap[evidence.item_key] = { urls: [] };

@@ -21,7 +21,7 @@ Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLi
 - [Modelagem de Dados](./architecture/data-model.md) - DDL e relacionamentos
 - [Fluxos e Diagramas](./architecture/flows.md) - Diagramas de sequência e fluxos
 - [Análise de Arquitetura](./architecture/ARCHITECTURE_ANALYSIS.md) - Documento técnico detalhado
-- [Documentos de Arquitetura](./architecture/architecture/) - Documentos complementares
+- [Análise ClientDashboard](./architecture/client_dashboard.md) - Análise do painel do cliente
 
 ### [🔌 APIs e Integração](./api/)
 - [Especificação de APIs](./api/api-spec.md) - Contratos de API definidos
@@ -29,7 +29,7 @@ Esta documentação unificada organiza todo o conhecimento sobre o sistema ProLi
 
 ### [👥 Business Flows e Requisitos](./business-flows/)
 - [Especificação Funcional](./business-flows/functional-spec.md) - Requisitos funcionais detalhados
-- [Fluxos de Negócio](./business-flows/business-flows/) - Documentos de processos
+- [Fluxos de Negócio](./business-flows/) - Documentos de processos
 - [Features e Funcionalidades](./business-flows/features/) - Documentação de funcionalidades
 - [Coleção de Fluxos](./business-flows/collection-flow-analysis/) - Análises de fluxos
 - [Parceiros](./business-flows/partner/) - Documentos específicos de parceiros

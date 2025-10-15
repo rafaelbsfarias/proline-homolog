@@ -5,12 +5,12 @@ import { groupItemsByCategory } from '../utils/groupByCategory';
 export async function mapEvidencesWithUrls(evidences: EvidenceRow[]) {
   const results = await Promise.all(
     (evidences || []).map(async e => {
-      // FIX: media_url pode ser um path (precisa de signed URL) ou já ser uma URL completa
-      const isFullUrl = e.media_url?.startsWith('http');
-      let finalUrl = e.media_url;
+      // FIX: storage_path pode ser um path (precisa de signed URL) ou já ser uma URL completa
+      const isFullUrl = e.storage_path?.startsWith('http');
+      let finalUrl = e.storage_path;
 
-      if (!isFullUrl && e.media_url) {
-        const { url } = await createSignedUrl({ bucket: 'vehicle-media', path: e.media_url });
+      if (!isFullUrl && e.storage_path) {
+        const { url } = await createSignedUrl({ bucket: 'vehicle-media', path: e.storage_path });
         finalUrl = url;
       }
 

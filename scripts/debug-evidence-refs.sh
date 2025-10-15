@@ -64,7 +64,7 @@ echo "------------------------------------------------"
 psql "$DB_URL" -c "
 SELECT 
   item_key,
-  media_url,
+  storage_path,
   quote_id,
   created_at
 FROM mechanics_checklist_evidences 

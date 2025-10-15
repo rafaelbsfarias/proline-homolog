@@ -17,7 +17,7 @@ export class EvidenceRepository {
       // Tentar por quote_id; caso vazio e haja inspection_id, tentar fallback
       const base = this.supabase
         .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-        .select('item_key, media_url, inspection_id, quote_id');
+        .select('item_key, storage_path, inspection_id, quote_id');
 
       const tryQuery = async (opts: LoadChecklistOptions) => {
         let q = base;

@@ -39,7 +39,7 @@ echo "💾 2. Referências no banco (mechanics_checklist_evidences):"
 psql "$DB_URL" -c "
 SELECT 
   item_key,
-  LEFT(media_url, 100) as media_url_preview,
+  LEFT(storage_path, 100) as storage_path_preview,
   created_at
 FROM mechanics_checklist_evidences
 WHERE item_key = 'clutch'
@@ -87,7 +87,7 @@ echo "⚠️  5. Evidências sem quote_id (órfãs):"
 psql "$DB_URL" -c "
 SELECT 
   item_key,
-  LEFT(media_url, 80) as media_url_preview,
+  LEFT(storage_path, 80) as storage_path_preview,
   created_at
 FROM mechanics_checklist_evidences
 WHERE quote_id IS NULL

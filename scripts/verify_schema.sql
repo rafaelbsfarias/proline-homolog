@@ -21,7 +21,7 @@ ORDER BY ordinal_position;
 -- 2. VERIFICAR COLUNAS EM mechanics_checklist_evidence
 -- =====================================================
 \echo ''
-\echo '=== 2. Colunas em mechanics_checklist_evidence ==='
+\echo '=== 2. Colunas em mechanics_checklist_evidences ==='
 SELECT 
   column_name, 
   data_type,
@@ -29,7 +29,7 @@ SELECT
   column_default
 FROM information_schema.columns 
 WHERE table_schema = 'public'
-  AND table_name = 'mechanics_checklist_evidence'
+  AND table_name = 'mechanics_checklist_evidences'
 ORDER BY ordinal_position;
 
 -- 3. VERIFICAR ÍNDICES RELACIONADOS
@@ -67,13 +67,13 @@ WHERE conrelid = 'public.mechanics_checklist_items'::regclass
 ORDER BY conname;
 
 \echo ''
-\echo '=== 6. Constraints em mechanics_checklist_evidence ==='
+\echo '=== 6. Constraints em mechanics_checklist_evidences ==='
 SELECT
   conname AS constraint_name,
   contype AS constraint_type,
   pg_get_constraintdef(oid) AS constraint_definition
 FROM pg_constraint
-WHERE conrelid = 'public.mechanics_checklist_evidence'::regclass
+WHERE conrelid = 'public.mechanics_checklist_evidences'::regclass
 ORDER BY conname;
 
 -- 5. TESTAR ISOLAMENTO DE DADOS (se colunas existirem)

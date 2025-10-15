@@ -351,7 +351,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
             const row: Record<string, unknown> = {
               vehicle_id: checklistData.vehicle_id,
               item_key,
-              media_url: storage_path, // FIX: tabela consolidada usa media_url (não storage_path)
+              storage_path: storage_path, // Updated to use storage_path column
               media_type: 'image', // Assumir tipo padrão
               partner_id: partnerId,
             };
@@ -379,7 +379,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
         // Primeiro, buscar evidências existentes para este contexto
         let existingQuery = supabase
           .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
-          .select('media_url')
+          .select('storage_path')
           .eq('vehicle_id', checklistData.vehicle_id)
           .eq('partner_id', partnerId);
         if (checklistData.quote_id)
@@ -388,10 +388,10 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
           existingQuery = existingQuery.eq('inspection_id', checklistData.inspection_id);
 
         const { data: existingEvidences } = await existingQuery;
-        const existingUrls = new Set((existingEvidences || []).map(e => e.media_url));
+        const existingUrls = new Set((existingEvidences || []).map(e => e.storage_path));
 
         // Filtrar apenas evidências que ainda não existem
-        const newRows = rows.filter(row => !existingUrls.has(row.media_url as string));
+        const newRows = rows.filter(row => !existingUrls.has(row.storage_path as string));
 
         logger.debug('evidence_upsert_analysis', {
           total_in_payload: rows.length,

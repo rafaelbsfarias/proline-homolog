@@ -56,11 +56,11 @@ echo "📸 3.2 - Verificar evidências salvas:"
 psql "$DB_URL" -c "
 SELECT 
   item_key,
-  SUBSTRING(media_url, 1, 60) || '...' as caminho_arquivo,
+  SUBSTRING(storage_path, 1, 60) || '...' as caminho_arquivo,
   CASE 
-    WHEN media_url LIKE '%/evidences/sparkPlugs/%' THEN '✅ ESTRUTURA CORRETA'
-    WHEN media_url LIKE '%/evidences/%' THEN '✅ ESTRUTURA CORRETA (outro item)'
-    WHEN media_url LIKE '%/itens/%' THEN '❌ ESTRUTURA ANTIGA'
+    WHEN storage_path LIKE '%/evidences/sparkPlugs/%' THEN '✅ ESTRUTURA CORRETA'
+    WHEN storage_path LIKE '%/evidences/%' THEN '✅ ESTRUTURA CORRETA (outro item)'
+    WHEN storage_path LIKE '%/itens/%' THEN '❌ ESTRUTURA ANTIGA'
     ELSE '⚠️  ESTRUTURA DESCONHECIDA'
   END as status_estrutura,
   created_at

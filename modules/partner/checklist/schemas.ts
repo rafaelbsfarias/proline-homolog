@@ -14,7 +14,7 @@ export type Partner = {
 
 export type EvidenceRow = {
   id: string;
-  media_url: string; // FIX: tabela consolidada usa media_url (não storage_path)
+  storage_path: string; // Updated to use storage_path column
   media_type?: string;
   description: string | null;
   item_key: string;

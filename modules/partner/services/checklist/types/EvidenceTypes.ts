@@ -1,7 +1,7 @@
 export interface EvidenceRecord {
   item_key: string;
   // Consolidated schema column holding the storage path
-  media_url: string;
+  storage_path: string;
   inspection_id?: string | null;
   quote_id?: string | null;
 }

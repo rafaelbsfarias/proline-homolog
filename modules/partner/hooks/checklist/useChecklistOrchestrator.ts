@@ -11,10 +11,12 @@ import type {
 import { useChecklistForm } from './useChecklistForm';
 import { useChecklistEvidences } from './useChecklistEvidences';
 import { useChecklistAnomalies } from './useChecklistAnomalies';
+import { getLogger } from '@/modules/logger';
 
 export function useChecklistOrchestrator() {
   const { get, post, put } = useAuthenticatedFetch();
   const searchParams = useSearchParams();
+  const logger = getLogger('hooks:checklist-orchestrator');
 
   const { form, setField, reset } = useChecklistForm();
   const { evidences, addEvidence, removeEvidence, setFromUrlMap } = useChecklistEvidences();
@@ -116,16 +118,14 @@ export function useChecklistOrchestrator() {
                 }
               });
             }
-            // Convert old format { url: string } to new format { urls: string[] }
-            const convertedEvidences: Record<string, { urls: string[] }> = {};
-            Object.entries(loadedEvidences as Record<string, { url?: string }>).forEach(
-              ([key, value]) => {
-                if (value?.url) {
-                  convertedEvidences[key] = { urls: [value.url] };
-                }
-              }
-            );
-            setFromUrlMap(convertedEvidences);
+
+            logger.info('Loaded evidences from API', {
+              count: Object.keys(loadedEvidences).length,
+              keys: Object.keys(loadedEvidences),
+              sample: Object.entries(loadedEvidences).slice(0, 2),
+            }); // Use evidences directly as they come from the service in the correct format
+            console.log('DEBUG: loadedEvidences', loadedEvidences);
+            setFromUrlMap(loadedEvidences as unknown as Record<string, { urls: string[] }>);
             // As a practical approach, return evidences map via return object rather than fully seeding the internal state.
             // Save part-requests map
             const pr: Record<string, unknown> = {};
@@ -167,19 +167,29 @@ export function useChecklistOrchestrator() {
           EVIDENCE_KEYS.map(k => [k, [] as string[]])
         ) as Record<EvidenceKey, string[]>;
 
-        // Primeiro, preservar evidências já existentes (que vieram do banco com URLs)
+        // Simplificar: sempre enviar todas as evidências atuais (URLs existentes + novos uploads)
+        // Converter URL assinada/pública em storage_path relativo ao bucket
+        const toStoragePath = (url: string): string => {
+          if (!url) return url;
+          const clean = url.split('?')[0];
+          if (clean.startsWith('evidences/') || clean.startsWith('itens/')) return clean;
+          const marker = '/storage/v1/object/';
+          const idx = clean.indexOf(marker);
+          if (idx >= 0) {
+            const after = clean.substring(idx + marker.length);
+            const parts = after.split('/');
+            const vmIdx = parts.indexOf('vehicle-media');
+            if (vmIdx >= 0) return parts.slice(vmIdx + 1).join('/');
+          }
+          return clean;
+        };
+
         for (const key of EVIDENCE_KEYS) {
           const items = evidences[key] || [];
           for (const ev of items) {
-            // Se já tem URL mas não tem file, é uma evidência que já estava salva
             if (ev?.url && !ev?.file) {
-              // Extrair o storage_path da URL (remover assinatura)
-              const urlObj = new URL(ev.url);
-              const pathMatch = urlObj.pathname.match(
-                /\/storage\/v1\/object\/sign\/vehicle-media\/(.+)\?/
-              );
-              const storagePath = pathMatch ? pathMatch[1] : ev.url;
-              uploadedEvidenceUrls[key].push(storagePath);
+              // Evidência existente: persistir o storage_path derivado da URL
+              uploadedEvidenceUrls[key].push(toStoragePath(ev.url));
             }
           }
         }

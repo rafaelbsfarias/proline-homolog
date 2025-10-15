@@ -182,7 +182,7 @@ proline-homolog/
 
 #### **2. Arquitetura**
 - [architecture/indice.md](../architecture/indice.md)
-- [architecture/client_dashboard.md](../architecture/client_dashboard.md)
+- [architecture/client_dashboard.md](./architecture/client_dashboard.md)
 
 #### **3. Fluxos de Negócio**
 - [business-flows/fluxo_orcamentario.md](../business-flows/fluxo_orcamentario.md)

@@ -17,6 +17,11 @@ export class SignedUrlGenerator {
     try {
       const { expiresIn = this.DEFAULT_EXPIRATION, bucket = BUCKETS.VEHICLE_MEDIA } = options;
 
+      // Se já é uma URL completa, apenas retornar (compatibilidade com dados antigos)
+      if (/^https?:\/\//i.test(path)) {
+        return path;
+      }
+
       // Normalizar path (remover barra inicial se houver)
       const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
 

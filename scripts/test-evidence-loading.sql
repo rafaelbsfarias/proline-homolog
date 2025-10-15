@@ -18,10 +18,10 @@
 SELECT 
   id,
   item_key,
-  LEFT(media_url, 60) || '...' as media_url_preview,
+  LEFT(storage_path, 60) || '...' as storage_path_preview,
   CASE 
-    WHEN media_url LIKE '%/itens/%' THEN '❌ PASTA ANTIGA (itens)'
-    WHEN media_url LIKE '%/evidences/%' THEN '✅ PASTA NOVA (evidences)'
+    WHEN storage_path LIKE '%/itens/%' THEN '❌ PASTA ANTIGA (itens)'
+    WHEN storage_path LIKE '%/evidences/%' THEN '✅ PASTA NOVA (evidences)'
     ELSE '⚠️  OUTRO PADRÃO'
   END as estrutura_pasta,
   created_at
@@ -37,8 +37,8 @@ LIMIT 10;
 \echo '📈 3. Contagem de evidências por estrutura de pasta:'
 SELECT 
   CASE 
-    WHEN media_url LIKE '%/itens/%' THEN 'itens (antiga)'
-    WHEN media_url LIKE '%/evidences/%' THEN 'evidences (nova)'
+    WHEN storage_path LIKE '%/itens/%' THEN 'itens (antiga)'
+    WHEN storage_path LIKE '%/evidences/%' THEN 'evidences (nova)'
     ELSE 'outro'
   END as tipo_pasta,
   COUNT(*) as quantidade
@@ -56,8 +56,8 @@ SELECT
   COUNT(*) as quantidade_evidencias,
   STRING_AGG(DISTINCT 
     CASE 
-      WHEN media_url LIKE '%/itens/%' THEN 'itens'
-      WHEN media_url LIKE '%/evidences/%' THEN 'evidences'
+      WHEN storage_path LIKE '%/itens/%' THEN 'itens'
+      WHEN storage_path LIKE '%/evidences/%' THEN 'evidences'
       ELSE 'outro'
     END, ', ') as tipos_pasta
 FROM mechanics_checklist_evidences

@@ -4,7 +4,7 @@
 
 ### 1.1 Arquitetura
 - [Índice da Arquitetura](architecture/indice.md) - Documentação de arquitetura dos componentes
-- [Análise ClientDashboard](architecture/client_dashboard.md) - Análise do painel do cliente
+- [Análise ClientDashboard](../architecture/client_dashboard.md) - Análise do painel do cliente
 
 ### 1.2 Desenvolvimento
 - [Índice de Desenvolvimento](development/indice.md) - Documentação do processo de desenvolvimento
