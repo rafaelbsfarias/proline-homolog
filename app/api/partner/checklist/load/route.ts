@@ -49,7 +49,8 @@ async function loadChecklistHandler(req: AuthenticatedRequest) {
     );
 
     if (!result.success) {
-      return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
+      const errorMessage = 'error' in result && result.error ? result.error : 'Erro desconhecido';
+      return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
     }
 
     logger.info('load_ok', { inspection_id: inspectionId, quote_id: quoteId });

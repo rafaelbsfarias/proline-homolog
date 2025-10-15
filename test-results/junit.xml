@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="0.065681287">
-    <testsuite name="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" timestamp="2025-10-15T02:32:46.366Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.065681287">
-        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter os arquivos de infraestrutura criados" time="0.062320001">
+<testsuites name="vitest tests" tests="10" failures="0" errors="0" time="0.005267693">
+    <testsuite name="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" timestamp="2025-10-15T03:00:13.831Z" hostname="pop-os" tests="10" failures="0" errors="0" skipped="0" time="0.005267693">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_SUBMIT=false" time="0.001341337">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de repositório exportadas" time="0.000554166">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_SUBMIT=true" time="0.000283981">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de serviço exportadas" time="0.000498274">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_ANOMALIES=false" time="0.000447181">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Configuração da infraestrutura &gt; deve exportar a configuração completa" time="0.000317739">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_ANOMALIES=true" time="0.000161729">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_INIT=false" time="0.000313848">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_INIT=true" time="0.000136613">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do submit checklist" time="0.000146019">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do save anomalies" time="0.000675053">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do init checklist" time="0.000228114">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Error Handling &gt; deve fazer fallback graceful quando DDD falha" time="0.000212666">
         </testcase>
     </testsuite>
 </testsuites>

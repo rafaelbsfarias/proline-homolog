@@ -20,3 +20,16 @@ export const infrastructureServices = realInfrastructure.services;
 
 // Exporta a infraestrutura completa
 export { realInfrastructure };
+
+// Exporta os métodos específicos para migração gradual
+export const loadChecklistWithDetailsDDD =
+  checklistApplicationService.loadChecklistWithDetailsDDD.bind(checklistApplicationService);
+export const submitChecklistDDD = checklistApplicationService.submitChecklistDDD.bind(
+  checklistApplicationService
+);
+export const saveAnomaliesDDD = checklistApplicationService.saveAnomaliesDDD.bind(
+  checklistApplicationService
+);
+export const initChecklistDDD = checklistApplicationService.initChecklistDDD.bind(
+  checklistApplicationService
+);

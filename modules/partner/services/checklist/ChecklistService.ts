@@ -7,6 +7,39 @@ import { AnomalyService } from './anomalies/AnomalyService';
 import { ChecklistItemService } from './items/ChecklistItemService';
 import { ChecklistSubmissionData, ChecklistSubmissionResult, LoadChecklistOptions } from './types';
 
+// Import DDD services for gradual migration
+let loadChecklistWithDetailsDDD:
+  | ((
+      inspection_id?: string | null,
+      quote_id?: string | null,
+      partner_id?: string
+    ) => Promise<{
+      success: boolean;
+      data?: {
+        form: Record<string, unknown> | null;
+        evidences: Record<string, unknown>;
+        items?: unknown[];
+      };
+      error?: string;
+    }>)
+  | null = null;
+
+// Lazy load do serviço DDD para evitar problemas de inicialização circular
+const getDDDService = async () => {
+  if (!loadChecklistWithDetailsDDD) {
+    try {
+      const { loadChecklistWithDetailsDDD: dddService } = await import(
+        '../../checklist/application/real-services'
+      );
+      loadChecklistWithDetailsDDD = dddService;
+    } catch {
+      // Se não conseguir importar, manter null (usar apenas legacy)
+      loadChecklistWithDetailsDDD = null;
+    }
+  }
+  return loadChecklistWithDetailsDDD;
+};
+
 const logger = getLogger('services:checklist');
 
 /**
@@ -26,6 +59,9 @@ export class ChecklistService {
   private readonly evidenceService: EvidenceService;
   private readonly anomalyService: AnomalyService;
   private readonly itemService: ChecklistItemService;
+
+  // Feature flag para migração gradual para DDD
+  private readonly USE_DDD_CHECKLIST = process.env.USE_DDD_CHECKLIST === 'true';
 
   private constructor() {
     this.repository = new ChecklistRepository(this.supabase);
@@ -118,6 +154,34 @@ export class ChecklistService {
     quote_id?: string | null,
     partner_id?: string
   ) {
+    // Fase 4.2: Migração gradual para DDD
+    if (this.USE_DDD_CHECKLIST) {
+      logger.info('load_checklist_with_details_ddd', {
+        inspection_id: inspection_id?.slice(0, 8),
+        quote_id: quote_id?.slice(0, 8),
+        partner_id: partner_id?.slice(0, 8),
+      });
+
+      try {
+        const dddService = await getDDDService();
+        if (dddService) {
+          const result = await dddService(inspection_id, quote_id, partner_id);
+          if (result.success) {
+            return result;
+          }
+          // Fallback para implementação legacy em caso de erro
+          logger.warn('ddd_checklist_failed_fallback_to_legacy', {
+            error: result.error,
+          });
+        }
+      } catch (error) {
+        logger.error('ddd_checklist_error_fallback_to_legacy', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // Implementação legacy (mantida para compatibilidade)
     try {
       const options: LoadChecklistOptions = { inspection_id, quote_id };
 
