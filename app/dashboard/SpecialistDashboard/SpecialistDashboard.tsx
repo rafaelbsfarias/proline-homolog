@@ -104,7 +104,9 @@ const SpecialistDashboard = () => {
     totalPages,
   } = useClientVehicles(selectedClientId || undefined, filters);
 
-  const { statuses: availableStatuses } = useClientVehicleStatuses(selectedClientId || undefined);
+  const { statuses: availableStatuses, refetchStatuses } = useClientVehicleStatuses(
+    selectedClientId || undefined
+  );
 
   useEffect(() => {
     async function fetchUser() {
