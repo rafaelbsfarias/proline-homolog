@@ -1,45 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="20" failures="0" errors="0" time="0.010778971">
-    <testsuite name="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" timestamp="2025-09-15T16:49:43.211Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.010778971">
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve criar serviço com sucesso" time="0.003700937">
+<testsuites name="vitest tests" tests="4" failures="0" errors="0" time="0.065681287">
+    <testsuite name="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" timestamp="2025-10-15T02:32:46.366Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.065681287">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter os arquivos de infraestrutura criados" time="0.062320001">
         </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar ao tentar criar serviço com nome duplicado" time="0.000617598">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de repositório exportadas" time="0.000554166">
         </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar quando validação do serviço falha" time="0.000528514">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de serviço exportadas" time="0.000498274">
         </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve atualizar serviço com sucesso" time="0.000618829">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando serviço não existe" time="0.000191995">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando nome já existe para outro serviço do mesmo parceiro" time="0.000175518">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve desativar serviço com sucesso" time="0.000286656">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve falhar quando serviço já está desativado" time="0.000142012">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve reativar serviço com sucesso" time="0.000324396">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve falhar quando serviço já está ativo" time="0.000217222">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar serviço quando encontrado" time="0.000165152">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar null quando serviço não encontrado" time="0.000121974">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServicesByPartner &gt; deve retornar serviços paginados do parceiro" time="0.000378311">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome sem filtro de parceiro" time="0.000383631">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome com filtro de parceiro" time="0.000490102">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar true quando nome é único" time="0.000204311">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar false quando nome já existe" time="0.00012285">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve excluir serviço específico da validação quando informado" time="0.000184953">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateAllServices &gt; deve desativar todos os serviços do parceiro" time="0.00020932">
-        </testcase>
-        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; countActiveServices &gt; deve contar serviços ativos do parceiro" time="0.000251917">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Configuração da infraestrutura &gt; deve exportar a configuração completa" time="0.000317739">
         </testcase>
     </testsuite>
 </testsuites>

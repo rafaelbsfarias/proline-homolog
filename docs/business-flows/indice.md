@@ -2,19 +2,25 @@
 
 Este diretório contém a documentação dos principais fluxos de negócio do sistema ProLine Hub.
 
-## 📁 Arquivos Disponíveis
+## 📁 Estrutura Organizacional
 
-### 🔄 Fluxos Principais
-- [**diagramas_sequencia.md**](./diagramas_sequencia.md) - Diagramas de sequência dos fluxos de status dos veículos
-- [**fluxo_aprovacao.md**](./fluxo_aprovacao.md) - Fluxo de aprovação de coleta (caminho feliz)
-- [**fluxo_mudanca_data.md**](./fluxo_mudanca_data.md) - Fluxo de mudança de data da coleta
-- [**fluxo_orcamentario.md**](./fluxo_orcamentario.md) - **NOVO** - Fluxo completo de orçamento e execução de serviços
-- [**diagramas_tecnicos_orcamentario.md**](./diagramas_tecnicos_orcamentario.md) - **NOVO** - Diagramas técnicos detalhados do fluxo orçamentário
-- [**fluxo_rejeicao.md**](./fluxo_rejeicao.md) - Fluxo de rejeição de coleta
-- [**fluxo_status_veiculos.md**](./fluxo_status_veiculos.md) - Documentação completa dos estados e transições
-- [**resumo_fluxos_status.md**](./resumo_fluxos_status.md) - Resumo consolidado dos fluxos de status
+### [Collection Process](./collection-process/)
+Documentação relacionada aos fluxos de coleta de veículos, incluindo transições de status, agendamento e processos de aprovação.
 
-### 🐛 Análise de Bugs e Problemas
-- [**fluxo_multiplas_mudancas_data.md**](./fluxo_multiplas_mudancas_data.md) - **NOVO** - Análise detalhada do bug de múltiplas mudanças de data
-- [**diagramas_tecnicos_bug.md**](./diagramas_tecnicos_bug.md) - **NOVO** - Diagramas técnicos do comportamento interno durante o bug
-- [**solucao_bug_multiplas_mudancas.md**](./solucao_bug_multiplas_mudancas.md) - **NOVO** - Solução técnica proposta para correção do bug
+### [Partner Process](./partner-process/)
+Documentação relacionada às interações com parceiros, serviços, aprovações e funcionalidades do dashboard.
+
+### [Quote Process](./quote-process/)
+Documentação relacionada à criação de orçamentos, aprovação, solicitações de peças e ordens de serviço.
+
+## 📁 Arquivos Principais
+
+- [**Especificação Funcional**](./functional-spec.md) - Requisitos funcionais gerais do sistema
+- [**README**](./README.md) - Visão geral da estrutura de documentação
+
+## 📁 Subdiretórios de Análise
+
+### Collection Process Analysis
+Análise técnica detalhada dos fluxos de coleta de veículos, disponível em:
+- [collection-process/collection-process-analysis/](./collection-process/collection-process-analysis/)
+- [collection-process/collection-flow-diagrams/](./collection-process/collection-flow-diagrams/)

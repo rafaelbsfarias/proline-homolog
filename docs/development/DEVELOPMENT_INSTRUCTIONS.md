@@ -14,7 +14,7 @@ escalabilidade do código:
   manutenção, escalabilidade e reusabilidade. Cada módulo deve ter responsabilidades bem definidas e
   interfaces claras.
 - **Criação de Componentes:** Todos os componentes devem seguir o composition pattern. As páginas principais atuarão como "containers" que compõem múltiplos componentes filhos, cada um gerenciando uma parte específica do fluxo. Modais serão
-
+- **KISS** (Keep It Simple, Stupid):** Manter o código o mais simples possível, evitando complexidade desnecessária.
 
 
 - Esse é um projeto **REACT/TS** e deve seguir as melhores praticas para um desenvolvimento seguro
@@ -31,3 +31,5 @@ para trás
 - toda migration deve ser criada com **supabase migration new**
 
 - Nunca trabalhar diretamente na main, sempre criar uma branch nova, exceto se expressamente autorizado.
+
+-Nunca commitar usando a flag --no-verify
