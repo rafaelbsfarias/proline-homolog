@@ -54,30 +54,35 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
   }
 
   // 2) Parking total today = sum(client.parqueamento * parked_vehicle_count_for_client)
-  // Consider vehicles "parked" if NOT in pre-collection statuses
+  // Consider parked vehicles as those with a service_order in category 'patio_atacado' and status 'in_progress'
   let parking_total_today = 0;
   try {
-    const preCollectionStatuses = [
-      STATUS.AGUARDANDO_APROVACAO,
-      STATUS.SOLICITACAO_MUDANCA_DATA,
-      STATUS.APROVACAO_NOVA_DATA,
-      STATUS.AGUARDANDO_COLETA,
-      STATUS.PONTO_COLETA_SELECIONADO,
-    ];
-
-    const { data: vehiclesRows } = await admin
-      .from('vehicles')
-      .select('client_id, status')
-      .not('client_id', 'is', null);
+    // Query service_orders joined with service_categories to detect 'patio_atacado'
+    const { data: soRows, error: soErr } = await admin
+      .from('service_orders')
+      .select(
+        'client_id, vehicle_id, status, category_id, service_categories:category_id ( key, name )'
+      )
+      .eq('status', 'in_progress');
+    if (soErr) throw soErr;
 
     const countsByClient = new Map<string, number>();
-    (vehiclesRows || []).forEach((r: any) => {
-      const st = String(r?.status || '').trim();
-      const isPre = preCollectionStatuses.includes(st as any);
-      if (isPre) return;
+    const seenVehicleByClient = new Map<string, Set<string>>();
+    (soRows || []).forEach((r: any) => {
+      const cat = r?.service_categories;
+      const key = String(cat?.key || '').toLowerCase();
+      const name = String(cat?.name || '').toLowerCase();
+      const isPatio = key === 'patio_atacado' || name.includes('pátio') || name.includes('patio');
+      if (!isPatio) return;
       const cid = String(r?.client_id || '');
-      if (!cid) return;
-      countsByClient.set(cid, (countsByClient.get(cid) || 0) + 1);
+      const vid = String(r?.vehicle_id || '');
+      if (!cid || !vid) return;
+      if (!seenVehicleByClient.has(cid)) seenVehicleByClient.set(cid, new Set());
+      const set = seenVehicleByClient.get(cid)!;
+      if (!set.has(vid)) {
+        set.add(vid);
+        countsByClient.set(cid, (countsByClient.get(cid) || 0) + 1);
+      }
     });
 
     const clientIds = Array.from(countsByClient.keys());

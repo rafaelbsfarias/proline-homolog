@@ -57,152 +57,182 @@ sequenceDiagram
 
 ## 🎨 Interface do Parceiro
 
-### 1. Dashboard - Contador de Revisões Pendentes
+### 1. Dashboard - Card de Solicitações Pendentes
 
-**Componente**: `PartnerTimeRevisionsCounter.tsx`
+**Componente**: `PendingTimeRevisionsCard.tsx`
 
 ```tsx
-// Localização: /modules/partner/components/PartnerTimeRevisionsCounter.tsx
+// Localização: /modules/partner/components/PendingTimeRevisionsCard.tsx
+
+// Features:
+// - Card integrado no dashboard (não é uma página separada)
+// - Lista compacta de orçamentos com revisão solicitada
+// - Botões de ação diretos em cada item
+// - Auto-refresh automático quando dados mudam
+```
+
+**Visual no Dashboard**:
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Dashboard do Parceiro                                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  📊 Resumo                                                          │
+│  ┌──────────────┬──────────────┬──────────────┐                   │
+│  │ Pendentes: 5 │ Aprovados:12 │ Rejeitados:2 │                   │
+│  └──────────────┴──────────────┴──────────────┘                   │
+│                                                                     │
+│  ⏱️  Solicitações de Ajuste de Prazo (2) 🔴  ← NOVO               │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ 🚗 ABC-1234 | Cliente Teste                                 │  │
+│  │ Orçamento #12345 | Solicitado: 15/10 14:30                 │  │
+│  │ Especialista: João Silva | 3 itens para revisar            │  │
+│  │                                                              │  │
+│  │ [Revisar Prazos] [Ver Detalhes]                            │  │
+│  ├─────────────────────────────────────────────────────────────┤  │
+│  │ � XYZ-5678 | Cliente ABC Ltda                             │  │
+│  │ Orçamento #12346 | Solicitado: 14/10 10:15                 │  │
+│  │ Especialista: Maria Santos | 2 itens para revisar          │  │
+│  │                                                              │  │
+│  │ [Revisar Prazos] [Ver Detalhes]                            │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  📋 Outros Orçamentos Pendentes                                    │
+│  ┌─────────────────────────────────────────────────────────────┐  │
+│  │ ...                                                          │  │
+│  └─────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Fluxo de Interação**:
+1. Usuário vê o card no dashboard
+2. Clica em **"Revisar Prazos"** → Abre modal de edição
+3. Ou clica em **"Ver Detalhes"** → Navega para página de detalhes do orçamento
+
+---
+
+### 2. Modal de Revisão de Prazos
+
+**Componente**: `TimeRevisionModal.tsx`
+
+```tsx
+// Localização: /modules/partner/components/TimeRevisionModal/TimeRevisionModal.tsx
 
 interface Props {
-  onClick: () => void;
+  isOpen: boolean;
+  onClose: () => void;
+  quoteId: string;
+  onSuccess: () => void;
 }
 
 // Features:
-// - Badge com número de revisões pendentes
-// - Cor de alerta (vermelho/amarelo)
-// - Click navega para /dashboard/partner/time-revisions
-// - Auto-refresh a cada 30 segundos
+// - Modal fullscreen ou large
+// - 3 seções: Info, Solicitação, Edição
+// - Botões de salvar/cancelar fixos no rodapé
+// - Validação inline de campos
 ```
 
-**Visual**:
+**Layout do Modal**:
+
 ```
-┌─────────────────────────────────────┐
-│  Dashboard do Parceiro              │
-├─────────────────────────────────────┤
-│                                     │
-│  📋 Orçamentos Pendentes: 5         │
-│  ⏱️  Revisões de Prazo: 2 🔴        │  ← NOVO
-│  ✅ Aprovados: 12                   │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│  Revisar Prazos - Orçamento #12345                           [X]     │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ℹ️ Informações do Orçamento                                        │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ Cliente: Cliente Teste 12345                                   │ │
+│  │ Veículo: Toyota Corolla - ABC-1234                            │ │
+│  │ Data de Envio Original: 10/10/2025                            │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  📝 Solicitação do Especialista                                     │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ 👤 Especialista: João Silva                                    │ │
+│  │ 📅 Solicitado em: 15/10/2025 às 14:30                        │ │
+│  │                                                                │ │
+│  │ 💬 Comentário:                                                 │ │
+│  │ "Os prazos estão muito curtos para a complexidade dos         │ │
+│  │  serviços solicitados. Por favor, revisar considerando        │ │
+│  │  possíveis imprevistos."                                      │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  ✏️ Editar Prazos dos Itens                                         │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │                                                                │ │
+│  │ 1. Troca de óleo e filtros                                    │ │
+│  │ ┌──────────────────────────────────────────────────────────┐  │ │
+│  │ │ Prazo Atual: 5 dias                                       │  │ │
+│  │ │ 💡 Sugestão: 7 dias                                       │  │ │
+│  │ │ 📝 Motivo: "Considerar tempo de espera de peças"         │  │ │
+│  │ │                                                            │  │ │
+│  │ │ Novo Prazo: [7] dias  [Aplicar Sugestão]                 │  │ │
+│  │ └──────────────────────────────────────────────────────────┘  │ │
+│  │                                                                │ │
+│  │ 2. Reparo de suspensão                                        │ │
+│  │ ┌──────────────────────────────────────────────────────────┐  │ │
+│  │ │ Prazo Atual: 10 dias                                      │  │ │
+│  │ │ 💡 Sugestão: 15 dias                                      │  │ │
+│  │ │ � Motivo: "Serviço complexo, pode haver imprevistos"    │  │ │
+│  │ │                                                            │  │ │
+│  │ │ Novo Prazo: [10] dias  [Aplicar Sugestão]                │  │ │
+│  │ └──────────────────────────────────────────────────────────┘  │ │
+│  │                                                                │ │
+│  │ 3. Alinhamento e balanceamento                                │ │
+│  │ ┌──────────────────────────────────────────────────────────┐  │ │
+│  │ │ Prazo Atual: 2 dias                                       │  │ │
+│  │ │ ℹ️ Sem sugestão do especialista                           │  │ │
+│  │ │                                                            │  │ │
+│  │ │ Novo Prazo: [2] dias                                      │  │ │
+│  │ └──────────────────────────────────────────────────────────┘  │ │
+│  │                                                                │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+│  💬 Comentário da Revisão (opcional)                                │
+│  ┌────────────────────────────────────────────────────────────────┐ │
+│  │ Explique as alterações feitas nos prazos...                   │ │
+│  │                                                                │ │
+│  └────────────────────────────────────────────────────────────────┘ │
+│                                                                      │
+├──────────────────────────────────────────────────────────────────────┤
+│                                    [Cancelar] [Salvar e Reenviar]   │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 2. Página de Lista de Revisões
+### 3. Página de Detalhes do Orçamento (Opcional)
 
-**Rota**: `/dashboard/partner/time-revisions`
+**Rota**: `/dashboard/partner/quotes/[quoteId]` (página existente)
 
-**Componente**: `PartnerTimeRevisionsPage.tsx`
+**Componente**: Página já existente, mas com seção adicional
 
-```tsx
-// Localização: /app/dashboard/partner/time-revisions/page.tsx
-
-// Features:
-// - Lista de orçamentos com revisão solicitada
-// - Filtros: Data, Cliente, Status
-// - Ordenação: Mais antigo primeiro
-// - Cards com informações principais
-```
+**Features**:
+- Exibe timeline de revisões (quem solicitou, quando, o que foi alterado)
+- Permite visualizar histórico completo
+- Botão para abrir modal de revisão se houver solicitação pendente
 
 **Visual**:
-```
-┌────────────────────────────────────────────────────────┐
-│  ← Voltar                                              │
-│                                                        │
-│  Revisões de Prazo Solicitadas                        │
-│                                                        │
-│  ┌──────────────────────────────────────────────┐    │
-│  │ 🚗 ABC-1234 | Cliente Teste                  │    │
-│  │ Orçamento #12345                              │    │
-│  │                                                │    │
-│  │ 📝 Solicitado por: Especialista João         │    │
-│  │ 📅 Data: 15/10/2025 14:30                    │    │
-│  │ ⏱️  Itens com revisão: 3                      │    │
-│  │                                                │    │
-│  │ [Ver Detalhes e Revisar Prazos]              │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                        │
-│  ┌──────────────────────────────────────────────┐    │
-│  │ 🚗 XYZ-5678 | Cliente ABC Ltda               │    │
-│  │ ...                                            │    │
-│  └──────────────────────────────────────────────┘    │
-│                                                        │
-└────────────────────────────────────────────────────────┘
-```
-
----
-
-### 3. Página de Revisão de Prazos
-
-**Rota**: `/dashboard/partner/time-revisions/[quoteId]`
-
-**Componente**: `PartnerTimeRevisionDetailPage.tsx`
-
-**Layout em 3 Seções**:
-
-#### Seção 1: Informações do Orçamento
-```
-┌────────────────────────────────────────────────┐
-│  Informações do Orçamento                      │
-├────────────────────────────────────────────────┤
-│  Cliente: Cliente Teste 12345                  │
-│  Veículo: Toyota Corolla - ABC-1234            │
-│  Orçamento: #12345                             │
-│  Data de Envio: 10/10/2025                     │
-└────────────────────────────────────────────────┘
-```
-
-#### Seção 2: Solicitação do Especialista
-```
-┌────────────────────────────────────────────────┐
-│  Solicitação de Revisão                        │
-├────────────────────────────────────────────────┤
-│  👤 Especialista: João Silva                   │
-│  📅 Data: 15/10/2025 às 14:30                 │
-│                                                │
-│  💬 Comentário Geral:                          │
-│  "Os prazos estão muito curtos para a         │
-│   complexidade dos serviços solicitados."     │
-│                                                │
-└────────────────────────────────────────────────┘
-```
-
-#### Seção 3: Itens do Orçamento (Editável)
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│  Itens do Orçamento - Edição de Prazos                        │
+│  Detalhes do Orçamento #12345                                  │
 ├────────────────────────────────────────────────────────────────┤
+│  ... (conteúdo existente) ...                                  │
 │                                                                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ 1. Troca de óleo e filtros                           │    │
-│  │                                                        │    │
-│  │ Prazo Atual: [5] dias                                │    │
-│  │                                                        │    │
-│  │ 💡 Sugestão do Especialista: 7 dias                  │    │
-│  │ 📝 Motivo: "Considerar tempo de espera de peças"     │    │
-│  │                                                        │    │
-│  │ Novo Prazo: [7] dias  [Aplicar Sugestão]            │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ 2. Reparo de suspensão                                │    │
-│  │                                                        │    │
-│  │ Prazo Atual: [10] dias                               │    │
-│  │                                                        │    │
-│  │ 💡 Sugestão do Especialista: 15 dias                 │    │
-│  │ 📝 Motivo: "Serviço complexo, pode haver imprevistos"│    │
-│  │                                                        │    │
-│  │ Novo Prazo: [10] dias  [Aplicar Sugestão]           │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  💬 Comentário da Revisão (opcional):                         │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │ Explique as alterações feitas...                      │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                                │
-│  [Cancelar]  [Salvar e Reenviar para Admin]                  │
+│  ⏱️ Histórico de Revisões de Prazo                             │
+│  ┌────────────────────────────────────────────────────────┐   │
+│  │ 📅 15/10/2025 14:30 - Revisão Solicitada              │   │
+│  │ 👤 Especialista João Silva                             │   │
+│  │ 💬 "Os prazos estão muito curtos..."                   │   │
+│  │ • Item 1: 5 dias → sugestão 7 dias                    │   │
+│  │ • Item 2: 10 dias → sugestão 15 dias                  │   │
+│  │                                                         │   │
+│  │ [Revisar Prazos Agora]                                 │   │
+│  ├────────────────────────────────────────────────────────┤   │
+│  │ 📅 10/10/2025 09:00 - Orçamento Enviado               │   │
+│  │ � Parceiro                                            │   │
+│  └────────────────────────────────────────────────────────┘   │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -274,7 +304,7 @@ interface Props {
 
 #### `GET /api/partner/quotes/pending-time-revisions`
 **Status**: 🆕 A criar
-**Função**: Listar orçamentos com revisão de prazo solicitada
+**Função**: Listar orçamentos com revisão de prazo solicitada (para o card no dashboard)
 
 **Response**:
 ```json
@@ -283,11 +313,13 @@ interface Props {
   "data": [
     {
       "quote_id": "uuid",
+      "quote_number": "12345",
       "client_name": "Cliente Teste",
       "vehicle_plate": "ABC-1234",
       "vehicle_model": "Toyota Corolla",
       "requested_at": "2025-10-15T14:30:00Z",
       "specialist_name": "João Silva",
+      "specialist_comments": "Os prazos estão muito curtos...",
       "items_count": 5,
       "revision_items_count": 3
     }
@@ -321,15 +353,63 @@ GROUP BY q.id, p.full_name, v.plate, v.model, qtr.created_at, sp.full_name
 ORDER BY qtr.created_at ASC;
 ```
 
-#### `GET /api/partner/quotes/pending-time-revisions/count`
+#### `GET /api/partner/quotes/[quoteId]/revision-details`
 **Status**: 🆕 A criar
-**Função**: Contar orçamentos com revisão pendente (para o contador no dashboard)
+**Função**: Buscar detalhes completos para o modal de revisão (quote + items + revision)
 
 **Response**:
 ```json
 {
   "success": true,
-  "count": 3
+  "data": {
+    "quote": {
+      "id": "uuid",
+      "quote_number": "12345",
+      "client_name": "Cliente Teste",
+      "vehicle_plate": "ABC-1234",
+      "vehicle_model": "Toyota Corolla",
+      "created_at": "2025-10-10T09:00:00Z"
+    },
+    "revision": {
+      "specialist_name": "João Silva",
+      "requested_at": "2025-10-15T14:30:00Z",
+      "comments": "Os prazos estão muito curtos...",
+      "revision_requests": {
+        "item-uuid-1": {
+          "suggested_days": 7,
+          "reason": "Considerar tempo de espera de peças"
+        },
+        "item-uuid-2": {
+          "suggested_days": 15,
+          "reason": "Serviço complexo"
+        }
+      }
+    },
+    "items": [
+      {
+        "id": "item-uuid-1",
+        "description": "Troca de óleo e filtros",
+        "estimated_days": 5,
+        "has_suggestion": true,
+        "suggested_days": 7,
+        "suggestion_reason": "Considerar tempo de espera de peças"
+      },
+      {
+        "id": "item-uuid-2",
+        "description": "Reparo de suspensão",
+        "estimated_days": 10,
+        "has_suggestion": true,
+        "suggested_days": 15,
+        "suggestion_reason": "Serviço complexo"
+      },
+      {
+        "id": "item-uuid-3",
+        "description": "Alinhamento e balanceamento",
+        "estimated_days": 2,
+        "has_suggestion": false
+      }
+    ]
+  }
 }
 ```
 
@@ -457,21 +537,46 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 
 ### Frontend - Componentes
 
-- [ ] Criar `PartnerTimeRevisionsCounter.tsx`
-- [ ] Criar página `/app/dashboard/partner/time-revisions/page.tsx`
-- [ ] Criar página `/app/dashboard/partner/time-revisions/[quoteId]/page.tsx`
-- [ ] Criar componente `TimeRevisionCard.tsx` (card da lista)
-- [ ] Criar componente `TimeRevisionItemEditor.tsx` (editor de item)
+- [ ] Criar `PendingTimeRevisionsCard.tsx` (card no dashboard)
+  - [ ] Lista compacta de orçamentos pendentes
+  - [ ] Botões de ação em cada item
+  - [ ] Auto-refresh quando dados mudam
+- [ ] Criar `TimeRevisionModal.tsx` (modal de edição)
+  - [ ] Seção de informações do orçamento
+  - [ ] Seção de solicitação do especialista
+  - [ ] Seção de edição de prazos
+  - [ ] Botão "Aplicar Sugestão" por item
+  - [ ] Validação de formulário
+- [ ] Criar `TimeRevisionItemEditor.tsx` (editor individual de item)
+  - [ ] Exibir prazo atual
+  - [ ] Exibir sugestão (se houver)
+  - [ ] Input para novo prazo
+  - [ ] Botão para aplicar sugestão
 - [ ] Criar hook `usePartnerTimeRevisions.ts`
+  - [ ] Fetch de orçamentos pendentes
+  - [ ] Fetch de detalhes de revisão
+  - [ ] Submit de prazos atualizados
+- [ ] Criar `TimeRevisionHistorySection.tsx` (opcional)
+  - [ ] Timeline de revisões
+  - [ ] Integrar na página de detalhes do orçamento
 
 ### Frontend - Integração
 
-- [ ] Integrar contador no `PartnerDashboard`
-- [ ] Adicionar rota no router
-- [ ] Adicionar link no menu lateral (se existir)
+- [ ] Integrar `PendingTimeRevisionsCard` no `PartnerDashboard`
+  - [ ] Posicionar no topo, acima de "Orçamentos Pendentes"
+  - [ ] Ocultar quando não há revisões pendentes
 - [ ] Adicionar validações de formulário
+  - [ ] Prazo deve ser número positivo
+  - [ ] Alertar se nenhum prazo foi alterado
 - [ ] Adicionar loading states
+  - [ ] Loading ao carregar lista
+  - [ ] Loading ao salvar alterações
 - [ ] Adicionar error handling
+  - [ ] Toasts de erro/sucesso
+  - [ ] Mensagens de validação
+- [ ] Adicionar confirmação antes de salvar
+  - [ ] Modal "Tem certeza que deseja salvar?"
+  - [ ] Resumo das alterações
 
 ### Testes E2E
 
@@ -492,18 +597,31 @@ E perguntar "Deseja realmente reenviar sem alterações?"
 ## 🚀 Plano de Rollout
 
 ### Fase 1: MVP (1-2 dias)
-- Backend: APIs básicas
-- Frontend: Contador + Lista simples
-- Edição inline de prazos
+**Backend**:
+- [ ] API `GET /api/partner/quotes/pending-time-revisions`
+- [ ] API `GET /api/partner/quotes/[quoteId]/revision-details`
+- [ ] Atualizar API `PUT /api/partner/quotes/[quoteId]/update-times`
+
+**Frontend**:
+- [ ] Componente `PendingTimeRevisionsCard` no dashboard
+- [ ] Modal `TimeRevisionModal` básico
+- [ ] Edição de prazos com botão "Aplicar Sugestão"
 
 ### Fase 2: Melhorias (1 dia)
-- Melhorias de UX
-- Validações robustas
-- Feedback visual melhor
+**UX**:
+- [ ] Loading states e animações
+- [ ] Toasts de feedback
+- [ ] Confirmação antes de salvar
+- [ ] Validações robustas
+
+**Features Extras**:
+- [ ] Histórico de revisões na página de detalhes
+- [ ] Filtros e busca no card
 
 ### Fase 3: Notificações (Futuro)
-- Sistema de notificações por email
-- Push notifications
+- [ ] Sistema de notificações por email
+- [ ] Push notifications
+- [ ] Alertas no menu lateral
 
 ---
 

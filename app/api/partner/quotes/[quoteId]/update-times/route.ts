@@ -4,9 +4,10 @@ import { SupabaseService } from '@/modules/common/services/SupabaseService';
 
 interface UpdateTimesRequest {
   items: Array<{
-    id: string;
+    item_id: string;
     estimated_days: number;
   }>;
+  comments?: string;
 }
 
 async function updateQuoteTimesHandler(
@@ -53,13 +54,22 @@ async function updateQuoteTimesHandler(
       );
     }
 
+    // Validar prazos
+    const invalidItems = body.items.filter(item => item.estimated_days <= 0);
+    if (invalidItems.length > 0) {
+      return NextResponse.json(
+        { success: false, error: 'Todos os prazos devem ser números positivos' },
+        { status: 400 }
+      );
+    }
+
     // Atualizar os prazos dos itens
     const updatePromises = body.items.map(item =>
       supabase
         .from('quote_items')
         .update({ estimated_days: item.estimated_days })
-        .eq('id', item.id)
-        .eq('budget_id', quoteId)
+        .eq('id', item.item_id)
+        .eq('quote_id', quoteId)
     );
 
     const results = await Promise.all(updatePromises);
@@ -73,10 +83,26 @@ async function updateQuoteTimesHandler(
       );
     }
 
-    // Atualizar o status do orçamento de volta para approved (para que possa ser aprovado novamente pelo admin)
+    // Criar registro de revisão do parceiro
+    const { error: reviewError } = await supabase.from('quote_time_reviews').insert({
+      quote_id: quoteId,
+      specialist_id: null,
+      action: 'partner_updated',
+      comments: body.comments || 'Prazos atualizados pelo parceiro',
+      created_by: req.user.id,
+    });
+
+    if (reviewError) {
+      return NextResponse.json(
+        { success: false, error: 'Erro ao registrar revisão' },
+        { status: 500 }
+      );
+    }
+
+    // Atualizar o status do orçamento de volta para admin_review
     const { error: sError } = await supabase
       .from('quotes')
-      .update({ status: 'approved' })
+      .update({ status: 'admin_review' })
       .eq('id', quoteId);
 
     if (sError) {
@@ -88,10 +114,9 @@ async function updateQuoteTimesHandler(
 
     return NextResponse.json({
       success: true,
-      message: 'Prazos atualizados com sucesso',
+      message: 'Prazos atualizados com sucesso. Orçamento reenviado para revisão do admin.',
     });
-  } catch (error) {
-    console.error('Erro interno:', error);
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Erro interno do servidor' },
       { status: 500 }
