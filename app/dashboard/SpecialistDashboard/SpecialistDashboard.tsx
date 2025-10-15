@@ -11,6 +11,7 @@ import { useClientVehicleStatuses } from '@/modules/specialist/hooks/useClientVe
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleChecklistModal from '@/modules/specialist/components/VehicleChecklistModal/VehicleChecklistModal';
 import SpecialistRequestedPartsCounter from '@/modules/specialist/components/SpecialistRequestedPartsCounter';
+import SpecialistTimeApprovalsCounter from '@/modules/specialist/components/SpecialistTimeApprovalsCounter';
 import styles from './SpecialistDashboard.module.css';
 
 const SpecialistDashboard = () => {
@@ -138,9 +139,10 @@ const SpecialistDashboard = () => {
           <h1 className={styles.title}>Painel do Especialista</h1>
           <p className={styles.welcomeMessage}>Bem-vindo, {userName}!</p>
 
-          {/* Contador de peças solicitadas */}
-          <div className={styles.partsCounterContainer}>
+          {/* Contadores */}
+          <div className={styles.countersContainer}>
             <SpecialistRequestedPartsCounter />
+            <SpecialistTimeApprovalsCounter />
           </div>
 
           <div className={styles.contentWrapper}>

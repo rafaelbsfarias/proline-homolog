@@ -10,6 +10,7 @@ import {
   PartnersCard,
   PendingChecklistAnalysisCounter,
   RequestedPartsCounter, // Add the new component
+  GeneralFinancialSummaryButton,
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
@@ -116,6 +117,7 @@ const AdminDashboard: React.FC = () => {
             <VehiclesPendingApprovalCounter onLoadingChange={setVehiclesCounterLoading} />
             <UsersCounter onLoadingChange={setUsersCounterLoading} />
             <VehiclesCounter onLoadingChange={setVehiclesCounterLoading} />
+            <GeneralFinancialSummaryButton />
           </div>
         </div>
       </div>

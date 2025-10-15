@@ -1,7 +1,8 @@
 /* Container dos cards de contadores */
 .countersRow {
   display: flex;
-  gap: 18px;
+  gap: 18px; /* horizontal and vertical gap baseline */
+  row-gap: 24px; /* increase vertical spacing between rows */
   margin: 32px auto 0 auto;
   align-items: flex-start;
   flex-wrap: wrap;
@@ -23,7 +24,7 @@
   font-weight: 600;
   color: #1a1a1a;
   padding: 0.5rem 1.2rem;
-  margin: 0;
+  margin: 15px;
   margin-left: 16px;
   outline: none;
   min-width: 120px;

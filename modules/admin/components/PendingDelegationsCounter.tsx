@@ -48,7 +48,7 @@ const PendingDelegationsCounter: React.FC<PendingDelegationsCounterProps> = ({
   return (
     <span
       className={styles.counterCard}
-      style={{ cursor: 'pointer', backgroundColor: '#FFC107' }} // Highlight color
+      style={{ cursor: 'pointer' }}
       title="Ver delegações de serviço pendentes"
       onClick={() => router.push('/admin/service-delegation')}
     >
