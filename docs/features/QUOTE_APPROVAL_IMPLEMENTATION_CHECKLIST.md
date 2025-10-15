@@ -506,14 +506,14 @@ Redesenhar o fluxo de aprovação de orçamentos para que as 3 aprovações (Adm
 | Fase | Tarefas | Concluídas | Progresso | Estimativa |
 |------|---------|------------|-----------|------------|
 | 1. Migrations | 6 | 6 | ✅ 100% | 3h |
-| 2. Backend - Admin | 3 | 0 | ⏳ 0% | 4h |
-| 3. Backend - Especialista | 3 | 0 | ⏳ 0% | 2.5h |
-| 4. Backend - Cliente | 3 | 0 | ⏳ 0% | 5h |
-| 5. Backend - Parceiro | 2 | 0 | ⏳ 0% | 2.5h |
+| 2. Backend - Admin | 3 | 3 | ✅ 100% | 4h |
+| 3. Backend - Especialista | 3 | 3 | ✅ 100% | 2.5h |
+| 4. Backend - Cliente | 3 | 3 | ✅ 100% | 5h |
+| 5. Backend - Parceiro | 2 | 2 | ✅ 100% | 2.5h |
 | 6. Testes E2E | 4 | 0 | ⏳ 0% | 3h |
 | 7. Migração de Dados | 1 | 0 | ⏳ 0% | 2h |
 | 8. Documentação | 2 | 0 | ⏳ 0% | 1.5h |
-| **TOTAL** | **24** | **6** | **🚀 25%** | **23.5h** |
+| **TOTAL** | **24** | **17** | **🚀 71%** | **23.5h** |
 
 ### Timeline Estimada
 
