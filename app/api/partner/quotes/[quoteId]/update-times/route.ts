@@ -94,7 +94,12 @@ async function updateQuoteTimesHandler(
 
     if (reviewError) {
       return NextResponse.json(
-        { success: false, error: 'Erro ao registrar revisão' },
+        {
+          success: false,
+          error: 'Erro ao registrar revisão',
+          details: reviewError.message,
+          code: reviewError.code,
+        },
         { status: 500 }
       );
     }
