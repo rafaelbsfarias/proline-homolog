@@ -51,181 +51,182 @@ async function getCategoriesHandler(req: AuthenticatedRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // Buscar parceiros e categorias a partir de quotes + service_orders
-    // e checar se cada parceiro possui anomalias no contexto (inspection opcional)
-    const { data: quotes, error: quotesError } = await supabase
-      .from('quotes')
+    // Buscar ANOMALIAS de forma resiliente (sem depender de joins por nome de FK)
+    const anomaliesResult = await supabase
+      .from('vehicle_anomalies')
       .select(
         `
         id,
+        vehicle_id,
+        inspection_id,
+        quote_id,
         partner_id,
-        partners ( id, name ),
-        service_orders!inner (
-          vehicle_id,
-          service_categories!inner ( name )
-        )
+        description,
+        created_at
       `
       )
-      .eq('service_orders.vehicle_id', validVehicleId);
+      .eq('vehicle_id', validVehicleId);
 
-    if (quotesError) {
-      logger.error('fetch_quotes_error', { error: quotesError.message });
+    // Buscar CHECKLISTS estruturados de forma resiliente
+    const checklistsResult = await supabase
+      .from('mechanics_checklist')
+      .select(
+        `
+        id,
+        vehicle_id,
+        inspection_id,
+        quote_id,
+        partner_id,
+        status,
+        created_at
+      `
+      )
+      .eq('vehicle_id', validVehicleId)
+      .eq('status', 'submitted');
+
+    if (anomaliesResult.error) {
+      logger.error('fetch_anomalies_error', {
+        error: anomaliesResult.error.message,
+        code: anomaliesResult.error.code,
+      });
       return NextResponse.json(
-        { success: false, error: 'Erro ao buscar parceiros' },
+        { success: false, error: 'Erro ao buscar anomalias' },
         { status: 500 }
       );
     }
 
-    type QuoteRow = {
-      partner_id: string;
-      partners: { id: string; name: string } | { id: string; name: string }[] | null;
-      service_orders:
-        | {
-            service_categories: { name: string } | { name: string }[] | null;
-          }
-        | { service_categories: { name: string } | { name: string }[] | null }[]
-        | null;
-    };
-
-    const partnerCategoryPairs: { partner_id: string; partner_name: string; category: string }[] =
-      [];
-    for (const q of (quotes as QuoteRow[]) || []) {
-      const partner = Array.isArray(q.partners) ? q.partners[0] : q.partners;
-      const so = Array.isArray(q.service_orders) ? q.service_orders[0] : q.service_orders;
-      const cat = so?.service_categories;
-      const categoryName = Array.isArray(cat) ? cat[0]?.name : cat?.name;
-      if (q.partner_id && partner && categoryName) {
-        partnerCategoryPairs.push({
-          partner_id: q.partner_id,
-          partner_name: partner.name || 'Parceiro',
-          category: categoryName,
-        });
-      }
+    if (checklistsResult.error) {
+      logger.error('fetch_checklists_error', {
+        error: checklistsResult.error.message,
+        code: checklistsResult.error.code,
+      });
+      return NextResponse.json(
+        { success: false, error: 'Erro ao buscar checklists' },
+        { status: 500 }
+      );
     }
 
-    // Remover duplicados (mesmo parceiro+categoria)
-    const seen = new Set<string>();
-    const uniquePairs = partnerCategoryPairs.filter(p => {
-      const key = `${p.partner_id}-${p.category}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    logger.info('entries_fetched', {
+      anomalies_count: anomaliesResult.data?.length || 0,
+      checklists_count: checklistsResult.data?.length || 0,
+      vehicle_id: validVehicleId,
     });
 
-    // Para cada par, checar se existem anomalias do parceiro (define has_anomalies)
-    const categories: {
+    // Enriquecer anomalias com profile.full_name e partners.category
+    const entries: Array<{
+      id: string;
       category: string;
       partner_id: string;
       partner_name: string;
+      type: 'mechanics_checklist' | 'vehicle_anomalies';
       has_anomalies: boolean;
-    }[] = [];
-    for (const p of uniquePairs) {
-      const anomaliesQuery = supabase
-        .from('vehicle_anomalies')
-        .select('id', { count: 'exact', head: true })
-        .eq('vehicle_id', validVehicleId)
-        .eq('partner_id', p.partner_id);
-      // Não filtrar por inspection_id para abarcar anomalias vinculadas por quote_id
-      const { count } = await anomaliesQuery;
-      categories.push({
-        category: p.category,
-        partner_id: p.partner_id,
-        partner_name: p.partner_name,
-        has_anomalies: (count || 0) > 0,
+      created_at: string;
+      status: string;
+    }> = [];
+    const anomalyRows = anomaliesResult.data || [];
+    const anomalyPartnerIds = Array.from(
+      new Set((anomalyRows as Array<{ partner_id: string }>).map(a => a.partner_id).filter(Boolean))
+    );
+
+    const profilesById: Record<string, { id: string; full_name: string | null }> = {};
+    const partnersByProfileId: Record<string, { profile_id: string; category: string | null }> = {};
+
+    if (anomalyPartnerIds.length > 0) {
+      const [{ data: profiles }, { data: partnersData }] = await Promise.all([
+        supabase.from('profiles').select('id, full_name').in('id', anomalyPartnerIds),
+        supabase
+          .from('partners')
+          .select('profile_id, category')
+          .in('profile_id', anomalyPartnerIds),
+      ]);
+
+      (profiles || []).forEach(p => {
+        profilesById[p.id] = { id: p.id, full_name: p.full_name ?? null };
+      });
+      (partnersData || []).forEach(p => {
+        partnersByProfileId[p.profile_id] = {
+          profile_id: p.profile_id,
+          category: p.category ?? null,
+        };
       });
     }
 
-    // Complementar: incluir parceiros com anomalias sem quote/service_order
-    const anomaliesPartnersQuery = supabase
-      .from('vehicle_anomalies')
-      .select(
-        `
-        partner_id,
-        profiles!vehicle_anomalies_partner_id_fkey ( id, full_name )
-      `
-      )
-      .eq('vehicle_id', validVehicleId);
-    // Não filtrar por inspection_id aqui; alguns registros usam apenas quote_id
-    const { data: anomalyRows, error: anomalyPartnersError } = await anomaliesPartnersQuery;
-    if (anomalyPartnersError) {
-      logger.warn('anomaly_partners_fetch_error', { error: anomalyPartnersError.message });
-    } else {
-      const existingKeys = new Set(categories.map(c => `${c.partner_id}-${c.category}`));
-      const partnerIds = Array.from(
-        new Set((anomalyRows || []).map((r: any) => r.partner_id).filter(Boolean))
-      ) as string[];
+    for (const anomaly of anomalyRows) {
+      const profile = profilesById[anomaly.partner_id];
+      const partnerMeta = partnersByProfileId[anomaly.partner_id];
+      if (!anomaly.partner_id || !profile) continue;
 
-      if (partnerIds.length > 0) {
-        const { data: partnersRows } = await supabase
-          .from('partners')
-          .select('id, name, partner_type')
-          .in('id', partnerIds);
+      const categoryName = partnerMeta?.category || 'Anomalias';
 
-        const typeToCategory = (t?: string) => {
-          switch (t) {
-            case 'mechanic':
-              return 'Mecânica';
-            case 'bodyshop':
-              return 'Funilaria/Pintura';
-            case 'tire_shop':
-              return 'Pneus';
-            case 'car_wash':
-              return 'Lavagem';
-            case 'store':
-              return 'Loja';
-            case 'yard_wholesale':
-              return 'Pátio Atacado';
-            default:
-              return 'Checklist do Parceiro';
-          }
-        };
-
-        const partnerMeta = new Map<string, { name?: string; type?: string }>();
-        (partnersRows || []).forEach((p: any) =>
-          partnerMeta.set(p.id, { name: p.name, type: p.partner_type })
-        );
-
-        // Nome do perfil (fallback)
-        const profileName = new Map<string, string>();
-        (anomalyRows || []).forEach((r: any) => {
-          const prof = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-          if (r.partner_id && prof?.full_name) profileName.set(r.partner_id, prof.full_name);
-        });
-
-        // Criar entradas faltantes
-        for (const pid of partnerIds) {
-          const meta = partnerMeta.get(pid);
-          const categoryName = typeToCategory(meta?.type);
-          const key = `${pid}-${categoryName}`;
-          if (existingKeys.has(key)) continue;
-
-          // Contar anomalias deste parceiro
-          const cntQuery = supabase
-            .from('vehicle_anomalies')
-            .select('id', { count: 'exact', head: true })
-            .eq('vehicle_id', validVehicleId)
-            .eq('partner_id', pid);
-          // Não filtrar por inspection_id aqui; alguns registros usam apenas quote_id
-          const { count: pCount } = await cntQuery;
-
-          categories.push({
-            category: categoryName,
-            partner_id: pid,
-            partner_name: meta?.name || profileName.get(pid) || 'Parceiro',
-            has_anomalies: (pCount || 0) > 0,
-          });
-        }
-      }
+      entries.push({
+        id: anomaly.id,
+        category: categoryName,
+        partner_id: anomaly.partner_id,
+        partner_name: profile.full_name || 'Parceiro',
+        type: 'vehicle_anomalies',
+        has_anomalies: true,
+        created_at: anomaly.created_at,
+        status: 'submitted',
+      });
     }
 
-    logger.info('categories_fetched', {
+    // Enriquecer checklists com profile.full_name e partners.category
+    const checklistRows = checklistsResult.data || [];
+    const checklistPartnerIds = Array.from(
+      new Set(
+        (checklistRows as Array<{ partner_id: string }>).map(c => c.partner_id).filter(Boolean)
+      )
+    );
+
+    if (checklistPartnerIds.length > 0) {
+      const [{ data: checklistProfiles }, { data: checklistPartnersData }] = await Promise.all([
+        supabase.from('profiles').select('id, full_name').in('id', checklistPartnerIds),
+        supabase
+          .from('partners')
+          .select('profile_id, category')
+          .in('profile_id', checklistPartnerIds),
+      ]);
+
+      (checklistProfiles || []).forEach(p => {
+        profilesById[p.id] = { id: p.id, full_name: p.full_name ?? null };
+      });
+      (checklistPartnersData || []).forEach(p => {
+        partnersByProfileId[p.profile_id] = {
+          profile_id: p.profile_id,
+          category: p.category ?? null,
+        };
+      });
+    }
+
+    // Processar checklists estruturados
+    for (const checklist of checklistRows) {
+      const profile = profilesById[checklist.partner_id];
+      const partnerMeta = partnersByProfileId[checklist.partner_id];
+      if (!checklist.partner_id || !profile) continue;
+
+      // Usar categoria real do parceiro
+      const categoryName = partnerMeta?.category || 'Mecânica';
+
+      entries.push({
+        id: checklist.id,
+        category: categoryName,
+        partner_id: checklist.partner_id,
+        partner_name: profile.full_name || 'Parceiro',
+        type: 'mechanics_checklist',
+        has_anomalies: false, // Checklists estruturados não têm anomalias separadas
+        created_at: checklist.created_at,
+        status: checklist.status,
+      });
+    }
+
+    logger.info('entries_processed', {
       vehicle_id: validVehicleId,
-      categories_count: categories.length,
+      entries_count: entries.length,
     });
 
     return NextResponse.json({
       success: true,
-      categories,
+      categories: entries, // Mantém o nome 'categories' para compatibilidade
     });
   } catch (e) {
     const error = e as Error;

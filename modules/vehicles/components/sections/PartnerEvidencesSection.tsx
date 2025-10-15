@@ -2,19 +2,25 @@ import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
 import styles from './PartnerEvidencesSection.module.css';
 
-interface PartnerChecklistCategory {
+interface PartnerChecklistEntry {
+  id: string;
   category: string;
   partner_id: string;
   partner_name: string;
+  type: 'mechanics_checklist' | 'vehicle_anomalies';
   has_anomalies: boolean;
+  created_at: string;
+  status: string;
 }
 
 interface PartnerEvidencesSectionProps {
-  checklistCategories: PartnerChecklistCategory[];
+  checklistCategories: PartnerChecklistEntry[];
   categoriesLoading: boolean;
   loadingDynamicChecklist: boolean;
   onOpenDynamicChecklist: (
-    args: string | { category: string; partnerId: string; partnerName?: string }
+    args:
+      | string
+      | { id: string; category: string; partnerId: string; partnerName?: string; type: string }
   ) => Promise<void>;
 }
 
@@ -36,11 +42,13 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
     return null;
   }
 
-  const handleOpenChecklist = async (category: PartnerChecklistCategory) => {
+  const handleOpenChecklist = async (entry: PartnerChecklistEntry) => {
     await onOpenDynamicChecklist({
-      category: category.category,
-      partnerId: category.partner_id,
-      partnerName: category.partner_name,
+      id: entry.id,
+      category: entry.category,
+      partnerId: entry.partner_id,
+      partnerName: entry.partner_name,
+      type: entry.type,
     });
   };
 
@@ -48,22 +56,24 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
     <>
       <SectionCard title="Vistorias" fullWidth>
         <div className={styles.checklistGrid}>
-          {checklistCategories.map(category => (
+          {checklistCategories.map(entry => (
             <button
-              key={`${category.category}-${category.partner_id}`}
-              onClick={() => handleOpenChecklist(category)}
+              key={`${entry.type}-${entry.id}`}
+              onClick={() => handleOpenChecklist(entry)}
               disabled={loadingDynamicChecklist}
               className={styles.checklistButton}
             >
               <div className={styles.checklistInfo}>
                 <div className={styles.checklistTitle}>
-                  {category.category} • {category.partner_name}
+                  {entry.category} • {entry.partner_name}
                 </div>
                 <div className={styles.checklistMeta}>
-                  {category.has_anomalies ? 'Com anomalias' : 'Sem anomalias'}
+                  {entry.type === 'vehicle_anomalies'
+                    ? 'Relatório de Anomalias'
+                    : 'Checklist Mecânico'}
                 </div>
                 <div className={styles.checklistStats}>
-                  Status: {category.has_anomalies ? 'Revisar' : 'OK'}
+                  Status: {entry.status} • {new Date(entry.created_at).toLocaleDateString('pt-BR')}
                 </div>
               </div>
             </button>

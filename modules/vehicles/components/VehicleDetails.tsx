@@ -84,13 +84,15 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
 
   // Handlers
   const handleLoadDynamicChecklist = async (
-    args: { category: string; partnerId: string; partnerName?: string } | string
+    args:
+      | { id: string; category: string; partnerId: string; partnerName?: string; type: string }
+      | string
   ) => {
     if (!vehicle?.id || !inspection?.id) return;
-    const { category, partnerId } =
-      typeof args === 'string' ? { category: args, partnerId: '' } : args;
+    const { id, category, partnerId } =
+      typeof args === 'string' ? { id: '', category: args, partnerId: '' } : args;
 
-    const data = await loadChecklist(vehicle.id, inspection.id, category, partnerId);
+    const data = await loadChecklist(vehicle.id, inspection.id, category, partnerId, id);
     if (data) {
       modalState.dynamicChecklistModal.open({
         anomalies: data.anomalies,
