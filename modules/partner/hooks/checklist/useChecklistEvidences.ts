@@ -12,7 +12,11 @@ export function useChecklistEvidences() {
   const addEvidence = (key: EvidenceKey, file: File) => {
     setEvidences(prev => {
       const existing = prev[key] || [];
-      const newEvidence: EvidenceItem = { file, url: undefined, id: `${Date.now()}-${Math.random()}` };
+      const newEvidence: EvidenceItem = {
+        file,
+        url: undefined,
+        id: `${Date.now()}-${Math.random()}`,
+      };
       return { ...prev, [key]: [...existing, newEvidence] };
     });
   };
@@ -27,13 +31,16 @@ export function useChecklistEvidences() {
 
   const clear = () => setEvidences(emptyEvidenceState);
 
-  const setFromUrlMap = (urls: Record<string, { url: string }>) => {
+  const setFromUrlMap = (urls: Record<string, { urls: string[] }>) => {
     const next: EvidenceState = { ...emptyEvidenceState };
     Object.entries(urls).forEach(([key, value]) => {
-      if (!value?.url) return;
-      if ((EVIDENCE_KEYS as readonly string[]).includes(key as any)) {
-        const entry: EvidenceItem = { url: value.url, id: `${key}-0` };
-        (next as Record<string, EvidenceItem[] | undefined>)[key] = [entry];
+      if (!value?.urls || !Array.isArray(value.urls)) return;
+      if ((EVIDENCE_KEYS as readonly string[]).includes(key)) {
+        const entries: EvidenceItem[] = value.urls.map((url, index) => ({
+          url,
+          id: `${key}-${index}`,
+        }));
+        (next as Record<string, EvidenceItem[] | undefined>)[key] = entries;
       }
     });
     setEvidences(next);

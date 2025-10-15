@@ -116,7 +116,16 @@ export function useChecklistOrchestrator() {
                 }
               });
             }
-            setFromUrlMap(loadedEvidences as Record<string, { url: string }>);
+            // Convert old format { url: string } to new format { urls: string[] }
+            const convertedEvidences: Record<string, { urls: string[] }> = {};
+            Object.entries(loadedEvidences as Record<string, { url?: string }>).forEach(
+              ([key, value]) => {
+                if (value?.url) {
+                  convertedEvidences[key] = { urls: [value.url] };
+                }
+              }
+            );
+            setFromUrlMap(convertedEvidences);
             // As a practical approach, return evidences map via return object rather than fully seeding the internal state.
             // Save part-requests map
             const pr: Record<string, unknown> = {};

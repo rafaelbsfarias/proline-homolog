@@ -31,12 +31,16 @@ export class EvidenceService {
       for (const evidence of evidences) {
         const url = await this.urlGenerator.generate(evidence.media_url);
         if (url) {
-          evidenceMap[evidence.item_key] = { url };
+          if (!evidenceMap[evidence.item_key]) {
+            evidenceMap[evidence.item_key] = { urls: [] };
+          }
+          evidenceMap[evidence.item_key].urls.push(url);
         }
       }
 
       logger.info('evidences_loaded_with_urls', {
         count: Object.keys(evidenceMap).length,
+        total_urls: Object.values(evidenceMap).reduce((sum, item) => sum + item.urls.length, 0),
       });
 
       return evidenceMap;

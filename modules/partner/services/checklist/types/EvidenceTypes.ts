@@ -8,7 +8,7 @@ export interface EvidenceRecord {
 
 export interface EvidenceMap {
   [itemKey: string]: {
-    url: string;
+    urls: string[]; // Changed from single url to array of urls
   };
 }
 
