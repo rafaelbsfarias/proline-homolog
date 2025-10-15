@@ -32,7 +32,12 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 // --- Funções de criação de usuário (adaptadas dos scripts existentes) ---
 

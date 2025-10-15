@@ -74,7 +74,11 @@ async function createUser(email, password, fullName, role, additionalData = {}) 
     const authError = authUserResult.error;
 
     if (authError) {
-      if (authError.message.includes('User already exists')) {
+      if (
+        authError.message.includes('User already exists') ||
+        authError.message.includes('already been registered') ||
+        authError.code === 'email_exists'
+      ) {
         console.warn(`Usuário ${email} já existe no Auth. Pulando criação no Auth.`);
         const { data: existingUsers } = await supabase.auth.admin.listUsers();
         const existingUser = existingUsers?.users.find(u => u.email === email);
