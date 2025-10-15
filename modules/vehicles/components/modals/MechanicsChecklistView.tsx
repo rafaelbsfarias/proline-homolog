@@ -1,11 +1,9 @@
 'use client';
 
 import React from 'react';
-import Lightbox from 'yet-another-react-lightbox';
-import 'yet-another-react-lightbox/styles.css';
 import { useLightbox } from '@/modules/vehicles/hooks/useLightbox';
-import styles from './ChecklistView.module.css';
 import { ImageLightbox } from './ImageLightbox';
+import styles from './ChecklistViewer.module.css';
 
 interface ChecklistItem {
   id: string;

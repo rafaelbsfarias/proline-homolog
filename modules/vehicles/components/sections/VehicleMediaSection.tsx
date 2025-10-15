@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
 import { MediaCard } from '../cards/MediaCard';
 import { MediaData } from '../../types/VehicleDetailsTypes';
-import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
+import { useExpandableSection } from '../../hooks/useExpandableSection';
 import styles from './VehicleMediaSection.module.css';
 
 interface VehicleMediaSectionProps {
@@ -11,7 +11,7 @@ interface VehicleMediaSectionProps {
 }
 
 export const VehicleMediaSection: React.FC<VehicleMediaSectionProps> = ({ media, mediaUrls }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, headerAction } = useExpandableSection(false, styles);
 
   if (!media || media.length === 0) return null;
 
@@ -21,24 +21,6 @@ export const VehicleMediaSection: React.FC<VehicleMediaSectionProps> = ({ media,
       `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vehicle-media/${storagePath}`
     );
   };
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const headerAction = (
-    <button onClick={toggleExpand} className={styles.toggleButton}>
-      {isExpanded ? (
-        <>
-          Recolher <LuChevronUp size={18} />
-        </>
-      ) : (
-        <>
-          Expandir <LuChevronDown size={18} />
-        </>
-      )}
-    </button>
-  );
 
   return (
     <SectionCard title="Evidências da Análise Preliminar" fullWidth headerAction={headerAction}>

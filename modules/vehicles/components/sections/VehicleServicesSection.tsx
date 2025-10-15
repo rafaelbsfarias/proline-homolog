@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
 import { ServiceCard } from '../cards/ServiceCard';
 import { ServiceData } from '../../types/VehicleDetailsTypes';
-import { LuChevronDown, LuChevronUp } from 'react-icons/lu';
+import { useExpandableSection } from '../../hooks/useExpandableSection';
 import styles from './VehicleServicesSection.module.css';
 
 interface VehicleServicesSectionProps {
@@ -10,27 +10,9 @@ interface VehicleServicesSectionProps {
 }
 
 export const VehicleServicesSection: React.FC<VehicleServicesSectionProps> = ({ services }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { isExpanded, headerAction } = useExpandableSection(false, styles);
 
   if (!services || services.length === 0) return null;
-
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  const headerAction = (
-    <button onClick={toggleExpand} className={styles.toggleButton}>
-      {isExpanded ? (
-        <>
-          Recolher <LuChevronUp size={18} />
-        </>
-      ) : (
-        <>
-          Expandir <LuChevronDown size={18} />
-        </>
-      )}
-    </button>
-  );
 
   return (
     <SectionCard title="Serviços Necessários" fullWidth headerAction={headerAction}>
