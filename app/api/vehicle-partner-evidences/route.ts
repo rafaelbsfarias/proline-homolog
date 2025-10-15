@@ -147,9 +147,9 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
           anomalyResults.push({
             item_key: `anomaly:${desc}`,
             label: `Anomalia: ${desc}`,
-            // Por ora, anomalias são agrupadas em Pintura/Funilaria (parceiros de funilaria/pintura)
+            // Por ora, anomalias são agrupadas em Funilaria/Pintura (parceiros de funilaria/pintura)
             // Se surgirem anomalias de outros parceiros, podemos enriquecer a origem e categoria
-            category: 'Pintura/Funilaria',
+            category: 'Funilaria/Pintura',
             url: signed.signedUrl,
           });
         } catch (e) {
@@ -200,7 +200,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
 
               const lower = path.toLowerCase();
               let category = 'Mecânica';
-              if (lower.includes('/anomalias/')) category = 'Pintura/Funilaria';
+              if (lower.includes('/anomalias/')) category = 'Funilaria/Pintura';
               else if (lower.includes('pneu') || lower.includes('tires')) category = 'Pneus';
 
               anomalyResults.push({
@@ -215,6 +215,61 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
       }
     } catch (legacyErr) {
       logger.warn('legacy_partner_media_fetch_warning', { e: String(legacyErr) });
+    }
+
+    // 4) Fallback: listar diretório de evidências no Storage quando há pastas sem registro em tabela
+    //    Ex.: {vehicle_id}/{inspection_id}/evidences/{item_key}/*
+    try {
+      if (inspectionId) {
+        const basePrefix = `${vehicleId}/${inspectionId}/evidences`;
+        const { data: evidenceDirs, error: listDirErr } = await supabase.storage
+          .from(BUCKETS.VEHICLE_MEDIA)
+          .list(basePrefix, { limit: 1000 });
+        if (!listDirErr && Array.isArray(evidenceDirs)) {
+          for (const dir of evidenceDirs) {
+            // Alguns storages retornam arquivos diretamente neste nível; tratar ambos
+            const dirPath = `${basePrefix}/${dir.name}`;
+            const isLikelyFolder = !dir.id; // heurística: se não tem id, é pasta
+
+            if (isLikelyFolder) {
+              const { data: files } = await supabase.storage
+                .from(BUCKETS.VEHICLE_MEDIA)
+                .list(dirPath, { limit: 1000 });
+              for (const file of files || []) {
+                const fullPath = `${dirPath}/${file.name}`;
+                const { data: signed } = await supabase.storage
+                  .from(BUCKETS.VEHICLE_MEDIA)
+                  .createSignedUrl(fullPath, 3600);
+                if (signed?.signedUrl) {
+                  const meta = ITEM_METADATA[dir.name as keyof typeof ITEM_METADATA];
+                  anomalyResults.push({
+                    item_key: dir.name,
+                    label: meta?.label || `Evidência: ${dir.name}`,
+                    category: meta?.category || 'Mecânica',
+                    url: signed.signedUrl,
+                  });
+                }
+              }
+            } else {
+              // É arquivo diretamente em /evidences
+              const fullPath = dirPath; // dir.name aqui é o arquivo
+              const { data: signed } = await supabase.storage
+                .from(BUCKETS.VEHICLE_MEDIA)
+                .createSignedUrl(fullPath, 3600);
+              if (signed?.signedUrl) {
+                anomalyResults.push({
+                  item_key: 'evidences',
+                  label: 'Evidência Mecânica',
+                  category: 'Mecânica',
+                  url: signed.signedUrl,
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (storageListErr) {
+      logger.warn('storage_evidences_fallback_warning', { error: String(storageListErr) });
     }
 
     const evidences = [...results.filter(Boolean), ...anomalyResults] as Array<{

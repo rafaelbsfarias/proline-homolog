@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import styles from './ChecklistViewer.module.css';
+//import React, { useState } from 'react';
+import React from 'react';
+import { useLightbox } from '@/modules/vehicles/hooks/useLightbox';
 import { ImageLightbox } from './ImageLightbox';
+import styles from './ChecklistViewer.module.css';
 
 interface ChecklistItem {
   id: string;
@@ -14,6 +16,12 @@ interface ChecklistItem {
     media_url: string;
     description: string;
   }>;
+  part_request?: {
+    partName: string;
+    partDescription?: string;
+    quantity: number;
+    estimatedPrice?: number;
+  };
 }
 
 interface MechanicsChecklistData {
@@ -128,15 +136,23 @@ const getCategoryLabel = (categoryKey: string): string => {
 };
 
 export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ data }) => {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  const openLightbox = (images: string[], index: number) => {
-    setLightboxImages(images);
-    setLightboxIndex(index);
-    setLightboxOpen(true);
-  };
+  //const [lightboxOpen, setLightboxOpen] = useState(false);
+  //const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  //const [lightboxIndex, setLightboxIndex] = useState(0);
+  //
+  //const openLightbox = (images: string[], index: number) => {
+  //  setLightboxImages(images);
+  //  setLightboxIndex(index);
+  //  setLightboxOpen(true);
+  //};
+  const {
+    lightboxOpen,
+    lightboxImages,
+    lightboxIndex,
+    openLightbox,
+    closeLightbox,
+    setLightboxIndex,
+  } = useLightbox();
 
   return (
     <>
@@ -173,21 +189,96 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
 
               {item.item_notes && <p className={styles.itemNotes}>{item.item_notes}</p>}
 
-              {item.evidences.length > 0 && (
-                <div className={styles.evidencesGrid}>
-                  {item.evidences.map((evidence, idx) => {
-                    const images = item.evidences.map(e => e.media_url).filter(Boolean);
-                    return (
-                      <div key={evidence.id} className={styles.evidenceItem}>
-                        <img
-                          src={evidence.media_url}
-                          alt={evidence.description || 'Evidência'}
-                          className={styles.evidenceImage}
-                          onClick={() => openLightbox(images, idx)}
-                        />
+              {/* Exibir evidências apenas para itens NOK */}
+              {item.item_status === 'nok' &&
+                item.evidences &&
+                item.evidences.some(e => !!e.media_url) && (
+                  <div className={styles.evidencesGrid}>
+                    {item.evidences
+                      .filter(e => !!e.media_url)
+                      .map(evidence => {
+                        const images = item.evidences
+                          .map(e => e.media_url)
+                          .filter((u): u is string => Boolean(u));
+                        const imgIndex = images.indexOf(evidence.media_url);
+                        return (
+                          <div key={evidence.id} className={styles.evidenceItem}>
+                            <img
+                              src={evidence.media_url || undefined}
+                              alt={evidence.description || 'Evidência'}
+                              className={styles.evidenceImage}
+                              onClick={() => openLightbox(images, imgIndex >= 0 ? imgIndex : 0)}
+                            />
+                            {evidence.description && (
+                              <p className={styles.evidenceDescription}>{evidence.description}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+
+              {/* Mensagem se NOK mas sem evidências */}
+              {item.item_status === 'nok' &&
+                (!item.evidences || !item.evidences.some(e => !!e.media_url)) && (
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      padding: '8px',
+                      background: '#f8d7da',
+                      border: '1px solid #f5c6cb',
+                      borderRadius: '4px',
+                      marginTop: '8px',
+                      color: '#721c24',
+                    }}
+                  >
+                    ⚠️ Item marcado como NOK mas sem evidências fotográficas
+                  </div>
+                )}
+
+              {/* Solicitação de peça quando houver */}
+              {item.item_status === 'nok' && item.part_request && (
+                <div
+                  style={{
+                    background: '#eff6ff',
+                    border: '2px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginTop: '10px',
+                  }}
+                >
+                  <strong style={{ display: 'block', color: '#1e40af', marginBottom: '8px' }}>
+                    📦 Solicitação de Peça
+                  </strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>Peça: </span>
+                      <span>{item.part_request.partName}</span>
+                    </div>
+                    {item.part_request.quantity != null && (
+                      <div>
+                        <span style={{ fontWeight: 600 }}>Quantidade: </span>
+                        <span>{item.part_request.quantity}</span>
                       </div>
-                    );
-                  })}
+                    )}
+                    {item.part_request.partDescription && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontWeight: 600 }}>Descrição: </span>
+                        <span>{item.part_request.partDescription}</span>
+                      </div>
+                    )}
+                    {item.part_request.estimatedPrice != null && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <span style={{ fontWeight: 600 }}>Preço Estimado: </span>
+                        <span>
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(item.part_request.estimatedPrice)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -204,7 +295,7 @@ export const MechanicsChecklistView: React.FC<MechanicsChecklistViewProps> = ({ 
         isOpen={lightboxOpen}
         images={lightboxImages}
         startIndex={lightboxIndex}
-        onClose={() => setLightboxOpen(false)}
+        onClose={closeLightbox}
       />
     </>
   );

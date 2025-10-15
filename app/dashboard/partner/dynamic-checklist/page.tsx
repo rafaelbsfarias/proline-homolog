@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
 import InspectionData from '@/modules/partner/components/InspectionData';
@@ -23,6 +23,7 @@ import styles from './page.module.css';
 
 const DynamicChecklistPage = () => {
   const router = useRouter();
+  const [localError, setLocalError] = useState<string | null>(null);
   const {
     form,
     vehicle,
@@ -71,6 +72,17 @@ const DynamicChecklistPage = () => {
 
   const handleSave = async () => {
     try {
+      // Regra: só salvar se houver pelo menos UMA imagem em qualquer anomalia
+      const hasAnyImage =
+        Array.isArray(anomalies) &&
+        anomalies.some(a => Array.isArray(a.photos) && a.photos.length > 0);
+
+      if (!hasAnyImage) {
+        setLocalError('É obrigatório anexar pelo menos uma imagem para salvar.');
+        return;
+      }
+
+      setLocalError(null);
       await save(anomalies);
     } catch {
       // Erro já é tratado pelo hook
@@ -123,6 +135,7 @@ const DynamicChecklistPage = () => {
           onRemovePartRequest={removePartRequest}
         />
 
+        {localError && <MessageBanner type="error" message={localError} />}
         {error && <MessageBanner type="error" message={error} />}
         {success && <MessageBanner type="success" message={success} />}
 

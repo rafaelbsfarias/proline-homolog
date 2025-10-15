@@ -56,7 +56,7 @@ export const PartRequestModal: React.FC<PartRequestModalProps> = ({
         </div>
 
         <div className={styles.field}>
-          <label className={styles.label}>Preço Estimado (opcional)</label>
+          <label className={styles.label}>Preço (Opcional)</label>
           <input
             type="number"
             step="0.01"
@@ -64,6 +64,17 @@ export const PartRequestModal: React.FC<PartRequestModalProps> = ({
             value={modalState.estimatedPrice}
             onChange={e => onUpdateField('estimatedPrice', e.target.value)}
             placeholder="0.00"
+            className={styles.input}
+          />
+        </div>
+
+        <div className={styles.field}>
+          <label className={styles.label}>Link de Compra (opcional)</label>
+          <input
+            type="url"
+            value={modalState.purchaseLink}
+            onChange={e => onUpdateField('purchaseLink', e.target.value)}
+            placeholder="https://exemplo.com/produto"
             className={styles.input}
           />
         </div>

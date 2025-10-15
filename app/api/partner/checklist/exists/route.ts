@@ -79,7 +79,11 @@ async function existsChecklistHandler(req: AuthenticatedRequest) {
     }
 
     // Verificar se existe checklist submetido usando ChecklistService
-    const hasSubmittedChecklist = await checklistService.hasSubmittedChecklist(vehicleId);
+    const hasSubmittedChecklist = await checklistService.hasSubmittedChecklist(
+      vehicleId,
+      undefined,
+      quoteId
+    );
 
     logger.info('checklist_existence_checked', {
       quote_id: quoteId,

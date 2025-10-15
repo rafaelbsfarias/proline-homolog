@@ -1,18 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loading } from '@/modules/common/components/Loading/Loading';
-import ImageViewerModal from '@/modules/client/components/ImageViewerModal';
-import { ChecklistViewer } from './modals/ChecklistViewer';
 import ChecklistReadOnlyViewer from './modals/ChecklistReadOnlyViewer';
+import { ChecklistViewer } from './modals/ChecklistViewer';
 import BudgetPhaseSection from './BudgetPhaseSection';
 import { IconTextButton } from '@/modules/common/components/IconTextButton/IconTextButton';
 import { LuArrowLeft } from 'react-icons/lu';
 
 // Hooks
 import { usePartnerEvidences } from '@/modules/vehicles/hooks/usePartnerEvidences';
-import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
 import { usePartnerChecklistCategories } from '@/modules/vehicles/hooks/usePartnerChecklistCategories';
 import { useExecutionEvidences } from '@/modules/vehicles/hooks/useExecutionEvidences';
 import { useVehicleDetailsState } from '@/modules/vehicles/hooks/useVehicleDetailsState';
@@ -30,6 +28,8 @@ import { InspectionObservationsSection } from './sections/InspectionObservations
 import { VehicleDetailsProps } from '../types/VehicleDetailsTypes';
 
 import styles from './VehicleDetails.module.css';
+import { ImageLightbox } from './modals/ImageLightbox';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   vehicle,
@@ -43,24 +43,109 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
   const { loadChecklist, loading: loadingDynamicChecklist } = useDynamicChecklistLoader();
 
   // Data Hooks
-  const { grouped: partnerEvidenceByCategory } = usePartnerEvidences(vehicle?.id, inspection?.id);
-  const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(vehicle?.id);
+  const { evidences: partnerEvidences } = usePartnerEvidences(vehicle?.id, inspection?.id);
   const { evidences: executionEvidences, loading: executionLoading } = useExecutionEvidences(
     vehicle?.id
   );
   const { categories: checklistCategories, loading: categoriesLoading } =
     usePartnerChecklistCategories(vehicle?.id, inspection?.id);
 
-  // Handlers
-  const handleLoadDynamicChecklist = async (category: string) => {
-    if (!vehicle?.id || !inspection?.id) return;
+  // Aggregated evidences (specialist + partner + execution)
+  const aggregatedEvidenceUrls = useMemo(() => {
+    const urls: string[] = [];
+    // 1) Specialist inspection media
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    (inspection?.media || []).forEach(img => {
+      const url =
+        (mediaUrls && mediaUrls[img.storage_path]) ||
+        (supabaseUrl
+          ? `${supabaseUrl}/storage/v1/object/public/vehicle-media/${img.storage_path}`
+          : '');
+      if (url) urls.push(url);
+    });
+    // 2) Partner evidences
+    (partnerEvidences || []).forEach(ev => {
+      if (ev.url) urls.push(ev.url);
+    });
+    // 3) Execution evidences
+    (executionEvidences || []).forEach(group => {
+      (group.evidences || []).forEach(e => {
+        if (e.image_url) urls.push(e.image_url);
+      });
+    });
+    // Deduplicate while preserving order
+    const seen = new Set<string>();
+    return urls.filter(u => (seen.has(u) ? false : (seen.add(u), true)));
+  }, [inspection?.media, mediaUrls, partnerEvidences, executionEvidences]);
 
-    const anomalies = await loadChecklist(vehicle.id, inspection.id, category);
-    if (anomalies) {
+  const [aggLightboxOpen, setAggLightboxOpen] = useState(false);
+
+  const openAggregatedEvidences = () => {
+    if (aggregatedEvidenceUrls.length > 0) setAggLightboxOpen(true);
+  };
+
+  // Handlers
+  const handleLoadDynamicChecklist = async (
+    args:
+      | { id: string; category: string; partnerId: string; partnerName?: string; type: string }
+      | string
+  ) => {
+    if (!vehicle?.id || !inspection?.id) return;
+    const isObj = typeof args !== 'string';
+    const { id, category, partnerId, type } = isObj
+      ? (args as {
+          id: string;
+          category: string;
+          partnerId: string;
+          partnerName?: string;
+          type: string;
+        })
+      : { id: '', category: args as string, partnerId: '', type: '' };
+
+    // Normalização de categoria para detectar mecânica mesmo se type estiver incorreto
+    const normCategory = (category || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    const treatAsMechanics =
+      (isObj && type === 'mechanics_checklist') ||
+      normCategory.includes('mecanica') ||
+      normCategory.includes('mechanic');
+
+    // Para mecânica, usar modal específico com itens + evidências + peças
+    if (treatAsMechanics) {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const params = new URLSearchParams({ vehicle_id: vehicle.id });
+        if (inspection?.id) params.set('inspection_id', inspection.id);
+        const res = await fetch(`/api/checklist/mechanics/view?${params.toString()}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (res.ok) {
+          const payload = await res.json();
+          if (payload) {
+            modalState.partnerChecklistModal.open(payload);
+            return;
+          }
+        }
+      } catch (e) {
+        // Mantemos silêncio para produção; não abrir modal genérico para mecânica
+      }
+      // Não cair no fluxo genérico para mecânica; encerrar aqui
+      return;
+    }
+
+    // Fluxo genérico (ex.: anomalias)
+    const data = await loadChecklist(vehicle.id, inspection.id, category, partnerId, id);
+    if (data) {
       modalState.dynamicChecklistModal.open({
-        anomalies,
+        anomalies: data.anomalies,
         savedAt: new Date().toISOString(),
         category,
+        items: data.items,
       });
     }
   };
@@ -94,27 +179,34 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
     <main className={styles.main}>
       {/* Header */}
       <div className={styles.header}>
-        <IconTextButton
-          onClick={() => router.back()}
-          title="Voltar"
-          icon={<LuArrowLeft size={20} />}
-          className="mr-4"
-        >
-          Voltar
-        </IconTextButton>
-        <h1 className={styles.title}>Detalhes do Veículo</h1>
-        <p className={styles.subtitle}>
-          {vehicle.brand} {vehicle.model} • {vehicle.plate}
-        </p>
+        <div className={styles.headerTop}>
+          <IconTextButton
+            onClick={() => router.back()}
+            title="Voltar"
+            icon={<LuArrowLeft size={20} />}
+            className="mr-4"
+          >
+            Voltar
+          </IconTextButton>
+        </div>
+        <div className={styles.headerContent}>
+          <div>
+            <h1 className={styles.title}>Detalhes do Veículo</h1>
+            <p className={styles.subtitle}>
+              {vehicle.brand} {vehicle.model} • {vehicle.plate}
+            </p>
+          </div>
+          {aggregatedEvidenceUrls.length > 0 && (
+            <button onClick={openAggregatedEvidences} className={styles.evidenceButton}>
+              Ver Evidências ({aggregatedEvidenceUrls.length})
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Sections Grid */}
       <div className={styles.gridContainer}>
-        <VehicleBasicInfo
-          vehicle={vehicle}
-          onViewEvidences={modalState.imageViewer.open}
-          mediaCount={inspection?.media?.length || 0}
-        />
+        <VehicleBasicInfo vehicle={vehicle} />
 
         <BudgetPhaseSection
           vehicleId={vehicle.id}
@@ -129,13 +221,9 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
         <VehicleMediaSection media={inspection?.media || []} mediaUrls={mediaUrls} />
 
         <PartnerEvidencesSection
-          evidenceByCategory={partnerEvidenceByCategory}
           checklistCategories={checklistCategories}
-          checklistData={checklistData}
-          checklistLoading={checklistLoading}
           categoriesLoading={categoriesLoading}
           loadingDynamicChecklist={loadingDynamicChecklist}
-          onOpenStaticChecklist={modalState.checklistModal.open}
           onOpenDynamicChecklist={handleLoadDynamicChecklist}
         />
 
@@ -145,29 +233,32 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
       </div>
 
       {/* Modals */}
-      {inspection?.media && inspection.media.length > 0 && (
-        <ImageViewerModal
-          isOpen={modalState.imageViewer.isOpen}
-          onClose={modalState.imageViewer.close}
-          images={inspection.media}
-          mediaUrls={mediaUrls}
-          vehiclePlate={vehicle?.plate || ''}
+      {/* Aggregated evidences lightbox */}
+      {aggLightboxOpen && aggregatedEvidenceUrls.length > 0 && (
+        <ImageLightbox
+          isOpen={aggLightboxOpen}
+          images={aggregatedEvidenceUrls}
+          startIndex={0}
+          onClose={() => setAggLightboxOpen(false)}
         />
-      )}
-
-      {modalState.checklistModal.isOpen && checklistData && (
-        <ChecklistViewer data={checklistData} onClose={modalState.checklistModal.close} />
       )}
 
       {modalState.dynamicChecklistModal.isOpen && modalState.dynamicChecklistModal.data && (
         <ChecklistReadOnlyViewer
           data={{
-            items: [],
+            items: modalState.dynamicChecklistModal.data.items || [],
             anomalies: modalState.dynamicChecklistModal.data.anomalies,
             savedAt: modalState.dynamicChecklistModal.data.savedAt,
           }}
           partnerCategory={modalState.dynamicChecklistModal.data.category}
           onClose={modalState.dynamicChecklistModal.close}
+        />
+      )}
+
+      {modalState.partnerChecklistModal.isOpen && modalState.partnerChecklistModal.data && (
+        <ChecklistViewer
+          data={modalState.partnerChecklistModal.data}
+          onClose={modalState.partnerChecklistModal.close}
         />
       )}
     </main>

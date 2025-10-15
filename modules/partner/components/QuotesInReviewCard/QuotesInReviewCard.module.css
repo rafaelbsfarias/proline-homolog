@@ -1,0 +1,299 @@
+/* Card Container */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
+}
+
+.subtitle {
+  font-size: 13px;
+  margin: 0;
+  color: #666;
+  font-weight: 400;
+}
+
+.badge {
+  background: #667eea;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+/* Loading State */
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 16px;
+}
+
+/* List */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Item */
+.item {
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.item:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+/* Item Header */
+.itemHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.vehicleInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.vehicleIcon {
+  font-size: 20px;
+}
+
+.plate {
+  color: #002e4c;
+  font-weight: 700;
+}
+
+.separator {
+  color: #ccc;
+}
+
+.clientName {
+  color: #666;
+}
+
+/* Waiting Time Badge */
+.waitingTime {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.waitingNormal {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.waitingWarning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.waitingUrgent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Item Details */
+.itemDetails {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detailRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.value {
+  font-size: 14px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.valueHighlight {
+  font-size: 16px;
+  color: #059669;
+  font-weight: 700;
+}
+
+/* Comments */
+.comments {
+  background: #e8eaf6;
+  border-left: 4px solid #667eea;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: start;
+}
+
+.commentsIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.commentsText {
+  font-size: 14px;
+  color: #3949ab;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* Status Banner */
+.statusBanner {
+  background: #fff9e6;
+  border: 1px solid #fbbf24;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusIcon {
+  font-size: 18px;
+}
+
+.statusText {
+  font-size: 13px;
+  color: #92400e;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detailsButton {
+  background: white;
+  color: #002e4c;
+  border: 2px solid #002e4c;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 150px;
+}
+
+.detailsButton:hover {
+  background: #f0f0f0;
+}
+
+.detailsButton:active {
+  background: #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .card {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
+
+  .itemHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .waitingTime {
+    align-self: flex-end;
+  }
+
+  .itemDetails {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .detailsButton {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicleInfo {
+    flex-wrap: wrap;
+  }
+
+  .plate {
+    font-size: 14px;
+  }
+
+  .clientName {
+    font-size: 13px;
+    width: 100%;
+  }
+
+  .separator {
+    display: none;
+  }
+}

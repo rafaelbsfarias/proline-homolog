@@ -29,6 +29,14 @@
   margin-bottom: 24px;
 }
 
+.countersContainer {
+  margin-bottom: 32px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .contentWrapper {
   background: #fff;
   border-radius: 10px;

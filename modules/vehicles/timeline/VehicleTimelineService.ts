@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { TimelineEvent } from './types';
+import { capitalizeTitle } from './utils';
 
 type Logger = {
   info?: (...args: unknown[]) => void;
@@ -35,7 +36,7 @@ export async function getBudgetStartedEvents(
     id: row.id,
     vehicleId: row.vehicle_id,
     type: 'BUDGET_STARTED',
-    title: row.status,
+    title: capitalizeTitle(row.status),
     date: row.created_at,
   }));
 
@@ -65,7 +66,7 @@ export async function getBudgetApprovedEvents(
     vehicleId: row.vehicle_id,
     type: 'BUDGET_APPROVED',
     // O título no histórico pode conter detalhes; mantemos conforme salvo
-    title: row.status || 'Orçamento Aprovado',
+    title: capitalizeTitle(row.status || 'Orçamento Aprovado'),
     date: row.created_at,
   }));
 
@@ -94,7 +95,7 @@ export async function getServiceCompletedEvents(
     id: row.id,
     vehicleId: row.vehicle_id,
     type: 'SERVICE_COMPLETED',
-    title: row.status || 'Serviço Concluído',
+    title: capitalizeTitle(row.status || 'Serviço Concluído'),
     date: row.created_at,
     meta: {
       partner_service: row.partner_service,
@@ -188,7 +189,18 @@ export async function getAllVehicleHistoryEvents(
     throw new Error('Erro ao buscar histórico completo do veículo');
   }
 
-  const events: TimelineEvent[] = (data || []).map(row => {
+  // Suprimir apenas a entrada "Orçamento Aprovado Integralmente pelo Administrador" da timeline
+  const normalize = (text: string) =>
+    (text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  const isAdminFullApproval = (status: string) =>
+    normalize(status) === 'orcamento aprovado integralmente pelo administrador';
+
+  const rows = (data || []).filter(row => !isAdminFullApproval(row.status));
+
+  const events: TimelineEvent[] = rows.map(row => {
     // Determinar o tipo do evento baseado no status
     let type: TimelineEvent['type'] = 'BUDGET_STARTED';
 
@@ -216,7 +228,7 @@ export async function getAllVehicleHistoryEvents(
       id: row.id,
       vehicleId: row.vehicle_id,
       type,
-      title: row.status,
+      title: capitalizeTitle(row.status),
       date: row.created_at,
       meta: {
         partner_service: row.partner_service,

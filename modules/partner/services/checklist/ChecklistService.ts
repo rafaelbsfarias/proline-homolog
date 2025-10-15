@@ -1,0 +1,388 @@
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
+import { getLogger } from '@/modules/logger';
+import { ChecklistRepository } from './core/ChecklistRepository';
+import { ChecklistMapper } from './core/ChecklistMapper';
+import { EvidenceService } from './evidences/EvidenceService';
+import { AnomalyService } from './anomalies/AnomalyService';
+import { ChecklistItemService } from './items/ChecklistItemService';
+import { ChecklistSubmissionData, ChecklistSubmissionResult, LoadChecklistOptions } from './types';
+
+// Import DDD services for gradual migration
+let loadChecklistWithDetailsDDD:
+  | ((
+      inspection_id?: string | null,
+      quote_id?: string | null,
+      partner_id?: string
+    ) => Promise<{
+      success: boolean;
+      data?: {
+        form: Record<string, unknown> | null;
+        evidences: Record<string, unknown>;
+        items?: unknown[];
+      };
+      error?: string;
+    }>)
+  | null = null;
+
+// Lazy load do serviço DDD para evitar problemas de inicialização circular
+const getDDDService = async () => {
+  if (!loadChecklistWithDetailsDDD) {
+    try {
+      const { loadChecklistWithDetailsDDD: dddService } = await import(
+        '../../checklist/application/real-services'
+      );
+      loadChecklistWithDetailsDDD = dddService;
+    } catch {
+      // Se não conseguir importar, manter null (usar apenas legacy)
+      loadChecklistWithDetailsDDD = null;
+    }
+  }
+  return loadChecklistWithDetailsDDD;
+};
+
+const logger = getLogger('services:checklist');
+
+/**
+ * ChecklistService - Orquestrador principal
+ *
+ * Responsável por:
+ * - Coordenar operações entre serviços especializados
+ * - Expor API unificada para consumidores
+ * - Manter compatibilidade com código existente
+ */
+export class ChecklistService {
+  private static instance: ChecklistService;
+  private readonly supabase = SupabaseService.getInstance().getAdminClient();
+
+  // Serviços especializados
+  private readonly repository: ChecklistRepository;
+  private readonly evidenceService: EvidenceService;
+  private readonly anomalyService: AnomalyService;
+  private readonly itemService: ChecklistItemService;
+
+  // Feature flag para migração gradual para DDD
+  private readonly USE_DDD_CHECKLIST = process.env.USE_DDD_CHECKLIST === 'true';
+
+  private constructor() {
+    this.repository = new ChecklistRepository(this.supabase);
+    this.evidenceService = new EvidenceService(this.supabase);
+    this.anomalyService = new AnomalyService(this.supabase);
+    this.itemService = new ChecklistItemService(this.supabase);
+  }
+
+  public static getInstance(): ChecklistService {
+    if (!ChecklistService.instance) {
+      ChecklistService.instance = new ChecklistService();
+    }
+    return ChecklistService.instance;
+  }
+
+  /**
+   * Submete um checklist completo
+   */
+  public async submitChecklist(data: ChecklistSubmissionData): Promise<ChecklistSubmissionResult> {
+    try {
+      const { vehicle_id, inspection_id, partner_id } = data;
+
+      logger.info('submit_checklist_start', {
+        vehicle_id: vehicle_id.slice(0, 8),
+        inspection_id: inspection_id.slice(0, 8),
+      });
+
+      // Buscar categoria do parceiro
+      let partnerCategory: string | null = null;
+      try {
+        const { data: partner } = await this.supabase
+          .from('partners')
+          .select('category')
+          .eq('profile_id', partner_id)
+          .single();
+        partnerCategory = partner?.category || null;
+      } catch (error) {
+        logger.warn('failed_to_fetch_partner_category', {
+          partner_id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
+      // VALIDAÇÃO CRÍTICA: Apenas parceiros de Mecânica podem salvar na tabela mechanics_checklist
+      if (partnerCategory !== 'Mecânica') {
+        logger.warn('partner_not_mechanic_submit_denied', {
+          partner_id,
+          partner_category: partnerCategory,
+          vehicle_id,
+        });
+        throw new Error('Apenas parceiros de Mecânica podem submeter checklists técnicos');
+      }
+
+      // Mapear dados
+      const mapped = ChecklistMapper.toDatabase(data, partner_id, partnerCategory);
+
+      // Verificar se já existe
+      const existing = await this.repository.findOne({
+        vehicle_id,
+        inspection_id,
+      });
+
+      let result;
+      if (existing?.id) {
+        result = await this.repository.update(existing.id, mapped);
+      } else {
+        result = await this.repository.create(mapped);
+      }
+
+      logger.info('submit_checklist_success', {
+        vehicle_id: vehicle_id.slice(0, 8),
+      });
+
+      return { success: true, data: result };
+    } catch (error) {
+      logger.error('submit_checklist_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Erro ao processar checklist' };
+    }
+  }
+
+  /**
+   * Salva itens individuais do checklist
+   */
+  public async saveChecklistItems(
+    inspection_id: string,
+    vehicle_id: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    items: Array<Record<string, any>>
+  ): Promise<{ success: boolean; error?: string }> {
+    return this.itemService.saveItems(inspection_id, vehicle_id, items);
+  }
+
+  /**
+   * Carrega checklist completo com evidências e itens
+   */
+  public async loadChecklistWithDetails(
+    inspection_id?: string | null,
+    quote_id?: string | null,
+    partner_id?: string
+  ) {
+    // Fase 4.2: Migração gradual para DDD
+    if (this.USE_DDD_CHECKLIST) {
+      logger.info('load_checklist_with_details_ddd', {
+        inspection_id: inspection_id?.slice(0, 8),
+        quote_id: quote_id?.slice(0, 8),
+        partner_id: partner_id?.slice(0, 8),
+      });
+
+      try {
+        const dddService = await getDDDService();
+        if (dddService) {
+          const result = await dddService(inspection_id, quote_id, partner_id);
+          if (result.success) {
+            return result;
+          }
+          // Fallback para implementação legacy em caso de erro
+          logger.warn('ddd_checklist_failed_fallback_to_legacy', {
+            error: result.error,
+          });
+        }
+      } catch (error) {
+        logger.error('ddd_checklist_error_fallback_to_legacy', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    // Implementação legacy (mantida para compatibilidade)
+    try {
+      const options: LoadChecklistOptions = { inspection_id, quote_id };
+
+      // Garantir escopo do parceiro: se partner_id foi informado, validar ownership.
+      // Se não há registro do parceiro, retornar dados vazios para evitar vazamento.
+      let checklist = null as unknown as Awaited<ReturnType<typeof this.repository.findOne>>;
+      if (partner_id) {
+        checklist = await this.repository.findOneForPartner(options, partner_id);
+        if (!checklist) {
+          return { success: true, data: { form: null, evidences: {} } };
+        }
+      } else {
+        checklist = await this.repository.findOne(options);
+      }
+
+      // Carregar itens e evidências somente após validar o escopo
+      // Propagar partner_id nas buscas de itens/evidências
+      const [evidences, items] = await Promise.all([
+        this.evidenceService.loadWithSignedUrls({ ...options, partner_id }),
+        this.itemService.loadItems({ ...options, partner_id }),
+      ]);
+
+      // Construir formPartial
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formPartial = this.buildFormPartial(checklist as any, items);
+
+      return {
+        success: true,
+        data: {
+          form: formPartial,
+          evidences,
+          items, // Incluir items completos para acesso aos part_requests
+        },
+      };
+    } catch (error) {
+      logger.error('load_checklist_with_details_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Erro ao carregar checklist' };
+    }
+  }
+
+  /**
+   * Carrega anomalias com URLs assinadas
+   */
+  public async loadAnomaliesWithSignedUrls(
+    inspection_id: string | null,
+    vehicle_id: string,
+    quote_id?: string | null,
+    partner_id?: string
+  ) {
+    try {
+      const options: LoadChecklistOptions = { inspection_id, quote_id };
+      const anomalies = await this.anomalyService.loadWithSignedUrls(
+        vehicle_id,
+        options,
+        partner_id
+      );
+
+      return {
+        success: true,
+        data: anomalies,
+      };
+    } catch (error) {
+      logger.error('load_anomalies_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { success: false, error: 'Erro ao carregar anomalias' };
+    }
+  }
+
+  /**
+   * Verifica se existe checklist
+   */
+  public async checklistExists(vehicle_id: string, inspection_id: string): Promise<boolean> {
+    return this.repository.exists(vehicle_id, inspection_id);
+  }
+
+  /**
+   * Verifica se existe checklist submetido
+   * Suporta inspection_id (legacy) ou quote_id (novo)
+   * Verifica tanto mechanics_checklist quanto vehicle_anomalies
+   */
+  public async hasSubmittedChecklist(
+    vehicle_id: string,
+    inspection_id?: string | null | undefined,
+    quote_id?: string | null
+  ): Promise<boolean> {
+    try {
+      const options: LoadChecklistOptions = {};
+
+      // Priorizar quote_id se fornecido
+      if (quote_id) {
+        options.quote_id = quote_id;
+      } else if (inspection_id) {
+        options.inspection_id = inspection_id;
+      } else {
+        // Se nenhum ID foi fornecido, retornar false
+        return false;
+      }
+
+      options.vehicle_id = vehicle_id;
+
+      // Verificar checklist estruturado (mecânicos)
+      const checklist = await this.repository.findOne(options);
+      const hasStructuredChecklist = !!checklist && checklist.status === 'submitted';
+
+      // Verificar anomalias salvas (checklist dinâmico)
+      const hasAnomalies = await this.anomalyService.hasSubmittedAnomalies(vehicle_id, options);
+
+      // Checklist é considerado submetido se:
+      // 1. Existe checklist estruturado com status 'submitted', OU
+      // 2. Existem anomalias salvas (que têm status 'submitted' por padrão)
+      return hasStructuredChecklist || hasAnomalies;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Normaliza status do front (2 estados: 'ok' | 'nok') e variações legadas
+   * Exposto para uso em endpoints que precisam mapear status manualmente
+   */
+  public mapStatus(status?: string): string | null {
+    if (!status) return null;
+    const normalized = String(status).toLowerCase();
+
+    // Mapeamento de status legados
+    const legacyMap: Record<string, string> = {
+      ok: 'ok',
+      good: 'ok',
+      nok: 'nok',
+      poor: 'nok',
+      regular: 'nok',
+      attention: 'nok',
+      critical: 'nok',
+    };
+
+    return legacyMap[normalized] || null;
+  }
+
+  /**
+   * Constrói objeto form para UI
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private buildFormPartial(checklist: any, items: any[]): Record<string, any> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const form: Record<string, any> = {};
+
+    if (checklist) {
+      form.observations = checklist.general_observations || '';
+      form.fluidsNotes = checklist.fluids_notes || '';
+    }
+
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        form[item.item_key] = item.item_status;
+        form[`${item.item_key}Notes`] = item.item_notes || '';
+      }
+    }
+
+    return form;
+  }
+
+  /**
+   * @deprecated Use ChecklistMapper.toDatabase() diretamente
+   * Mantido apenas para compatibilidade com código legado
+   */
+  public mapChecklistToMechanicsSchema(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    input: any,
+    partnerId: string
+  ): Record<string, unknown> {
+    return ChecklistMapper.toDatabase(input, partnerId);
+  }
+
+  /**
+   * Carrega um checklist existente (backward compatibility)
+   */
+  public async loadChecklist(vehicle_id: string, inspection_id: string) {
+    try {
+      return await this.repository.findOne({ vehicle_id, inspection_id });
+    } catch (error) {
+      logger.error('load_checklist_error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
+    }
+  }
+}
+
+// Re-exportar tipos para backward compatibility
+export type { ChecklistSubmissionData, ChecklistSubmissionResult } from './types';
+export type { ChecklistStatus } from './types';

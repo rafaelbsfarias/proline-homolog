@@ -123,12 +123,19 @@ export async function POST(request: NextRequest) {
 
     logger.info('quote_item_completed', { quote_item_id, completed_at: completedAt });
 
-    // 7. Adicionar entrada na timeline do veículo
+    // 7. Adicionar entrada na timeline do veículo com tipo SERVICE_COMPLETED
+    const timelineMessage = `${quoteItem.description} - Finalizado`;
     const { error: historyError } = await supabaseAdmin.from('vehicle_history').insert({
       vehicle_id,
-      status: `Serviço Concluído - ${quoteItem.description}`,
+      status: 'Serviço Concluído',
       partner_service: quoteItem.description,
-      notes: `Serviço "${quoteItem.description}" marcado como concluído`,
+      notes: timelineMessage,
+      type: 'SERVICE_COMPLETED',
+      meta: {
+        partner_service: quoteItem.description,
+        quote_id,
+        quote_item_id,
+      },
       created_at: completedAt,
     });
 

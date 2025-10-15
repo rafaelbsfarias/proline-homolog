@@ -145,7 +145,7 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
     // 5. Buscar itens do orçamento com preços e prazos estimados
     const { data: items, error: itemsError } = await supabase
       .from('quote_items')
-      .select('id, description, quantity, unit_price, estimated_days, completed_at')
+      .select('id, description, quantity, unit_price, estimated_days, started_at, completed_at')
       .eq('quote_id', quoteId)
       .order('description', { ascending: true });
 

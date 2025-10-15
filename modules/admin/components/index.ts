@@ -12,3 +12,5 @@ export { default as UserList } from './UserList';
 export { default as PartnersCard } from './PartnersCard';
 export { default as PendingDelegationsList } from './PendingDelegationsList/PendingDelegationsList';
 export { default as PendingChecklistAnalysisCounter } from './PendingDelegationsCounter';
+export { default as RequestedPartsCounter } from './RequestedPartsCounter';
+export { default as GeneralFinancialSummaryButton } from './GeneralFinancialSummaryButton';

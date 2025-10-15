@@ -3,8 +3,8 @@ import { getLogger } from '@/modules/logger';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { ChecklistService } from '@/modules/partner/services/ChecklistService';
+import { TABLES } from '@/modules/common/constants/database';
 import { z } from 'zod';
-import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
 
 const logger = getLogger('api:partner:checklist:submit');
 
@@ -50,8 +50,63 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       quote_id: checklistData.quote_id,
     });
 
+    // Access control: garantir que o parceiro tem vínculo com o veículo (via quotes)
+    try {
+      const { data: accessCheck, error: accessError } = await supabase
+        .from('quotes')
+        .select(
+          `
+          id,
+          service_orders!inner(vehicle_id)
+        `
+        )
+        .eq('partner_id', partnerId)
+        .eq('service_orders.vehicle_id', checklistData.vehicle_id)
+        .limit(1);
+
+      if (accessError || !accessCheck || accessCheck.length === 0) {
+        logger.warn('partner_access_denied_submit', {
+          partner_id: partnerId,
+          vehicle_id: checklistData.vehicle_id,
+          error: accessError?.message,
+        });
+        return NextResponse.json(
+          { success: false, error: 'Acesso negado para este veículo' },
+          { status: 403 }
+        );
+      }
+    } catch (ace) {
+      logger.warn('partner_access_check_error', {
+        error: ace instanceof Error ? ace.message : String(ace),
+      });
+    }
+
+    // Buscar categoria do parceiro
+    let partnerCategory: string | null = null;
+    try {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('category')
+        .eq('profile_id', partnerId)
+        .single();
+      partnerCategory = partner?.category || null;
+    } catch (error) {
+      logger.warn('failed_to_fetch_partner_category', {
+        partner_id: partnerId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    // VALIDAÇÃO REMOVIDA: O roteamento agora é feito no client baseado na categoria
+    // Apenas parceiros de Mecânica devem chegar neste endpoint através do saveChecklist()
+
     // Mapear dados usando ChecklistService
     const mapped = checklistService.mapChecklistToMechanicsSchema(checklistData, partnerId);
+
+    // Adicionar categoria do parceiro
+    if (partnerCategory) {
+      mapped.category = partnerCategory;
+    }
 
     // Adicionar quote_id se fornecido (nova arquitetura)
     if (checklistData.quote_id) {
@@ -65,21 +120,48 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       status: mapped.status,
     });
 
-    // Upsert - prioriza quote_id se disponível, senão usa inspection_id (legacy)
-    const conflictKeys = checklistData.quote_id
-      ? 'vehicle_id,quote_id'
-      : 'vehicle_id,inspection_id';
-
-    const { data, error } = await supabase
-      .from('mechanics_checklist')
-      .upsert(mapped, { onConflict: conflictKeys })
-      .select('*');
-
-    if (error) {
-      logger.error('mechanics_checklist_upsert_error', { error: error.message });
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    // Segmentação por parceiro: atualizar registro do próprio parceiro, senão inserir
+    let existingId: string | null = null;
+    {
+      let base = supabase
+        .from('mechanics_checklist')
+        .select('id')
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .eq('partner_id', partnerId)
+        .limit(1);
+      if (checklistData.quote_id) base = base.eq('quote_id', checklistData.quote_id);
+      if (checklistData.inspection_id) base = base.eq('inspection_id', checklistData.inspection_id);
+      const { data: found } = await base.maybeSingle();
+      existingId = found?.id || null;
     }
-    logger.info('mechanics_checklist_upsert_ok', { rows: Array.isArray(data) ? data.length : 0 });
+
+    let mainRow;
+    if (existingId) {
+      const { data: updated, error: updErr } = await supabase
+        .from('mechanics_checklist')
+        .update(mapped)
+        .eq('id', existingId)
+        .select('*')
+        .single();
+      if (updErr) {
+        logger.error('mechanics_checklist_update_error', { error: updErr.message });
+        return NextResponse.json({ success: false, error: updErr.message }, { status: 500 });
+      }
+      mainRow = updated;
+      logger.info('mechanics_checklist_update_ok', { id: existingId });
+    } else {
+      const { data: inserted, error: insErr } = await supabase
+        .from('mechanics_checklist')
+        .insert(mapped)
+        .select('*')
+        .single();
+      if (insErr) {
+        logger.error('mechanics_checklist_insert_error', { error: insErr.message });
+        return NextResponse.json({ success: false, error: insErr.message }, { status: 500 });
+      }
+      mainRow = inserted;
+      logger.info('mechanics_checklist_insert_ok', { id: inserted?.id });
+    }
 
     // Registrar entrada de timeline idempotente e atualizar status do veículo
     try {
@@ -125,15 +207,21 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
             });
           }
         }
-      }
 
-      // Atualizar status do veículo para Fase Orçamentária
-      const { error: statusError } = await supabase
-        .from('vehicles')
-        .update({ status: VehicleStatus.FASE_ORCAMENTARIA })
-        .eq('id', checklistData.vehicle_id);
-      if (statusError) {
-        logger.warn('vehicle_status_update_failed', { error: statusError.message });
+        // Atualizar status do veículo para 'FASE ORÇAMENTÁRIA'
+        const { error: statusUpdateError } = await supabase
+          .from('vehicles')
+          .update({ status: 'FASE ORÇAMENTÁRIA' })
+          .eq('id', checklistData.vehicle_id);
+
+        if (statusUpdateError) {
+          logger.error('vehicle_status_update_error', { error: statusUpdateError.message });
+        } else {
+          logger.info('vehicle_status_updated', {
+            vehicle_id: checklistData.vehicle_id.slice(0, 8),
+            new_status: 'FASE ORÇAMENTÁRIA',
+          });
+        }
       }
     } catch (timelineError) {
       logger.error('timeline_or_status_update_error', {
@@ -192,6 +280,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
           item_status: mappedStatus,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           item_notes: (checklistData as any)?.[notesKey] || null,
+          partner_id: partnerId,
         };
 
         // Adicionar quote_id (novo) ou inspection_id (legacy)
@@ -202,6 +291,13 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
           row.inspection_id = checklistData.inspection_id;
         }
 
+        // Adicionar part_request se existir para este item
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const partRequest = (checklistData as any)?.part_requests?.[key];
+        if (partRequest) {
+          row.part_request = partRequest;
+        }
+
         return row;
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -210,55 +306,117 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
     logger.debug('mechanics_checklist_items_prepared', { count: itemRows.length });
 
     if (itemRows.length > 0) {
-      // Upsert baseado em quote_id (novo) ou inspection_id (legacy)
-      const itemConflict = checklistData.quote_id ? 'quote_id,item_key' : 'inspection_id,item_key';
+      // Limpar itens anteriores deste parceiro neste contexto
+      let del = supabase
+        .from('mechanics_checklist_items')
+        .delete()
+        .eq('vehicle_id', checklistData.vehicle_id)
+        .eq('partner_id', partnerId);
+      if (checklistData.quote_id) del = del.eq('quote_id', checklistData.quote_id);
+      if (checklistData.inspection_id) del = del.eq('inspection_id', checklistData.inspection_id);
+      const { error: delErr } = await del;
+      if (delErr) {
+        logger.warn('mechanics_checklist_items_delete_error', { error: delErr.message });
+      }
 
       const { error: itemsError } = await supabase
         .from('mechanics_checklist_items')
-        .upsert(itemRows, { onConflict: itemConflict });
+        .insert(itemRows);
       if (itemsError) {
-        logger.error('mechanics_checklist_items_upsert_error', { error: itemsError.message });
+        logger.error('mechanics_checklist_items_insert_error', { error: itemsError.message });
+      } else {
+        logger.info('mechanics_checklist_items_insert_ok', { count: itemRows.length });
       }
-      logger.info('mechanics_checklist_items_upsert_ok', { count: itemRows.length });
     }
 
     // Persistir referências das evidências em tabela separada (uma por item), sem blobs
+    logger.debug('evidences_processing_start', {
+      hasEvidences: !!checklistData.evidences,
+      evidencesType: typeof checklistData.evidences,
+      evidencesKeys: checklistData.evidences ? Object.keys(checklistData.evidences) : [],
+      evidencesData: checklistData.evidences, // Log completo do payload de evidências
+    });
+
     if (checklistData.evidences && typeof checklistData.evidences === 'object') {
-      const entries = Object.entries(checklistData.evidences) as [string, string][];
-      const rows = entries
-        .filter(([, path]) => !!path && String(path).trim() !== '')
-        .map(([item_key, storage_path]) => {
-          const row: Record<string, unknown> = {
-            vehicle_id: checklistData.vehicle_id,
-            item_key,
-            storage_path,
-          };
+      // evidences pode ser: { sparkPlugs: ["path1", "path2"], belts: ["path3"] }
+      // Achatar para uma row por arquivo
+      const rows: Array<Record<string, unknown>> = [];
 
-          // Adicionar quote_id (novo) ou inspection_id (legacy)
-          if (checklistData.quote_id) {
-            row.quote_id = checklistData.quote_id;
-          }
-          if (checklistData.inspection_id) {
-            row.inspection_id = checklistData.inspection_id;
-          }
-
-          return row;
+      Object.entries(checklistData.evidences).forEach(([item_key, paths]) => {
+        logger.debug('processing_evidence_item', {
+          item_key,
+          paths,
+          isArray: Array.isArray(paths),
         });
+        const pathArray = Array.isArray(paths) ? paths : [paths];
+        pathArray.forEach(storage_path => {
+          if (storage_path && String(storage_path).trim() !== '') {
+            const row: Record<string, unknown> = {
+              vehicle_id: checklistData.vehicle_id,
+              item_key,
+              storage_path: storage_path, // Updated to use storage_path column
+              media_type: 'image', // Assumir tipo padrão
+              partner_id: partnerId,
+            };
+
+            // Adicionar quote_id (novo) ou inspection_id (legacy)
+            if (checklistData.quote_id) {
+              row.quote_id = checklistData.quote_id;
+            }
+            if (checklistData.inspection_id) {
+              row.inspection_id = checklistData.inspection_id;
+            }
+
+            rows.push(row);
+          }
+        });
+      });
+
+      logger.debug('evidence_rows_prepared', { count: rows.length, rows });
 
       if (rows.length > 0) {
-        // Upsert baseado em quote_id (novo) ou inspection_id (legacy)
-        const evidenceConflict = checklistData.quote_id
-          ? 'quote_id,item_key'
-          : 'inspection_id,item_key';
+        // CORREÇÃO: Não deletar evidências antigas, apenas adicionar novas
+        // O frontend já envia todas as evidências (existentes + novas)
+        // então devemos fazer um upsert baseado em media_url única
 
-        const { error: evError } = await supabase
-          .from('mechanics_checklist_evidences')
-          .upsert(rows, { onConflict: evidenceConflict });
-        if (evError) {
-          // Não falhar a requisição principal por causa das evidências
-          logger.error('mechanics_checklist_evidences_upsert_error', { error: evError.message });
+        // Primeiro, buscar evidências existentes para este contexto
+        let existingQuery = supabase
+          .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
+          .select('storage_path')
+          .eq('vehicle_id', checklistData.vehicle_id)
+          .eq('partner_id', partnerId);
+        if (checklistData.quote_id)
+          existingQuery = existingQuery.eq('quote_id', checklistData.quote_id);
+        if (checklistData.inspection_id)
+          existingQuery = existingQuery.eq('inspection_id', checklistData.inspection_id);
+
+        const { data: existingEvidences } = await existingQuery;
+        const existingUrls = new Set((existingEvidences || []).map(e => e.storage_path));
+
+        // Filtrar apenas evidências que ainda não existem
+        const newRows = rows.filter(row => !existingUrls.has(row.storage_path as string));
+
+        logger.debug('evidence_upsert_analysis', {
+          total_in_payload: rows.length,
+          already_exists: rows.length - newRows.length,
+          to_insert: newRows.length,
+        });
+
+        if (newRows.length > 0) {
+          const { error: evError } = await supabase
+            .from(TABLES.MECHANICS_CHECKLIST_EVIDENCES)
+            .insert(newRows);
+          if (evError) {
+            // Não falhar a requisição principal por causa das evidências
+            logger.error('mechanics_checklist_evidences_insert_error', { error: evError.message });
+          } else {
+            logger.info('mechanics_checklist_evidences_insert_ok', { count: newRows.length });
+          }
+        } else {
+          logger.info('mechanics_checklist_evidences_no_new', {
+            message: 'Todas as evidências já existem',
+          });
         }
-        logger.info('mechanics_checklist_evidences_upsert_ok', { count: rows.length });
       }
     }
 
@@ -302,10 +460,7 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: Array.isArray(data) && data[0] ? data[0] : mapped,
-    });
+    return NextResponse.json({ success: true, data: mainRow || mapped });
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     logger.error('submit_unexpected_error', { error: error.message });

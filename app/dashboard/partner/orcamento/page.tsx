@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/modules/common/services/supabaseClient';
 import { usePartnerServices, PartnerService } from '@/modules/partner/hooks/usePartnerServices';
 import { useBudget } from '@/modules/partner/hooks/useBudget';
 import { useQuoteLoader } from '@/modules/partner/hooks/useQuoteLoader';
@@ -10,6 +11,8 @@ import BudgetServiceSelector from '../../../../modules/partner/components/budget
 import BudgetSummary from '../../../../modules/partner/components/budget/BudgetSummary';
 import BudgetLayout from '../../../../modules/partner/components/budget/BudgetLayout';
 import BudgetHeader from '../../../../modules/partner/components/budget/BudgetHeader';
+import TimeRevisionModal from '@/modules/partner/components/TimeRevisionModal/TimeRevisionModal';
+import { usePartnerTimeRevisions } from '@/modules/partner/hooks/usePartnerTimeRevisions';
 
 const OrcamentoPage = () => {
   const searchParams = useSearchParams();
@@ -37,6 +40,44 @@ const OrcamentoPage = () => {
 
   // Hook customizado para salvamento
   const { savingBudget, saveMessage, saveBudget, clearSaveMessage } = useBudgetSaver();
+
+  // Revisão de prazos (modal)
+  const [showTimeRevisionModal, setShowTimeRevisionModal] = useState(false);
+  const [quoteStatus, setQuoteStatus] = useState<string | null>(null);
+  const { fetchRevisionDetails, updateTimes } = usePartnerTimeRevisions();
+
+  // Buscar status do orçamento para controlar visibilidade do botão de revisão
+  React.useEffect(() => {
+    const fetchQuoteStatus = async () => {
+      if (!quoteId) {
+        setQuoteStatus(null);
+        return;
+      }
+
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        const accessToken = session?.session?.access_token;
+
+        if (!accessToken) return;
+
+        const response = await fetch(`/api/partner/quotes/${quoteId}/status`, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setQuoteStatus(data.status || null);
+        }
+      } catch {
+        // Silently fail - button just won't show if we can't get status
+        setQuoteStatus(null);
+      }
+    };
+
+    fetchQuoteStatus();
+  }, [quoteId]);
 
   // Handlers de eventos
   const handleServiceSelect = (service: PartnerService, selected: boolean) => {
@@ -104,6 +145,26 @@ const OrcamentoPage = () => {
           error={quoteError}
         />
 
+        {/* Botão para revisar prazos do orçamento (abre modal) */}
+        {quoteId && quoteStatus === 'specialist_time_revision_requested' && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', margin: '8px 0 16px' }}>
+            <button
+              onClick={() => setShowTimeRevisionModal(true)}
+              title="Revisar prazos do orçamento"
+              style={{
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '1px solid #e5e7eb',
+                background: '#fff',
+                color: '#111827',
+                cursor: 'pointer',
+              }}
+            >
+              Revisar Prazos
+            </button>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '32px' }}>
           {/* Área de Seleção de Serviços */}
           <div>
@@ -133,6 +194,21 @@ const OrcamentoPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Revisão de Prazos */}
+      {quoteId && (
+        <TimeRevisionModal
+          isOpen={showTimeRevisionModal}
+          onClose={() => setShowTimeRevisionModal(false)}
+          quoteId={quoteId}
+          onSuccess={() => {
+            // Após atualizar prazos, apenas fechamos e mantemos na página
+            setShowTimeRevisionModal(false);
+          }}
+          fetchRevisionDetails={fetchRevisionDetails}
+          updateTimes={updateTimes}
+        />
+      )}
     </BudgetLayout>
   );
 };

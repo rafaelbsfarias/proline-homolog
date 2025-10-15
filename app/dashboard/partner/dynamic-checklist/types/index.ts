@@ -10,6 +10,7 @@ export interface PartRequest {
   partDescription?: string;
   quantity: number;
   estimatedPrice?: number;
+  purchaseLink?: string;
 }
 
 export interface PartRequestModalState {
@@ -19,6 +20,7 @@ export interface PartRequestModalState {
   partDescription: string;
   quantity: number;
   estimatedPrice: string;
+  purchaseLink: string;
 }
 
 export interface VehicleInfo {

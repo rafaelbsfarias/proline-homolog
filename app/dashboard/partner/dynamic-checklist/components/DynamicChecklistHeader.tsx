@@ -12,7 +12,7 @@ export const DynamicChecklistHeader: React.FC<DynamicChecklistHeaderProps> = ({ 
         <button onClick={onBack} className={styles.backButton}>
           ← Voltar ao Dashboard
         </button>
-        <h1 className={styles.title}>Anomalias do Veículo</h1>
+        <h1 className={styles.title}>Vistoria do Veículo</h1>
       </div>
     </div>
   );

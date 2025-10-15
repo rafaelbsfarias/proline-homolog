@@ -10,13 +10,24 @@ export const useAnomaliesManager = ({ initialAnomalies, loading }: UseAnomaliesM
   const [anomalies, setAnomalies] = useState<AnomalyEvidence[]>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Sincronizar apenas na primeira carga
+  // Sincronizar apenas na primeira carga E quando initialAnomalies muda (após carregamento)
   useEffect(() => {
-    if (!hasInitialized && !loading) {
-      setAnomalies(initialAnomalies);
-      setHasInitialized(true);
+    if (!loading && (!hasInitialized || initialAnomalies.length > 0 || anomalies.length === 0)) {
+      // Só sincronizar se:
+      // 1. É a primeira inicialização, OU
+      // 2. initialAnomalies tem dados E anomalies está vazio (dados carregados), OU
+      // 3. initialAnomalies mudou e tem mais dados que o estado atual
+      const shouldSync =
+        !hasInitialized ||
+        (initialAnomalies.length > 0 && anomalies.length === 0) ||
+        initialAnomalies.length > anomalies.length;
+
+      if (shouldSync) {
+        setAnomalies(initialAnomalies);
+        setHasInitialized(true);
+      }
     }
-  }, [initialAnomalies, loading, hasInitialized]);
+  }, [initialAnomalies, loading, hasInitialized, anomalies.length]);
 
   const addAnomaly = () => {
     const newAnomaly: AnomalyEvidence = {

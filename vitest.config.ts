@@ -123,6 +123,8 @@ export default defineConfig({
       '@/lib': path.resolve(__dirname, './lib'),
       '@/utils': path.resolve(__dirname, './utils'),
       '@/components': path.resolve(__dirname, './app/components'),
+      '@collections': path.resolve(__dirname, './modules/collections'),
+      '@collections/*': path.resolve(__dirname, './modules/collections/*'),
     },
   },
 
@@ -137,6 +139,8 @@ export default defineConfig({
       '@/lib': path.resolve(__dirname, './lib'),
       '@/utils': path.resolve(__dirname, './utils'),
       '@/components': path.resolve(__dirname, './app/components'),
+      '@collections': path.resolve(__dirname, './modules/collections'),
+      '@collections/*': path.resolve(__dirname, './modules/collections/*'),
     },
   },
 });

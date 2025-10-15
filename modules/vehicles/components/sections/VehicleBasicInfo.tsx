@@ -8,23 +8,11 @@ import styles from './VehicleBasicInfo.module.css';
 
 interface VehicleBasicInfoProps {
   vehicle: VehicleDetails;
-  onViewEvidences?: () => void;
-  mediaCount?: number;
 }
 
-export const VehicleBasicInfo: React.FC<VehicleBasicInfoProps> = ({
-  vehicle,
-  onViewEvidences,
-  mediaCount = 0,
-}) => {
-  const headerAction = mediaCount > 0 && onViewEvidences && (
-    <button onClick={onViewEvidences} className={styles.evidenceButton}>
-      Ver Evidências ({mediaCount})
-    </button>
-  );
-
+export const VehicleBasicInfo: React.FC<VehicleBasicInfoProps> = ({ vehicle }) => {
   return (
-    <SectionCard title="Informações Básicas" headerAction={headerAction}>
+    <SectionCard title="Informações Básicas">
       <div className={styles.grid}>
         <InfoRow label="Placa" value={vehicle.plate} monospace />
         <InfoRow label="Marca" value={vehicle.brand} />
@@ -34,6 +22,8 @@ export const VehicleBasicInfo: React.FC<VehicleBasicInfoProps> = ({
         <InfoRow label="Valor FIPE" value={formatCurrency(vehicle.fipe_value)} />
         <InfoRow label="KM Atual" value={vehicle.current_odometer?.toString() || 'N/A'} />
         <InfoRow label="Nível de Combustível" value={translateFuelLevel(vehicle.fuel_level)} />
+        <InfoRow label="Preparação" value={vehicle.preparacao ? 'Sim' : 'Não'} />
+        <InfoRow label="Comercialização" value={vehicle.comercializacao ? 'Sim' : 'Não'} />
         <InfoRow label="Cadastrado em" value={formatDateBR(vehicle.created_at)} />
         <InfoRow label="Previsão de Chegada" value={formatDateBR(vehicle.estimated_arrival_date)} />
       </div>

@@ -1,102 +1,87 @@
 import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
-import { MediaCard } from '../cards/MediaCard';
 import styles from './PartnerEvidencesSection.module.css';
 
-interface PartnerEvidence {
-  item_key: string;
-  label: string;
-  url: string;
-}
-
-interface ChecklistCategory {
+interface PartnerChecklistEntry {
+  id: string;
   category: string;
   partner_id: string;
   partner_name: string;
+  type: 'mechanics_checklist' | 'vehicle_anomalies';
   has_anomalies: boolean;
+  created_at: string;
+  status: string;
 }
 
 interface PartnerEvidencesSectionProps {
-  evidenceByCategory: Record<string, PartnerEvidence[]>;
-  checklistCategories: ChecklistCategory[];
-  checklistData: unknown;
-  checklistLoading: boolean;
+  checklistCategories: PartnerChecklistEntry[];
   categoriesLoading: boolean;
   loadingDynamicChecklist: boolean;
-  onOpenStaticChecklist: () => void;
-  onOpenDynamicChecklist: (category: string) => void;
+  onOpenDynamicChecklist: (
+    args:
+      | string
+      | { id: string; category: string; partnerId: string; partnerName?: string; type: string }
+  ) => Promise<void>;
 }
 
 export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = ({
-  evidenceByCategory,
   checklistCategories,
-  checklistData,
-  checklistLoading,
   categoriesLoading,
   loadingDynamicChecklist,
-  onOpenStaticChecklist,
   onOpenDynamicChecklist,
 }) => {
-  const hasAnyEvidence =
-    checklistData || Object.keys(evidenceByCategory).length > 0 || checklistCategories.length > 0;
+  if (categoriesLoading) {
+    return (
+      <SectionCard title="Vistorias" fullWidth>
+        <div className={styles.loading}>Carregando vistorias...</div>
+      </SectionCard>
+    );
+  }
 
-  if (!hasAnyEvidence) return null;
+  if (!checklistCategories || checklistCategories.length === 0) {
+    return null;
+  }
 
-  const headerAction = (
-    <div className={styles.buttonGroup}>
-      {/* Botão Checklist Estático (Mecânica) */}
-      {checklistLoading ? (
-        <span className={styles.loadingText}>Carregando checklist...</span>
-      ) : (
-        checklistData && (
-          <button onClick={onOpenStaticChecklist} className={styles.checklistButtonStatic}>
-            Mecânica
-          </button>
-        )
-      )}
-
-      {/* Botões Checklist Dinâmico (Por Categoria) */}
-      {categoriesLoading ? (
-        <span className={styles.loadingText}>Carregando categorias...</span>
-      ) : checklistCategories.length > 0 ? (
-        checklistCategories.map(cat => (
-          <button
-            key={`${cat.partner_id}-${cat.category}`}
-            onClick={() => onOpenDynamicChecklist(cat.category)}
-            disabled={loadingDynamicChecklist}
-            className={styles.checklistButtonDynamic}
-          >
-            {loadingDynamicChecklist ? 'Carregando...' : `Ver Checklist - ${cat.category}`}
-          </button>
-        ))
-      ) : (
-        <span className={styles.emptyText}>Nenhum checklist dinâmico disponível.</span>
-      )}
-    </div>
-  );
+  const handleOpenChecklist = async (entry: PartnerChecklistEntry) => {
+    await onOpenDynamicChecklist({
+      id: entry.id,
+      category: entry.category,
+      partnerId: entry.partner_id,
+      partnerName: entry.partner_name,
+      type: entry.type,
+    });
+  };
 
   return (
-    <SectionCard title="Evidências do Parceiro" headerAction={headerAction} fullWidth>
-      {Object.keys(evidenceByCategory).length === 0 ? (
-        <p className={styles.emptyMessage}>Nenhuma evidência enviada pelo parceiro.</p>
-      ) : (
-        Object.entries(evidenceByCategory).map(([category, items]) => (
-          <div key={category} className={styles.categorySection}>
-            <h3 className={styles.categoryTitle}>{category}</h3>
-            <div className={styles.grid}>
-              {items.map((ev, idx) => (
-                <MediaCard
-                  key={`${ev.item_key}-${idx}`}
-                  src={ev.url}
-                  alt={`Evidência Parceiro - ${ev.label}`}
-                  date={new Date().toISOString()}
-                  description={ev.label}
-                />
-              ))}
-            </div>
-          </div>
-        ))
-      )}
-    </SectionCard>
+    <>
+      <SectionCard title="Vistorias" fullWidth>
+        <div className={styles.checklistGrid}>
+          {checklistCategories.map(entry => (
+            <button
+              key={`${entry.type}-${entry.id}`}
+              onClick={() => handleOpenChecklist(entry)}
+              disabled={loadingDynamicChecklist}
+              className={styles.checklistButton}
+            >
+              <div className={styles.checklistInfo}>
+                <div className={styles.checklistTitle}>
+                  {entry.category} • {entry.partner_name}
+                </div>
+                <div className={styles.checklistMeta}>
+                  {entry.type === 'vehicle_anomalies'
+                    ? 'Relatório de Anomalias'
+                    : 'Checklist Mecânico'}
+                </div>
+                <div className={styles.checklistStats}>
+                  Status: {entry.status} • {new Date(entry.created_at).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* O modal será aberto pelo VehicleDetails através do modalState.dynamicChecklistModal */}
+    </>
   );
 };

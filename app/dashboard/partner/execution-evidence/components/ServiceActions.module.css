@@ -50,3 +50,27 @@
   background: #ccc;
   cursor: not-allowed;
 }
+
+.startButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.startButton:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.startButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

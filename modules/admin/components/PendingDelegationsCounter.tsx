@@ -30,11 +30,9 @@ const PendingDelegationsCounter: React.FC<PendingDelegationsCounterProps> = ({
         if (response.ok && response.data) {
           setCount(response.data.count);
         } else {
-          console.error('Error fetching pending checklist count:', response.error);
           setCount(0);
         }
-      } catch (e) {
-        console.error('Unexpected error fetching pending checklist count:', e);
+      } catch {
         setCount(0);
       } finally {
         setLoading(false);
@@ -48,7 +46,7 @@ const PendingDelegationsCounter: React.FC<PendingDelegationsCounterProps> = ({
   return (
     <span
       className={styles.counterCard}
-      style={{ cursor: 'pointer', backgroundColor: '#FFC107' }} // Highlight color
+      style={{ cursor: 'pointer' }}
       title="Ver delegações de serviço pendentes"
       onClick={() => router.push('/admin/service-delegation')}
     >

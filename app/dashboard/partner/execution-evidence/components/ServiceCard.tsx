@@ -10,10 +10,12 @@ import styles from './ServiceCard.module.css';
 interface ServiceCardProps {
   service: ServiceWithEvidences;
   serviceIndex: number;
+  onStart: () => void;
   onImageUpload: (file: File) => void;
   onComplete: () => void;
   onEvidenceDescriptionChange: (index: number, description: string) => void;
   onEvidenceRemove: (index: number) => void;
+  starting: boolean;
   uploading: boolean;
   completing: boolean;
 }
@@ -21,14 +23,18 @@ interface ServiceCardProps {
 export const ServiceCard: React.FC<ServiceCardProps> = ({
   service,
   serviceIndex,
+  onStart,
   onImageUpload,
   onComplete,
   onEvidenceDescriptionChange,
   onEvidenceRemove,
+  starting,
   uploading,
   completing,
 }) => {
   const isCompleted = !!service.completed_at;
+  // Considera iniciado se: tem started_at OU tem evidências (backward compatibility)
+  const isStarted = !!service.started_at || service.evidences.length > 0;
   const hasNoEvidences = service.evidences.length === 0;
 
   return (
@@ -40,6 +46,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         </div>
       )}
 
+      {!isCompleted && isStarted && <div className={styles.inProgressBadge}>Em Execução</div>}
+
       <h3 className={styles.title}>
         {serviceIndex + 1}. {service.description}
       </h3>
@@ -49,8 +57,11 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
       {!isCompleted && (
         <ServiceActions
           serviceId={service.id}
+          isStarted={isStarted}
+          onStart={onStart}
           onImageUpload={onImageUpload}
           onComplete={onComplete}
+          starting={starting}
           uploading={uploading}
           completing={completing}
         />

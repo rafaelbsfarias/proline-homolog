@@ -4,43 +4,15 @@ import { getLogger } from '@/modules/logger';
 
 const logger = getLogger('hooks:usePartnerChecklistCategories');
 
-interface PartnerChecklistCategory {
+interface PartnerChecklistEntry {
+  id: string;
   category: string;
   partner_id: string;
   partner_name: string;
+  type: 'mechanics_checklist' | 'vehicle_anomalies';
   has_anomalies: boolean;
-}
-
-function getMockCategories(vehicleId?: string): PartnerChecklistCategory[] {
-  // Mock determinístico simples para evitar erros de console quando não há backend/sessão
-  const base: PartnerChecklistCategory[] = [
-    {
-      category: 'Elétrica',
-      partner_id: 'p-001',
-      partner_name: 'Parceiro Elétrica',
-      has_anomalies: false,
-    },
-    {
-      category: 'Mecânica',
-      partner_id: 'p-002',
-      partner_name: 'Parceiro Mecânica',
-      has_anomalies: false,
-    },
-    {
-      category: 'Lataria',
-      partner_id: 'p-003',
-      partner_name: 'Parceiro Lataria',
-      has_anomalies: false,
-    },
-  ];
-  if (!vehicleId) return [];
-  // Varie levemente pelo último caractere do id
-  const last = vehicleId.at(-1);
-  if (last && /[0-9]/.test(last)) {
-    const n = Number(last) % base.length;
-    return [...base.slice(n), ...base.slice(0, n)];
-  }
-  return base;
+  created_at: string;
+  status: string;
 }
 
 /**
@@ -48,7 +20,7 @@ function getMockCategories(vehicleId?: string): PartnerChecklistCategory[] {
  * para um determinado veículo
  */
 export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?: string) {
-  const [categories, setCategories] = useState<PartnerChecklistCategory[]>([]);
+  const [categories, setCategories] = useState<PartnerChecklistEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastKeyRef = useRef<string | null>(null);
@@ -78,13 +50,13 @@ export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?:
         } = await supabase.auth.getSession();
 
         if (sessionError || !session?.access_token) {
-          // Em ambientes sem sessão (dev), usar mock e registrar apenas um aviso
-          logger.warn('session_missing_or_error_using_mock', {
+          // Em ambientes sem sessão, definir erro
+          logger.warn('session_missing_or_error', {
             error: sessionError,
             hasSession: !!session,
           });
-          setCategories(getMockCategories(vehicleId));
-          setError(null);
+          setCategories([]);
+          setError('Sessão não encontrada');
           setLoading(false);
           return;
         }
@@ -122,20 +94,20 @@ export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?:
           } catch {
             errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
           }
-          // Usar mock para reduzir ruído de console e manter UX funcional
-          logger.warn('fetch_categories_failed_using_mock', {
+          // Usar lista vazia para reduzir ruído de console e manter UX funcional
+          logger.warn('fetch_categories_failed', {
             status: response.status,
             statusText: response.statusText,
             error: errorData,
           });
-          setCategories(getMockCategories(vehicleId));
-          setError(null);
+          setCategories([]);
+          setError('Erro ao carregar categorias');
         }
       } catch (err) {
-        // Fallback para mock em erros inesperados (ex.: offline)
-        logger.warn('fetch_categories_error_using_mock', { error: err });
-        setCategories(getMockCategories(vehicleId));
-        setError(null);
+        // Fallback para lista vazia em erros inesperados (ex.: offline)
+        logger.warn('fetch_categories_error', { error: err });
+        setCategories([]);
+        setError('Erro ao carregar categorias');
       } finally {
         setLoading(false);
       }

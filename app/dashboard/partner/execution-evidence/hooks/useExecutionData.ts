@@ -38,6 +38,7 @@ export const useExecutionData = (quoteId: string | null) => {
             quantity: number;
             unit_price: number;
             total_price: number;
+            started_at?: string | null;
             completed_at?: string | null;
           }>;
           evidences?: Evidence[];
@@ -78,6 +79,7 @@ export const useExecutionData = (quoteId: string | null) => {
         quantity: item.quantity || 0,
         unit_price: Number(item.unit_price ?? 0),
         total_price: Number(item.total_price ?? 0),
+        started_at: item.started_at,
         completed_at: item.completed_at,
         evidences: evidencesByItem.get(item.id) || [],
       }));

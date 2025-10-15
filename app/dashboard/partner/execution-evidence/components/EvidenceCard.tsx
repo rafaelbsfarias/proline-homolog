@@ -26,7 +26,7 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({
       <div className={styles.content}>
         <textarea
           placeholder="Descrição da evidência (opcional)"
-          value={evidence.description}
+          value={evidence.description || ''}
           onChange={e => onDescriptionChange(e.target.value)}
           className={styles.textarea}
         />

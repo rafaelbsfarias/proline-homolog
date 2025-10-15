@@ -4,9 +4,48 @@
   gap: 16px;
 }
 
+.toggleButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  color: #002e4c;
+  border: 1px solid #002e4c;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background: #002e4c;
+  color: white;
+}
+
+.collapsedInfo {
+  padding: 20px;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
+}
+
+.collapsedText {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
 @media (max-width: 768px) {
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 12px;
+  }
+
+  .toggleButton {
+    font-size: 13px;
+    padding: 6px 12px;
   }
 }

@@ -10,6 +10,7 @@ import { useToast } from './hooks/useToast';
 import { useExecutionData } from './hooks/useExecutionData';
 import { useEvidenceManager } from './hooks/useEvidenceManager';
 import { useImageUpload } from './hooks/useImageUpload';
+import { useServiceStart } from './hooks/useServiceStart';
 import { useServiceCompletion } from './hooks/useServiceCompletion';
 import { useExecutionFinalize } from './hooks/useExecutionFinalize';
 
@@ -34,11 +35,23 @@ function ExecutionEvidenceContent() {
   const { addEvidence, removeEvidence, updateEvidenceDescription } =
     useEvidenceManager(setServices);
   const { uploading, uploadImage } = useImageUpload(quoteId);
+  const { starting, startService } = useServiceStart(quoteId);
   const { completing, completeService } = useServiceCompletion(quoteId);
   const { finalizing, finalize, saveProgress } = useExecutionFinalize(quoteId);
 
   // Handlers
   const handleBack = () => router.push('/dashboard');
+
+  const handleStartService = async (serviceId: string, serviceName: string) => {
+    const result = await startService(serviceId, serviceName);
+
+    if (result.success) {
+      showToast(result.message!, 'success');
+      await reloadData();
+    } else {
+      showToast(result.error || 'Erro ao iniciar serviço', 'error');
+    }
+  };
 
   const handleImageUpload = async (serviceId: string, file: File) => {
     const result = await uploadImage(serviceId, file);
@@ -110,12 +123,14 @@ function ExecutionEvidenceContent() {
                 key={service.id}
                 service={service}
                 serviceIndex={index}
+                onStart={() => handleStartService(service.id, service.description)}
                 onImageUpload={file => handleImageUpload(service.id, file)}
                 onComplete={() => handleCompleteService(service.id, service.description)}
                 onEvidenceDescriptionChange={(evidenceIndex, desc) =>
                   updateEvidenceDescription(service.id, evidenceIndex, desc)
                 }
                 onEvidenceRemove={evidenceIndex => removeEvidence(service.id, evidenceIndex)}
+                starting={starting}
                 uploading={uploading}
                 completing={completing}
               />
