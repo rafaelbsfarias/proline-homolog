@@ -16,15 +16,26 @@ type VehicleRow = {
 
 export default function AdminVehiclesListPage() {
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<VehicleRow[]>([]);
+  const [total, setTotal] = useState<number>(0);
   const { get } = useAuthenticatedFetch();
 
   const query = useMemo(() => {
     const p = new URLSearchParams();
     if (q.trim()) p.set('q', q.trim());
+    p.set('page', String(page));
+    p.set('limit', String(pageSize));
     return p.toString();
+  }, [q, page]);
+
+  // Resetar página quando o filtro muda
+  useEffect(() => {
+    const t = setTimeout(() => setPage(1), 300);
+    return () => clearTimeout(t);
   }, [q]);
 
   useEffect(() => {
@@ -34,12 +45,19 @@ export default function AdminVehiclesListPage() {
       setError(null);
       try {
         const url = `/api/admin/vehicles${query ? `?${query}` : ''}`;
-        const resp = await get<{ success: boolean; vehicles: VehicleRow[] }>(url);
+        const resp = await get<{
+          success: boolean;
+          vehicles: VehicleRow[];
+          total?: number;
+          page?: number;
+          pageSize?: number;
+        }>(url);
         if (!resp.ok || !resp.data?.success) {
           throw new Error(resp.error || 'Erro ao listar veículos');
         }
         if (!active) return;
         setRows(resp.data.vehicles || []);
+        setTotal(resp.data.total ?? (resp.data.vehicles?.length || 0));
       } catch (e: any) {
         if (active) setError(e?.message || 'Erro ao listar veículos');
       } finally {
@@ -98,7 +116,41 @@ export default function AdminVehiclesListPage() {
             ) : error ? (
               <span style={{ color: '#b91c1c' }}>{error}</span>
             ) : (
-              <span style={{ color: '#374151' }}>Total: {rows.length}</span>
+              <div
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              >
+                <span style={{ color: '#374151' }}>Total: {total}</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1 || loading}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                      background: page <= 1 ? '#f3f4f6' : '#fff',
+                      color: page <= 1 ? '#9ca3af' : '#374151',
+                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Anterior
+                  </button>
+                  <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={loading || page * pageSize >= total}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                      background: page * pageSize >= total ? '#f3f4f6' : '#fff',
+                      color: page * pageSize >= total ? '#9ca3af' : '#374151',
+                      cursor: page * pageSize >= total ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Próxima
+                  </button>
+                </div>
+              </div>
             )}
           </div>
           <div style={{ overflowX: 'auto' }}>

@@ -27,6 +27,9 @@ const PendingTimeRevisionsCard: React.FC<PendingTimeRevisionsCardProps> = ({
   onReviewClick,
   onDetailsClick,
 }) => {
+  // Garantir que revisions é sempre um array
+  const safeRevisions = Array.isArray(revisions) ? revisions : [];
+
   if (loading) {
     return (
       <div className={styles.card}>
@@ -38,7 +41,7 @@ const PendingTimeRevisionsCard: React.FC<PendingTimeRevisionsCardProps> = ({
     );
   }
 
-  if (!revisions || revisions.length === 0) {
+  if (safeRevisions.length === 0) {
     return null; // Ocultar card quando não há revisões
   }
 
@@ -57,12 +60,12 @@ const PendingTimeRevisionsCard: React.FC<PendingTimeRevisionsCardProps> = ({
       <div className={styles.header}>
         <h2 className={styles.title}>
           ⏱️ Solicitações de Ajuste de Prazo
-          <span className={styles.badge}>{revisions.length}</span>
+          <span className={styles.badge}>{safeRevisions.length}</span>
         </h2>
       </div>
 
       <div className={styles.list}>
-        {revisions.map(revision => (
+        {safeRevisions.map(revision => (
           <div key={revision.quote_id} className={styles.item}>
             <div className={styles.itemHeader}>
               <div className={styles.vehicleInfo}>

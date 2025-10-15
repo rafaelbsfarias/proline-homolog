@@ -4,12 +4,16 @@ import Header from '@/modules/admin/components/Header';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { useChecklistCache } from '@/modules/partner/hooks/useChecklistCache';
+import { usePartnerTimeRevisions } from '@/modules/partner/hooks/usePartnerTimeRevisions';
 
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
 import { PARTNER_CONTRACT_CONTENT } from '@/modules/common/constants/contractContent';
 import ServiceModal from '@/modules/partner/components/services/ServiceModal';
 import ContractAcceptanceView from '@/modules/partner/components/contract/ContractAcceptanceView';
+import PendingTimeRevisionsCard from '@/modules/partner/components/PendingTimeRevisionsCard/PendingTimeRevisionsCard';
+import QuotesInReviewCard from '@/modules/partner/components/QuotesInReviewCard/QuotesInReviewCard';
+import TimeRevisionModal from '@/modules/partner/components/TimeRevisionModal/TimeRevisionModal';
 import {
   usePartnerDashboard,
   type PendingQuote,
@@ -56,6 +60,22 @@ const PartnerDashboard = () => {
   const [isAcceptingContract, setIsAcceptingContract] = useState(false);
   const [quotesWithChecklist, setQuotesWithChecklist] = useState<Set<string>>(new Set());
   const [isCheckingChecklists, setIsCheckingChecklists] = useState(false);
+
+  // Time Revisions
+  const [showTimeRevisionModal, setShowTimeRevisionModal] = useState(false);
+  const [selectedQuoteForRevision, setSelectedQuoteForRevision] = useState<string | null>(null);
+
+  // Hook de revisões de tempo
+  const {
+    pendingRevisions,
+    quotesInReview,
+    loading: revisionsLoading,
+    loadingInReview,
+    fetchRevisionDetails,
+    updateTimes,
+    fetchPendingRevisions,
+    fetchQuotesInReview,
+  } = usePartnerTimeRevisions();
 
   // Sistema de toast interno
   const [toast, setToast] = useState<{
@@ -278,6 +298,27 @@ const PartnerDashboard = () => {
     router.push(`/dashboard/partner/execution-evidence?quoteId=${service.id}`);
   };
 
+  // Handlers para revisão de prazos
+  const handleReviewClick = (quoteId: string) => {
+    setSelectedQuoteForRevision(quoteId);
+    setShowTimeRevisionModal(true);
+  };
+
+  const handleDetailsClick = (quoteId: string) => {
+    router.push(`/dashboard/partner/orcamento?quoteId=${quoteId}`);
+  };
+
+  const handleRevisionSuccess = async () => {
+    showToast('Prazos atualizados com sucesso! Orçamento enviado para revisão do admin.');
+    setShowTimeRevisionModal(false);
+    setSelectedQuoteForRevision(null);
+    await Promise.all([fetchPendingRevisions(), fetchQuotesInReview()]);
+  };
+
+  const handleViewQuoteDetails = (quoteId: string) => {
+    setSelectedQuoteForRevision(quoteId);
+    setShowTimeRevisionModal(true);
+  };
   const pendingQuotesColumns: { key: keyof PendingQuoteDisplay; header: string }[] = [
     { key: 'vehicle', header: 'Veículo' },
     { key: 'status', header: 'Status' },
@@ -330,6 +371,14 @@ const PartnerDashboard = () => {
               </ActionButton>
             </div>
           </div>
+
+          {/* Card de Revisões de Prazo Pendentes */}
+          <PendingTimeRevisionsCard
+            revisions={pendingRevisions}
+            loading={revisionsLoading}
+            onReviewClick={handleReviewClick}
+            onDetailsClick={handleDetailsClick}
+          />
 
           {/* Contador de Serviços em Andamento */}
           <div style={{ marginBottom: 24 }}>
@@ -493,6 +542,14 @@ const PartnerDashboard = () => {
             loading={isCheckingChecklists}
           />
 
+          {/* Card de Orçamentos em Análise */}
+          <QuotesInReviewCard
+            quotes={quotesInReview}
+            loading={loadingInReview}
+            onViewDetailsClick={handleViewQuoteDetails}
+            onEditTimesClick={handleReviewClick}
+          />
+
           <DataTable<InProgressServiceDisplay>
             title="Orçamentos Aprovados - Aguardando Execução"
             data={inProgressServices.map(service => ({
@@ -520,6 +577,19 @@ const PartnerDashboard = () => {
           />
         </main>
       )}
+
+      {/* Time Revision Modal */}
+      <TimeRevisionModal
+        isOpen={showTimeRevisionModal}
+        onClose={() => {
+          setShowTimeRevisionModal(false);
+          setSelectedQuoteForRevision(null);
+        }}
+        quoteId={selectedQuoteForRevision}
+        onSuccess={handleRevisionSuccess}
+        fetchRevisionDetails={fetchRevisionDetails}
+        updateTimes={updateTimes}
+      />
 
       {/* Toast Component */}
       {toast.show && (
