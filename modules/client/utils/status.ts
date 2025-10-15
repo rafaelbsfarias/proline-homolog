@@ -1,3 +1,5 @@
+import { capitalizeTitle } from '@/modules/vehicles/timeline/utils';
+
 export function sanitizeStatus(status?: string): string {
   return (status ?? '').toString().trim().toLowerCase().replace(/\s+/g, '-');
 }
@@ -5,18 +7,9 @@ export function sanitizeStatus(status?: string): string {
 export function statusLabel(status?: string): string {
   if (!status) return '—';
   const raw = String(status).trim();
-  const s = raw.toUpperCase();
-  if (s === 'AGUARDANDO DEFINIÇÃO DE COLETA') return 'Aguardando definição de coleta';
-  if (s === 'PONTO DE COLETA SELECIONADO') return 'Ponto de coleta selecionado';
-  if (s === 'AGUARDANDO APROVAÇÃO DA COLETA') return 'Aguardando aprovação da coleta';
-  if (s === 'AGUARDANDO COLETA') return 'Aguardando coleta';
-  if (s === 'AGUARDANDO CHEGADA DO CLIENTE') return 'Aguardando chegada do cliente';
-  if (s === 'AGUARDANDO CHEGADA DO VEÍCULO') return 'Aguardando chegada do veículo';
-  if (s === 'CHEGADA CONFIRMADA') return 'Chegada confirmada';
-  if (s === 'EM ANÁLISE') return 'Em análise';
-  if (s === 'ANÁLISE FINALIZADA' || s === 'ANALISE FINALIZADA') return 'Análise finalizada';
-  if (s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') return 'Solicitação de mudança de data';
-  return raw;
+
+  // Usar capitalização automática para padronizar todos os status
+  return capitalizeTitle(raw);
 }
 
 export function statusOrder(statusRaw: string): number {

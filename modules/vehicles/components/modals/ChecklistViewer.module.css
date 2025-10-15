@@ -172,6 +172,9 @@
   position: relative;
   border-radius: 6px;
   overflow: hidden;
+  background: white;
+  padding: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .evidenceImage {
@@ -185,6 +188,14 @@
 
 .evidenceImage:hover {
   transform: scale(1.05);
+}
+
+.evidenceDescription {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.4;
 }
 
 /* Anomalias - Styles */

@@ -195,6 +195,26 @@ async function generateVehicles(numVehicles = 100) {
       const randomYear = 2000 + Math.floor(Math.random() * 25);
       const plate = `ABC${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String(Math.floor(Math.random() * 10)).padStart(1, '0')}`;
 
+      // Gerar valores para preparacao e comercializacao
+      // Garantir que nunca ambos sejam false
+      let preparacao, comercializacao;
+      const randomCase = Math.floor(Math.random() * 3);
+
+      switch (randomCase) {
+        case 0: // true, true
+          preparacao = true;
+          comercializacao = true;
+          break;
+        case 1: // true, false
+          preparacao = true;
+          comercializacao = false;
+          break;
+        case 2: // false, true
+          preparacao = false;
+          comercializacao = true;
+          break;
+      }
+
       vehiclesToInsert.push({
         client_id: clientId,
         plate: plate,
@@ -203,6 +223,8 @@ async function generateVehicles(numVehicles = 100) {
         color: randomColor,
         year: randomYear,
         status: 'AGUARDANDO DEFINIÇÃO DE COLETA',
+        preparacao: preparacao,
+        comercializacao: comercializacao,
       });
     }
 

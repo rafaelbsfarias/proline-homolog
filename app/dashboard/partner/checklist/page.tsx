@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePartnerChecklist } from '@/modules/partner/hooks/usePartnerChecklist';
+import { useChecklistOrchestrator } from '@/modules/partner/hooks/checklist/useChecklistOrchestrator';
 import PartnerChecklistGroups from '@/modules/partner/components/checklist/PartnerChecklistGroups';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import InspectionData from '@/modules/partner/components/InspectionData';
+import { usePartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/hooks/usePartRequestModal';
+import { PartRequest } from '@/app/dashboard/partner/dynamic-checklist/types';
+import { PartRequestModal } from '@/app/dashboard/partner/dynamic-checklist/components/PartRequestModal';
+import { type EvidenceKey } from '@/modules/partner/constants/checklist';
 
 const ChecklistPage = () => {
   const router = useRouter();
@@ -19,14 +23,49 @@ const ChecklistPage = () => {
     setField,
     saveChecklist,
     evidences,
-    setEvidence,
+    addEvidence,
     removeEvidence,
-  } = usePartnerChecklist();
+    partRequests,
+  } = useChecklistOrchestrator();
+
+  // Solicitações de peças por item do checklist
+  const [itemPartRequests, setItemPartRequests] = useState<
+    Partial<Record<EvidenceKey, PartRequest>>
+  >({});
+  const { modalState, open, close, updateField, buildPartRequest } = usePartRequestModal();
+
+  // Recuperar part_requests salvos quando o componente montar
+  useEffect(() => {
+    if (partRequests && Object.keys(partRequests).length > 0) {
+      setItemPartRequests(partRequests as Partial<Record<EvidenceKey, PartRequest>>);
+    }
+  }, [partRequests]);
+
+  const handleOpenPartRequestModal = (itemKey: EvidenceKey, existing?: PartRequest) => {
+    open(itemKey, existing);
+  };
+
+  const handleSavePartRequest = () => {
+    const pr = buildPartRequest();
+    if (pr && modalState.anomalyId) {
+      const key = modalState.anomalyId as EvidenceKey;
+      setItemPartRequests(prev => ({ ...prev, [key]: pr }));
+      close();
+    }
+  };
+
+  const handleRemovePartRequest = (itemKey: EvidenceKey) => {
+    setItemPartRequests(prev => {
+      const copy = { ...prev };
+      delete copy[itemKey];
+      return copy;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await saveChecklist();
+      await saveChecklist(itemPartRequests);
       // Após salvar com sucesso, voltar ao dashboard para habilitar edição de orçamento
       router.push('/dashboard');
     } catch {
@@ -127,7 +166,7 @@ const ChecklistPage = () => {
               margin: 0,
             }}
           >
-            Checklist do Veículo
+            Vistoria do Veículo
           </h1>
         </div>
       </div>
@@ -270,8 +309,11 @@ const ChecklistPage = () => {
               }}
               onChange={(name, value) => setField(name, value)}
               evidences={evidences}
-              setEvidence={setEvidence}
+              setEvidence={addEvidence}
               removeEvidence={removeEvidence}
+              partRequests={itemPartRequests}
+              onOpenPartRequestModal={handleOpenPartRequestModal}
+              onRemovePartRequest={handleRemovePartRequest}
             />
           </div>
 
@@ -362,6 +404,14 @@ const ChecklistPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Modal de Solicitação de Peças (reaproveitado do dynamic-checklist) */}
+      <PartRequestModal
+        modalState={modalState}
+        onClose={close}
+        onSave={handleSavePartRequest}
+        onUpdateField={updateField}
+      />
     </div>
   );
 };

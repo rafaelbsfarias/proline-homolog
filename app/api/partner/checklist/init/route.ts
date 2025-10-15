@@ -40,75 +40,44 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       quoteId: quoteId?.slice(0, 8),
     });
 
-    // Buscar categoria do parceiro
-    const { data: partnerCategories, error: categoryError } = await supabase.rpc(
-      'get_partner_categories',
-      { partner_id: partnerId }
-    );
-    if (categoryError) {
-      logger.warn('category_fetch_error', { error: categoryError.message });
-    }
-    const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
-    const categoryName = normalizePartnerCategoryName(partnerCategories);
+    // Buscar informações do veículo
+    const { data: vehicleData, error: vehicleError } = await supabase
+      .from('vehicles')
+      .select('id, brand, model, year, plate, color, status')
+      .eq('id', vehicleId)
+      .single();
 
-    // Status formatado para a timeline
+    if (vehicleError || !vehicleData) {
+      logger.error('vehicle_not_found', { vehicleId: vehicleId.slice(0, 8), error: vehicleError });
+      return NextResponse.json(
+        { success: false, error: 'Veículo não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Buscar categoria do parceiro
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('category')
+      .eq('profile_id', partnerId)
+      .single();
+
+    const partnerCategory = partner?.category || null;
+
+    const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
+    const categoryName = normalizePartnerCategoryName(partnerCategory);
+
+    // Nota: A criação do registro na timeline "Fase Orçamentária Iniciada"
+    // foi movida para /api/partner/checklist/submit para evitar duplicatas.
+    // Este endpoint apenas registra que o parceiro iniciou o acesso ao checklist.
+
     const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
 
-    // Verificar se já existe registro deste status na timeline
-    const { data: existingHistory } = await supabase
-      .from('vehicle_history')
-      .select('id, created_at')
-      .eq('vehicle_id', vehicleId)
-      .eq('status', timelineStatus)
-      .order('created_at', { ascending: true });
-
-    if (!existingHistory || existingHistory.length === 0) {
-      // Se não existe, criar novo registro na timeline
-      const { error: historyError } = await supabase.from('vehicle_history').insert({
-        vehicle_id: vehicleId,
-        status: timelineStatus,
-        prevision_date: null,
-        end_date: null,
-        created_at: new Date().toISOString(),
-      });
-
-      if (historyError) {
-        logger.error('history_insert_error', { error: historyError.message });
-        // Não falhar a request por causa do histórico
-      } else {
-        logger.info('history_created', {
-          vehicleId: vehicleId.slice(0, 8),
-          status: timelineStatus,
-        });
-      }
-    } else {
-      logger.info('history_already_exists', {
-        vehicleId: vehicleId.slice(0, 8),
-        duplicates: existingHistory.length,
-      });
-
-      // Deduplicação: manter o primeiro e remover demais
-      if (existingHistory.length > 1) {
-        const idsToKeep = existingHistory[0]?.id;
-        const idsToDelete = existingHistory.slice(1).map(h => h.id);
-
-        if (idsToDelete.length > 0) {
-          const { error: cleanupError } = await supabase
-            .from('vehicle_history')
-            .delete()
-            .in('id', idsToDelete);
-
-          if (cleanupError) {
-            logger.warn('history_cleanup_error', { error: cleanupError.message });
-          } else {
-            logger.info('history_cleanup_done', {
-              kept: idsToKeep,
-              removedCount: idsToDelete.length,
-            });
-          }
-        }
-      }
-    }
+    logger.info('init_endpoint_timeline_skipped', {
+      vehicleId: vehicleId.slice(0, 8),
+      partnerId: partnerId.slice(0, 8),
+      reason: 'Timeline entry will be created only when checklist is submitted',
+    });
 
     // Atualizar status do veículo se ainda estiver em "Análise Finalizada" ou "Em Análise"
     const { data: vehicle } = await supabase
@@ -144,10 +113,70 @@ async function initChecklistHandler(req: AuthenticatedRequest): Promise<NextResp
       }
     }
 
+    // Buscar template da categoria
+    let template = null;
+    if (partnerCategory) {
+      const { ChecklistTemplateService } = await import(
+        '@/modules/partner/services/checklist/templates/ChecklistTemplateService'
+      );
+      const templateService = new ChecklistTemplateService(supabase);
+      const normalizedCategory = partnerCategory
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/[\/]/g, '_');
+
+      template = await templateService.getActiveTemplateForCategory(normalizedCategory);
+
+      if (template) {
+        logger.info('template_loaded', {
+          category: normalizedCategory,
+          template_id: template.id,
+          items_count: template.items?.length || 0,
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Fase orçamentária iniciada com sucesso',
       status: timelineStatus,
+      data: {
+        vehicle: {
+          id: vehicleData.id,
+          brand: vehicleData.brand,
+          model: vehicleData.model,
+          year: vehicleData.year,
+          plate: vehicleData.plate,
+          color: vehicleData.color,
+          status: vehicleData.status,
+        },
+        category: partnerCategory,
+        normalizedCategory: partnerCategory
+          ? partnerCategory
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/\s+/g, '_')
+              .replace(/[\/]/g, '_')
+          : null,
+        template: template
+          ? {
+              id: template.id,
+              title: template.title,
+              version: template.version,
+              sections: template.items
+                ? Array.from(new Set(template.items.map(item => item.section))).map(section => ({
+                    section,
+                    items: template
+                      .items!.filter(item => item.section === section)
+                      .sort((a, b) => a.position - b.position),
+                  }))
+                : [],
+            }
+          : null,
+      },
     });
   } catch (error) {
     logger.error('init_checklist_error', {

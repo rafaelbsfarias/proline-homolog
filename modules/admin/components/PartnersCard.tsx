@@ -79,6 +79,22 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
     });
   }, [partners, query, filter]);
 
+  // Ordenação: decrescente por 'para aprovação', depois 'em execução', depois 'pendentes'
+  const sorted = React.useMemo(() => {
+    const arr = filtered.slice();
+    arr.sort((a, b) => {
+      const byApproval = (b.approval_budgets || 0) - (a.approval_budgets || 0);
+      if (byApproval !== 0) return byApproval;
+      const byExecuting = (b.executing_budgets || 0) - (a.executing_budgets || 0);
+      if (byExecuting !== 0) return byExecuting;
+      const byPending = (b.pending_budgets || 0) - (a.pending_budgets || 0);
+      if (byPending !== 0) return byPending;
+      // fallback determinístico por nome
+      return a.company_name.localeCompare(b.company_name);
+    });
+    return arr;
+  }, [filtered]);
+
   return (
     <div className={containerStyles.partnersCardOuter}>
       <div className={styles.partnersCard}>
@@ -128,7 +144,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map(partner => (
+              {sorted.map(partner => (
                 <tr key={partner.id} className={styles.tableRow}>
                   <td className={styles.companyCell}>
                     <a

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import styles from './Toolbar.module.css';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
@@ -47,9 +48,14 @@ const VehiclesCounter: React.FC<VehiclesCounterProps> = ({ onLoadingChange }) =>
 
   if (loading) return <span className={styles.counterCard}>Carregando...</span>;
   return (
-    <span className={styles.counterCard} title="Total de veículos cadastrados">
+    <Link
+      href="/admin/vehicles"
+      className={styles.counterCard}
+      title="Ver listagem geral de veículos"
+      style={{ cursor: 'pointer', display: 'inline-block', textDecoration: 'none' }}
+    >
       Veículos: {count}
-    </span>
+    </Link>
   );
 };
 

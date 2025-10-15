@@ -42,10 +42,15 @@ async function loadChecklistHandler(req: AuthenticatedRequest) {
 
     // Carrega checklist com evidências e itens formatados
     // Passa ambos IDs, service decidirá qual usar
-    const result = await checklistService.loadChecklistWithDetails(inspectionId, quoteId);
+    const result = await checklistService.loadChecklistWithDetails(
+      inspectionId,
+      quoteId,
+      req.user.id
+    );
 
     if (!result.success) {
-      return NextResponse.json({ ok: false, error: result.error }, { status: 500 });
+      const errorMessage = 'error' in result && result.error ? result.error : 'Erro desconhecido';
+      return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
     }
 
     logger.info('load_ok', { inspection_id: inspectionId, quote_id: quoteId });

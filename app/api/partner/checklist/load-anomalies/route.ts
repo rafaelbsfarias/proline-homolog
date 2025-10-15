@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withPartnerAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { ChecklistService } from '@/modules/partner/services/ChecklistService';
+import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { getLogger } from '@/modules/logger';
 import { z } from 'zod';
 
@@ -75,10 +76,48 @@ async function loadAnomaliesHandler(req: AuthenticatedRequest) {
     });
 
     const checklistService = ChecklistService.getInstance();
+
+    // Access control: garantir que o parceiro tem acesso
+    // 1) Se existir mechanics_checklist com os IDs fornecidos, ele deve pertencer ao partner
+    // 2) Caso não exista, validar se há quote do partner para o vehicle_id
+    const supabase = SupabaseService.getInstance().getAdminClient();
+    let ownershipOk = false;
+    try {
+      if (validQuoteId || validInspectionId) {
+        let q = supabase.from('mechanics_checklist').select('id, partner_id').limit(1);
+        if (validQuoteId) q = q.eq('quote_id', validQuoteId);
+        if (validInspectionId) q = q.eq('inspection_id', validInspectionId);
+        const { data: chk } = await q.maybeSingle();
+        if (chk?.partner_id) {
+          ownershipOk = chk.partner_id === partnerId;
+        }
+      }
+      if (!ownershipOk) {
+        const { data: accessCheck } = await supabase
+          .from('quotes')
+          .select(`id, service_orders!inner(vehicle_id)`)
+          .eq('partner_id', partnerId)
+          .eq('service_orders.vehicle_id', validVehicleId)
+          .limit(1);
+        ownershipOk = Array.isArray(accessCheck) && accessCheck.length > 0;
+      }
+    } catch (ace) {
+      logger.warn('access_check_error', {
+        error: ace instanceof Error ? ace.message : String(ace),
+      });
+    }
+
+    if (!ownershipOk) {
+      return NextResponse.json(
+        { success: false, error: 'Acesso negado a anomalias deste veículo' },
+        { status: 403 }
+      );
+    }
     const result = await checklistService.loadAnomaliesWithSignedUrls(
       validInspectionId || null,
       validVehicleId,
-      validQuoteId || null
+      validQuoteId || null,
+      partnerId
     );
 
     if (!result.success) {

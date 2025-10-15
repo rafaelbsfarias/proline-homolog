@@ -15,9 +15,13 @@ import { Loading } from '@/modules/common/components/Loading/Loading';
 import Modal from '@/modules/common/components/Modal/Modal';
 import QuoteReviewModal from '@/modules/admin/components/QuoteReviewModal';
 import { ChecklistViewer } from '@/modules/vehicles/components/modals/ChecklistViewer';
-import { usePartnerChecklist } from '@/modules/vehicles/hooks/usePartnerChecklist';
+import type { PartnerChecklistData } from '@/modules/vehicles/hooks/usePartnerChecklist';
 import { supabase } from '@/modules/common/services/supabaseClient';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { formatQuoteStatus } from '@/modules/common/utils/format';
+import { getLogger } from '@/modules/logger';
+
+const logger = getLogger('admin:partner-overview');
 
 // Import extracted hooks
 import { usePartnerData } from '@/modules/admin/partner-overview/hooks/usePartnerData';
@@ -57,9 +61,9 @@ export default function PartnerOverviewPage() {
   // === Checklist Modal State ===
   const [showChecklistModal, setShowChecklistModal] = useState(false);
   const [vehicleIdForChecklist, setVehicleIdForChecklist] = useState<string | null>(null);
-  const { data: checklistData, loading: checklistLoading } = usePartnerChecklist(
-    vehicleIdForChecklist || undefined
-  );
+  const [checklistData, setChecklistData] = useState<PartnerChecklistData | null>(null);
+  const [checklistLoading, setChecklistLoading] = useState(false);
+  const { authenticatedFetch } = useAuthenticatedFetch();
 
   // === Handlers ===
 
@@ -105,10 +109,31 @@ export default function PartnerOverviewPage() {
     }
   }, []);
 
-  const handleOpenChecklist = useCallback((vehicleId: string) => {
-    setVehicleIdForChecklist(vehicleId);
-    setShowChecklistModal(true);
-  }, []);
+  const handleOpenChecklist = useCallback(
+    async (vehicleId: string) => {
+      setVehicleIdForChecklist(vehicleId);
+      setShowChecklistModal(true);
+      setChecklistLoading(true);
+      setChecklistData(null);
+
+      try {
+        // MIGRADO: usando nova API POST /api/partner/checklist/load
+        const response = await authenticatedFetch('/api/partner/checklist/load', {
+          method: 'POST',
+          body: JSON.stringify({ quoteId: vehicleId }),
+        });
+
+        if (response.ok && response.data) {
+          setChecklistData(response.data as PartnerChecklistData);
+        }
+      } catch (error) {
+        logger.error('checklist_load_error', { vehicleId, error });
+      } finally {
+        setChecklistLoading(false);
+      }
+    },
+    [authenticatedFetch]
+  );
 
   const handleCloseChecklist = useCallback(() => {
     setShowChecklistModal(false);

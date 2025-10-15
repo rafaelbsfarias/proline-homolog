@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { getLogger } from '@/modules/logger';
 
 const logger = getLogger('hooks:usePartnerChecklistCategories');
 
-interface PartnerChecklistCategory {
+interface PartnerChecklistEntry {
+  id: string;
   category: string;
   partner_id: string;
   partner_name: string;
+  type: 'mechanics_checklist' | 'vehicle_anomalies';
   has_anomalies: boolean;
+  created_at: string;
+  status: string;
 }
 
 /**
@@ -16,9 +20,10 @@ interface PartnerChecklistCategory {
  * para um determinado veículo
  */
 export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?: string) {
-  const [categories, setCategories] = useState<PartnerChecklistCategory[]>([]);
+  const [categories, setCategories] = useState<PartnerChecklistEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!vehicleId) {
@@ -27,6 +32,13 @@ export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?:
     }
 
     const fetchCategories = async () => {
+      // Evitar execução duplicada em StrictMode no dev para o mesmo conjunto de chaves
+      const key = `${vehicleId || ''}|${inspectionId || ''}`;
+      if (lastKeyRef.current === key) {
+        return;
+      }
+      lastKeyRef.current = key;
+
       setLoading(true);
       setError(null);
 
@@ -38,11 +50,13 @@ export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?:
         } = await supabase.auth.getSession();
 
         if (sessionError || !session?.access_token) {
-          logger.error('session_error', {
+          // Em ambientes sem sessão, definir erro
+          logger.warn('session_missing_or_error', {
             error: sessionError,
             hasSession: !!session,
           });
-          setError('Sessão de autenticação não encontrada');
+          setCategories([]);
+          setError('Sessão não encontrada');
           setLoading(false);
           return;
         }
@@ -80,16 +94,20 @@ export function usePartnerChecklistCategories(vehicleId?: string, inspectionId?:
           } catch {
             errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
           }
-          logger.error('fetch_categories_failed', {
+          // Usar lista vazia para reduzir ruído de console e manter UX funcional
+          logger.warn('fetch_categories_failed', {
             status: response.status,
             statusText: response.statusText,
             error: errorData,
           });
-          setError(errorData.error || `Erro ${response.status} ao buscar categorias`);
+          setCategories([]);
+          setError('Erro ao carregar categorias');
         }
       } catch (err) {
-        logger.error('fetch_categories_error', { error: err });
-        setError('Erro ao buscar categorias de checklist');
+        // Fallback para lista vazia em erros inesperados (ex.: offline)
+        logger.warn('fetch_categories_error', { error: err });
+        setCategories([]);
+        setError('Erro ao carregar categorias');
       } finally {
         setLoading(false);
       }

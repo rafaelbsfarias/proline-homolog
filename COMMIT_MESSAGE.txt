@@ -1,0 +1,102 @@
+feat: implementar aprovação de prazos por especialistas
+
+Implementa sistema completo para que especialistas possam revisar e
+aprovar os prazos estimados definidos pelos parceiros nos orçamentos.
+
+## Backend
+
+### Database
+- Adiciona tabela `quote_time_reviews` para rastrear revisões
+- Adiciona valores ao ENUM `quote_status`:
+  - `specialist_time_approved`
+  - `specialist_time_revision_requested`
+- Implementa RLS policies para segurança
+- Adiciona índices para otimização
+
+### APIs Especialista
+- GET `/api/specialist/quotes/pending-time-approval`
+  - Lista orçamentos aprovados aguardando revisão
+  - Query otimizada para evitar erro 500
+  - Retorna dados completos (parceiro, cliente, veículo, itens)
+
+- POST `/api/specialist/quotes/[quoteId]/review-times`
+  - Permite aprovar ou solicitar revisão de prazos
+  - Valida acesso do especialista
+  - Cria registro de revisão e atualiza status
+
+### APIs Parceiro
+- GET `/api/partner/quotes/[quoteId]/time-reviews`
+  - Lista revisões solicitadas para um orçamento
+  - Mostra histórico com dados do especialista
+
+- PUT `/api/partner/quotes/[quoteId]/update-times`
+  - Permite atualizar prazos após revisão
+  - Valida estado do orçamento
+  - Retorna status para `approved`
+
+## Frontend
+
+### Especialista
+- Página `/dashboard/specialist/time-approvals`
+  - Lista de orçamentos pendentes de revisão
+  - Cards com informações completas
+  - Modal para aprovação/revisão de prazos
+  - Interface para solicitar revisões específicas
+  - Estilização completa e responsiva
+
+- Componente `SpecialistTimeApprovalsCounter`
+  - Integrado no dashboard do especialista
+  - Mostra quantidade de aprovações pendentes
+  - Navega para página ao clicar
+  - Esconde quando não há pendências
+
+## Fluxo de Trabalho
+
+1. Parceiro cria orçamento com prazos (status: pending_admin_approval)
+2. Admin aprova orçamento (status: approved)
+3. Especialista revisa prazos:
+   - Aprovar → status: specialist_time_approved
+   - Solicitar Revisão → status: specialist_time_revision_requested
+4. Parceiro atualiza prazos (status volta para approved)
+5. Loop até aprovação final
+
+## Segurança
+
+- RLS policies implementadas
+- Validação de ownership em todas as APIs
+- Middlewares withSpecialistAuth e withPartnerAuth
+- Verificação de relacionamento especialista-cliente
+
+## Correções
+
+### Erro 500 na API
+- Problema: Query complexa com joins aninhados
+- Solução: Mudança para queries sequenciais
+- Resultado: API funcionando corretamente
+
+## Documentação
+
+- docs/features/SPECIALIST_TIME_APPROVAL.md: Guia completo
+- docs/refactoring/SPECIALIST_TIME_APPROVAL_REVIEW.md: Análise técnica
+- docs/refactoring/SPECIALIST_TIME_APPROVAL_SUMMARY.md: Resumo executivo
+- scripts/test-time-approval-api.sh: Script de teste
+
+## Pendente (Próximo PR)
+
+- Interface do parceiro para responder revisões
+- Sistema de notificações
+- Testes E2E
+- View materializada para performance
+
+## Breaking Changes
+
+Nenhum. Feature é aditiva e não afeta fluxos existentes.
+
+## Migrations
+
+- 20251015073145_add_specialist_time_approval_status.sql
+- 20251015073926_add_specialist_time_status_to_quote_enum.sql
+
+Executar: `supabase migration up`
+
+Refs: #TIME-APPROVAL

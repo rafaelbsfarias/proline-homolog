@@ -45,8 +45,8 @@ async function uploadEvidenceHandler(req: AuthenticatedRequest): Promise<NextRes
       file,
       {
         bucket: 'vehicle-media',
-        // Padrão unificado: <vehicle_id>/<partner_id>/itens
-        folder: `${vehicle_id}/${userId}/itens`,
+        // Estrutura organizada: <vehicle_id>/<partner_id>/evidences/<item_key>
+        folder: `${vehicle_id}/${userId}/evidences/${item_key}`,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'webp'],
         maxSizeBytes: 10 * 1024 * 1024, // 10MB
         cacheControl: '3600',

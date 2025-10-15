@@ -2,8 +2,8 @@ export function mapToTopCategory(inputCategory: string, itemKey?: string): strin
   const c = (inputCategory || '').toLowerCase();
   const k = (itemKey || '').toLowerCase();
 
-  // Pintura / Funilaria
-  if (c.includes('pintura') || c.includes('funilaria')) return 'Pintura/Funilaria';
+  // Funilaria / Pintura
+  if (c.includes('pintura') || c.includes('funilaria')) return 'Funilaria/Pintura';
 
   // Pneus: por categoria ou por chaves conhecidas
   if (c.includes('pneu')) return 'Pneus';

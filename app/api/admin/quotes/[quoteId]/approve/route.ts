@@ -74,20 +74,14 @@ export const POST = withAdminAuth(
           .single();
 
         if (serviceOrder?.vehicle_id) {
-          // Atualizar status do veículo
-          await admin
-            .from('vehicles')
-            .update({ status: 'Fase Orçamentaria' })
-            .eq('id', serviceOrder.vehicle_id);
-
-          // Criar entrada no vehicle_history
+          // Criar entrada no vehicle_history (não alterar vehicles.status aqui)
           await admin.from('vehicle_history').insert({
             vehicle_id: serviceOrder.vehicle_id,
             status: 'Orçamento Aprovado pelo Administrador',
             notes: 'Aprovação integral via rota simplificada',
           });
 
-          logger.info('vehicle_status_updated_after_approval', {
+          logger.info('vehicle_history_created_after_approval', {
             vehicleId: serviceOrder.vehicle_id,
             quoteId,
           });
