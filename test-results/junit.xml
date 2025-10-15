@@ -1,25 +1,345 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="10" failures="0" errors="0" time="0.005267693">
-    <testsuite name="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" timestamp="2025-10-15T03:00:13.831Z" hostname="pop-os" tests="10" failures="0" errors="0" skipped="0" time="0.005267693">
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_SUBMIT=false" time="0.001341337">
+<testsuites name="vitest tests" tests="161" failures="0" errors="0" time="0.198731802">
+    <testsuite name="modules/partner/checklist/application/__tests__/domain-entities.test.ts" timestamp="2025-10-15T03:22:01.150Z" hostname="pop-os" tests="29" failures="0" errors="0" skipped="0" time="0.010362259">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve criar PartnerService com dados válidos" time="0.001830515">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_SUBMIT=true" time="0.000283981">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve falhar com ID vazio" time="0.000283456">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_ANOMALIES=false" time="0.000447181">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve falhar com partner ID vazio" time="0.000309446">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_ANOMALIES=true" time="0.000161729">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve falhar com nome inválido" time="0.000275">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_INIT=false" time="0.000313848">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve falhar com preço inválido" time="0.000271409">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_INIT=true" time="0.000136613">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; create &gt; deve falhar com descrição inválida" time="0.000157371">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do submit checklist" time="0.000146019">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; reconstruct &gt; deve reconstruir PartnerService a partir de dados persistidos" time="0.00068573">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do save anomalies" time="0.000675053">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateName &gt; deve atualizar nome com sucesso" time="0.000378054">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do init checklist" time="0.000228114">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateName &gt; deve falhar com nome inválido" time="0.000166392">
         </testcase>
-        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Error Handling &gt; deve fazer fallback graceful quando DDD falha" time="0.000212666">
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updatePrice &gt; deve atualizar preço com sucesso" time="0.000246879">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updatePrice &gt; deve falhar com preço inválido" time="0.000135415">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateDescription &gt; deve atualizar descrição com sucesso" time="0.000242259">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateMultiple &gt; deve atualizar múltiplas propriedades com sucesso" time="0.000229362">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateMultiple &gt; deve atualizar apenas propriedades fornecidas" time="0.000305616">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; updateMultiple &gt; deve falhar se alguma propriedade for inválida" time="0.000165528">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; deactivate/reactivate &gt; deve desativar serviço" time="0.000157797">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; deactivate/reactivate &gt; deve reativar serviço" time="0.000118027">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; canBeOffered deve retornar true para serviço ativo" time="0.000154986">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; canBeOffered deve retornar false para serviço inativo" time="0.000099974">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; belongsToPartner deve funcionar corretamente" time="0.000102935">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; nameContains deve funcionar corretamente" time="0.000152671">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; descriptionContains deve funcionar corretamente" time="0.00010896">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; isPriceInRange deve funcionar corretamente" time="0.000133443">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; calculateDiscountedPrice deve calcular desconto corretamente" time="0.000161748">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; business logic methods &gt; calculateDiscountedPrice deve falhar com percentual inválido" time="0.000104218">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; toJSON &gt; deve retornar representação JSON correta" time="0.000587916">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; equals &gt; deve retornar true para serviços com mesmo ID" time="0.000122359">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; equals &gt; deve retornar false para serviços com IDs diferentes" time="0.000074205">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/domain-entities.test.ts" name="PartnerService &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000692524">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" timestamp="2025-10-15T03:22:01.153Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.087986057">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter os arquivos de infraestrutura criados" time="0.083422928">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de repositório exportadas" time="0.000944103">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Estrutura dos arquivos &gt; deve ter as classes de serviço exportadas" time="0.000855465">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase3-real-infrastructure.test.ts" name="Fase 3 - Infraestrutura Real &gt; Configuração da infraestrutura &gt; deve exportar a configuração completa" time="0.00047797">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/checklist/application/__tests__/phase4-2-migration-checklist-service.test.ts" timestamp="2025-10-15T03:22:01.153Z" hostname="pop-os" tests="4" failures="0" errors="0" skipped="0" time="0.007270603">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-2-migration-checklist-service.test.ts" name="Fase 4.2 - Migração ChecklistService.loadChecklistWithDetails() &gt; Feature Flag Control &gt; deve ter a propriedade USE_DDD_CHECKLIST configurável" time="0.00145605">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-2-migration-checklist-service.test.ts" name="Fase 4.2 - Migração ChecklistService.loadChecklistWithDetails() &gt; Feature Flag Control &gt; deve ser capaz de chamar loadChecklistWithDetails sem erros" time="0.002691081">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-2-migration-checklist-service.test.ts" name="Fase 4.2 - Migração ChecklistService.loadChecklistWithDetails() &gt; Backward Compatibility &gt; deve retornar um objeto com a estrutura esperada" time="0.000886844">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-2-migration-checklist-service.test.ts" name="Fase 4.2 - Migração ChecklistService.loadChecklistWithDetails() &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros" time="0.000898562">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" timestamp="2025-10-15T03:22:01.153Z" hostname="pop-os" tests="10" failures="0" errors="0" skipped="0" time="0.007615507">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_SUBMIT=false" time="0.002609552">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Submit Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_SUBMIT=true" time="0.0002906">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_ANOMALIES=false" time="0.00042011">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Save Anomalies API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_ANOMALIES=true" time="0.000155877">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve usar implementação legacy quando USE_DDD_CHECKLIST_INIT=false" time="0.000347352">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Feature Flag Control &gt; Init Checklist API &gt; deve tentar usar implementação DDD quando USE_DDD_CHECKLIST_INIT=true" time="0.000157544">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do submit checklist" time="0.000156221">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do save anomalies" time="0.000684258">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Backward Compatibility &gt; deve aceitar os mesmos parâmetros do init checklist" time="0.00022965">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-3-migration-api.test.ts" name="Fase 4.3 - Migração APIs de produção &gt; Error Handling &gt; deve fazer fallback graceful quando DDD falha" time="0.000202559">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" timestamp="2025-10-15T03:22:01.154Z" hostname="pop-os" tests="14" failures="0" errors="0" skipped="0" time="0.013590013">
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Coleta de Métricas &gt; deve registrar uso de API DDD corretamente" time="0.002939642">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Coleta de Métricas &gt; deve registrar uso de API Legacy corretamente" time="0.000886682">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Coleta de Métricas &gt; deve registrar fallbacks corretamente" time="0.00106">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Coleta de Métricas &gt; deve manter apenas últimas 100 medições de performance" time="0.001893052">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Cálculo de Estatísticas &gt; deve calcular taxa de adoção corretamente" time="0.000786484">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Cálculo de Estatísticas &gt; deve calcular melhoria de performance" time="0.00046567">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Cálculo de Estatísticas &gt; deve calcular redução de erros" time="0.000492397">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Sistema de Alertas &gt; deve criar alerta para taxa de erro crítica" time="0.000393149">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Sistema de Alertas &gt; deve criar alerta para performance degradada" time="0.000457434">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Sistema de Alertas &gt; deve criar alerta para alta taxa de fallback" time="0.000861655">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Sistema de Alertas &gt; deve resolver alertas" time="0.000400878">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Relatório de Migração &gt; deve gerar relatório completo" time="0.000422735">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Relatório de Migração &gt; deve incluir estatísticas no relatório" time="0.000259964">
+        </testcase>
+        <testcase classname="modules/partner/checklist/application/__tests__/phase4-4-migration-monitoring.test.ts" name="Fase 4.4 - Rollout Controlado e Monitoramento &gt; Thresholds de Alerta &gt; deve ter thresholds configurados corretamente" time="0.000306597">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" timestamp="2025-10-15T03:22:01.155Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.01590176">
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar serviço quando encontrado" time="0.001968281">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando serviço não encontrado" time="0.000567215">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findById &gt; deve retornar null quando ocorre erro" time="0.000424668">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista de serviços" time="0.000927072">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findAll &gt; deve retornar lista vazia quando ocorre erro" time="0.000665638">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve salvar serviço com sucesso" time="0.000586707">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; save &gt; deve lançar erro quando falha ao salvar" time="0.001304697">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve deletar serviço com sucesso" time="0.00069967">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; delete &gt; deve lançar erro quando falha ao deletar" time="0.000502644">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByPartnerId &gt; deve retornar serviços do parceiro" time="0.000643097">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findActiveByPartnerId &gt; deve retornar apenas serviços ativos do parceiro" time="0.000469767">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findByName &gt; deve buscar serviços por nome" time="0.000658529">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve contar serviços do parceiro" time="0.000448409">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; countByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000520847">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar true quando serviço existe" time="0.00044945">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; existsByNameForPartner &gt; deve retornar false quando serviço não existe" time="0.000406454">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve desativar serviços com sucesso" time="0.00046466">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; deactivateAllByPartnerId &gt; deve retornar 0 quando ocorre erro" time="0.000299211">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar serviços paginados" time="0.000720715">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/repositories/SupabasePartnerServiceRepository.test.ts" name="SupabasePartnerServiceRepository &gt; findWithPagination &gt; deve retornar resultado vazio quando ocorre erro" time="0.00055685">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" timestamp="2025-10-15T03:22:01.156Z" hostname="pop-os" tests="23" failures="0" errors="0" skipped="0" time="0.006231116">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve criar ServiceDescription com descrição válida" time="0.001184592">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição vazia" time="0.000348686">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição apenas espaços" time="0.00034053">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito curta" time="0.000200567">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com descrição muito longa" time="0.000147451">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição no limite máximo" time="0.000136949">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve aceitar descrição com espaços internos" time="0.000114742">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no início" time="0.000108357">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com espaços no fim" time="0.000120508">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; create &gt; deve falhar com caracteres de controle" time="0.000121642">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar resumo para descrições longas" time="0.000155524">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; summary &gt; deve retornar descrição completa para textos curtos" time="0.000092457">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; length &gt; deve retornar o comprimento correto da descrição" time="0.000095272">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar true para descrições iguais" time="0.000240311">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve retornar false para descrições diferentes" time="0.000111833">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; equals &gt; deve ser case sensitive" time="0.000085916">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve encontrar palavra-chave existente" time="0.000116219">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve retornar false para palavra-chave inexistente" time="0.000080983">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; contains &gt; deve ser case insensitive" time="0.000084002">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toString &gt; deve retornar o valor como string" time="0.000161184">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.000104201">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; value getter &gt; deve retornar o valor interno" time="0.000064313">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceDescription.test.ts" name="ServiceDescription &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000556543">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" timestamp="2025-10-15T03:22:01.158Z" hostname="pop-os" tests="16" failures="0" errors="0" skipped="0" time="0.006486688">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve criar ServiceName com nome válido" time="0.001726985">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome vazio" time="0.000378634">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome apenas espaços" time="0.000273975">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito curto" time="0.000209949">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com nome muito longo" time="0.000198737">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com caracteres especiais perigosos" time="0.000302008">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve aceitar nome com espaços internos" time="0.00010568">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no início" time="0.000168138">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; create &gt; deve falhar com espaços no fim" time="0.000218865">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar true para nomes iguais" time="0.000149737">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve retornar false para nomes diferentes" time="0.000093901">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; equals &gt; deve ser case sensitive" time="0.000080109">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toString &gt; deve retornar o valor como string" time="0.000132778">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; toJSON &gt; deve retornar o valor para serialização JSON" time="0.000217934">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; value getter &gt; deve retornar o valor interno" time="0.000157395">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServiceName.test.ts" name="ServiceName &gt; imutabilidade &gt; deve ser imutável após criação" time="0.000653117">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" timestamp="2025-10-15T03:22:01.159Z" hostname="pop-os" tests="21" failures="0" errors="0" skipped="0" time="0.029325539">
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (número)" time="0.017892127">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve criar ServicePrice com preço válido (string)" time="0.000793506">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço negativo" time="0.00078805">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com preço muito alto" time="0.000488211">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com string inválida" time="0.000357088">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com NaN" time="0.000332547">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com Infinity" time="0.000311798">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço zero" time="0.000487407">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve aceitar preço com 2 casas decimais" time="0.000501243">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; create &gt; deve falhar com mais de 2 casas decimais" time="0.00046961">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores inteiros" time="0.000439166">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; formatted &gt; deve formatar corretamente valores decimais" time="0.000356642">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar true para preços iguais" time="0.000304695">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve retornar false para preços diferentes" time="0.000430559">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; equals &gt; deve comparar corretamente preços próximos" time="0.000267728">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isGreaterThan deve funcionar corretamente" time="0.00029661">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; comparisons &gt; isLessThan deve funcionar corretamente" time="0.000272973">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toString &gt; deve retornar o preço formatado" time="0.00044051">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; toJSON &gt; deve retornar o valor numérico para JSON" time="0.000261921">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; value getter &gt; deve retornar o valor numérico interno" time="0.000287158">
+        </testcase>
+        <testcase classname="modules/partner/domain/__tests__/value-objects/ServicePrice.test.ts" name="ServicePrice &gt; imutabilidade &gt; deve ser imutável após criação" time="0.001143986">
+        </testcase>
+    </testsuite>
+    <testsuite name="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" timestamp="2025-10-15T03:22:01.161Z" hostname="pop-os" tests="20" failures="0" errors="0" skipped="0" time="0.01396226">
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve criar serviço com sucesso" time="0.004063681">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar ao tentar criar serviço com nome duplicado" time="0.000743636">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; createService &gt; deve falhar quando validação do serviço falha" time="0.000614486">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve atualizar serviço com sucesso" time="0.000704284">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando serviço não existe" time="0.000251364">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; updateService &gt; deve falhar quando nome já existe para outro serviço do mesmo parceiro" time="0.000227444">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve desativar serviço com sucesso" time="0.000439264">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateService &gt; deve falhar quando serviço já está desativado" time="0.000260737">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve reativar serviço com sucesso" time="0.000429906">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; activateService &gt; deve falhar quando serviço já está ativo" time="0.00032115">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar serviço quando encontrado" time="0.000305412">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServiceById &gt; deve retornar null quando serviço não encontrado" time="0.000184491">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; getServicesByPartner &gt; deve retornar serviços paginados do parceiro" time="0.000513246">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome sem filtro de parceiro" time="0.000519767">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; searchServicesByName &gt; deve buscar serviços por nome com filtro de parceiro" time="0.000723227">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar true quando nome é único" time="0.000462434">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve retornar false quando nome já existe" time="0.00017994">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; validateServiceNameUniqueness &gt; deve excluir serviço específico da validação quando informado" time="0.000250814">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; deactivateAllServices &gt; deve desativar todos os serviços do parceiro" time="0.00034421">
+        </testcase>
+        <testcase classname="modules/partner/domain/application/__tests__/services/PartnerServiceApplicationServiceImpl.test.ts" name="PartnerServiceApplicationServiceImpl &gt; countActiveServices &gt; deve contar serviços ativos do parceiro" time="0.000267753">
         </testcase>
     </testsuite>
 </testsuites>

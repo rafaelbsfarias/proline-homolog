@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { PartnerService } from '../../entities/PartnerService';
+import { PartnerService } from '../../../domain/entities/PartnerService';
 
 describe('PartnerService', () => {
   const validServiceData = {

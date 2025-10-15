@@ -201,7 +201,7 @@ describe('PartnerServiceApplicationServiceImpl', () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.message).toBe('Serviço não encontrado');
+        expect(result.error.message).toBe('Serviço com ID "non-existent" não foi encontrado');
       }
     });
 
@@ -266,7 +266,7 @@ describe('PartnerServiceApplicationServiceImpl', () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.message).toBe('Serviço já está desativado');
+        expect(result.error.message).toBe('Serviço com ID "service-123" já está desativado');
       }
     });
   });
@@ -307,7 +307,7 @@ describe('PartnerServiceApplicationServiceImpl', () => {
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.message).toBe('Serviço já está ativo');
+        expect(result.error.message).toBe('Serviço com ID "service-123" já está ativo');
       }
     });
   });
