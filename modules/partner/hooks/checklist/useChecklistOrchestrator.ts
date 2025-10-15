@@ -43,6 +43,15 @@ export function useChecklistOrchestrator() {
     quoteId || null
   );
 
+  // Efeito separado para carregar anomalias após os dados básicos serem carregados
+  useEffect(() => {
+    if (vehicle?.id && (inspection?.id || inspectionIdRef.current || quoteId)) {
+      anomalies.load().catch(error => {
+        logger.warn('Failed to load anomalies', { error: error.message });
+      });
+    }
+  }, [vehicle?.id, inspection?.id, inspectionIdRef.current, quoteId, anomalies]);
+
   // Initial load: vehicle + inspection + checklist data
   useEffect(() => {
     const load = async () => {
@@ -124,7 +133,6 @@ export function useChecklistOrchestrator() {
               keys: Object.keys(loadedEvidences),
               sample: Object.entries(loadedEvidences).slice(0, 2),
             }); // Use evidences directly as they come from the service in the correct format
-            console.log('DEBUG: loadedEvidences', loadedEvidences);
             setFromUrlMap(loadedEvidences as unknown as Record<string, { urls: string[] }>);
             // As a practical approach, return evidences map via return object rather than fully seeding the internal state.
             // Save part-requests map
@@ -138,7 +146,7 @@ export function useChecklistOrchestrator() {
 
         // load anomalies but do not break on failure
         try {
-          await anomalies.load();
+          // Anomalies are now loaded in a separate useEffect after vehicle/inspection data is available
         } catch {}
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Erro ao carregar dados do veículo';
