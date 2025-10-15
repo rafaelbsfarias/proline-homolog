@@ -42,13 +42,13 @@ const VehiclesPendingApprovalCounter: React.FC<VehiclesPendingApprovalCounterPro
     fetchCount();
   }, [get]);
 
-  //if (loading) return <span className={styles.counterCard}>Carregando...</span>;
-  //if (error) return <span className={styles.counterCard}>{error}</span>;
-  //return (
-  //  <span className={styles.counterCard} title="Veículos aguardando orçamento">
-  //    Veículos para orçamento: {count}
-  //  </span>
-  //);
+  if (loading) return <span className={styles.counterCard}>Carregando...</span>;
+  if (error) return <span className={styles.counterCard}>{error}</span>;
+  return (
+    <span className={styles.counterCard} title="Veículos aguardando orçamento">
+      Veículos para orçamento: {count}
+    </span>
+  );
 };
 
 export default VehiclesPendingApprovalCounter;

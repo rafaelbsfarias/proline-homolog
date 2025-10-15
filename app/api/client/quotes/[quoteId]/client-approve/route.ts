@@ -13,10 +13,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request, { params }: { params: { quoteId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ quoteId: string }> }) {
   try {
     const supabase = await createClient();
-    const { quoteId } = params;
+    const { quoteId } = await params;
 
     // Verificar autenticação
     const {
