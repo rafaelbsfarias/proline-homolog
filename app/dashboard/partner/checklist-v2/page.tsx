@@ -6,6 +6,7 @@ import { useChecklistTemplate } from '@/modules/partner/hooks/useChecklistTempla
 import { DynamicChecklistForm } from '@/modules/partner/components/checklist/DynamicChecklistForm';
 import { ToastProvider } from '@/modules/partner/components/toast/ToastProvider';
 import { Loading } from '@/modules/common/components/Loading/Loading';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 /**
  * ChecklistV2Page - Nova página de checklist usando sistema dinâmico de templates
@@ -51,31 +52,83 @@ const ChecklistV2Page = () => {
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/partner/checklist/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vehicleId,
-          quoteId,
-          checklistData: formData,
-          templateId: template?.id,
-        }),
-      });
+      // Verificar categoria do parceiro para determinar qual endpoint usar
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('Usuário não autenticado');
 
-      const data = await response.json();
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('partners')
+        .select('category')
+        .eq('profile_id', userId)
+        .single();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao salvar checklist');
+      if (partnerError) {
+        throw new Error('Erro ao verificar categoria do parceiro');
       }
 
-      setSuccess('Checklist salvo com sucesso!');
+      const partnerCategory = partnerData?.category;
+
+      let response: Response;
+      let data: { success?: boolean; error?: string };
+
+      if (partnerCategory === 'Mecânica') {
+        // Parceiros de Mecânica usam o endpoint de checklist técnico
+        response = await fetch('/api/partner/checklist/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicleId,
+            quoteId,
+            checklistData: formData,
+            templateId: template?.id,
+          }),
+        });
+        data = await response.json();
+      } else {
+        // Outros parceiros salvam anomalias
+        const formDataForAnomalies = new FormData();
+        formDataForAnomalies.append('vehicle_id', vehicleId);
+        if (quoteId) formDataForAnomalies.append('quote_id', quoteId);
+
+        // Converter formData para formato de anomalias
+        // Assumindo que formData contém campos como description, photos, etc.
+        const anomalies = [
+          {
+            description: formData.description || formData.observations || 'Anomalia identificada',
+            photos: [], // a fazer: implementar upload de fotos se necessário
+            partRequest: formData.partRequest || null,
+          },
+        ];
+
+        formDataForAnomalies.append('anomalies', JSON.stringify(anomalies));
+
+        response = await fetch('/api/partner/checklist/save-anomalies', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sessionData.session?.access_token}`,
+          },
+          body: formDataForAnomalies,
+        });
+        data = await response.json();
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao salvar dados');
+      }
+
+      setSuccess(
+        partnerCategory === 'Mecânica'
+          ? 'Checklist salvo com sucesso!'
+          : 'Anomalias salvas com sucesso!'
+      );
 
       // Redirecionar após 2 segundos
       setTimeout(() => {
         router.push('/dashboard/partner');
       }, 2000);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar checklist';
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao salvar dados';
       setError(errorMessage);
     } finally {
       setSaving(false);

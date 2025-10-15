@@ -217,6 +217,7 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         partner_id: partnerId, // Adicionar partner_id para identificar quem criou a anomalia
         description,
         photos: allPhotoPaths,
+        status: 'submitted', // Status indicando que foi submetido através do checklist
         // Adicionar quote_id (novo) ou inspection_id (legacy)
         ...(quote_id ? { quote_id } : {}),
         ...(inspection_id ? { inspection_id } : {}),

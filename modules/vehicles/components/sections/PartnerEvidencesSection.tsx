@@ -2,7 +2,7 @@ import React from 'react';
 import { SectionCard } from '../cards/SectionCard';
 import styles from './PartnerEvidencesSection.module.css';
 
-interface ChecklistCategory {
+interface PartnerChecklistCategory {
   category: string;
   partner_id: string;
   partner_name: string;
@@ -10,14 +10,12 @@ interface ChecklistCategory {
 }
 
 interface PartnerEvidencesSectionProps {
-  checklistCategories: ChecklistCategory[];
+  checklistCategories: PartnerChecklistCategory[];
   categoriesLoading: boolean;
   loadingDynamicChecklist: boolean;
-  onOpenDynamicChecklist: (args: {
-    category: string;
-    partnerId: string;
-    partnerName?: string;
-  }) => void;
+  onOpenDynamicChecklist: (
+    args: string | { category: string; partnerId: string; partnerName?: string }
+  ) => Promise<void>;
 }
 
 export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = ({
@@ -26,42 +24,54 @@ export const PartnerEvidencesSection: React.FC<PartnerEvidencesSectionProps> = (
   loadingDynamicChecklist,
   onOpenDynamicChecklist,
 }) => {
-  // Mostrar botões somente quando houver checklist realmente realizado.
-  const availableCategories = (checklistCategories || []).filter(c => c.has_anomalies);
+  if (categoriesLoading) {
+    return (
+      <SectionCard title="Vistorias" fullWidth>
+        <div className={styles.loading}>Carregando vistorias...</div>
+      </SectionCard>
+    );
+  }
 
-  if (availableCategories.length === 0) return null;
+  if (!checklistCategories || checklistCategories.length === 0) {
+    return null;
+  }
 
-  const headerAction = (
-    <div className={styles.buttonGroup}>
-      {/* Botões Checklist Dinâmico (Por Categoria) */}
-      {categoriesLoading ? (
-        <span className={styles.loadingText}>Carregando categorias...</span>
-      ) : (
-        availableCategories.map(cat => (
-          <button
-            key={`${cat.partner_id}-${cat.category}`}
-            onClick={() =>
-              onOpenDynamicChecklist({
-                category: cat.category,
-                partnerId: cat.partner_id,
-                partnerName: cat.partner_name,
-              })
-            }
-            disabled={loadingDynamicChecklist}
-            className={styles.checklistButtonDynamic}
-          >
-            {loadingDynamicChecklist ? 'Carregando...' : `${cat.category} • ${cat.partner_name}`}
-          </button>
-        ))
-      )}
-    </div>
-  );
+  const handleOpenChecklist = async (category: PartnerChecklistCategory) => {
+    await onOpenDynamicChecklist({
+      category: category.category,
+      partnerId: category.partner_id,
+      partnerName: category.partner_name,
+    });
+  };
 
   return (
-    <SectionCard title="Vistorias" headerAction={headerAction} fullWidth>
-      <p className={styles.infoMessage}>
-        Clique nos botões acima para visualizar as vistorias realizadas pelos parceiros.
-      </p>
-    </SectionCard>
+    <>
+      <SectionCard title="Vistorias" fullWidth>
+        <div className={styles.checklistGrid}>
+          {checklistCategories.map(category => (
+            <button
+              key={`${category.category}-${category.partner_id}`}
+              onClick={() => handleOpenChecklist(category)}
+              disabled={loadingDynamicChecklist}
+              className={styles.checklistButton}
+            >
+              <div className={styles.checklistInfo}>
+                <div className={styles.checklistTitle}>
+                  {category.category} • {category.partner_name}
+                </div>
+                <div className={styles.checklistMeta}>
+                  {category.has_anomalies ? 'Com anomalias' : 'Sem anomalias'}
+                </div>
+                <div className={styles.checklistStats}>
+                  Status: {category.has_anomalies ? 'Revisar' : 'OK'}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* O modal será aberto pelo VehicleDetails através do modalState.dynamicChecklistModal */}
+    </>
   );
 };

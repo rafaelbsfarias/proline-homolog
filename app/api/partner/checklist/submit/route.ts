@@ -97,6 +97,9 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       });
     }
 
+    // VALIDAÇÃO REMOVIDA: O roteamento agora é feito no client baseado na categoria
+    // Apenas parceiros de Mecânica devem chegar neste endpoint através do saveChecklist()
+
     // Mapear dados usando ChecklistService
     const mapped = checklistService.mapChecklistToMechanicsSchema(checklistData, partnerId);
 

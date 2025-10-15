@@ -105,6 +105,16 @@ export class ChecklistService {
         });
       }
 
+      // VALIDAÇÃO CRÍTICA: Apenas parceiros de Mecânica podem salvar na tabela mechanics_checklist
+      if (partnerCategory !== 'Mecânica') {
+        logger.warn('partner_not_mechanic_submit_denied', {
+          partner_id,
+          partner_category: partnerCategory,
+          vehicle_id,
+        });
+        throw new Error('Apenas parceiros de Mecânica podem submeter checklists técnicos');
+      }
+
       // Mapear dados
       const mapped = ChecklistMapper.toDatabase(data, partner_id, partnerCategory);
 
@@ -263,6 +273,7 @@ export class ChecklistService {
   /**
    * Verifica se existe checklist submetido
    * Suporta inspection_id (legacy) ou quote_id (novo)
+   * Verifica tanto mechanics_checklist quanto vehicle_anomalies
    */
   public async hasSubmittedChecklist(
     vehicle_id: string,
@@ -284,8 +295,17 @@ export class ChecklistService {
 
       options.vehicle_id = vehicle_id;
 
+      // Verificar checklist estruturado (mecânicos)
       const checklist = await this.repository.findOne(options);
-      return !!checklist && checklist.status === 'submitted';
+      const hasStructuredChecklist = !!checklist && checklist.status === 'submitted';
+
+      // Verificar anomalias salvas (checklist dinâmico)
+      const hasAnomalies = await this.anomalyService.hasSubmittedAnomalies(vehicle_id, options);
+
+      // Checklist é considerado submetido se:
+      // 1. Existe checklist estruturado com status 'submitted', OU
+      // 2. Existem anomalias salvas (que têm status 'submitted' por padrão)
+      return hasStructuredChecklist || hasAnomalies;
     } catch {
       return false;
     }

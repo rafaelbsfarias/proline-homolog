@@ -50,7 +50,7 @@ export function useChecklistOrchestrator() {
         logger.warn('Failed to load anomalies', { error: error.message });
       });
     }
-  }, [vehicle?.id, inspection?.id, inspectionIdRef.current, quoteId, anomalies]);
+  }, [vehicle?.id, inspection?.id, inspectionIdRef.current, quoteId, anomalies.load]);
 
   // Initial load: vehicle + inspection + checklist data
   useEffect(() => {
@@ -171,6 +171,25 @@ export function useChecklistOrchestrator() {
         if (!form.odometer || Number(form.odometer) < 0)
           throw new Error('Informe a quilometragem atual válida.');
 
+        // Verificar categoria do parceiro para determinar qual endpoint usar
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session?.user?.id;
+        if (!userId) throw new Error('Usuário não autenticado');
+
+        const { data: partnerData, error: partnerError } = await supabase
+          .from('partners')
+          .select('category')
+          .eq('profile_id', userId)
+          .single();
+
+        if (partnerError) {
+          logger.warn('failed_to_fetch_partner_category', { error: partnerError.message });
+          throw new Error('Erro ao verificar categoria do parceiro');
+        }
+
+        const partnerCategory = partnerData?.category;
+        logger.info('partner_category_determined', { category: partnerCategory });
+
         const uploadedEvidenceUrls = Object.fromEntries(
           EVIDENCE_KEYS.map(k => [k, [] as string[]])
         ) as Record<EvidenceKey, string[]>;
@@ -235,18 +254,32 @@ export function useChecklistOrchestrator() {
           inspection_id = url.searchParams.get('inspectionId') || undefined;
         }
 
-        const payload = {
-          ...form,
-          vehicle_id: vehicle.id,
-          evidences: uploadedEvidenceUrls,
-          inspection_id,
-          ...(quoteId ? { quote_id: quoteId } : {}),
-          ...(partRequestsData ? { part_requests: partRequestsData } : {}),
-        } as Record<string, unknown>;
+        // Roteamento baseado na categoria do parceiro
+        if (partnerCategory === 'Mecânica') {
+          // Parceiros de Mecânica salvam checklist técnico completo
+          const payload = {
+            ...form,
+            vehicle_id: vehicle.id,
+            evidences: uploadedEvidenceUrls,
+            inspection_id,
+            ...(quoteId ? { quote_id: quoteId } : {}),
+            ...(partRequestsData ? { part_requests: partRequestsData } : {}),
+          } as Record<string, unknown>;
 
-        const resp = await put('/api/partner/checklist/submit', payload, { requireAuth: true });
-        if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar checklist no backend');
-        setSuccess('Checklist salvo com sucesso!');
+          const resp = await put('/api/partner/checklist/submit', payload, { requireAuth: true });
+          if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar checklist no backend');
+          setSuccess('Checklist salvo com sucesso!');
+        } else {
+          // Outros parceiros salvam apenas anomalias usando o hook de anomalias
+          try {
+            await anomalies.save(anomalies.anomalies);
+            setSuccess('Anomalias salvas com sucesso!');
+          } catch (anomalyError) {
+            throw new Error(
+              anomalyError instanceof Error ? anomalyError.message : 'Erro ao salvar anomalias'
+            );
+          }
+        }
       } catch (e) {
         const message = e instanceof Error ? e.message : 'Erro ao salvar checklist.';
         setError(message);
@@ -255,7 +288,7 @@ export function useChecklistOrchestrator() {
         setSaving(false);
       }
     },
-    [vehicle, form, evidences, inspection?.id, quoteId, put]
+    [vehicle, form, evidences, inspection?.id, quoteId, put, anomalies]
   );
 
   return {

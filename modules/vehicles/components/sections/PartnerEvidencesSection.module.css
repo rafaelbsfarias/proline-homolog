@@ -1,106 +1,207 @@
-.buttonGroup {
+/* PartnerEvidencesSection.module.css */
+
+.checklistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.checklistButton {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.checklistButton:hover {
+  border-color: #007acc;
+  box-shadow: 0 2px 8px rgba(0, 123, 204, 0.15);
+  transform: translateY(-1px);
+}
+
+.checklistInfo {
   display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.checklistButtonStatic {
-  background: #2563eb;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.checklistTitle {
   font-weight: 600;
-  transition: background 0.2s;
+  font-size: 1rem;
+  color: #1e293b;
 }
 
-.checklistButtonStatic:hover {
-  background: #1d4ed8;
+.checklistMeta {
+  font-size: 0.875rem;
+  color: #64748b;
 }
 
-.checklistButtonDynamic {
-  background: #16a34a;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.checklistStats {
+  font-size: 0.75rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+/* Modal Content */
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.5rem 0;
+}
+
+/* Readonly Components */
+.readonlyCard {
+  background: white;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.readonlyHeader {
+  margin-bottom: 1rem;
+}
+
+.readonlyTitle {
+  font-size: 1.25rem;
   font-weight: 600;
-  transition: background 0.2s;
-}
-
-.checklistButtonDynamic:hover {
-  background: #15803d;
-}
-
-.checklistButtonDynamic:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-
-.loadingText {
-  color: #6b7280;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-
-.emptyText {
-  color: #6b7280;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-
-.emptyMessage {
-  color: #6b7280;
-  font-size: 0.95rem;
+  color: #1e293b;
   margin: 0;
 }
 
-.infoMessage {
-  color: #6b7280;
-  font-size: 0.95rem;
-  margin: 16px 0;
-  text-align: center;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px dashed #d1d5db;
+.readonlyList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.categorySection {
-  padding-top: 8px;
+.readonlyAnomalyCard {
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  padding: 1rem;
+  background: #f8fafc;
 }
 
-.categoryTitle {
-  margin-bottom: 12px;
+.anomalyHeader {
+  margin-bottom: 1rem;
+}
+
+.anomalyTitle {
+  font-size: 1rem;
   font-weight: 600;
-  color: #1f2937;
-  font-size: 1.1rem;
+  color: #1e293b;
+  margin: 0;
 }
 
-.grid {
+.anomalyContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.description strong {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.description p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.photos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.photos strong {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.photoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
 }
 
-@media (max-width: 768px) {
-  .buttonGroup {
-    flex-direction: column;
-    align-items: stretch;
-  }
+.photoItem {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .checklistButtonStatic,
-  .checklistButtonDynamic {
-    width: 100%;
-  }
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-  .grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
-  }
+.photoPlaceholder {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.partRequest {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.partRequest strong {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.partRequestDetails {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 4px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.partRequestDetails p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.emptyState p {
+  margin: 0;
+  font-style: italic;
 }

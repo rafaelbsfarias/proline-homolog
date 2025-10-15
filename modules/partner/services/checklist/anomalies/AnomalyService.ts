@@ -54,4 +54,15 @@ export class AnomalyService {
       throw error;
     }
   }
+
+  /**
+   * Verifica se existem anomalias submetidas para o checklist
+   */
+  async hasSubmittedAnomalies(
+    vehicle_id: string,
+    options: LoadChecklistOptions,
+    partner_id?: string
+  ): Promise<boolean> {
+    return this.repository.existsAnomalies(vehicle_id, options, partner_id);
+  }
 }
