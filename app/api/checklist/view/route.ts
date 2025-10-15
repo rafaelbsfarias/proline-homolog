@@ -12,6 +12,7 @@ const ViewChecklistSchema = z.object({
   inspection_id: z.string().uuid('inspection_id deve ser um UUID válido').optional(),
   quote_id: z.string().uuid('quote_id deve ser um UUID válido').optional(),
   partner_category: z.string().optional(), // Categoria do parceiro para filtrar
+  partner_id: z.string().uuid('partner_id deve ser um UUID válido').optional(),
   entry_id: z.string().uuid('entry_id deve ser um UUID válido').optional(), // ID específico da entrada
 });
 
@@ -26,6 +27,8 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
     const inspection_id = searchParams.get('inspection_id') || undefined;
     const quote_id = searchParams.get('quote_id') || undefined;
     const partner_category = searchParams.get('partner_category') || undefined;
+    const partner_id = searchParams.get('partner_id') || undefined;
+    const entry_id = searchParams.get('entry_id') || undefined;
 
     logger.info('view_checklist_request', {
       vehicle_id,
@@ -34,6 +37,8 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       partner_category,
       user_id: req.user.id,
       user_role: req.user.role,
+      partner_id,
+      entry_id,
     });
 
     // Validação com Zod
@@ -42,6 +47,8 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       inspection_id,
       quote_id,
       partner_category,
+      partner_id,
+      entry_id,
     });
 
     if (!validation.success) {
@@ -64,6 +71,7 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       inspection_id: validInspectionId,
       quote_id: validQuoteId,
       partner_category: validPartnerCategory,
+      partner_id: validPartnerId,
     } = validation.data;
 
     const checklistService = ChecklistService.getInstance();
@@ -99,33 +107,54 @@ async function viewChecklistHandler(req: AuthenticatedRequest) {
       }
     }
 
-    // Buscar anomalias com URLs assinadas
-    const result = await checklistService.loadAnomaliesWithSignedUrls(
-      validInspectionId || null,
-      validVehicleId,
-      validQuoteId || null
-    );
+    // Carregar checklist detalhado (para obter form/itens) e anomalias com URLs assinadas
+    const [details, anomalies] = await Promise.all([
+      checklistService.loadChecklistWithDetails(
+        validInspectionId || null,
+        validQuoteId || null,
+        validPartnerId
+      ),
+      checklistService.loadAnomaliesWithSignedUrls(
+        validInspectionId || null,
+        validVehicleId,
+        validQuoteId || null,
+        validPartnerId
+      ),
+    ]);
 
-    if (!result.success) {
-      logger.error('load_anomalies_service_error', {
-        error: result.error,
+    if (!details.success) {
+      const detailsError =
+        'error' in details && details.error ? details.error : 'Erro ao carregar checklist';
+      logger.error('load_details_service_error', {
+        error: detailsError,
         vehicle_id: validVehicleId,
       });
-      return NextResponse.json({ success: false, error: result.error }, { status: 500 });
+      return NextResponse.json({ success: false, error: detailsError }, { status: 500 });
     }
 
-    // Se partner_category foi especificada, filtrar os dados (futuro: quando tivermos essa info no banco)
-    const filteredData = result.data;
+    if (!anomalies.success) {
+      const anomaliesError =
+        'error' in anomalies && anomalies.error ? anomalies.error : 'Erro ao carregar anomalias';
+      logger.error('load_anomalies_service_error', {
+        error: anomaliesError,
+        vehicle_id: validVehicleId,
+      });
+      return NextResponse.json({ success: false, error: anomaliesError }, { status: 500 });
+    }
+
+    const form = details.data?.form ?? null;
+    const anomaliesData = anomalies.data ?? [];
 
     logger.info('view_checklist_success', {
       vehicle_id: validVehicleId,
-      anomalies_count: filteredData?.length || 0,
+      anomalies_count: anomaliesData?.length || 0,
       partner_category: validPartnerCategory,
+      has_form: !!form,
     });
 
     return NextResponse.json({
       success: true,
-      data: filteredData,
+      data: { form, anomalies: anomaliesData },
       partner_category: validPartnerCategory,
     });
   } catch (e) {

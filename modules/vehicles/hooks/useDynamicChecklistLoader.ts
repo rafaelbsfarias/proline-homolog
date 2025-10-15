@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/modules/common/services/supabaseClient';
 import { getLogger } from '@/modules/logger';
 import { AnomalyEvidence } from '../types/VehicleDetailsTypes';
+import { FormattedAnomaly } from '@/modules/partner/services/checklist/types/AnomalyTypes';
 
 type ChecklistItem = {
   key: string;
@@ -58,10 +59,17 @@ export const useDynamicChecklistLoader = () => {
       }
       const viewData = (await viewResp.json()) as {
         success: boolean;
-        data?: { form?: Record<string, unknown>; anomalies?: AnomalyEvidence[] };
+        data?:
+          | { form?: Record<string, unknown>; anomalies?: AnomalyEvidence[] }
+          | FormattedAnomaly[];
       };
-      const form: Record<string, unknown> = (viewData.data?.form || {}) as Record<string, unknown>;
-      const anomalies: AnomalyEvidence[] = viewData.data?.anomalies || [];
+      const form: Record<string, unknown> =
+        viewData.data && typeof viewData.data === 'object' && !Array.isArray(viewData.data)
+          ? (viewData.data as { form?: Record<string, unknown> }).form || {}
+          : {};
+      const anomalies: AnomalyEvidence[] = Array.isArray(viewData.data)
+        ? viewData.data
+        : (viewData.data as { anomalies?: AnomalyEvidence[] })?.anomalies || [];
 
       // Mapear form -> itens apenas quando a categoria for Mecânica
       const norm = (category || '')
