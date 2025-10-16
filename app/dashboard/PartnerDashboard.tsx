@@ -396,6 +396,9 @@ const PartnerDashboard = () => {
           >
             <p style={{ color: '#666', fontSize: '1.15rem' }}>Bem-vindo, {userName}!</p>
             <div style={{ display: 'flex', gap: '10px' }}>
+              <ActionButton onClick={() => router.push('/dashboard/partner/financial-summary')}>
+                💰 Resumo Financeiro
+              </ActionButton>
               <ActionButton onClick={() => router.push('/dashboard/partner/services')}>
                 Serviços Cadastrados
               </ActionButton>
