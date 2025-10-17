@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Header from '@/modules/admin/components/Header';
 import FinancialSummaryContent from '@/modules/partner/components/financial-summary/FinancialSummaryContent';
 import { useFinancialSummary } from '@/modules/partner/hooks/useFinancialSummary';
@@ -14,6 +16,9 @@ type PeriodOption =
   | 'custom';
 
 const FinancialSummaryPage = () => {
+  const searchParams = useSearchParams();
+  const partnerId = searchParams.get('partnerId');
+
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodOption>('current_month');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
@@ -74,12 +79,29 @@ const FinancialSummaryPage = () => {
     }
   }, [selectedPeriod, customStartDate, customEndDate]);
 
-  const { data, loading, error, refetch } = useFinancialSummary(period);
+  // Use different hook/API based on whether partnerId is provided
+  const { data, loading, error, refetch } = useFinancialSummary(period, partnerId || undefined);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
       <Header />
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 24px' }}>
+        {/* Back Link - only show if partnerId is present (admin viewing specific partner) */}
+        {partnerId && (
+          <Link
+            href={`/dashboard/admin/partner-overview?partnerId=${partnerId}`}
+            style={{
+              display: 'inline-block',
+              marginBottom: '16px',
+              color: '#3498db',
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+            }}
+          >
+            ← Voltar para Visão Geral do Parceiro
+          </Link>
+        )}
+
         <div style={{ marginBottom: 24 }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: 8, color: '#333' }}>
             Resumo Financeiro

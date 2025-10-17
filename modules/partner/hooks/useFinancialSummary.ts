@@ -54,7 +54,7 @@ export interface FinancialSummaryPeriod {
 }
 
 // --- Hook ---
-export function useFinancialSummary(period?: FinancialSummaryPeriod) {
+export function useFinancialSummary(period?: FinancialSummaryPeriod, partnerId?: string) {
   const [data, setData] = useState<FinancialSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,11 @@ export function useFinancialSummary(period?: FinancialSummaryPeriod) {
       if (period?.end_date) params.append('end_date', period.end_date);
 
       const queryString = params.toString();
-      const url = `/api/partner/financial-summary${queryString ? `?${queryString}` : ''}`;
+
+      // Use admin API if partnerId is provided, otherwise use partner API
+      const url = partnerId
+        ? `/api/admin/partner/${partnerId}/financial-summary${queryString ? `?${queryString}` : ''}`
+        : `/api/partner/financial-summary${queryString ? `?${queryString}` : ''}`;
 
       const response = await authenticatedFetch(url);
 
@@ -99,7 +103,7 @@ export function useFinancialSummary(period?: FinancialSummaryPeriod) {
     } finally {
       setLoading(false);
     }
-  }, [authenticatedFetch, period]);
+  }, [authenticatedFetch, period, partnerId]);
 
   useEffect(() => {
     fetchFinancialSummary();
