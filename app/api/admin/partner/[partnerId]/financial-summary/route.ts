@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { handleApiError } from '@/lib/utils/apiErrorHandlers';
@@ -58,68 +58,40 @@ async function getPartnerFinancialSummary(
       throw new DatabaseError(`Falha ao buscar dados financeiros: ${error.message}`);
     }
 
+    // A RPC já retorna a estrutura completa em JSON
+    // Apenas ajustamos o label do período para português
+    const rpcResult = data as {
+      period: { start_date: string; end_date: string; label: string };
+      metrics: {
+        total_revenue: { amount: number; formatted: string; currency: string };
+        total_quotes: number;
+        average_quote_value: { amount: number; formatted: string; currency: string };
+        parts: {
+          total_parts_requested: number;
+          total_parts_value: { amount: number; formatted: string; currency: string };
+        };
+        projected_value: {
+          pending_approval: { amount: number; formatted: string; currency: string };
+          in_execution: { amount: number; formatted: string; currency: string };
+          total_projected: { amount: number; formatted: string; currency: string };
+        };
+      };
+    };
+
+    // Ajustar o label do período para português
+    rpcResult.period.label = `${start.toLocaleDateString('pt-BR')} - ${end.toLocaleDateString('pt-BR')}`;
+
     // Formatar resposta
     const response = {
       success: true,
-      data: {
-        period: {
-          start_date: startDate,
-          end_date: endDate,
-          label: `${start.toLocaleDateString('pt-BR')} - ${end.toLocaleDateString('pt-BR')}`,
-        },
-        metrics: {
-          total_revenue: {
-            amount: data.total_revenue || 0,
-            formatted: formatCurrency(data.total_revenue || 0),
-            currency: 'BRL',
-          },
-          total_quotes: data.total_quotes || 0,
-          average_quote_value: {
-            amount: data.average_quote_value || 0,
-            formatted: formatCurrency(data.average_quote_value || 0),
-            currency: 'BRL',
-          },
-          parts: {
-            total_parts_requested: data.total_parts_requested || 0,
-            total_parts_value: {
-              amount: data.total_parts_value || 0,
-              formatted: formatCurrency(data.total_parts_value || 0),
-              currency: 'BRL',
-            },
-          },
-          projected_value: {
-            pending_approval: {
-              amount: data.pending_approval_value || 0,
-              formatted: formatCurrency(data.pending_approval_value || 0),
-              currency: 'BRL',
-            },
-            in_execution: {
-              amount: data.in_execution_value || 0,
-              formatted: formatCurrency(data.in_execution_value || 0),
-              currency: 'BRL',
-            },
-            total_projected: {
-              amount: (data.pending_approval_value || 0) + (data.in_execution_value || 0),
-              formatted: formatCurrency(
-                (data.pending_approval_value || 0) + (data.in_execution_value || 0)
-              ),
-              currency: 'BRL',
-            },
-          },
-        },
-        metadata: {
-          generated_at: new Date().toISOString(),
-          data_freshness: 'real-time',
-          calculation_method: 'confirmed_quotes_only',
-        },
-      },
+      data: rpcResult,
     };
 
     logger.info('✅ [Admin] Resumo financeiro obtido com sucesso', {
       adminId: req.user.id,
       partnerId,
-      totalRevenue: data.total_revenue,
-      totalQuotes: data.total_quotes,
+      totalRevenue: rpcResult.metrics.total_revenue.amount,
+      totalQuotes: rpcResult.metrics.total_quotes,
     });
 
     return NextResponse.json(response);
@@ -127,13 +99,6 @@ async function getPartnerFinancialSummary(
     logger.error('💥 Erro interno na API financial-summary:', { error });
     return handleApiError(error);
   }
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(amount);
 }
 
 export const GET = withAdminAuth(getPartnerFinancialSummary);
