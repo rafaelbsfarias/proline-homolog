@@ -9,10 +9,10 @@ const logger = getLogger('api:admin:partner:financial-summary');
 
 async function getPartnerFinancialSummary(
   req: AuthenticatedRequest,
-  { params }: { params: { partnerId: string } }
+  { params }: { params: Promise<{ partnerId: string }> }
 ) {
   try {
-    const partnerId = params.partnerId;
+    const { partnerId } = await params;
     const url = new URL(req.url);
     const startDate = url.searchParams.get('start_date');
     const endDate = url.searchParams.get('end_date');
