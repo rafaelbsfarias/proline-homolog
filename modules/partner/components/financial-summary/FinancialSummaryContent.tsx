@@ -90,9 +90,9 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           padding: 32,
           textAlign: 'center',
           color: '#666',
+          border: '1px solid #e5e7eb',
         }}
       >
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
         <p style={{ fontSize: 16, marginBottom: 8 }}>Nenhum dado financeiro encontrado</p>
         <p style={{ fontSize: 13, color: '#999' }}>
           Tente selecionar outro período ou realizar novos orçamentos.
@@ -113,10 +113,11 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           justifyContent: 'space-between',
           alignItems: 'center',
           boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+          border: '1px solid #e5e7eb',
         }}
       >
         <div>
-          <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>📅 Período</div>
+          <div style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Período</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#333' }}>{data.period.label}</div>
           {data.period.start_date && data.period.end_date && (
             <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
@@ -136,13 +137,9 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
             cursor: 'pointer',
             fontSize: 13,
             fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
           }}
         >
-          <span>🔄</span>
-          <span>Atualizar</span>
+          Atualizar
         </button>
       </div>
 
@@ -150,7 +147,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
           gap: 16,
         }}
       >
@@ -161,36 +158,14 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
             borderRadius: 8,
             padding: 20,
             boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            border: '1px solid #e5e7eb',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                background: '#d4edda',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 24,
-              }}
-            >
-              💰
-            </div>
-          </div>
           <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Receita Total</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#27ae60' }}>
             {data.metrics.total_revenue.formatted}
           </div>
-          <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Valor faturado no período</div>
+          <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Orçamentos confirmados</div>
         </div>
 
         {/* Total Quotes */}
@@ -200,36 +175,14 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
             borderRadius: 8,
             padding: 20,
             boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            border: '1px solid #e5e7eb',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                background: '#d1ecf1',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 24,
-              }}
-            >
-              📋
-            </div>
-          </div>
           <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Total de Orçamentos</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#3498db' }}>
             {data.metrics.total_quotes}
           </div>
-          <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Orçamentos realizados</div>
+          <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Orçamentos aprovados</div>
         </div>
 
         {/* Average Quote Value */}
@@ -239,31 +192,9 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
             borderRadius: 8,
             padding: 20,
             boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+            border: '1px solid #e5e7eb',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 8,
-                background: '#e7d5f7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 24,
-              }}
-            >
-              📊
-            </div>
-          </div>
           <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Valor Médio</div>
           <div style={{ fontSize: 28, fontWeight: 700, color: '#9b59b6' }}>
             {data.metrics.average_quote_value.formatted}
@@ -279,10 +210,11 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           borderRadius: 8,
           padding: 20,
           boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+          border: '1px solid #e5e7eb',
         }}
       >
         <div style={{ fontSize: 16, fontWeight: 600, color: '#333', marginBottom: 16 }}>
-          🔧 Informações de Peças
+          Informações de Peças
         </div>
         <div
           style={{
@@ -300,12 +232,12 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           </div>
           <div
             style={{
-              background: 'linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%)',
+              background: '#f8f9fa',
               borderRadius: 6,
               padding: 16,
             }}
           >
-            <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Valor Total</div>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 8 }}>Valor Total de Peças</div>
             <div style={{ fontSize: 24, fontWeight: 700, color: '#e67e22' }}>
               {data.metrics.parts.total_parts_value.formatted}
             </div>
@@ -321,10 +253,11 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           borderRadius: 8,
           padding: 20,
           boxShadow: '0 2px 4px rgba(0,0,0,0.08)',
+          border: '1px solid #e5e7eb',
         }}
       >
         <div style={{ fontSize: 16, fontWeight: 600, color: '#333', marginBottom: 16 }}>
-          📈 Valor Projetado
+          Valores Projetados
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
           <div
@@ -340,7 +273,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           >
             <div>
               <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
-                ⏱️ Aguardando Aprovação
+                Aguardando Aprovação
               </div>
               <div style={{ fontSize: 11, color: '#999' }}>Orçamentos pendentes</div>
             </div>
@@ -361,7 +294,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
             }}
           >
             <div>
-              <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>⚡ Em Execução</div>
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Em Execução</div>
               <div style={{ fontSize: 11, color: '#999' }}>Serviços em andamento</div>
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#3498db' }}>
@@ -371,7 +304,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
 
           <div
             style={{
-              background: 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)',
+              background: '#d4edda',
               border: '2px solid #28a745',
               borderRadius: 6,
               padding: 16,
@@ -382,7 +315,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           >
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#155724', marginBottom: 4 }}>
-                💹 Total Projetado
+                Total Projetado
               </div>
               <div style={{ fontSize: 11, color: '#28a745' }}>Receita potencial</div>
             </div>
@@ -396,37 +329,18 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
       {/* Info Footer */}
       <div
         style={{
-          background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+          background: '#e3f2fd',
           border: '1px solid #90caf9',
           borderRadius: 8,
           padding: 16,
-          display: 'flex',
-          gap: 12,
         }}
       >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 8,
-            background: '#2196f3',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 20,
-            flexShrink: 0,
-          }}
-        >
-          ℹ️
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#1565c0', marginBottom: 4 }}>
+          Informações importantes
         </div>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#1565c0', marginBottom: 4 }}>
-            Informações importantes
-          </div>
-          <div style={{ fontSize: 12, color: '#1976d2', lineHeight: 1.5 }}>
-            Os dados apresentados refletem orçamentos confirmados, pendentes de aprovação e em
-            execução. Os valores projetados são estimativas baseadas no status atual dos orçamentos.
-          </div>
+        <div style={{ fontSize: 12, color: '#1976d2', lineHeight: 1.5 }}>
+          Os dados apresentados refletem orçamentos confirmados, pendentes de aprovação e em
+          execução. Os valores projetados são estimativas baseadas no status atual dos orçamentos.
         </div>
       </div>
     </div>
