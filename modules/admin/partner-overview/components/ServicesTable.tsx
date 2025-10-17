@@ -48,6 +48,7 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
   onApproveService,
   onRejectService,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -141,130 +142,165 @@ export const ServicesTable: React.FC<ServicesTableProps> = ({
 
   return (
     <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>Serviços</h2>
-
-      <div className={styles.filters}>
-        <input
-          type="text"
-          placeholder="Buscar por nome..."
-          value={query}
-          onChange={e => onQueryChange(e.target.value)}
-          className={styles.searchInput}
-        />
-
-        <select
-          value={status}
-          onChange={e => onStatusChange(e.target.value as ServiceFilterStatus)}
-          className={styles.statusSelect}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+        }}
+      >
+        <h2 className={styles.sectionTitle}>Serviços</h2>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          style={{
+            background: 'transparent',
+            border: '1px solid #d1d5db',
+            borderRadius: 6,
+            padding: '6px 12px',
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            color: '#374151',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            transition: 'all 0.2s',
+          }}
+          title={isExpanded ? 'Recolher seção' : 'Expandir seção'}
         >
-          {Object.entries(STATUS_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <span>{isExpanded ? '▼' : '▶'}</span>
+          <span>{isExpanded ? 'Recolher' : 'Expandir'}</span>
+        </button>
       </div>
 
-      {services.length === 0 ? (
-        <div className={styles.emptyState}>Nenhum serviço encontrado.</div>
-      ) : (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Descrição</th>
-                <th>Preço</th>
-                <th>Status</th>
-                <th>Revisão</th>
-                <th>Cadastrado em</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map(service => (
-                <tr key={service.id}>
-                  <td className={styles.cellName}>{service.name}</td>
-                  <td className={styles.cellDescription}>
-                    {service.description || <span className={styles.textMuted}>Sem descrição</span>}
-                  </td>
-                  <td>
-                    {service.price != null
-                      ? `R$ ${Number(service.price).toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                        })}`
-                      : '—'}
-                  </td>
-                  <td>
-                    <span
-                      className={`${styles.statusBadge} ${
-                        service.is_active ? styles.statusActive : styles.statusInactive
-                      }`}
-                    >
-                      {service.is_active ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`${styles.reviewBadge} ${
-                        service.review_status === 'approved'
-                          ? styles.reviewApproved
-                          : service.review_status === 'pending_review'
-                            ? styles.reviewPending
-                            : service.review_status === 'pending_approval'
-                              ? styles.reviewPendingApproval
-                              : service.review_status === 'rejected'
-                                ? styles.reviewRejected
-                                : styles.reviewInRevision
-                      }`}
-                      title={service.review_feedback || undefined}
-                    >
-                      {REVIEW_STATUS_LABELS[service.review_status]}
-                    </span>
-                  </td>
-                  <td>{new Date(service.created_at).toLocaleDateString('pt-BR')}</td>
-                  <td>
-                    <div className={styles.actionButtons}>
-                      {/* Botão Solicitar Revisão - sempre disponível */}
-                      <button
-                        onClick={() => handleOpenReviewModal(service)}
-                        className={`${styles.btn} ${styles.btnWarning}`}
-                        title="Solicitar revisão do serviço"
-                        disabled={submitting}
-                      >
-                        Revisão
-                      </button>
+      {isExpanded && (
+        <>
+          <div className={styles.filters}>
+            <input
+              type="text"
+              placeholder="Buscar por nome..."
+              value={query}
+              onChange={e => onQueryChange(e.target.value)}
+              className={styles.searchInput}
+            />
 
-                      {/* Botão Aprovar - apenas para pending_approval */}
-                      {service.review_status === 'pending_approval' && onApproveService && (
-                        <button
-                          onClick={() => handleApprove(service)}
-                          className={`${styles.btn} ${styles.btnSuccess}`}
-                          title="Aprovar serviço"
-                          disabled={submitting}
-                        >
-                          Aprovar
-                        </button>
-                      )}
-
-                      {/* Botão Rejeitar - apenas para pending_approval */}
-                      {service.review_status === 'pending_approval' && onRejectService && (
-                        <button
-                          onClick={() => handleOpenRejectModal(service)}
-                          className={`${styles.btn} ${styles.btnDanger}`}
-                          title="Rejeitar serviço"
-                          disabled={submitting}
-                        >
-                          Rejeitar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+            <select
+              value={status}
+              onChange={e => onStatusChange(e.target.value as ServiceFilterStatus)}
+              className={styles.statusSelect}
+            >
+              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </select>
+          </div>
+
+          {services.length === 0 ? (
+            <div className={styles.emptyState}>Nenhum serviço encontrado.</div>
+          ) : (
+            <div className={styles.tableContainer}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Descrição</th>
+                    <th>Preço</th>
+                    <th>Status</th>
+                    <th>Revisão</th>
+                    <th>Cadastrado em</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map(service => (
+                    <tr key={service.id}>
+                      <td className={styles.cellName}>{service.name}</td>
+                      <td className={styles.cellDescription}>
+                        {service.description || (
+                          <span className={styles.textMuted}>Sem descrição</span>
+                        )}
+                      </td>
+                      <td>
+                        {service.price != null
+                          ? `R$ ${Number(service.price).toLocaleString('pt-BR', {
+                              minimumFractionDigits: 2,
+                            })}`
+                          : '—'}
+                      </td>
+                      <td>
+                        <span
+                          className={`${styles.statusBadge} ${
+                            service.is_active ? styles.statusActive : styles.statusInactive
+                          }`}
+                        >
+                          {service.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`${styles.reviewBadge} ${
+                            service.review_status === 'approved'
+                              ? styles.reviewApproved
+                              : service.review_status === 'pending_review'
+                                ? styles.reviewPending
+                                : service.review_status === 'pending_approval'
+                                  ? styles.reviewPendingApproval
+                                  : service.review_status === 'rejected'
+                                    ? styles.reviewRejected
+                                    : styles.reviewInRevision
+                          }`}
+                          title={service.review_feedback || undefined}
+                        >
+                          {REVIEW_STATUS_LABELS[service.review_status]}
+                        </span>
+                      </td>
+                      <td>{new Date(service.created_at).toLocaleDateString('pt-BR')}</td>
+                      <td>
+                        <div className={styles.actionButtons}>
+                          {/* Botão Solicitar Revisão - sempre disponível */}
+                          <button
+                            onClick={() => handleOpenReviewModal(service)}
+                            className={`${styles.btn} ${styles.btnWarning}`}
+                            title="Solicitar revisão do serviço"
+                            disabled={submitting}
+                          >
+                            Revisão
+                          </button>
+
+                          {/* Botão Aprovar - apenas para pending_approval */}
+                          {service.review_status === 'pending_approval' && onApproveService && (
+                            <button
+                              onClick={() => handleApprove(service)}
+                              className={`${styles.btn} ${styles.btnSuccess}`}
+                              title="Aprovar serviço"
+                              disabled={submitting}
+                            >
+                              Aprovar
+                            </button>
+                          )}
+
+                          {/* Botão Rejeitar - apenas para pending_approval */}
+                          {service.review_status === 'pending_approval' && onRejectService && (
+                            <button
+                              onClick={() => handleOpenRejectModal(service)}
+                              className={`${styles.btn} ${styles.btnDanger}`}
+                              title="Rejeitar serviço"
+                              disabled={submitting}
+                            >
+                              Rejeitar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {/* Review Modal */}
