@@ -29,8 +29,8 @@ BEGIN
       'client'
     ) as user_role,
     u.created_at,
-    c.company_name,
-    c.document_number as cnpj,
+    c.company_name::TEXT,
+    c.document_number::TEXT,
     COALESCE(
       (u.raw_user_meta_data->>'phone')::TEXT,
       (u.raw_user_meta_data->>'phone_number')::TEXT,
