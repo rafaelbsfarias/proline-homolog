@@ -28,8 +28,6 @@ async function addClientHandler(req: AuthenticatedRequest) {
       documentType: rawData.documentType,
       document: rawData.document,
       parqueamento: rawData.parqueamento,
-      quilometragem: rawData.quilometragem,
-      percentualFipe: rawData.percentualFipe,
       taxaOperacao: rawData.taxaOperacao,
     };
     logger.info(`Attempting to create new client with email: ${input.email}`);

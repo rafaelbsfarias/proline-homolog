@@ -24,8 +24,6 @@ export interface CreateUserInput {
   documentType?: string;
   document?: string;
   parqueamento?: string;
-  quilometragem?: string;
-  percentualFipe?: number;
   taxaOperacao?: number;
   companyName?: string;
 }
@@ -156,14 +154,12 @@ export class CreateUserUseCase {
       let specificTableError: any = null;
       if (role === 'client') {
         logger.info(`Creating client record for user ID: ${authUserId}`);
-        const { parqueamento, quilometragem, percentualFipe, taxaOperacao } = input;
+        const { parqueamento, taxaOperacao } = input;
         const { error } = await this.supabase.from('clients').insert({
           profile_id: authUserId,
           document_type: documentType,
           document_number: sanitizedDocument,
           parqueamento: parqueamento,
-          quilometragem: quilometragem,
-          percentual_fipe: percentualFipe,
           taxa_operacao: taxaOperacao,
         });
         specificTableError = error;
