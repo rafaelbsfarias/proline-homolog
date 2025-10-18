@@ -67,7 +67,7 @@ Profissional que realiza inspeções técnicas detalhadas nos veículos.
   - **NOK** (Não OK): Precisa de reparo
   - **NA** (Não Aplicável): Não se aplica a este veículo
 - Adicionar comentários em cada item
-- Definir gravidade dos problemas (baixa, média, alta)
+
 
 #### Adicionar Evidências
 - Tirar fotos dos problemas encontrados
@@ -107,6 +107,7 @@ Profissional que realiza inspeções técnicas detalhadas nos veículos.
 - Visualizar detalhes e veículos de cada cliente
 - Editar informações dos clientes
 - Ativar ou desativar clientes
+- Aprovar novos clientes que se cadastraram
 
 #### Gerenciar Parceiros
 - Ver lista de todos os parceiros
@@ -136,7 +137,6 @@ Profissional que realiza inspeções técnicas detalhadas nos veículos.
 #### Visualizar Evidências
 - Acessar todos os checklists da plataforma
 - Ver fotos e vídeos de qualquer serviço
-- Auditar qualidade do trabalho dos parceiros
 - Verificar conformidade dos serviços
 
 
@@ -171,14 +171,12 @@ Profissional que realiza inspeções técnicas detalhadas nos veículos.
 #### Documentar Problemas
 - Fotografar todos os problemas encontrados
 - Adicionar múltiplas evidências por item
-- Organizar fotos por categoria
 - Remover fotos desnecessárias
 
 #### Criar Relatórios (Análise Preliminar)
 - Adicionar comentários técnicos detalhados
-- Classificar gravidade dos problemas
 - Salvar análise parcial como rascunho
-- Finalizar inspeção e gerar relatório
+- Finalizar inspeção
 
 #### Acompanhar Produtividade
 - Ver quantidade de inspeções realizadas
