@@ -70,9 +70,11 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
   const hiddenDateRef = useRef<HTMLInputElement | null>(null);
   const [selectMudancaData, setSelectMudancaData] = useState(true);
   const [selectAprovacao, setSelectAprovacao] = useState(true);
+  const [selectPontoSelecionado, setSelectPontoSelecionado] = useState(true);
 
   const counts = useMemo(() => {
-    if (!statusCounts) return { definicao: 0, chegada: 0, aprovacao: 0, mudancaData: 0 };
+    if (!statusCounts)
+      return { definicao: 0, chegada: 0, aprovacao: 0, mudancaData: 0, pontoSelecionado: 0 };
 
     return {
       definicao: statusCounts['AGUARDANDO DEFINIÇÃO DE COLETA'] || 0,
@@ -81,6 +83,7 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         (statusCounts['AGUARDANDO CHEGADA DO VEÍCULO'] || 0),
       aprovacao: statusCounts['AGUARDANDO APROVAÇÃO DA COLETA'] || 0,
       mudancaData: statusCounts['SOLICITAÇÃO DE MUDANÇA DE DATA'] || 0,
+      pontoSelecionado: statusCounts['PONTO DE COLETA SELECIONADO'] || 0,
     };
   }, [statusCounts]);
 
@@ -96,9 +99,17 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
         selected.push(v.id);
       else if (selectAprovacao && s === 'AGUARDANDO APROVAÇÃO DA COLETA') selected.push(v.id);
       else if (selectMudancaData && s === 'SOLICITAÇÃO DE MUDANÇA DE DATA') selected.push(v.id);
+      else if (selectPontoSelecionado && s === 'PONTO DE COLETA SELECIONADO') selected.push(v.id);
     });
     return selected;
-  }, [vehicles, selectDefinicao, selectChegada, selectAprovacao, selectMudancaData]);
+  }, [
+    vehicles,
+    selectDefinicao,
+    selectChegada,
+    selectAprovacao,
+    selectMudancaData,
+    selectPontoSelecionado,
+  ]);
 
   const canSubmit = useMemo(() => {
     if (!selectedIds.length) return false;
@@ -227,6 +238,18 @@ const BulkCollectionModal: React.FC<BulkCollectionModalProps> = ({
               disabled={counts.mudancaData === 0}
             />
             <span className="bcm-count">({counts.mudancaData})</span>
+          </div>
+
+          <div className="bcm-checkbox-row">
+            <Checkbox
+              id="pontoSelecionado"
+              name="pontoSelecionado"
+              label="Ponto de coleta selecionado"
+              checked={selectPontoSelecionado}
+              onChange={setSelectPontoSelecionado}
+              disabled={counts.pontoSelecionado === 0}
+            />
+            <span className="bcm-count">({counts.pontoSelecionado})</span>
           </div>
         </div>
 
