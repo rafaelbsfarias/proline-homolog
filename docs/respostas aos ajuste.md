@@ -20,3 +20,7 @@
 9 - ok
 
 10 - Quando é selecionado 'preparação' ou 'comercialização' não é necessário nenhuma validação humana. O checklist do especialista só exibe loja e patio quando comercialização é selecionada e as demais categorias são exibidas somente quando preparação é selecionado
+
+11 - exibido nos detalhes do veículo e no checklist do especialista
+
+12 - evidencias são listadas

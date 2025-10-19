@@ -97,11 +97,6 @@ async function createClientUser() {
         document_type: documentType,
         document_number: documentNumber,
         company_name: companyName,
-        // garantir inteiros
-        percentual_fipe: 50, // inteiro
-        taxa_operacao: 10,   // inteiro
-        parqueamento: 25,    // inteiro
-        quilometragem: 100,  // inteiro
       },
       { onConflict: 'profile_id' }
     );
