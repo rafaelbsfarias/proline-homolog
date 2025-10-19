@@ -25,6 +25,7 @@ export interface VehicleDetails {
   estimated_arrival_date?: string;
   preparacao?: boolean;
   comercializacao?: boolean;
+  observations?: string;
 }
 
 export interface InspectionData {

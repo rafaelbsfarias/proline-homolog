@@ -36,6 +36,7 @@ export interface VehicleInfo {
   estimated_arrival_date?: string | null;
   preparacao?: boolean;
   comercializacao?: boolean;
+  observations?: string;
 }
 
 export class ClientVehicleService {
@@ -61,7 +62,8 @@ export class ClientVehicleService {
       fuel_level,
       estimated_arrival_date,
       preparacao,
-      comercializacao
+      comercializacao,
+      observations
     `;
   }
 

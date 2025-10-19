@@ -352,6 +352,14 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
           </div>
 
+          {/* Observações do Cliente */}
+          {vehicle.observations && vehicle.observations.trim() !== '' && (
+            <div className={styles.clientObservations}>
+              <h4 className={styles.observationsTitle}>Observações do Cliente</h4>
+              <p className={styles.observationsText}>{vehicle.observations}</p>
+            </div>
+          )}
+
           {/* Dados básicos da inspeção */}
           <div className={styles.grid}>
             <div className={styles.field}>

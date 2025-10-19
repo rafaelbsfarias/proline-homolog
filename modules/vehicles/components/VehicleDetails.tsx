@@ -18,6 +18,7 @@ import { useDynamicChecklistLoader } from '@/modules/vehicles/hooks/useDynamicCh
 
 // Sections
 import { VehicleBasicInfo } from './sections/VehicleBasicInfo';
+import { VehicleObservationsSection } from './sections/VehicleObservationsSection';
 import { VehicleServicesSection } from './sections/VehicleServicesSection';
 import { VehicleMediaSection } from './sections/VehicleMediaSection';
 import { PartnerEvidencesSection } from './sections/PartnerEvidencesSection';
@@ -206,6 +207,8 @@ const VehicleDetails: React.FC<VehicleDetailsProps> = ({
 
       {/* Sections Grid */}
       <div className={styles.gridContainer}>
+        <VehicleObservationsSection observations={vehicle.observations} />
+
         <VehicleBasicInfo vehicle={vehicle} />
 
         <BudgetPhaseSection

@@ -13,6 +13,7 @@ export interface VehicleData {
   estimated_arrival_date?: string;
   comercializacao?: boolean;
   preparacao?: boolean;
+  observations?: string;
 }
 
 const PAGE_SIZE = 12;

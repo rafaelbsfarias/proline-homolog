@@ -21,6 +21,7 @@ interface Vehicle {
   year: number;
   plate: string;
   client_id: string;
+  observations?: string;
 }
 
 interface DashboardState {
@@ -289,6 +290,7 @@ const SpecialistDashboard: React.FC = () => {
                   estimated_arrival_date: undefined,
                   current_odometer: undefined,
                   fuel_level: undefined,
+                  observations: selectedVehicle.observations,
                 }
               : null
           }
