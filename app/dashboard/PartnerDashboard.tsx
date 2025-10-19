@@ -5,6 +5,7 @@ import { supabase } from '@/modules/common/services/supabaseClient';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { useChecklistCache } from '@/modules/partner/hooks/useChecklistCache';
 import { usePartnerTimeRevisions } from '@/modules/partner/hooks/usePartnerTimeRevisions';
+import { usePartnerProfile } from '@/modules/partner/hooks/usePartnerProfile';
 
 import DataTable from '@/modules/common/components/shared/DataTable';
 import ActionButton from '@/modules/partner/components/dashboard/ActionButton';
@@ -14,6 +15,8 @@ import ContractAcceptanceView from '@/modules/partner/components/contract/Contra
 import PendingTimeRevisionsCard from '@/modules/partner/components/PendingTimeRevisionsCard/PendingTimeRevisionsCard';
 import QuotesInReviewCard from '@/modules/partner/components/QuotesInReviewCard/QuotesInReviewCard';
 import TimeRevisionModal from '@/modules/partner/components/TimeRevisionModal/TimeRevisionModal';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import {
   usePartnerDashboard,
   type PendingQuote,
@@ -46,6 +49,7 @@ type InProgressServiceDisplay = Omit<InProgressService, 'total_value' | 'approve
 const PartnerDashboard = () => {
   const router = useRouter();
   const { post } = useAuthenticatedFetch(); // Mantém para handleSendToAdmin
+  const { profileData, userId, loading: profileLoading } = usePartnerProfile();
 
   // Hook otimizado de cache de checklist
   const { checkSingleQuote, checkMultipleQuotes, invalidateCache, getFromCache } =
@@ -64,6 +68,12 @@ const PartnerDashboard = () => {
   // Time Revisions
   const [showTimeRevisionModal, setShowTimeRevisionModal] = useState(false);
   const [selectedQuoteForRevision, setSelectedQuoteForRevision] = useState<string | null>(null);
+
+  // Force Change Password Modal
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Hook de revisões de tempo
   const {
@@ -163,6 +173,13 @@ const PartnerDashboard = () => {
       }
     };
   }, [invalidateCache]);
+
+  // Verificar se deve mostrar modal de mudança obrigatória de senha
+  useEffect(() => {
+    if (profileData?.must_change_password) {
+      setShowForceChangePasswordModal(true);
+    }
+  }, [profileData]);
 
   async function handleAcceptContract() {
     if (!checked) return;
@@ -646,6 +663,37 @@ const PartnerDashboard = () => {
         >
           {toast.message}
         </div>
+      )}
+
+      <ForceChangePasswordModal
+        isOpen={showForceChangePasswordModal}
+        onClose={() => setShowForceChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowForceChangePasswordModal(false);
+          setShowSuccessModal(true);
+        }}
+        onError={message => {
+          setErrorMessage(message);
+          setShowErrorModal(true);
+        }}
+      />
+
+      {showSuccessModal && (
+        <MessageModal
+          title="Sucesso!"
+          message="Sua senha foi atualizada com sucesso."
+          variant="success"
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
+      {showErrorModal && (
+        <MessageModal
+          title="Erro"
+          message={errorMessage}
+          variant="error"
+          onClose={() => setShowErrorModal(false)}
+        />
       )}
     </div>
   );

@@ -46,7 +46,8 @@ const partnerSchema = z.object({
     .string({
       required_error: 'O telefone é obrigatório',
     })
-    .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Telefone inválido'),
+    // Aceita: "(11) 1234-5678", "(11) 91234-5678" e "(11) 9 1234-5678" (máscara atual)
+    .regex(/^\(\d{2}\) (?:\d{4}-\d{4}|\d{5}-\d{4}|\d \d{4}-\d{4})$/, 'Telefone inválido'),
   contractValue: z
     .number({
       required_error: 'O valor do contrato é obrigatório',

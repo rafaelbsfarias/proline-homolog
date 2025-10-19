@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Header from '../../../modules/admin/components/Header';
-import { supabase } from '@/modules/common/services/supabaseClient';
 import { useSpecialistClients } from '@/modules/specialist/hooks/useSpecialistClients';
 import { useClientVehicles, type VehicleData } from '@/modules/specialist/hooks/useClientVehicles';
 import { VehicleStatus } from '@/modules/vehicles/constants/vehicleStatus';
@@ -14,6 +13,9 @@ import SpecialistRequestedPartsCounter from '@/modules/specialist/components/Spe
 import SpecialistTimeApprovalsCounter from '@/modules/specialist/components/SpecialistTimeApprovalsCounter';
 import PendingReviewsCard from '@/modules/specialist/components/PendingReviewsCard';
 import { useSpecialistPendingReviews } from '@/modules/specialist/hooks/useSpecialistPendingReviews';
+import { useSpecialistProfile } from '@/modules/specialist/hooks/useSpecialistProfile';
+import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
+import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import { useRouter } from 'next/navigation';
 import styles from './SpecialistDashboard.module.css';
 
@@ -21,12 +23,20 @@ const SpecialistDashboard = () => {
   const { showToast } = useToast();
   const router = useRouter();
   const [userName, setUserName] = useState('');
-  const [loadingUser, setLoadingUser] = useState(true);
   const { clients, loading: loadingClients, error: clientsError } = useSpecialistClients();
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
+  // Hook para perfil do especialista (incluindo must_change_password)
+  const { profileData, loading: loadingProfile } = useSpecialistProfile();
+
   // Hook para revisões pendentes do parceiro
   const { pendingReviews, loading: loadingReviews } = useSpecialistPendingReviews();
+
+  // Estados para modal de mudança de senha
+  const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Filtros de veículos (placa e status)
   const [filterPlate, setFilterPlate] = useState('');
@@ -122,28 +132,19 @@ const SpecialistDashboard = () => {
   );
 
   useEffect(() => {
-    async function fetchUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single();
-        setUserName(profile?.full_name || '');
+    if (profileData) {
+      setUserName(profileData.full_name || '');
+      if (profileData.must_change_password) {
+        setShowForceChangePasswordModal(true);
       }
-      setLoadingUser(false);
     }
-    fetchUser();
-  }, []);
+  }, [profileData]);
 
   return (
     <div className={styles.container}>
       <Header />
 
-      {loadingUser || loadingClients ? (
+      {loadingProfile || loadingClients ? (
         <div className={styles.loadingContainer}>
           <Loading />
         </div>
@@ -221,6 +222,37 @@ const SpecialistDashboard = () => {
         onFinalized={() => refetch()}
         vehicle={selectedVehicle}
       />
+
+      <ForceChangePasswordModal
+        isOpen={showForceChangePasswordModal}
+        onClose={() => setShowForceChangePasswordModal(false)}
+        onSuccess={() => {
+          setShowForceChangePasswordModal(false);
+          setShowSuccessModal(true);
+        }}
+        onError={message => {
+          setErrorMessage(message);
+          setShowErrorModal(true);
+        }}
+      />
+
+      {showSuccessModal && (
+        <MessageModal
+          title="Sucesso!"
+          message="Sua senha foi atualizada com sucesso."
+          variant="success"
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
+      {showErrorModal && (
+        <MessageModal
+          title="Erro"
+          message={errorMessage}
+          variant="error"
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     </div>
   );
 };
