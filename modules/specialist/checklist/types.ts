@@ -8,6 +8,8 @@ export interface VehicleInfo {
   year?: number;
   color?: string;
   observations?: string;
+  comercializacao?: boolean;
+  preparacao?: boolean;
 }
 
 export interface ServicesFlags {

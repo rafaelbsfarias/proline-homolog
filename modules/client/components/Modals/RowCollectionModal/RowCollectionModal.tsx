@@ -12,6 +12,7 @@ import { OutlineButton } from '@/modules/common/components/OutlineButton/Outline
 import { SolidButton } from '@/modules/common/components/SolidButton/SolidButton';
 
 type Method = 'collect_point' | 'bring_to_yard';
+type ContextMode = 'collection' | 'delivery';
 
 export interface VehicleItem {
   id: string;
@@ -32,6 +33,7 @@ interface RowCollectionModalProps {
   vehicle: VehicleItem;
   addresses: AddressItem[];
   minDate: string;
+  mode?: ContextMode; // collection (default) | delivery
   onApply: (payload: {
     method: Method;
     vehicleIds: string[];
@@ -46,6 +48,7 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
   vehicle,
   addresses,
   minDate,
+  mode = 'collection',
   onApply,
 }) => {
   const [method, setMethod] = useState<Method>('collect_point');
@@ -98,7 +101,7 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Adicionar ponto de coleta"
+        title={mode === 'delivery' ? 'Solicitar entrega do veículo' : 'Adicionar ponto de coleta'}
         size="md"
         showCloseButton
       >
@@ -108,33 +111,39 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
             value="collect_point"
             checked={method === 'collect_point'}
             onChange={v => setMethod(v as Method)}
-            label="Ponto de coleta"
+            label={mode === 'delivery' ? 'Endereço de entrega' : 'Ponto de coleta'}
           />
           <Radio
             name="method"
             value="bring_to_yard"
             checked={method === 'bring_to_yard'}
             onChange={v => setMethod(v as Method)}
-            label="Vou levar ao pátio"
+            label={mode === 'delivery' ? 'Vou buscar no pátio' : 'Vou levar ao pátio'}
           />
         </div>
 
         {method === 'collect_point' ? (
           <>
             <div className="rcm-form-group">
-              <label className="rcm-label">Ponto de coleta</label>
+              <label className="rcm-label">
+                {mode === 'delivery' ? 'Endereço de entrega' : 'Ponto de coleta'}
+              </label>
               <Select
                 id="collect-point"
                 name="collect-point"
                 value={addressId}
                 onChange={e => setAddressId(e.target.value)}
                 options={addressOptions}
-                placeholder="Selecione um ponto"
+                placeholder={mode === 'delivery' ? 'Selecione um endereço' : 'Selecione um ponto'}
                 className="rcm-select"
               />
             </div>
             <div className="rcm-form-group">
-              <label className="rcm-label">Data preferencial de coleta</label>
+              <label className="rcm-label">
+                {mode === 'delivery'
+                  ? 'Data preferencial de entrega'
+                  : 'Data preferencial de coleta'}
+              </label>
               <DatePickerBR
                 valueIso={etaIso}
                 minIso={minDate}
@@ -148,7 +157,11 @@ const RowCollectionModal: React.FC<RowCollectionModalProps> = ({
                     setError(null);
                   }
                 }}
-                ariaLabel="Data preferencial de coleta (dd/mm/aaaa)"
+                ariaLabel={
+                  mode === 'delivery'
+                    ? 'Data preferencial de entrega (dd/mm/aaaa)'
+                    : 'Data preferencial de coleta (dd/mm/aaaa)'
+                }
               />
             </div>
           </>

@@ -1,16 +1,7 @@
-# Planejamento: Veículo Pronto para Retirada/Entrega
+# Documentos de Desenvolvimento
 
-Este diretório concentra a documentação (em português) para a feature que sinaliza ao cliente quando o veículo está pronto para retirada e permite solicitar entrega em um endereço cadastrado.
+Para manter a navegação organizada, os documentos deste estudo foram agrupados na subpasta:
 
-Arquivos neste diretório:
-- 01-visao-geral.md — Objetivo, escopo, premissas e não-objetivos
-- 02-condicoes-de-prontidao.md — Regras para considerar o veículo “pronto”
-- 03-ux-fluxos-cliente.md — Fluxos e telas para o cliente (Dashboard, retirada, entrega)
-- 04-ux-ops-admin.md — Fluxos e telas para Operações/Admin (fila e ações)
-- 05-modelo-de-dados-e-apis.md — Tabelas propostas, contratos de API (rascunho)
-- 06-timeline-permissoes-notificacoes.md — Entradas na timeline, RLS/segurança, notificações
-- 07-metricas-rollout-riscos.md — Métricas, plano de lançamento e riscos
-- 08-perguntas-abertas.md — Decisões pendentes e próximos passos
+- `docs/development/vehicle-release/` — Planejamento da feature “Veículo Pronto para Retirada/Entrega”.
 
-Observação importante: este é um estudo/planejamento. Não há implementação nem migrações de banco nesta etapa.
-
+Consulte o `README.md` dentro da subpasta para o índice completo.

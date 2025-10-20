@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@/modules/common/components/Modal/Modal';
 import { useToast } from '@/modules/common/components/ToastProvider';
-import { VehicleInfo } from '@/modules/specialist/checklist/types';
-import { useChecklistForm } from '@/modules/specialist/checklist/useChecklistForm';
-import { useImageUploader } from '@/modules/specialist/checklist/useImageUploader';
-import { useChecklistSubmission } from '@/modules/specialist/hooks/useChecklistSubmission';
-import { useChecklistFinalization } from '@/modules/specialist/hooks/useChecklistFinalization';
-import { useChecklistData } from '@/modules/specialist/hooks/useChecklistData';
+import { VehicleInfo } from '../../../checklist/types';
+import { useChecklistForm } from '../../../checklist/useChecklistForm';
+import { useImageUploader } from '../../../checklist/useImageUploader';
+import { useChecklistSubmission } from '../../hooks/useChecklistSubmission';
+import { useChecklistFinalization } from '../../hooks/useChecklistFinalization';
+import { useChecklistData } from '../../hooks/useChecklistData';
 import VehicleChecklistHeader from './components/VehicleChecklistHeader';
 import VehicleChecklistForm from './components/VehicleChecklistForm';
 import VehicleChecklistImageSection from './components/VehicleChecklistImageSection';

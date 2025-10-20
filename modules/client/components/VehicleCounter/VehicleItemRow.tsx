@@ -89,6 +89,8 @@ export default function VehicleItemRow(props: Props) {
     return null;
   })();
 
+  const isFinalized = statusUpper === 'FINALIZADO';
+
   return (
     <div
       className={`vehicle-item ${dateStatusClass}`}
@@ -152,14 +154,16 @@ export default function VehicleItemRow(props: Props) {
           <SolidButton
             className="buttonVehicleCustom"
             onClick={() => onOpenRowModal(vehicle)}
-            disabled={!canClientModify(vehicle.status)}
+            disabled={isFinalized ? false : !canClientModify(vehicle.status)}
             title={
-              !canClientModify(vehicle.status)
-                ? 'Não editável neste status'
-                : 'Adicionar ponto de coleta'
+              isFinalized
+                ? 'Solicitar entrega do veículo'
+                : !canClientModify(vehicle.status)
+                  ? 'Não editável neste status'
+                  : 'Adicionar ponto de coleta'
             }
           >
-            Adicionar ponto de coleta
+            {isFinalized ? 'Solicitar entrega do veículo' : 'Adicionar ponto de coleta'}
           </SolidButton>
         </div>
       </div>

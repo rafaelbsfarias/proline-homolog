@@ -120,9 +120,18 @@ function makeAdminForPropose(ctx: {
           where.push({ type: 'eq', col: c, val: v });
           return del;
         };
+        del.in = (c: string, vals: any[]) => {
+          where.push({ type: 'in', col: c, vals });
+          return del;
+        };
         del.then = (onFulfilled: any) => {
           const remaining = (store[table] || []).filter(
-            r => !(where || []).every((f: any) => (f.type === 'eq' ? r[f.col] === f.val : true))
+            r =>
+              !(where || []).every((f: any) => {
+                if (f.type === 'eq') return r[f.col] === f.val;
+                if (f.type === 'in') return f.vals.includes(r[f.col]);
+                return true;
+              })
           );
           store[table] = remaining;
           where = [];
@@ -130,6 +139,7 @@ function makeAdminForPropose(ctx: {
         };
         // Allow await pattern without then chaining
         (del as any).eq = del.eq;
+        (del as any).in = del.in;
         return del;
       },
       update: (obj: any) => {
