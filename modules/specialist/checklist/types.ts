@@ -7,6 +7,7 @@ export interface VehicleInfo {
   model: string;
   year?: number;
   color?: string;
+  observations?: string;
 }
 
 export interface ServicesFlags {

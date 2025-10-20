@@ -172,30 +172,70 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
           });
           setIsFinalized(!!data.inspection.finalized);
 
+          // Load existing images with detailed logging
           const media = data.inspection?.mediaPaths || [];
+          console.log('📸 [Checklist] Media paths recebidos:', media);
+
           if (Array.isArray(media) && media.length > 0) {
-            const signedUrlPromises = media.map((path: string) =>
-              supabase.storage.from('vehicle-media').createSignedUrl(path, 60)
-            );
-            const signedUrlResults = await Promise.all(signedUrlPromises);
+            console.log(`🔄 [Checklist] Gerando URLs assinadas para ${media.length} imagens...`);
 
-            const imageObjects = media
-              .map((path: string, index: number) => {
-                const { data, error } = signedUrlResults[index];
-                if (error) {
-                  return null;
-                }
-                return { path, url: data.signedUrl };
-              })
-              .filter(Boolean) as { path: string; url: string }[];
+            try {
+              const signedUrlPromises = media.map((path: string) => {
+                console.log('  [Checklist] Processando path:', path);
+                return supabase.storage.from('vehicle-media').createSignedUrl(path, 3600); // 1 hora
+              });
 
-            setExistingImages(imageObjects);
+              const signedUrlResults = await Promise.all(signedUrlPromises);
+              console.log('✅ [Checklist] Resultados da geração de URLs:', signedUrlResults);
+
+              let successCount = 0;
+              let errorCount = 0;
+
+              const imageObjects = media
+                .map((path: string, index: number) => {
+                  const { data: urlData, error } = signedUrlResults[index];
+                  if (error) {
+                    errorCount++;
+                    console.error(`❌ [Checklist] Erro ao gerar URL para ${path}:`, error);
+                    showToast('warning', `Não foi possível carregar uma imagem: ${error.message}`);
+                    return null;
+                  }
+                  successCount++;
+                  console.log(`✅ [Checklist] URL gerada para ${path}`);
+                  return { path, url: urlData.signedUrl };
+                })
+                .filter(Boolean) as { path: string; url: string }[];
+
+              console.log(
+                `📦 [Checklist] Imagens carregadas: ${successCount}/${media.length} (${errorCount} erros)`
+              );
+
+              if (successCount > 0) {
+                setExistingImages(imageObjects);
+              } else {
+                setExistingImages([]);
+                showToast('error', 'Nenhuma imagem pôde ser carregada. Verifique as permissões.');
+              }
+
+              if (successCount > 0 && errorCount > 0) {
+                showToast(
+                  'warning',
+                  `${successCount} de ${media.length} imagens foram carregadas com sucesso.`
+                );
+              }
+            } catch (urlError) {
+              console.error('❌ [Checklist] Erro ao processar URLs assinadas:', urlError);
+              showToast('error', 'Erro ao carregar imagens do checklist.');
+              setExistingImages([]);
+            }
           } else {
+            console.log('ℹ️  [Checklist] Nenhuma imagem salva neste checklist');
             setExistingImages([]);
           }
         }
       } catch (e) {
-        // ignore prefill errors
+        console.error('❌ [Checklist] Erro ao carregar dados do checklist:', e);
+        showToast('error', 'Erro ao carregar dados do checklist.');
       }
     })();
   }, [isOpen, vehicle]);
@@ -351,6 +391,14 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
             )}
             {isFinalized && <div className={styles.success}>Checklist finalizado</div>}
           </div>
+
+          {/* Observações do Cliente */}
+          {vehicle.observations && vehicle.observations.trim() !== '' && (
+            <div className={styles.clientObservations}>
+              <h4 className={styles.observationsTitle}>Observações do Cliente</h4>
+              <p className={styles.observationsText}>{vehicle.observations}</p>
+            </div>
+          )}
 
           {/* Dados básicos da inspeção */}
           <div className={styles.grid}>

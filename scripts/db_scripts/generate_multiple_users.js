@@ -38,12 +38,12 @@ function randDigits(len) {
 
 function formatCPF(d11) {
   // d11: string com 11 dígitos
-  return `${d11.slice(0,3)}.${d11.slice(3,6)}.${d11.slice(6,9)}-${d11.slice(9,11)}`;
+  return `${d11.slice(0, 3)}.${d11.slice(3, 6)}.${d11.slice(6, 9)}-${d11.slice(9, 11)}`;
 }
 
 function formatCNPJ(d14) {
   // d14: string com 14 dígitos
-  return `${d14.slice(0,2)}.${d14.slice(2,5)}.${d14.slice(5,8)}/${d14.slice(8,12)}-${d14.slice(12,14)}`;
+  return `${d14.slice(0, 2)}.${d14.slice(2, 5)}.${d14.slice(5, 8)}/${d14.slice(8, 12)}-${d14.slice(12, 14)}`;
 }
 
 function generateCPF(seed = '') {
@@ -131,11 +131,6 @@ async function generateUsers() {
                 document_type: 'CPF',
                 document_number: documentNumber,
                 company_name: companyName,
-                // termos de contrato como inteiros
-                percentual_fipe: 50,
-                taxa_operacao: 10,
-                parqueamento: 25,
-                quilometragem: 100,
               },
               { onConflict: 'profile_id' }
             );

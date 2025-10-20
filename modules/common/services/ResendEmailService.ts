@@ -283,7 +283,7 @@ export class ResendEmailService implements EmailServiceInterface {
     temporaryPassword: string
   ): Promise<void> {
     const subject = 'Sua nova senha de acesso - ProLine Hub';
-    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/login`;
+    const loginLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.prolineauto.com.br'}/login`;
     const html = `<!DOCTYPE html>
     <html>
     <head>
@@ -344,8 +344,10 @@ export class ResendEmailService implements EmailServiceInterface {
     subject: string = 'Bem-vindo(a) ao ProLine Hub!',
     templateVariant: 'default' | 'invite' = 'default'
   ): Promise<void> {
-    const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/+$/, '');
-    const loginLink = `${baseUrl || 'https://portal.prolineauto.com.br'}/login`;
+    const baseUrl = (
+      process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.prolineauto.com.br'
+    ).replace(/\/+$/, '');
+    const loginLink = `${baseUrl}/login`;
 
     let htmlContent = '';
 

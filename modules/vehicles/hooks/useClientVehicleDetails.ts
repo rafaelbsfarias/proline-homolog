@@ -80,25 +80,51 @@ export function useClientVehicleDetails(vehicleId: string | undefined) {
           if (!active) return;
           setInspection(insp);
           if (insp?.media?.length) {
+            console.log(
+              `🖼️ [VehicleDetails] Carregando ${insp.media.length} imagens da inspeção...`
+            );
             const urls: Record<string, string> = {};
+            let successCount = 0;
+            let errorCount = 0;
+
             for (const m of insp.media) {
               try {
+                console.log(`  [VehicleDetails] Buscando URL para: ${m.storage_path}`);
                 const urlResp = await get<{
                   success: boolean;
                   signedUrl?: string;
                   error?: string;
+                  details?: string;
                 }>(
                   `/api/client/get-media-url?path=${encodeURIComponent(m.storage_path)}&vehicleId=${vehicleId}`
                 );
                 if (urlResp.ok && urlResp.data?.success && urlResp.data.signedUrl) {
                   urls[m.storage_path] = urlResp.data.signedUrl;
+                  successCount++;
+                  console.log(`  ✅ [VehicleDetails] URL gerada para: ${m.storage_path}`);
+                } else {
+                  errorCount++;
+                  console.error(
+                    `  ❌ [VehicleDetails] Erro ao gerar URL para ${m.storage_path}:`,
+                    urlResp.data?.error || urlResp.data?.details || 'Resposta inválida'
+                  );
                 }
               } catch (err) {
+                errorCount++;
+                console.error(
+                  `  ❌ [VehicleDetails] Exceção ao buscar URL para ${m.storage_path}:`,
+                  err
+                );
                 logger.warn('Erro ao buscar URL assinada', { path: m.storage_path, err });
               }
             }
+
+            console.log(
+              `📊 [VehicleDetails] URLs carregadas: ${successCount}/${insp.media.length} (${errorCount} erros)`
+            );
             if (active) setMediaUrls(urls);
           } else {
+            console.log('ℹ️ [VehicleDetails] Nenhuma mídia associada a esta inspeção');
             if (active) setMediaUrls({});
           }
         } else {

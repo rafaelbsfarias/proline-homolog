@@ -31,7 +31,7 @@ export const GET = withSpecialistAuth(async (req: AuthenticatedRequest) => {
     // 2) Fetch vehicles for those clients (basic fields for dashboard cards)
     const { data: vehicles, error: vehErr } = await supabase
       .from('vehicles')
-      .select('id, client_id, brand, model, year, plate, color, status')
+      .select('id, client_id, brand, model, year, plate, color, status, observations')
       .in('client_id', clientIds)
       .order('created_at', { ascending: false })
       .limit(200);

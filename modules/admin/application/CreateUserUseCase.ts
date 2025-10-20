@@ -24,8 +24,6 @@ export interface CreateUserInput {
   documentType?: string;
   document?: string;
   parqueamento?: string;
-  quilometragem?: string;
-  percentualFipe?: number;
   taxaOperacao?: number;
   companyName?: string;
 }
@@ -134,6 +132,7 @@ export class CreateUserUseCase {
         full_name: sanitizedName,
         role: role,
         status: 'ativo',
+        must_change_password: true, // Força mudança de senha no primeiro login
       });
 
       if (profileError) {
@@ -156,14 +155,12 @@ export class CreateUserUseCase {
       let specificTableError: any = null;
       if (role === 'client') {
         logger.info(`Creating client record for user ID: ${authUserId}`);
-        const { parqueamento, quilometragem, percentualFipe, taxaOperacao } = input;
+        const { parqueamento, taxaOperacao } = input;
         const { error } = await this.supabase.from('clients').insert({
           profile_id: authUserId,
           document_type: documentType,
           document_number: sanitizedDocument,
           parqueamento: parqueamento,
-          quilometragem: quilometragem,
-          percentual_fipe: percentualFipe,
           taxa_operacao: taxaOperacao,
         });
         specificTableError = error;
@@ -205,26 +202,14 @@ export class CreateUserUseCase {
       logger.info(`Specific table record created for user ID: ${authUserId} with role: ${role}.`);
 
       const friendlyRole = this.mapRoleToFriendly(role);
-      let emailSubject = 'Cadastro Aprovado - ProLine Hub';
-      let emailTemplateVariant: 'default' | 'invite' = 'default';
 
-      if (role === 'partner') {
-        emailSubject = 'Convite para o ProLine Hub - Seja nosso Parceiro!';
-        emailTemplateVariant = 'invite';
-      }
-
-      if (role === 'client') {
-        logger.info(`Sending registration success email to client ${sanitizedEmail}.`);
-        await this.emailService.sendRegistrationSuccessEmail(sanitizedEmail, sanitizedName);
-      } else {
-        logger.info(`Sending welcome email to ${sanitizedEmail} with temporary password.`);
-        await this.emailService.sendWelcomeEmailWithTemporaryPassword(
-          sanitizedEmail,
-          sanitizedName,
-          temporaryPassword,
-          friendlyRole
-        );
-      }
+      // Todos os usuários criados por admin recebem email com senha temporária
+      await this.emailService.sendWelcomeEmailWithTemporaryPassword(
+        sanitizedEmail,
+        sanitizedName,
+        temporaryPassword,
+        friendlyRole
+      );
       logger.info(`Email sent to ${sanitizedEmail}.`);
 
       logger.info(`User ${authUserId} created successfully.`);

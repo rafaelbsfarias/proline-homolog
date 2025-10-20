@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import styles from './Toolbar.module.css';
+import styles from './PendingRegistrationsCounter.module.css';
 import { useRouter } from 'next/navigation';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 
@@ -26,7 +26,7 @@ const PendingRegistrationsCounter: React.FC<PendingRegistrationsCounterProps> = 
       setLoading(true);
       try {
         // A API retorna um array direto, não um objeto com total
-        const response = await get<Array<any>>('/api/admin/cadastros-pendentes');
+        const response = await get<unknown[]>('/api/admin/cadastros-pendentes');
 
         if (response.ok && response.data) {
           // Contar o número de itens no array
@@ -44,9 +44,13 @@ const PendingRegistrationsCounter: React.FC<PendingRegistrationsCounterProps> = 
   }, [get]);
 
   if (loading) return <span className={styles.counterCard}>Carregando...</span>;
+
+  // Não exibir o contador se não houver pendências
+  if (count === 0) return null;
+
   return (
     <span
-      className={styles.counterCard}
+      className={`${styles.counterCard} ${count && count > 0 ? styles.urgent : ''}`}
       style={{ cursor: 'pointer' }}
       title="Ver cadastros pendentes"
       onClick={() => router.push('/admin/pendentes')}

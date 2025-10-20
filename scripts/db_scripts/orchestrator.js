@@ -326,10 +326,6 @@ async function generateMultipleUsers() {
                 document_type: 'CPF',
                 document_number: documentNumber,
                 company_name: companyName,
-                percentual_fipe: 50,
-                taxa_operacao: 10,
-                parqueamento: 25,
-                quilometragem: 100,
               },
               { onConflict: 'profile_id' }
             );
@@ -416,10 +412,6 @@ Ordem de execução:
         document_type: 'CPF',
         document_number: `111.111.111-${String(randomClientId).padStart(2, '0')}`,
         company_name: `Empresa Cliente ${randomClientId}`,
-        percentual_fipe: 50,
-        taxa_operacao: 10,
-        parqueamento: 25,
-        quilometragem: 100,
       }
     );
 

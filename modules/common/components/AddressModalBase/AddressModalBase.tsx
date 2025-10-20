@@ -7,6 +7,7 @@ import { OutlineButton } from '../OutlineButton/OutlineButton';
 import { SolidButton } from '../SolidButton/SolidButton';
 import ErrorMessage from '@/modules/common/components/ErroMessage/ErrorMessage';
 import { useAddressForm, AddressFormValues } from '../../hooks/Address/useAddressForm';
+import { maskCEP } from '../../utils/formatters';
 import styles from './AddressModalBase.module.css';
 
 export interface AddressModalBaseProps {
@@ -58,7 +59,15 @@ export default function AddressModalBase({
               name="zip_code"
               label="CEP"
               value={form.zip_code}
-              onChange={handleChange}
+              onChange={e => {
+                const maskedValue = maskCEP(e.target.value);
+                handleChange({
+                  target: {
+                    name: 'zip_code',
+                    value: maskedValue,
+                  },
+                } as React.ChangeEvent<HTMLInputElement>);
+              }}
               placeholder="00000-000"
             />
             <ErrorMessage message={errors.zip_code} />

@@ -63,6 +63,12 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     // A verificação extra no banco de dados foi removida.
 
     // Gerar URL assinada com expiração de 1 hora
+    logger.info('generating_signed_url', {
+      userId: clientId.slice(0, 8),
+      storagePath: storagePath,
+      bucket: 'vehicle-media',
+    });
+
     const { data: signedUrl, error: signedUrlError } = await supabase.storage
       .from('vehicle-media')
       .createSignedUrl(storagePath, 3600); // 1 hora
@@ -70,18 +76,26 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest) => {
     if (signedUrlError || !signedUrl) {
       logger.error('signed_url_error', {
         userId: clientId.slice(0, 8),
-        storagePath: storagePath.slice(0, 20),
-        error: signedUrlError?.message,
+        storagePath: storagePath,
+        errorName: signedUrlError?.name,
+        errorMessage: signedUrlError?.message,
+        errorStack: signedUrlError?.stack,
+        hasData: !!signedUrl,
       });
       return NextResponse.json(
-        { error: 'Erro ao gerar URL da mídia', code: 'STORAGE_ERROR' },
+        {
+          error: 'Erro ao gerar URL da mídia',
+          code: 'STORAGE_ERROR',
+          details: signedUrlError?.message || 'Signed URL data is null',
+        },
         { status: 500 }
       );
     }
 
     logger.info('success', {
       userId: clientId.slice(0, 8),
-      storagePath: storagePath.slice(0, 20),
+      storagePath: storagePath.slice(0, 30),
+      urlGenerated: true,
     });
 
     return NextResponse.json({

@@ -223,6 +223,42 @@ const PendingRegistrationsList: React.FC = () => {
                       borderBottom: '1px solid #e0e0e0',
                     }}
                   >
+                    Empresa
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '16px 24px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#666',
+                      borderBottom: '1px solid #e0e0e0',
+                    }}
+                  >
+                    CNPJ
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '16px 24px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#666',
+                      borderBottom: '1px solid #e0e0e0',
+                    }}
+                  >
+                    Telefone
+                  </th>
+                  <th
+                    style={{
+                      textAlign: 'left',
+                      padding: '16px 24px',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: '#666',
+                      borderBottom: '1px solid #e0e0e0',
+                    }}
+                  >
                     Perfil
                   </th>
                   <th
@@ -242,7 +278,7 @@ const PendingRegistrationsList: React.FC = () => {
               <tbody>
                 {cadastrosPendentes.length === 0 && !loading && !error ? (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '20px' }}>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '20px' }}>
                       Nenhum cadastro pendente encontrado.
                     </td>
                   </tr>
@@ -273,6 +309,33 @@ const PendingRegistrationsList: React.FC = () => {
                         }}
                       >
                         {user.email}
+                      </td>
+                      <td
+                        style={{
+                          padding: '16px 24px',
+                          fontSize: 14,
+                          color: '#333',
+                        }}
+                      >
+                        {user.company_name || '-'}
+                      </td>
+                      <td
+                        style={{
+                          padding: '16px 24px',
+                          fontSize: 14,
+                          color: '#333',
+                        }}
+                      >
+                        {user.cnpj || '-'}
+                      </td>
+                      <td
+                        style={{
+                          padding: '16px 24px',
+                          fontSize: 14,
+                          color: '#333',
+                        }}
+                      >
+                        {user.phone || '-'}
                       </td>
                       <td
                         style={{

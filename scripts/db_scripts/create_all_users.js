@@ -165,11 +165,6 @@ async function main() {
       document_type: 'CPF',
       document_number: `111.111.111-${String(randomClientId).padStart(2, '0')}`,
       company_name: `Empresa Cliente ${randomClientId}`,
-      // garantir inteiros para termos de contrato
-      percentual_fipe: 50,
-      taxa_operacao: 10,
-      parqueamento: 25,
-      quilometragem: 100,
     }
   );
 

@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/modules/admin/components/Header';
 import ClientVehicleRegistrationModal from '@/modules/client/components/VehicleRegistrationModal';
 import ClientCollectPointModal from '@/modules/client/components/ClientCollectPointModal';
-import VehicleCounter from '@/modules/client/components/VehicleCounter/VehicleCounter';
+import VehicleCounter, {
+  VehicleCounterRef,
+} from '@/modules/client/components/VehicleCounter/VehicleCounter';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import './ClientDashboard.css';
@@ -24,6 +26,7 @@ const ClientDashboard: React.FC = () => {
   const { profileData, userId, loading } = useUserProfile();
   const { accepted, loadingAcceptance, acceptContract } = useContractAcceptance(userId);
   const { addresses, collectPoints, refetch: refetchAddresses } = useAddresses();
+  const vehicleCounterRef = useRef<VehicleCounterRef>(null);
   const [showCadastrarVeiculoModal, setShowCadastrarVeiculoModal] = useState(false);
   const [showAddCollectPointModal, setShowAddCollectPointModal] = useState(false);
   const [showForceChangePasswordModal, setShowForceChangePasswordModal] = useState(false);
@@ -125,6 +128,7 @@ const ClientDashboard: React.FC = () => {
 
             <div className="dashboard-counter">
               <VehicleCounter
+                ref={vehicleCounterRef}
                 onLoadingChange={setVehicleCounterLoading}
                 addresses={addresses}
                 collectPoints={collectPoints}
@@ -149,7 +153,10 @@ const ClientDashboard: React.FC = () => {
       <ClientVehicleRegistrationModal
         isOpen={showCadastrarVeiculoModal}
         onClose={() => setShowCadastrarVeiculoModal(false)}
-        onSuccess={refetchAddresses}
+        onSuccess={() => {
+          refetchAddresses();
+          vehicleCounterRef.current?.refetch();
+        }}
       />
       <ClientCollectPointModal
         isOpen={showAddCollectPointModal}

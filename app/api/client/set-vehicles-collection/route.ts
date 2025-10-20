@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       'AGUARDANDO APROVAÇÃO DA COLETA',
       'AGUARDANDO CHEGADA DO VEÍCULO',
       'SOLICITAÇÃO DE MUDANÇA DE DATA',
+      'PONTO DE COLETA SELECIONADO',
     ]);
     const { data: currentVehicles, error: curErr } = await admin
       .from('vehicles')

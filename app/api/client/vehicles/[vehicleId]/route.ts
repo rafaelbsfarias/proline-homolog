@@ -57,6 +57,7 @@ export const GET = withClientAuth(async (req: AuthenticatedRequest, { params }) 
         estimated_arrival_date: vehicle.estimated_arrival_date,
         preparacao: vehicle.preparacao,
         comercializacao: vehicle.comercializacao,
+        observations: vehicle.observations,
       },
       message: 'Detalhes do veículo carregados com sucesso!',
     });

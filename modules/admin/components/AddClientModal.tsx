@@ -21,18 +21,6 @@ const clientSchema = z.object({
   parqueamento: z
     .number({ required_error: 'Parqueamento é obrigatório' })
     .nonnegative('Parqueamento deve ser positivo'),
-  quilometragem: z
-    .number({ required_error: 'Quilometragem é obrigatória' })
-    .nonnegative('Quilometragem deve ser positiva'),
-  percentualFipe: z.preprocess(
-    val => {
-      if (typeof val === 'string') return Number(val);
-      return val;
-    },
-    z
-      .number({ required_error: 'Percentual FIPE é obrigatório' })
-      .nonnegative('Percentual FIPE inválido')
-  ),
   taxaOperacao: z
     .number({ required_error: 'Taxa de Operação é obrigatória' })
     .nonnegative('Taxa de Operação deve ser positiva'),
@@ -56,8 +44,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
     documentType: 'CPF',
     document: '',
     parqueamento: undefined,
-    quilometragem: undefined,
-    percentualFipe: 0,
     taxaOperacao: undefined,
   });
 
@@ -83,8 +69,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
       documentType: 'CPF',
       document: '',
       parqueamento: undefined,
-      quilometragem: undefined,
-      percentualFipe: 0,
       taxaOperacao: undefined,
     });
     setFieldErrors({});
@@ -226,30 +210,6 @@ export const AddClientModal: React.FC<AddClientModalProps> = ({ isOpen, onClose,
               onChange={value => handleCurrencyChange('parqueamento', value)}
             />
             <ErrorMessage message={fieldErrors.parqueamento} />
-          </div>
-        </div>
-
-        {/* Quilometragem e Percentual FIPE */}
-        <div className={styles.formRow}>
-          <div>
-            <Input
-              id="quilometragem"
-              name="quilometragem"
-              label="Quilometragem"
-              value={form.quilometragem !== undefined ? form.quilometragem.toString() : ''}
-              onChange={handleChange}
-            />
-            <ErrorMessage message={fieldErrors.quilometragem} />
-          </div>
-          <div>
-            <Input
-              id="percentualFipe"
-              name="percentualFipe"
-              label="Percentual FIPE"
-              value={form.percentualFipe !== undefined ? form.percentualFipe.toString() : ''}
-              onChange={handleChange}
-            />
-            <ErrorMessage message={fieldErrors.percentualFipe} />
           </div>
         </div>
 

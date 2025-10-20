@@ -12,6 +12,9 @@ export interface PendingRegistration {
   full_name: string | null;
   user_role: string;
   created_at: string;
+  company_name?: string | null;
+  cnpj?: string | null;
+  phone?: string | null;
 }
 
 export function usePendingRegistrations() {

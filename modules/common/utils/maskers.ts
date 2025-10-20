@@ -25,6 +25,14 @@ export function maskPhone(value: string): string {
   return digits.replace(/(\d{2})(\d{1})(\d{4})(\d{0,4})/, '($1) $2 $3-$4').slice(0, 16);
 }
 
+export function maskCEP(value: string): string {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,3})$/, '$1-$2')
+    .slice(0, 10);
+}
+
 // New/Revised formatCurrencyBRL: Takes a number and formats it to "1.234,56" (without R$)
 export function formatCurrencyBRL(value: number): string {
   if (!isFinite(value)) return '';

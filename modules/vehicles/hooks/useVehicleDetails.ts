@@ -19,6 +19,7 @@ interface VehicleDetailsData {
   estimated_arrival_date?: string;
   preparacao?: boolean;
   comercializacao?: boolean;
+  observations?: string;
 }
 
 interface InspectionData {
