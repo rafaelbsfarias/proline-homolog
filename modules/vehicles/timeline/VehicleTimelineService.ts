@@ -149,7 +149,13 @@ export async function getExecutionCompletedEvents(
     .from('vehicle_history')
     .select('id, vehicle_id, status, partner_service, notes, created_at')
     .eq('vehicle_id', vehicleId)
-    .eq('status', 'Finalizado')
+    .or(
+      [
+        'status.eq.Finalizado',
+        'status.ilike.Execução Finalizada%',
+        'status.ilike.Execucao Finalizada%',
+      ].join(',')
+    )
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -200,7 +206,7 @@ export async function getAllVehicleHistoryEvents(
 
   const rows = (data || []).filter(row => !isAdminFullApproval(row.status));
 
-  const events: TimelineEvent[] = rows.map(row => {
+  let events: TimelineEvent[] = rows.map(row => {
     // Determinar o tipo do evento baseado no status
     let type: TimelineEvent['type'] = 'BUDGET_STARTED';
 
@@ -220,7 +226,11 @@ export async function getAllVehicleHistoryEvents(
       statusLower.includes('servico concluido')
     ) {
       type = 'SERVICE_COMPLETED';
-    } else if (statusLower === 'finalizado') {
+    } else if (
+      statusLower === 'finalizado' ||
+      statusLower.includes('execução finalizada') ||
+      statusLower.includes('execucao finalizada')
+    ) {
       type = 'EXECUTION_COMPLETED';
     }
 
@@ -236,6 +246,22 @@ export async function getAllVehicleHistoryEvents(
       },
     };
   });
+
+  // Pós-processamento: remover eventos 'EXECUTION_STARTED' que ocorram após o último 'EXECUTION_COMPLETED'
+  const lastCompletionIdx = (() => {
+    for (let i = events.length - 1; i >= 0; i--) {
+      if (events[i].type === 'EXECUTION_COMPLETED') return i;
+    }
+    return -1;
+  })();
+
+  if (lastCompletionIdx >= 0) {
+    const lastCompletionDate = new Date(events[lastCompletionIdx].date).getTime();
+    events = events.filter(ev => {
+      if (ev.type !== 'EXECUTION_STARTED') return true;
+      return new Date(ev.date).getTime() <= lastCompletionDate;
+    });
+  }
 
   logger?.info?.('timeline_all_events', { count: events.length });
   return events;

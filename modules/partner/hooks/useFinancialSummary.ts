@@ -39,6 +39,11 @@ export interface FinancialSummaryData {
         formatted: string;
         currency: string;
       };
+      finalized: {
+        amount: number;
+        formatted: string;
+        currency: string;
+      };
       total_projected: {
         amount: number;
         formatted: string;

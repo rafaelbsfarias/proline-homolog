@@ -75,7 +75,7 @@ export default function FinancialOverviewPage() {
           style={{
             display: 'inline-block',
             marginBottom: '16px',
-            color: '#3498db',
+            color: '#002E4C',
             textDecoration: 'none',
             fontSize: '0.875rem',
           }}

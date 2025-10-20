@@ -187,7 +187,7 @@ export default function ApprovedOverviewPage() {
                       disabled={!vehicleId || isLoading}
                       onClick={() => loadDetails(vehicleId)}
                       style={{
-                        background: '#3498db',
+                        background: '#002E4C',
                         color: '#fff',
                         border: 'none',
                         borderRadius: 6,

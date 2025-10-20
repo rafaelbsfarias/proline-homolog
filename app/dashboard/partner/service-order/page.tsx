@@ -110,7 +110,7 @@ export default function ServiceOrderPage() {
           style={{
             marginTop: '20px',
             padding: '10px 20px',
-            background: '#3498db',
+            background: '#002E4C',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
@@ -166,7 +166,7 @@ export default function ServiceOrderPage() {
             onClick={handlePrint}
             style={{
               padding: '10px 20px',
-              background: '#3498db',
+              background: '#002E4C',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
@@ -197,7 +197,7 @@ export default function ServiceOrderPage() {
           {/* Cabeçalho */}
           <div
             style={{
-              borderBottom: '3px solid #3498db',
+              borderBottom: '3px solid #002E4C',
               paddingBottom: '20px',
               marginBottom: '30px',
             }}
@@ -220,7 +220,7 @@ export default function ServiceOrderPage() {
               background: '#e8f4f8',
               padding: '20px',
               borderRadius: '8px',
-              border: '2px solid #3498db',
+              border: '2px solid #002E4C',
             }}
           >
             <h3

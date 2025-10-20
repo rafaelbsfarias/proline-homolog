@@ -227,7 +227,7 @@ export default function FinancialOverview({ clientId }: Props) {
         </div>
         <div style={cardStyle}>
           <div style={{ color: '#666', fontSize: 12 }}>Pagamentos futuros</div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#3498db' }}>
+          <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#002E4C' }}>
             {formatCurrencyBRL(totalFuture)}
           </div>
         </div>

@@ -53,7 +53,7 @@ async function analyzeTimeline() {
       label: 'Veículo Cadastrado',
       date: vehicle.created_at,
       source: 'STATIC',
-      color: '#3498db',
+      color: '#002E4C',
     });
   }
 

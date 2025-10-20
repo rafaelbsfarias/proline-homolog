@@ -338,7 +338,7 @@ export default function PartnerOverviewPage() {
           style={{
             display: 'inline-block',
             marginBottom: '16px',
-            color: '#3498db',
+            color: '#002E4C',
             textDecoration: 'none',
             fontSize: '0.875rem',
           }}
@@ -463,7 +463,7 @@ export default function PartnerOverviewPage() {
                   }}
                   style={{
                     padding: '8px 16px',
-                    background: '#3498db',
+                    background: '#002E4C',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '6px',

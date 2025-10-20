@@ -168,7 +168,9 @@ async function saveHandler(req: AuthenticatedRequest): Promise<NextResponse> {
             .select('status')
             .eq('id', vehicleId)
             .single();
-          if (vehicleRow && vehicleRow.status !== 'Em Execução') {
+          const isFinal =
+            vehicleRow?.status === 'Finalizado' || vehicleRow?.status === 'Execução Finalizada';
+          if (vehicleRow && vehicleRow.status !== 'Em Execução' && !isFinal) {
             const { error: vUpdErr } = await admin
               .from('vehicles')
               .update({ status: 'Em Execução' })

@@ -1,7 +1,8 @@
--- Migration: Create get_partner_financial_summary RPC function
--- Description: Creates RPC function to calculate financial summary metrics for partners
--- Date: 2025-10-16
+-- Migration: Fix financial summary to include finalized quotes
+-- Description: Update get_partner_financial_summary RPC to include 'finalized' status in revenue calculations
+-- Date: 2025-10-20
 
+-- Update the get_partner_financial_summary function to include finalized quotes in revenue calculations
 CREATE OR REPLACE FUNCTION public.get_partner_financial_summary(
   p_partner_id uuid,
   p_start_date date DEFAULT NULL,
@@ -20,6 +21,7 @@ DECLARE
   v_total_parts_value numeric(10,2) := 0;
   v_pending_approval_value numeric(10,2) := 0;
   v_in_execution_value numeric(10,2) := 0;
+  v_finalized_value numeric(10,2) := 0;
   v_total_projected_value numeric(10,2) := 0;
 BEGIN
   PERFORM set_config('search_path', 'public', false);
@@ -29,7 +31,7 @@ BEGIN
     RAISE EXCEPTION 'partner_id_cannot_be_null';
   END IF;
 
-  -- Calculate total revenue from completed quotes
+  -- Calculate total revenue from completed quotes (including finalized)
   SELECT COALESCE(SUM(q.total_value), 0)
   INTO v_total_revenue
   FROM quotes q
@@ -85,8 +87,17 @@ BEGIN
     AND (p_start_date IS NULL OR q.created_at >= p_start_date)
     AND (p_end_date IS NULL OR q.created_at <= p_end_date);
 
+  -- Finalized value (completed projects)
+  SELECT COALESCE(SUM(q.total_value), 0)
+  INTO v_finalized_value
+  FROM quotes q
+  WHERE q.partner_id = p_partner_id
+    AND q.status = 'finalized'
+    AND (p_start_date IS NULL OR q.created_at >= p_start_date)
+    AND (p_end_date IS NULL OR q.created_at <= p_end_date);
+
   -- Total projected value
-  v_total_projected_value := v_pending_approval_value + v_in_execution_value;
+  v_total_projected_value := v_pending_approval_value + v_in_execution_value + v_finalized_value;
 
   -- Build result JSON
   v_result := json_build_object(
@@ -132,6 +143,11 @@ BEGIN
           'formatted', 'R$ ' || trim(to_char(v_in_execution_value, '999G999G999G999D99')),
           'currency', 'BRL'
         ),
+        'finalized', json_build_object(
+          'amount', v_finalized_value,
+          'formatted', 'R$ ' || trim(to_char(v_finalized_value, '999G999G999G999D99')),
+          'currency', 'BRL'
+        ),
         'total_projected', json_build_object(
           'amount', v_total_projected_value,
           'formatted', 'R$ ' || trim(to_char(v_total_projected_value, '999G999G999G999D99')),
@@ -151,14 +167,17 @@ EXCEPTION WHEN OTHERS THEN
 END;
 $$;
 
+-- Update comment
 COMMENT ON FUNCTION public.get_partner_financial_summary(uuid, date, date)
-IS 'Calculates financial summary metrics for partners including revenue, quotes, parts, and projected values.';
+IS 'Calculates financial summary metrics for partners including revenue, quotes, parts, and projected values. Includes finalized quotes in revenue calculations.';
 
 -- Log success
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Migration completed: get_partner_financial_summary RPC function created';
-  RAISE NOTICE '   • Calculates 6 core financial metrics for partners';
-  RAISE NOTICE '   • Supports date range filtering';
-  RAISE NOTICE '   • Returns formatted currency values';
+  RAISE NOTICE '✅ Migration completed: get_partner_financial_summary updated to include finalized quotes';
+  RAISE NOTICE '   • Total revenue now includes quotes with status ''finalized''';
+  RAISE NOTICE '   • Total quotes count now includes finalized quotes';
+  RAISE NOTICE '   • Parts metrics now include finalized quotes';
+  RAISE NOTICE '   • Added finalized value metric to projected values';
+  RAISE NOTICE '   • Total projected now includes finalized projects';
 END $$;

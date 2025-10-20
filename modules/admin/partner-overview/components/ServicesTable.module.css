@@ -32,7 +32,7 @@
 }
 
 .searchInput:focus {
-  border-color: #3498db;
+  border-color: #002e4c;
 }
 
 .statusSelect {
@@ -47,7 +47,7 @@
 }
 
 .statusSelect:focus {
-  border-color: #3498db;
+  border-color: #002e4c;
 }
 
 .emptyState {
@@ -167,7 +167,7 @@
 }
 
 .btnPrimary {
-  background-color: #3498db;
+  background-color: #002e4c;
   color: #fff;
   padding: 10px 20px;
   font-size: 0.875rem;
@@ -298,7 +298,7 @@
 }
 
 .textarea:focus {
-  border-color: #3498db;
+  border-color: #002e4c;
 }
 
 .textarea:disabled {

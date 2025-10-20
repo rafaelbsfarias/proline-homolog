@@ -235,7 +235,7 @@ const handleDownloadServiceOrder = (service: InProgressServiceDisplay) => {
 - Formatação profissional
 
 ### Destaques Visuais:
-- **Azul (#3498db)**: Títulos e bordas principais
+- **Azul (#002E4C)**: Títulos e bordas principais
 - **Cinza (#ecf0f1)**: Fundo da seção de veículo
 - **Amarelo (#fff3cd)**: Destaque do prazo de conclusão
 - **Verde (#16a34a)**: Botão de download

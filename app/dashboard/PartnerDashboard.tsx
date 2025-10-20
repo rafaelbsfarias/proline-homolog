@@ -449,7 +449,7 @@ const PartnerDashboard = () => {
                 Serviços em Andamento
               </h3>
               <div
-                style={{ fontSize: '2.5rem', fontWeight: 700, color: '#3498db', marginBottom: 4 }}
+                style={{ fontSize: '2.5rem', fontWeight: 700, color: '#002E4C', marginBottom: 4 }}
               >
                 {inProgressServices.length}
               </div>
@@ -544,12 +544,12 @@ const PartnerDashboard = () => {
                   boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   textAlign: 'center',
                 }}
-                title="Soma de aprovados e rejeitados"
+                title="Orçamentos finalizados/executados"
               >
                 <div
                   style={{ fontSize: '2rem', fontWeight: 700, color: '#2c3e50', marginBottom: 4 }}
                 >
-                  {(budgetCounters.approved || 0) + (budgetCounters.rejected || 0)}
+                  {budgetCounters.finalized || 0}
                 </div>
                 <div style={{ fontSize: '0.875rem', color: '#666' }}>Finalizados</div>
               </div>
