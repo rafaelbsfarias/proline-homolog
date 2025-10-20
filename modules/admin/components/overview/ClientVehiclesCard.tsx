@@ -140,7 +140,7 @@ const ClientVehiclesCard: React.FC<Props> = ({ clientId, clientName = 'Cliente' 
             setShowDetails(false);
             setSelectedVehicle(null);
           }}
-          onNavigateToDetails={id => router.push(`/dashboard/admin/vehicle/${id}`)}
+          onNavigateToDetails={id => router.push(`/dashboard/vehicle/${id}`)}
           specialistsLoader={async () => {
             try {
               const resp = await get<{ success: boolean; names?: string }>(
