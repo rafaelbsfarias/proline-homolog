@@ -24,6 +24,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
   const [partners, setPartners] = React.useState<PartnerData[]>([]);
   const [query, setQuery] = React.useState<string>('');
   const [filter, setFilter] = React.useState<'all' | 'pending' | 'executing' | 'approval'>('all');
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -99,101 +100,115 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
     <div className={containerStyles.partnersCardOuter}>
       <div className={styles.partnersCard}>
         <div className={styles.cardHeader}>
-          <h3 className={styles.cardTitle}>Parceiros</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h3 className={styles.cardTitle}>Parceiros</h3>
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={styles.collapseButton}
+              title={isCollapsed ? 'Expandir' : 'Colapsar'}
+              aria-label={isCollapsed ? 'Expandir painel' : 'Colapsar painel'}
+            >
+              {isCollapsed ? '▼' : '▲'}
+            </button>
+          </div>
           <div className={styles.totalPartners}>{filtered.length} parceiros</div>
         </div>
 
-        {/* Filtros */}
-        <div className={styles.filtersContainer}>
-          <div className={styles.searchInput}>
-            <Input
-              id="search"
-              name="search"
-              placeholder="Buscar empresa..."
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
-          </div>
+        {!isCollapsed && (
+          <>
+            {/* Filtros */}
+            <div className={styles.filtersContainer}>
+              <div className={styles.searchInput}>
+                <Input
+                  id="search"
+                  name="search"
+                  placeholder="Buscar empresa..."
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                />
+              </div>
 
-          <div className={styles.filterSelect}>
-            <Select
-              id="filter"
-              name="filter"
-              value={filter}
-              onChange={e => setFilter(e.target.value as typeof filter)}
-              options={[
-                { value: 'all', label: 'Todos' },
-                { value: 'pending', label: 'Com pendências' },
-                { value: 'executing', label: 'Em execução' },
-                { value: 'approval', label: 'Para aprovação' },
-              ]}
-              placeholder="Selecione o filtro"
-            />
-          </div>
-        </div>
-
-        <div className={styles.tableContainer}>
-          <table className={styles.partnersTable}>
-            <thead>
-              <tr>
-                <th className={styles.companyColumn}>Empresa Parceira</th>
-                <th className={styles.servicesColumn}>Serviços Cadastrados</th>
-                <th className={styles.budgetColumn}>Orçamentos Pendentes</th>
-                <th className={styles.budgetColumn}>Em Execução</th>
-                <th className={styles.budgetColumn}>Para Aprovação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map(partner => (
-                <tr key={partner.id} className={styles.tableRow}>
-                  <td className={styles.companyCell}>
-                    <a
-                      className={styles.companyName}
-                      href={`/dashboard/admin/partner-overview?partnerId=${partner.id}`}
-                    >
-                      {partner.company_name}
-                    </a>
-                  </td>
-                  <td className={styles.servicesCell}>
-                    <span className={styles.servicesCount}>{partner.services_count}</span>
-                  </td>
-                  <td className={styles.budgetCell}>
-                    <span className={`${styles.budgetBadge} ${styles.pending}`}>
-                      {partner.pending_budgets}
-                    </span>
-                  </td>
-                  <td className={styles.budgetCell}>
-                    <span className={`${styles.budgetBadge} ${styles.executing}`}>
-                      {partner.executing_budgets}
-                    </span>
-                  </td>
-                  <td className={styles.budgetCell}>
-                    <span className={`${styles.budgetBadge} ${styles.approval}`}>
-                      {partner.approval_budgets}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className={styles.cardFooter}>
-          <div className={styles.summaryStats}>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>Total Serviços:</span>
-              <span className={styles.statValue}>
-                {partners.reduce((sum, p) => sum + p.services_count, 0)}
-              </span>
+              <div className={styles.filterSelect}>
+                <Select
+                  id="filter"
+                  name="filter"
+                  value={filter}
+                  onChange={e => setFilter(e.target.value as typeof filter)}
+                  options={[
+                    { value: 'all', label: 'Todos' },
+                    { value: 'pending', label: 'Com pendências' },
+                    { value: 'executing', label: 'Em execução' },
+                    { value: 'approval', label: 'Para aprovação' },
+                  ]}
+                  placeholder="Selecione o filtro"
+                />
+              </div>
             </div>
-            <div className={styles.statItem}>
-              <span className={styles.statLabel}>Orçamentos Ativos:</span>
-              <span className={styles.statValue}>
-                {partners.reduce((sum, p) => sum + p.executing_budgets, 0)}
-              </span>
+
+            <div className={styles.tableContainer}>
+              <table className={styles.partnersTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.companyColumn}>Empresa Parceira</th>
+                    <th className={styles.servicesColumn}>Serviços Cadastrados</th>
+                    <th className={styles.budgetColumn}>Orçamentos Pendentes</th>
+                    <th className={styles.budgetColumn}>Em Execução</th>
+                    <th className={styles.budgetColumn}>Para Aprovação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map(partner => (
+                    <tr key={partner.id} className={styles.tableRow}>
+                      <td className={styles.companyCell}>
+                        <a
+                          className={styles.companyName}
+                          href={`/dashboard/admin/partner-overview?partnerId=${partner.id}`}
+                        >
+                          {partner.company_name}
+                        </a>
+                      </td>
+                      <td className={styles.servicesCell}>
+                        <span className={styles.servicesCount}>{partner.services_count}</span>
+                      </td>
+                      <td className={styles.budgetCell}>
+                        <span className={`${styles.budgetBadge} ${styles.pending}`}>
+                          {partner.pending_budgets}
+                        </span>
+                      </td>
+                      <td className={styles.budgetCell}>
+                        <span className={`${styles.budgetBadge} ${styles.executing}`}>
+                          {partner.executing_budgets}
+                        </span>
+                      </td>
+                      <td className={styles.budgetCell}>
+                        <span className={`${styles.budgetBadge} ${styles.approval}`}>
+                          {partner.approval_budgets}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        </div>
+
+            <div className={styles.cardFooter}>
+              <div className={styles.summaryStats}>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Total Serviços:</span>
+                  <span className={styles.statValue}>
+                    {partners.reduce((sum, p) => sum + p.services_count, 0)}
+                  </span>
+                </div>
+                <div className={styles.statItem}>
+                  <span className={styles.statLabel}>Orçamentos Ativos:</span>
+                  <span className={styles.statValue}>
+                    {partners.reduce((sum, p) => sum + p.executing_budgets, 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
