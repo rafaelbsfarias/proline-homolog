@@ -78,10 +78,12 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
               break;
             case 'EXECUTION_STARTED':
               color = TIMELINE_COLORS.ORANGE;
+              // Garantir que exibimos o serviço específico em execução
               if (ev.meta?.partner_service) {
                 title = `Em Execução - ${ev.meta.partner_service}`;
               } else {
-                title = 'Em Execução';
+                // Fallback: tentar extrair do título original se disponível
+                title = ev.title || 'Em Execução';
               }
               break;
             case 'SERVICE_COMPLETED':
@@ -89,7 +91,12 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
               break;
             case 'EXECUTION_COMPLETED':
               color = TIMELINE_COLORS.GREEN;
-              title = 'Execução Finalizada';
+              // Exibir a categoria específica que foi finalizada
+              if (ev.meta?.partner_service) {
+                title = `Execução Finalizada - ${ev.meta.partner_service}`;
+              } else {
+                title = 'Execução Finalizada';
+              }
               break;
             default:
               // Para eventos que não têm tipo específico, determinar cor pelo título

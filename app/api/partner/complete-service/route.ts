@@ -155,7 +155,20 @@ export async function POST(request: NextRequest) {
     if (checkError) {
       logger.warn('failed_check_all_services', { error: checkError, quote_id });
     } else if (allCompleted === true) {
-      // 9. all os serviços concluídos - atualizar status do veículo
+      // 9. Todos os serviços concluídos - buscar categoria do partner para a entrada final
+      const { data: quoteData } = await supabaseAdmin
+        .from('quotes')
+        .select('partner:partners(category)')
+        .eq('id', quote_id)
+        .single();
+
+      const partnerCategory =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (quoteData?.partner && !Array.isArray(quoteData.partner)
+          ? (quoteData.partner as any).category
+          : null) || 'Serviços';
+
+      // 10. Atualizar status do veículo para "Finalizado"
       const { error: vehicleError } = await supabaseAdmin
         .from('vehicles')
         .update({ status: 'Finalizado' })
@@ -166,8 +179,7 @@ export async function POST(request: NextRequest) {
       } else {
         logger.info('vehicle_status_updated_to_finalizado', { vehicle_id, quote_id });
 
-        // 10. Adicionar entrada final na timeline (trigger vai criar automaticamente)
-        // Mas vamos atualizar com informações específicas
+        // 11. Aguardar trigger criar entrada automática e atualizar com categoria específica
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const { data: latestHistory } = await supabaseAdmin
@@ -183,10 +195,21 @@ export async function POST(request: NextRequest) {
           await supabaseAdmin
             .from('vehicle_history')
             .update({
-              partner_service: 'Todos os Serviços',
-              notes: 'Todos os serviços foram concluídos com sucesso',
+              partner_service: partnerCategory,
+              notes: `Execução finalizada - ${partnerCategory}`,
+              type: 'EXECUTION_COMPLETED',
+              meta: {
+                partner_service: partnerCategory,
+                quote_id,
+              },
             })
             .eq('id', latestHistory.id);
+
+          logger.info('vehicle_history_updated_with_category', {
+            vehicle_id,
+            category: partnerCategory,
+            history_id: latestHistory.id,
+          });
         }
       }
     }

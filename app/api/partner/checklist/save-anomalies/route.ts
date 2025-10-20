@@ -107,6 +107,35 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
       );
     }
 
+    // Resolver a categoria com base no próprio parceiro logado (fonte de verdade)
+    // Evita depender de joins de SO e elimina fallback indevido
+    let resolvedCategoryName: string | null = null;
+    try {
+      const { data: partner } = await supabase
+        .from('partners')
+        .select('category')
+        .eq('profile_id', partnerId)
+        .maybeSingle();
+
+      const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
+      const normalized = normalizePartnerCategoryName(
+        partner?.category ? [partner.category] : undefined
+      );
+      resolvedCategoryName = normalized && normalized !== 'Parceiro' ? normalized : null;
+    } catch (e) {
+      logger.warn('partner_category_lookup_error', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    if (!resolvedCategoryName) {
+      // Bloqueia a operação para rastrear inconsistências de categoria
+      return NextResponse.json(
+        { success: false, error: 'Categoria do parceiro não identificada' },
+        { status: 422 }
+      );
+    }
+
     // Processar anomalias e fazer upload das imagens
     const processedAnomalies = [];
 
@@ -334,14 +363,67 @@ async function saveAnomaliesHandler(req: AuthenticatedRequest): Promise<NextResp
         }
       }
 
-      // Nota: A atualização do status do veículo e criação da entrada na timeline
-      // já foi realizada pela API /api/partner/checklist/submit quando o checklist foi salvo.
-      // Não devemos criar registros duplicados na timeline aqui.
+      // Criar entrada na timeline "Fase Orçamentária Iniciada - {categoria}"
+      // se ainda não existir (importante para dynamic-checklist que não passa por /submit)
+      try {
+        const categoryName = resolvedCategoryName; // já resolvida acima (sem fallback)
+        const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
 
-      logger.info('anomalies_saved_timeline_skipped', {
-        vehicle_id,
-        reason: 'Timeline entry already created by checklist submit endpoint',
-      });
+        // Verificar se já existe este status na timeline para evitar duplicatas
+        const { data: existingHistory } = await supabase
+          .from('vehicle_history')
+          .select('id')
+          .eq('vehicle_id', vehicle_id)
+          .eq('status', timelineStatus)
+          .maybeSingle();
+
+        // Se não existe, criar novo registro na timeline
+        if (!existingHistory) {
+          const { error: historyError } = await supabase.from('vehicle_history').insert({
+            vehicle_id: vehicle_id,
+            status: timelineStatus,
+            partner_service: categoryName,
+            prevision_date: null,
+            end_date: null,
+            created_at: new Date().toISOString(),
+          });
+
+          if (historyError) {
+            logger.error('timeline_insert_error', { error: historyError.message });
+          } else {
+            logger.info('timeline_created', {
+              vehicle_id: vehicle_id.slice(0, 8),
+              status: timelineStatus,
+              partner_id: partnerId.slice(0, 8),
+            });
+
+            // Atualizar status do veículo para 'FASE ORÇAMENTÁRIA'
+            const { error: statusUpdateError } = await supabase
+              .from('vehicles')
+              .update({ status: 'FASE ORÇAMENTÁRIA' })
+              .eq('id', vehicle_id);
+
+            if (statusUpdateError) {
+              logger.error('vehicle_status_update_error', { error: statusUpdateError.message });
+            } else {
+              logger.info('vehicle_status_updated', {
+                vehicle_id: vehicle_id.slice(0, 8),
+                new_status: 'FASE ORÇAMENTÁRIA',
+              });
+            }
+          }
+        } else {
+          logger.info('timeline_entry_already_exists', {
+            vehicle_id: vehicle_id.slice(0, 8),
+            status: timelineStatus,
+          });
+        }
+      } catch (timelineError) {
+        logger.error('timeline_or_status_update_error', {
+          error: timelineError instanceof Error ? timelineError.message : String(timelineError),
+        });
+        // Não falhar a requisição principal por causa da timeline/status
+      }
 
       return NextResponse.json({
         success: true,
