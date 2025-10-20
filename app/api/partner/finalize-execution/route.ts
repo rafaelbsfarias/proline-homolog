@@ -160,7 +160,23 @@ export async function POST(request: NextRequest) {
       logger.info('timeline_updated', { vehicle_id, history_id: latestHistory.id });
     }
 
-    // 9. AVANÇAR FILA: Usar DelegationQueueService para processar próximo parceiro
+    // 9. Atualizar status do orçamento para 'finalized'
+    const { error: quoteUpdateError } = await supabaseAdmin
+      .from('quotes')
+      .update({ status: 'finalized', updated_at: new Date().toISOString() })
+      .eq('id', quote_id);
+
+    if (quoteUpdateError) {
+      logger.warn('failed_update_quote_status_to_finalized', {
+        quote_id,
+        error: quoteUpdateError,
+      });
+      // Não falhar a finalização por causa do status; apenas logar.
+    } else {
+      logger.info('quote_status_updated_to_finalized', { quote_id });
+    }
+
+    // 10. AVANÇAR FILA: Usar DelegationQueueService para processar próximo parceiro
     logger.info('processing_delegation_queue', { vehicle_id });
 
     // Buscar category_id do quote atual

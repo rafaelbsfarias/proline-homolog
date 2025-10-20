@@ -44,6 +44,8 @@ const PendingQuotesCounter: React.FC<PendingQuotesCounterProps> = ({ onLoadingCh
 
   if (loading) return <span className={styles.counterCard}>Carregando...</span>;
   if (error) return <span className={styles.counterCard}>{error}</span>;
+  // Hide the counter when there are zero pending quotes
+  if (count === 0) return null;
   return (
     <span
       className={styles.counterCard}

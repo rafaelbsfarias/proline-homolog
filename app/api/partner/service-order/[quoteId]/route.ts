@@ -61,18 +61,34 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
       return NextResponse.json({ ok: false, error: 'Veículo não encontrado' }, { status: 404 });
     }
 
-    // 3.1. Buscar categoria do serviço para a timeline
+    // 3.1. Determinar categoria do serviço para a timeline, sem fallback genérico
     const { data: inspectionService } = await supabase
       .from('service_orders')
       .select('inspection_services(service_categories(name))')
       .eq('id', quote.service_order_id)
       .single();
 
-    const serviceCategory =
-      inspectionService?.inspection_services?.service_categories?.name || 'Serviço';
+    let serviceCategory: string | null =
+      inspectionService?.inspection_services?.service_categories?.name || null;
 
-    // 3.2. Atualizar status do veículo para "Em Execução" se ainda não estiver
-    if (vehicle.status !== 'Em Execução') {
+    // Caso não venha pela inspeção, usar a categoria do próprio parceiro
+    if (!serviceCategory) {
+      const { data: partnerRow } = await supabase
+        .from('partners')
+        .select('category')
+        .eq('profile_id', quote.partner_id)
+        .maybeSingle();
+
+      if (partnerRow?.category) {
+        const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
+        const normalized = normalizePartnerCategoryName([partnerRow.category]);
+        serviceCategory = normalized && normalized !== 'Parceiro' ? normalized : null;
+      }
+    }
+
+    // 3.2. NÃO retroceder status após finalização; só atualizar para "Em Execução" quando não finalizado
+    const isFinal = vehicle.status === 'Finalizado' || vehicle.status === 'Execução Finalizada';
+    if (!isFinal && vehicle.status !== 'Em Execução') {
       const { error: updateError } = await supabase
         .from('vehicles')
         .update({ status: 'Em Execução' })
@@ -100,8 +116,8 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
           .limit(1)
           .single();
 
-        // 3.4. Atualizar a entrada com partner_service e notes
-        if (latestHistory?.id) {
+        // 3.4. Atualizar a entrada com partner_service e notes apenas se houver categoria definida
+        if (latestHistory?.id && serviceCategory) {
           const { error: historyError } = await supabase
             .from('vehicle_history')
             .update({
@@ -124,9 +140,11 @@ async function handler(req: AuthenticatedRequest, ctx: { params: Promise<{ quote
               category: serviceCategory,
             });
           }
-        } else {
-          logger.warn('vehicle_history_not_found_after_update', {
+        } else if (!serviceCategory) {
+          // Sem categoria: não escrever texto genérico
+          logger.info('skip_generic_execution_note', {
             vehicleId: serviceOrder.vehicle_id,
+            reason: 'service category undefined',
           });
         }
       }

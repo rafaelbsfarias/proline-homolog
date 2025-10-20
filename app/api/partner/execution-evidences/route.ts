@@ -105,6 +105,84 @@ async function saveHandler(req: AuthenticatedRequest): Promise<NextResponse> {
       itemCount: allowedIds.size,
     });
 
+    // Criar/assegurar entrada na timeline "Em Execução" com o nome do serviço (quote_item.description)
+    try {
+      // Obter vehicle_id do quote
+      const { data: quoteRow } = await admin
+        .from('quotes')
+        .select('service_order_id')
+        .eq('id', quote_id)
+        .single();
+      if (quoteRow?.service_order_id) {
+        const { data: so } = await admin
+          .from('service_orders')
+          .select('vehicle_id')
+          .eq('id', quoteRow.service_order_id)
+          .single();
+        const vehicleId = so?.vehicle_id as string | undefined;
+
+        if (vehicleId) {
+          // Para cada item com evidência, garantir um evento específico na timeline
+          const uniqueItemIds = Array.from(new Set(filtered.map(f => f.quote_item_id)));
+
+          // Carregar descrições dos itens
+          const { data: items } = await admin
+            .from('quote_items')
+            .select('id, description')
+            .in('id', uniqueItemIds);
+
+          for (const item of items || []) {
+            const serviceName = (item.description || '').trim();
+            if (!serviceName) continue;
+
+            // Verificar se já existe evento "Em Execução" com este partner_service
+            const { data: existing } = await admin
+              .from('vehicle_history')
+              .select('id')
+              .eq('vehicle_id', vehicleId)
+              .eq('status', 'Em Execução')
+              .eq('partner_service', serviceName)
+              .maybeSingle();
+
+            if (!existing) {
+              const now = new Date().toISOString();
+              const { error: vhErr } = await admin.from('vehicle_history').insert({
+                vehicle_id: vehicleId,
+                status: 'Em Execução',
+                partner_service: serviceName,
+                notes: `Execução de ${serviceName} Iniciada`,
+                created_at: now,
+              });
+              if (vhErr) {
+                logger.warn('timeline_insert_execution_failed', {
+                  error: vhErr.message,
+                  vehicleId,
+                });
+              }
+            }
+          }
+
+          // Garantir status do veículo
+          const { data: vehicleRow } = await admin
+            .from('vehicles')
+            .select('status')
+            .eq('id', vehicleId)
+            .single();
+          if (vehicleRow && vehicleRow.status !== 'Em Execução') {
+            const { error: vUpdErr } = await admin
+              .from('vehicles')
+              .update({ status: 'Em Execução' })
+              .eq('id', vehicleId);
+            if (vUpdErr) logger.warn('vehicle_status_update_failed', { error: vUpdErr.message });
+          }
+        }
+      }
+    } catch (timelineErr) {
+      logger.warn('execution_timeline_update_failed', {
+        error: timelineErr instanceof Error ? timelineErr.message : String(timelineErr),
+      });
+    }
+
     return NextResponse.json({ ok: true, inserted: filtered.length });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
