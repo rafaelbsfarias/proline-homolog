@@ -102,6 +102,7 @@ export interface PartnerInspectionInfo {
   odometer: number;
   fuel_level: 'empty' | 'quarter' | 'half' | 'three_quarters' | 'full';
   observations?: string;
+  partnerServiceNotes?: string;
   finalized: boolean;
   created_at: string;
 }

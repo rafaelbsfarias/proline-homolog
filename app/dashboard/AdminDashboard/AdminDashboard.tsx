@@ -28,7 +28,6 @@ const AdminDashboard: React.FC = () => {
   // Loading states
   const [userLoading, setUserLoading] = useState(true);
   const [pendingRegLoading, setPendingRegLoading] = useState(true);
-  const [pendingChecklistLoading, setPendingChecklistLoading] = useState(true); // New loading state
   const [requestedPartsLoading, setRequestedPartsLoading] = useState(true); // New loading state for requested parts
   const [usersCounterLoading, setUsersCounterLoading] = useState(true);
   const [vehiclesCounterLoading, setVehiclesCounterLoading] = useState(true);
@@ -38,7 +37,6 @@ const AdminDashboard: React.FC = () => {
   const showOverallLoader =
     userLoading ||
     pendingRegLoading ||
-    pendingChecklistLoading || // Add to overall loader
     requestedPartsLoading || // Add requested parts to overall loader
     usersCounterLoading ||
     vehiclesCounterLoading ||
@@ -110,7 +108,7 @@ const AdminDashboard: React.FC = () => {
       >
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
           <div className={styles.countersRow}>
-            <PendingChecklistAnalysisCounter onLoadingChange={setPendingChecklistLoading} />
+            <PendingChecklistAnalysisCounter />
             <PendingRegistrationsCounter onLoadingChange={setPendingRegLoading} />
             <PendingQuotesCounter onLoadingChange={setPendingRegLoading} />
             <RequestedPartsCounter onLoadingChange={setRequestedPartsLoading} />

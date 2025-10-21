@@ -78,18 +78,40 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
               break;
             case 'EXECUTION_STARTED':
               color = TIMELINE_COLORS.ORANGE;
-              if (ev.meta?.partner_service) {
-                title = `Em Execução - ${ev.meta.partner_service}`;
-              } else {
-                title = 'Em Execução';
+              // Exibir texto específico do serviço quando disponível
+              {
+                const ps = (ev.meta?.partner_service || '').toString().trim();
+                const psLower = ps.toLowerCase();
+                if (ps && psLower !== 'serviço' && psLower !== 'servico') {
+                  title = `Execução de ${ps} Iniciada`;
+                } else {
+                  // Fallback: manter título original
+                  title = ev.title || 'Em Execução';
+                }
               }
               break;
             case 'SERVICE_COMPLETED':
               color = TIMELINE_COLORS.BLUE;
+              // Exibir finalização específica do serviço, quando disponível
+              {
+                const ps = (ev.meta?.partner_service || '').toString().trim();
+                const psLower = ps.toLowerCase();
+                if (ps && psLower !== 'serviço' && psLower !== 'servico') {
+                  title = `Execução de ${ps} Finalizada`;
+                } else {
+                  // Fallback genérico
+                  title = ev.title || 'Serviço Concluído';
+                }
+              }
               break;
             case 'EXECUTION_COMPLETED':
               color = TIMELINE_COLORS.GREEN;
-              title = 'Execução Finalizada';
+              // Exibir a categoria específica que foi finalizada
+              if (ev.meta?.partner_service) {
+                title = `Execução Finalizada - ${ev.meta.partner_service}`;
+              } else {
+                title = 'Execução Finalizada';
+              }
               break;
             default:
               // Para eventos que não têm tipo específico, determinar cor pelo título

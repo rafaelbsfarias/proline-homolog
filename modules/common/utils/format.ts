@@ -64,6 +64,7 @@ export const formatQuoteStatus = (status: string): string => {
     pending_client_approval: 'Aguardando Cliente',
     approved: 'Aprovado',
     rejected: 'Rejeitado',
+    finalized: 'Finalizado',
   };
   return statusMap[status] || 'Desconhecido';
 };

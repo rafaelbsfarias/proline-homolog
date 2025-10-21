@@ -89,7 +89,9 @@ async function getSpecialistPendingTimeApprovalsHandler(req: AuthenticatedReques
       `
       )
       .in('service_order_id', serviceOrderIds)
-      .eq('status', 'approved')
+      // Nota: alguns fluxos usam 'pending_client_approval' após aprovação do admin;
+      // outros mantêm 'approved' antes da aprovação do cliente. Buscamos ambos.
+      .in('status', ['approved', 'pending_client_approval', 'admin_review'])
       .order('created_at', { ascending: false });
 
     if (qError) {
@@ -99,9 +101,23 @@ async function getSpecialistPendingTimeApprovalsHandler(req: AuthenticatedReques
       );
     }
 
-    // Para cada quote, buscar os dados relacionados
+    const quoteList = quotes || [];
+
+    // Excluir quotes já aprovados pelo especialista (registro em quote_time_reviews)
+    const quoteIds = quoteList.map(q => q.id);
+    const { data: specialistApprovals } = await supabase
+      .from('quote_time_reviews')
+      .select('quote_id')
+      .in('quote_id', quoteIds)
+      .eq('specialist_id', req.user.id)
+      .eq('action', 'approved');
+    const approvedBySpecialist = new Set((specialistApprovals || []).map(r => r.quote_id));
+
+    const filteredQuotes = quoteList.filter(q => !approvedBySpecialist.has(q.id));
+
+    // Para cada quote restante, buscar os dados relacionados
     const quotesWithDetails = await Promise.all(
-      (quotes || []).map(async quote => {
+      filteredQuotes.map(async quote => {
         // Buscar informações do parceiro
         const { data: partner } = await supabase
           .from('partners')

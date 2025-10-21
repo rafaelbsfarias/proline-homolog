@@ -27,6 +27,7 @@ const DynamicChecklistPage = () => {
   const {
     form,
     vehicle,
+    inspection,
     loading,
     error,
     success,
@@ -122,6 +123,7 @@ const DynamicChecklistPage = () => {
           odometer={form.odometer}
           fuelLevel={form.fuelLevel}
           observations={form.observations}
+          partnerServiceNotes={inspection?.partnerServiceNotes}
         />
 
         <AnomaliesSection

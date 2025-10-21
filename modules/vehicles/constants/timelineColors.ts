@@ -3,7 +3,7 @@
  */
 
 export const TIMELINE_COLORS = {
-  BLUE: '#3498db', // Azul - Eventos iniciais, em andamento
+  BLUE: '#002E4C', // Azul - Eventos iniciais, em andamento
   ORANGE: '#f39c12', // Laranja - Orçamentos, previsões
   RED: '#e74c3c', // Vermelho - Alertas, reprovações
   GREEN: '#27ae60', // Verde - Finalizações, aprovações

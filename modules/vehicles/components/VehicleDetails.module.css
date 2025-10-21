@@ -220,7 +220,7 @@
   padding: 16px;
   background: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #3498db;
+  border-left: 4px solid #002e4c;
 }
 
 /* Componentes de Loading e Erro */
@@ -244,7 +244,7 @@
 .errorButton {
   margin-top: 24px;
   padding: 12px 24px;
-  background: #3498db;
+  background: #002e4c;
   color: white;
   border: none;
   border-radius: 6px;

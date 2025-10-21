@@ -32,7 +32,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
               width: 48,
               height: 48,
               border: '4px solid #e0e0e0',
-              borderTop: '4px solid #3498db',
+              borderTop: '4px solid #002E4C',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               margin: '0 auto 16px',
@@ -129,7 +129,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
         <button
           onClick={onRefresh}
           style={{
-            background: '#3498db',
+            background: '#002E4C',
             color: '#fff',
             border: 'none',
             borderRadius: 6,
@@ -179,7 +179,7 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           }}
         >
           <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Total de Orçamentos</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#3498db' }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#002E4C' }}>
             {data.metrics.total_quotes}
           </div>
           <div style={{ fontSize: 11, color: '#999', marginTop: 4 }}>Orçamentos aprovados</div>
@@ -297,8 +297,30 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
               <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>Em Execução</div>
               <div style={{ fontSize: 11, color: '#999' }}>Serviços em andamento</div>
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: '#3498db' }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#002E4C' }}>
               {data.metrics.projected_value.in_execution.formatted}
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: '#d1ecf1',
+              border: '1px solid #bee5eb',
+              borderRadius: 6,
+              padding: 16,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 4 }}>
+                Projetos Finalizados
+              </div>
+              <div style={{ fontSize: 11, color: '#999' }}>Serviços concluídos</div>
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: '#17a2b8' }}>
+              {data.metrics.projected_value.finalized.formatted}
             </div>
           </div>
 
@@ -339,8 +361,9 @@ const FinancialSummaryContent: React.FC<FinancialSummaryContentProps> = ({
           Informações importantes
         </div>
         <div style={{ fontSize: 12, color: '#1976d2', lineHeight: 1.5 }}>
-          Os dados apresentados refletem orçamentos confirmados, pendentes de aprovação e em
-          execução. Os valores projetados são estimativas baseadas no status atual dos orçamentos.
+          Os dados apresentados refletem orçamentos confirmados, pendentes de aprovação, em execução
+          e finalizados. Os valores projetados são estimativas baseadas no status atual dos
+          orçamentos.
         </div>
       </div>
     </div>

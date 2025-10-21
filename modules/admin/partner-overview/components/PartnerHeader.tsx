@@ -44,7 +44,7 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({ partner }) => {
             alignItems: 'center',
             gap: 8,
             padding: '10px 16px',
-            background: '#3498db',
+            background: '#002E4C',
             color: '#fff',
             textDecoration: 'none',
             borderRadius: 6,
@@ -58,7 +58,7 @@ export const PartnerHeader: React.FC<PartnerHeaderProps> = ({ partner }) => {
             e.currentTarget.style.background = '#2980b9';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = '#3498db';
+            e.currentTarget.style.background = '#002E4C';
           }}
         >
           <span>📊</span>

@@ -24,6 +24,7 @@ export interface BudgetCounters {
   in_analysis: number; // Em análise (pending_admin_approval + pending_client_approval)
   approved: number; // Aprovados
   rejected: number; // Rejeitados
+  finalized: number; // Execução finalizada
 }
 
 export interface InProgressService {
@@ -69,6 +70,7 @@ export function usePartnerDashboard() {
       in_analysis: 0,
       approved: 0,
       rejected: 0,
+      finalized: 0,
     },
     pendingQuotes: [],
     inProgressServices: [],
@@ -141,6 +143,7 @@ export function usePartnerDashboard() {
           in_analysis: 0,
           approved: 0,
           rejected: 0,
+          finalized: 0,
         },
       });
     } catch (error) {

@@ -141,18 +141,12 @@ async function startServiceHandler(req: AuthenticatedRequest) {
     }
 
     // 9. Adicionar entrada específica na timeline do veículo
-    const timelineMessage = `${quoteItem.description} - Iniciado`;
+    const timelineMessage = `Execução de ${quoteItem.description} Iniciada`;
     const { error: historyError } = await supabase.from('vehicle_history').insert({
       vehicle_id,
       status: 'Em Execução',
       partner_service: quoteItem.description,
       notes: timelineMessage,
-      type: 'EXECUTION_STARTED',
-      meta: {
-        partner_service: quoteItem.description,
-        quote_id,
-        quote_item_id,
-      },
       created_at: startedAt,
     });
 

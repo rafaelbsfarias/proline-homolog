@@ -112,7 +112,7 @@ if (vehicleId || quoteId) {
 - Recebe prop `vehicleHistory`
 - Renderiza timeline completa incluindo todos os registros do histórico
 - Aplica cores diferentes baseadas no tipo de status:
-  - **Azul** (#3498db): Inícios de processo
+  - **Azul** (#002E4C): Inícios de processo
   - **Laranja** (#f39c12): Fase orçamentária
   - **Verde** (#27ae60): Finalizações
   - **Roxo** (#9b59b6): Outros eventos

@@ -74,7 +74,7 @@ async function testApiResponse() {
       id: 'static-created',
       label: 'Veículo Cadastrado',
       date: '2025-10-09T09:30:10.000Z',
-      color: '#3498db'
+      color: '#002E4C'
     });
 
     // Ordenar descendente (como o componente faz)

@@ -160,9 +160,24 @@ async function reviewQuoteTimesHandler(
         );
       }
 
+      // Atualizar approval_status.specialist_time = 'approved' sem alterar o status geral do orçamento
+      const { data: currentApproval } = await supabase
+        .from('quotes')
+        .select('approval_status')
+        .eq('id', quoteId)
+        .single();
+
+      // Construir novo JSON de approval_status
+      const baseStatus = currentApproval?.approval_status || {
+        admin: 'pending',
+        specialist_time: 'pending',
+        client: 'pending',
+      };
+      const newApprovalStatus = { ...baseStatus, specialist_time: 'approved' };
+
       const { error: uError } = await supabase
         .from('quotes')
-        .update({ status: 'approved' })
+        .update({ approval_status: newApprovalStatus })
         .eq('id', quoteId);
 
       if (uError) {

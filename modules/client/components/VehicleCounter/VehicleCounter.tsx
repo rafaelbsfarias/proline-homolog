@@ -255,6 +255,11 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
             }}
             addresses={addresses}
             minDate={minDateIsoLocal}
+            mode={
+              (rowModalVehicle.status || '').toUpperCase() === 'FINALIZADO'
+                ? 'delivery'
+                : 'collection'
+            }
             onApply={async payload => {
               const resp = await post('/api/client/set-vehicles-collection', payload);
               if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');

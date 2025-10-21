@@ -22,7 +22,7 @@ const ObservationsSection: React.FC<{ observations?: string | null }> = ({ obser
           padding: '16px',
           background: '#f8f9fa',
           borderRadius: '8px',
-          borderLeft: '4px solid #3498db',
+          borderLeft: '4px solid #002E4C',
         }}
       >
         {observations}

@@ -44,6 +44,10 @@ const VehiclesPendingApprovalCounter: React.FC<VehiclesPendingApprovalCounterPro
 
   if (loading) return <span className={styles.counterCard}>Carregando...</span>;
   if (error) return <span className={styles.counterCard}>{error}</span>;
+
+  // Não exibir o contador se não houver veículos aguardando orçamento
+  if (count === 0) return null;
+
   return (
     <span className={styles.counterCard} title="Veículos aguardando orçamento">
       Veículos para orçamento: {count}

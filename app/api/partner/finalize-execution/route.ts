@@ -119,48 +119,91 @@ export async function POST(request: NextRequest) {
 
     logger.info('checklist_completed', { quote_id, completed_at: completedAt });
 
-    // 6. Atualizar status do veículo para "Execução Finalizada"
-    const { error: vehicleError } = await supabaseAdmin
+    // 6. Atualizar status do veículo para "Execução Finalizada" somente se ainda não estiver finalizado
+    const { data: vehicleRow } = await supabaseAdmin
       .from('vehicles')
-      .update({ status: 'Execução Finalizada' })
-      .eq('id', vehicle_id);
-
-    if (vehicleError) {
-      logger.error('failed_update_vehicle_status', { error: vehicleError, vehicle_id });
-      return NextResponse.json(
-        { ok: false, error: 'Erro ao atualizar status do veículo' },
-        { status: 500 }
-      );
-    }
-
-    logger.info('vehicle_status_updated', { vehicle_id, status: 'Execução Finalizada' });
-
-    // 7. Aguardar um pouco para o trigger criar a entrada
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 8. Atualizar entrada da timeline criada pelo trigger
-    const { data: latestHistory } = await supabaseAdmin
-      .from('vehicle_history')
-      .select('id')
-      .eq('vehicle_id', vehicle_id)
-      .eq('status', 'Execução Finalizada')
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .select('status')
+      .eq('id', vehicle_id)
       .single();
 
-    if (latestHistory?.id) {
-      await supabaseAdmin
-        .from('vehicle_history')
-        .update({
-          partner_service: 'Todos os Serviços',
-          notes: 'Execução finalizada com sucesso. Todos os serviços foram concluídos.',
-        })
-        .eq('id', latestHistory.id);
+    const vehicleAlreadyFinal =
+      vehicleRow?.status === 'Finalizado' || vehicleRow?.status === 'Execução Finalizada';
 
-      logger.info('timeline_updated', { vehicle_id, history_id: latestHistory.id });
+    if (!vehicleAlreadyFinal) {
+      const { error: vehicleError } = await supabaseAdmin
+        .from('vehicles')
+        .update({ status: 'Execução Finalizada' })
+        .eq('id', vehicle_id);
+
+      if (vehicleError) {
+        logger.error('failed_update_vehicle_status', { error: vehicleError, vehicle_id });
+        return NextResponse.json(
+          { ok: false, error: 'Erro ao atualizar status do veículo' },
+          { status: 500 }
+        );
+      }
+
+      logger.info('vehicle_status_updated', { vehicle_id, status: 'Execução Finalizada' });
+
+      // 7. Aguardar um pouco para o trigger criar a entrada
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // 8. Atualizar entrada da timeline criada pelo trigger com a categoria do parceiro
+      // Buscar categoria
+      const { data: quoteData } = await supabaseAdmin
+        .from('quotes')
+        .select('partner:partners(category)')
+        .eq('id', quote_id)
+        .single();
+
+      const partnerCategory =
+        (quoteData?.partner && !Array.isArray(quoteData.partner)
+          ? (quoteData.partner as any).category
+          : null) || null;
+
+      const { data: latestHistory } = await supabaseAdmin
+        .from('vehicle_history')
+        .select('id')
+        .eq('vehicle_id', vehicle_id)
+        .eq('status', 'Execução Finalizada')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (latestHistory?.id) {
+        await supabaseAdmin
+          .from('vehicle_history')
+          .update({
+            partner_service: partnerCategory || 'Serviços',
+            notes: partnerCategory
+              ? `Execução Finalizada - ${partnerCategory}`
+              : 'Execução finalizada com sucesso. Todos os serviços foram concluídos.',
+          })
+          .eq('id', latestHistory.id);
+
+        logger.info('timeline_updated', { vehicle_id, history_id: latestHistory.id });
+      }
+    } else {
+      logger.info('vehicle_already_finalized_skip_status_update', { vehicle_id });
     }
 
-    // 9. AVANÇAR FILA: Usar DelegationQueueService para processar próximo parceiro
+    // 9. Atualizar status do orçamento para 'finalized'
+    const { error: quoteUpdateError } = await supabaseAdmin
+      .from('quotes')
+      .update({ status: 'finalized', updated_at: new Date().toISOString() })
+      .eq('id', quote_id);
+
+    if (quoteUpdateError) {
+      logger.warn('failed_update_quote_status_to_finalized', {
+        quote_id,
+        error: quoteUpdateError,
+      });
+      // Não falhar a finalização por causa do status; apenas logar.
+    } else {
+      logger.info('quote_status_updated_to_finalized', { quote_id });
+    }
+
+    // 10. AVANÇAR FILA: Usar DelegationQueueService para processar próximo parceiro
     logger.info('processing_delegation_queue', { vehicle_id });
 
     // Buscar category_id do quote atual

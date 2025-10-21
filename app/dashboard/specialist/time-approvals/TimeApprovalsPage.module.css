@@ -19,7 +19,7 @@
 .backButton {
   background: none;
   border: none;
-  color: #3498db;
+  color: #002e4c;
   cursor: pointer;
   font-size: 0.875rem;
   text-decoration: underline;
@@ -63,13 +63,13 @@
 }
 
 .tab:hover {
-  color: #3498db;
+  color: #002e4c;
   background: #f8f9fa;
 }
 
 .activeTab {
-  color: #3498db;
-  border-bottom-color: #3498db;
+  color: #002e4c;
+  border-bottom-color: #002e4c;
 }
 
 .revisionInfo {
@@ -80,7 +80,7 @@
 .comments {
   padding: 8px;
   background: #f0f8ff;
-  border-left: 3px solid #3498db;
+  border-left: 3px solid #002e4c;
   margin-top: 8px !important;
   font-style: italic;
 }
@@ -181,7 +181,7 @@
 
 .itemDays {
   font-weight: 600;
-  color: #3498db;
+  color: #002e4c;
   font-size: 0.875rem;
 }
 
@@ -191,7 +191,7 @@
 }
 
 .reviewButton {
-  background: #3498db;
+  background: #002e4c;
   color: white;
   border: none;
   padding: 8px 16px;

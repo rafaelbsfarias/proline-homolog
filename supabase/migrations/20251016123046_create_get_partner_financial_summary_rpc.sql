@@ -34,7 +34,7 @@ BEGIN
   INTO v_total_revenue
   FROM quotes q
   WHERE q.partner_id = p_partner_id
-    AND q.status IN ('approved', 'specialist_time_approved')
+    AND q.status IN ('approved', 'specialist_time_approved', 'finalized')
     AND (p_start_date IS NULL OR q.created_at >= p_start_date)
     AND (p_end_date IS NULL OR q.created_at <= p_end_date);
 
@@ -43,7 +43,7 @@ BEGIN
   INTO v_total_quotes
   FROM quotes q
   WHERE q.partner_id = p_partner_id
-    AND q.status IN ('approved', 'specialist_time_approved')
+    AND q.status IN ('approved', 'specialist_time_approved', 'finalized')
     AND (p_start_date IS NULL OR q.created_at >= p_start_date)
     AND (p_end_date IS NULL OR q.created_at <= p_end_date);
 
@@ -61,7 +61,7 @@ BEGIN
   JOIN vehicle_anomalies va ON pr.anomaly_id = va.id
   JOIN quotes q ON va.quote_id = q.id
   WHERE q.partner_id = p_partner_id
-    AND q.status IN ('approved', 'specialist_time_approved')
+    AND q.status IN ('approved', 'specialist_time_approved', 'finalized')
     AND (p_start_date IS NULL OR q.created_at >= p_start_date)
     AND (p_end_date IS NULL OR q.created_at <= p_end_date);
 
@@ -81,6 +81,7 @@ BEGIN
   FROM quotes q
   WHERE q.partner_id = p_partner_id
     AND q.status IN ('approved', 'specialist_time_approved')
+    AND q.status != 'finalized'
     AND (p_start_date IS NULL OR q.created_at >= p_start_date)
     AND (p_end_date IS NULL OR q.created_at <= p_end_date);
 

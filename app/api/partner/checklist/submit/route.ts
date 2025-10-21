@@ -97,6 +97,33 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
       });
     }
 
+    // Garantir que a categoria do parceiro está devidamente identificada
+    // para compor a timeline sem fallback genérico
+    let resolvedCategoryName: string | null = null;
+    try {
+      const { data: partnerCategories, error: categoryError } = await supabase.rpc(
+        'get_partner_categories',
+        { partner_id: partnerId }
+      );
+      const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
+      if (categoryError) {
+        logger.warn('category_fetch_error', { error: categoryError.message });
+      }
+      const cn = normalizePartnerCategoryName(partnerCategories);
+      resolvedCategoryName = cn && cn !== 'Parceiro' ? cn : null;
+    } catch (e) {
+      logger.warn('category_resolution_exception', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    if (!resolvedCategoryName) {
+      return NextResponse.json(
+        { success: false, error: 'Categoria do parceiro não identificada para compor a timeline' },
+        { status: 422 }
+      );
+    }
+
     // VALIDAÇÃO REMOVIDA: O roteamento agora é feito no client baseado na categoria
     // Apenas parceiros de Mecânica devem chegar neste endpoint através do saveChecklist()
 
@@ -165,18 +192,8 @@ async function submitChecklistHandler(req: AuthenticatedRequest): Promise<NextRe
 
     // Registrar entrada de timeline idempotente e atualizar status do veículo
     try {
-      // Buscar categoria do parceiro
-      const { data: partnerCategories, error: categoryError } = await supabase.rpc(
-        'get_partner_categories',
-        { partner_id: partnerId }
-      );
-
-      const { normalizePartnerCategoryName } = await import('@/modules/partner/utils/category');
-      if (categoryError) {
-        logger.warn('category_fetch_error', { error: categoryError.message });
-      }
       {
-        const categoryName = normalizePartnerCategoryName(partnerCategories);
+        const categoryName = resolvedCategoryName; // já validada acima
         const timelineStatus = `Fase Orçamentária Iniciada - ${categoryName}`;
 
         // Verificar se já existe este status na timeline para evitar duplicatas

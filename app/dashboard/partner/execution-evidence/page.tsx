@@ -65,8 +65,15 @@ function ExecutionEvidenceContent() {
   };
 
   const handleCompleteService = async (serviceId: string, serviceName: string) => {
-    const result = await completeService(serviceId, serviceName);
+    // 1) Save current evidences/descriptions first (silent on success)
+    const save = await saveProgress(services);
+    if (!save.success) {
+      showToast(save.error || 'Erro ao salvar evidências', 'error');
+      return;
+    }
 
+    // 2) Complete the service
+    const result = await completeService(serviceId, serviceName);
     if (result.success) {
       showToast(result.message!, 'success');
       await reloadData();

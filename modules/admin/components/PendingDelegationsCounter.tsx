@@ -43,6 +43,9 @@ const PendingDelegationsCounter: React.FC<PendingDelegationsCounterProps> = ({
 
   if (loading) return <span className={styles.counterCard}>Carregando...</span>;
 
+  // Não exibir o contador se não houver delegações pendentes
+  if (count === 0) return null;
+
   return (
     <span
       className={styles.counterCard}
