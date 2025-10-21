@@ -80,7 +80,7 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
         (s: { category: string; required: boolean; notes: string }) => {
           const map: Record<string, keyof typeof form.services> = {
             mechanics: 'mechanics',
-            bodyPaint: 'bodyPaint',
+            body_paint: 'bodyPaint', // ← Corrigido: usar underscore como no banco
             washing: 'washing',
             tires: 'tires',
             loja: 'loja',
