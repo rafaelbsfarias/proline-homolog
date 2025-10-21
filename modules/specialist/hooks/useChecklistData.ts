@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { VehicleInfo } from '../checklist/types';
 import { ChecklistService, ServiceCategory, ChecklistData } from '../services/ChecklistService';
 import { ImageService, SignedUrlResult } from '../services/ImageService';
@@ -37,7 +37,7 @@ export const useChecklistData = (): ChecklistDataHook => {
   /**
    * Reseta todos os dados carregados
    */
-  const resetData = () => {
+  const resetData = useCallback(() => {
     setState({
       checklistData: null,
       serviceCategories: [],
@@ -45,13 +45,13 @@ export const useChecklistData = (): ChecklistDataHook => {
       isLoading: false,
       error: null,
     });
-  };
+  }, []);
 
   /**
    * Carrega todos os dados necessários para o checklist
    * Inclui checklist existente, categorias de serviço e imagens
    */
-  const loadData = async (vehicle: VehicleInfo): Promise<void> => {
+  const loadData = useCallback(async (vehicle: VehicleInfo): Promise<void> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -102,7 +102,7 @@ export const useChecklistData = (): ChecklistDataHook => {
       }));
       throw error;
     }
-  };
+  }, []);
 
   return {
     state,

@@ -8,6 +8,7 @@ interface InspectionDataProps {
   odometer?: number | string;
   fuelLevel?: string;
   observations?: string;
+  partnerServiceNotes?: string;
 }
 
 const InspectionData: React.FC<InspectionDataProps> = ({
@@ -15,6 +16,7 @@ const InspectionData: React.FC<InspectionDataProps> = ({
   odometer,
   fuelLevel,
   observations,
+  partnerServiceNotes,
 }) => {
   const getFuelLevelLabel = (level?: string): string => {
     switch (level) {
@@ -71,10 +73,19 @@ const InspectionData: React.FC<InspectionDataProps> = ({
         </div>
       </div>
 
-      <div className={styles.observationsGroup}>
-        <label className={styles.fieldLabel}>Observações Gerais</label>
-        <div className={styles.observationsValue}>
-          {observations || 'Nenhuma observação registrada.'}
+      <div className={styles.observationsGrid}>
+        <div className={styles.observationsGroup}>
+          <label className={styles.fieldLabel}>Observações Gerais</label>
+          <div className={styles.observationsValue}>
+            {observations || 'Nenhuma observação registrada.'}
+          </div>
+        </div>
+
+        <div className={styles.observationsGroup}>
+          <label className={styles.fieldLabel}>Observações Específicas do Serviço</label>
+          <div className={styles.observationsValue}>
+            {partnerServiceNotes || 'Nenhuma observação específica registrada.'}
+          </div>
         </div>
       </div>
     </div>

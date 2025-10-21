@@ -51,20 +51,20 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
   const [isFinalized, setIsFinalized] = useState(false);
 
   // Hook de dados
-  const { state: dataState, loadData } = useChecklistData();
+  const { state: dataState, loadData, resetData } = useChecklistData();
 
   // Hooks de submissão
   const submission = useChecklistSubmission();
   const finalization = useChecklistFinalization();
 
-  // Carregar dados quando modal abre
+  // Carregar dados quando o modal é aberto e o veículo é definido
   useEffect(() => {
     if (isOpen && vehicle) {
       loadData(vehicle);
+    } else if (!isOpen) {
+      resetData();
     }
-  }, [isOpen, vehicle, loadData]);
-
-  // Sincronizar dados carregados com estado local
+  }, [isOpen, vehicle, loadData, resetData]); // Sincronizar dados carregados com estado local
   useEffect(() => {
     if (dataState.checklistData) {
       const checklist = dataState.checklistData;
@@ -106,7 +106,6 @@ const VehicleChecklistModal: React.FC<VehicleChecklistModalProps> = ({
     setField,
     setServiceFlag,
     setServiceNotes,
-    form.services,
   ]);
 
   // Handlers

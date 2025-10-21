@@ -67,6 +67,50 @@ async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
 
     const supabase = SupabaseService.getInstance().getAdminClient();
 
+    // Buscar categoria do parceiro
+    const { data: partnerData, error: partnerError } = await supabase
+      .from('partners')
+      .select('category')
+      .eq('profile_id', partnerId)
+      .single();
+
+    if (partnerError) {
+      logger.error('partner_category_fetch_error', { partnerId, error: partnerError.message });
+      return NextResponse.json({ error: 'Erro ao buscar categoria do parceiro' }, { status: 500 });
+    }
+
+    const partnerCategory = partnerData?.category;
+    logger.info('partner_category_found', { partnerCategory });
+
+    // Helper function para buscar observações específicas do serviço
+    const getPartnerServiceNotes = async (inspectionId: string): Promise<string | undefined> => {
+      if (!partnerCategory) return undefined;
+
+      // Mapear categoria do parceiro para categoria do serviço
+      const categoryMapping: Record<string, string> = {
+        Mecânica: 'mechanics',
+        'Funilaria/Pintura': 'body_paint',
+        Lavagem: 'washing',
+        Pneu: 'tires',
+      };
+
+      const serviceCategory = categoryMapping[partnerCategory];
+      if (!serviceCategory) return undefined;
+
+      const { data: serviceNotes, error: serviceNotesError } = await supabase
+        .from('inspection_services')
+        .select('notes')
+        .eq('inspection_id', inspectionId)
+        .eq('category', serviceCategory)
+        .single();
+
+      if (serviceNotesError) {
+        return undefined;
+      }
+
+      return serviceNotes?.notes || undefined;
+    };
+
     // FLUXO 1: Busca direta por vehicleId
     if (isVehicleId) {
       logger.info('fetching_vehicle_directly', { vehicleId });
@@ -142,9 +186,20 @@ async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
 
       const inspection = quote.service_orders.inspections;
 
+      // Buscar observações específicas do serviço se houver inspeção
+      let partnerServiceNotes: string | undefined;
+      if (inspection?.id) {
+        partnerServiceNotes = await getPartnerServiceNotes(inspection.id);
+      }
+
       return NextResponse.json({
         vehicle: quote.service_orders.vehicles,
-        inspection: inspection || null,
+        inspection: inspection
+          ? {
+              ...inspection,
+              partnerServiceNotes,
+            }
+          : null,
         quoteId,
         serviceOrderId: quote.service_orders.id,
         vehicleId: quote.service_orders.vehicle_id,
@@ -191,6 +246,9 @@ async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
       return NextResponse.json({ error: 'Inspeção ou veículo não encontrado' }, { status: 404 });
     }
 
+    // Buscar observações específicas do serviço
+    const partnerServiceNotes = await getPartnerServiceNotes(inspectionId);
+
     return NextResponse.json({
       vehicle: inspection.vehicles,
       inspection: {
@@ -199,6 +257,7 @@ async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
         odometer: inspection.odometer,
         fuel_level: inspection.fuel_level,
         observations: inspection.observations,
+        partnerServiceNotes,
         finalized: inspection.finalized,
         created_at: inspection.created_at,
       },

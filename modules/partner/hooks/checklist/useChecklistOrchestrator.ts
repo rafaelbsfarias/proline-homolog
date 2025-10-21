@@ -90,7 +90,10 @@ export function useChecklistOrchestrator() {
         } catch {}
 
         if (inspectionData) {
-          setInspection(inspectionData);
+          setInspection({
+            ...inspectionData,
+            partnerServiceNotes: inspectionData.partnerServiceNotes,
+          });
           // hydrate form basics
           setField('date', inspectionData.inspection_date);
           setField('odometer', String(inspectionData.odometer));
