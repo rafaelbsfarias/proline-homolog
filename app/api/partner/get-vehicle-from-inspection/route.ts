@@ -92,6 +92,8 @@ async function getVehicleFromInspectionHandler(req: AuthenticatedRequest) {
         'Funilaria/Pintura': 'body_paint',
         Lavagem: 'washing',
         Pneu: 'tires',
+        Loja: 'loja',
+        'Pátio Atacado': 'patio_atacado',
       };
 
       const serviceCategory = categoryMapping[partnerCategory];

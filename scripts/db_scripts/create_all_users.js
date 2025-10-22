@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega variáveis de ambiente do .env.local na raiz do projeto
-const envPath = path.resolve(__dirname, '../../.env.local');
+const envPath = path.resolve(__dirname, '../../.env.remoto');
 dotenv.config({ path: envPath, debug: true });
 
 console.log(`
