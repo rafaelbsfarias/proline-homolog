@@ -97,8 +97,13 @@ async function reviewQuoteTimesHandler(
     }
 
     // Verificar se o orçamento está no status correto
-    // Aceita 'approved' (primeira análise) ou 'admin_review' (parceiro já atualizou)
-    if (quote.status !== 'approved' && quote.status !== 'admin_review') {
+    // Aceita 'approved' (primeira análise), 'admin_review' (parceiro já atualizou)
+    // ou 'pending_client_approval' (aguardando aprovação do cliente)
+    if (
+      quote.status !== 'approved' &&
+      quote.status !== 'admin_review' &&
+      quote.status !== 'pending_client_approval'
+    ) {
       return NextResponse.json(
         { success: false, error: 'Orçamento não está aguardando aprovação de prazos' },
         { status: 400 }

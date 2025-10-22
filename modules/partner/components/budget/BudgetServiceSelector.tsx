@@ -146,7 +146,10 @@ const BudgetServiceSelector: React.FC<BudgetServiceSelectorProps> = ({
                         color: '#28a745',
                       }}
                     >
-                      R$ {service.price.toFixed(2)}
+                      R${' '}
+                      {typeof service.price === 'number'
+                        ? service.price.toFixed(2)
+                        : 'ERRO: price não é number'}
                     </div>
                   </div>
 

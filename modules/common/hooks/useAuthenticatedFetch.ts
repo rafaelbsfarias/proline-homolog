@@ -86,7 +86,22 @@ export const useAuthenticatedFetch = () => {
 
           try {
             const errorData = await response.json();
-            errorMessage = errorData.error || errorData.message || errorMessage;
+            // Handle structured error responses from API
+            if (errorData && typeof errorData === 'object' && errorData.error) {
+              if (typeof errorData.error === 'string') {
+                errorMessage = errorData.error;
+              } else if (
+                errorData.error &&
+                typeof errorData.error === 'object' &&
+                errorData.error.message
+              ) {
+                errorMessage = errorData.error.message;
+              } else {
+                errorMessage = errorData.message || errorMessage;
+              }
+            } else {
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            }
           } catch {
             // Se não conseguir parsear JSON, usar mensagem de status
             errorMessage = response.statusText || errorMessage;
