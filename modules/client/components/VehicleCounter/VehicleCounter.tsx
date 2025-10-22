@@ -261,8 +261,19 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
                 : 'collection'
             }
             onApply={async payload => {
-              const resp = await post('/api/client/set-vehicles-collection', payload);
-              if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
+              const isDelivery = (rowModalVehicle.status || '').toUpperCase() === 'FINALIZADO';
+              if (isDelivery) {
+                const body = {
+                  vehicleId: payload.vehicleIds?.[0],
+                  addressId: payload.addressId,
+                  desiredDate: payload.estimated_arrival_date,
+                };
+                const resp = await post('/api/client/deliveries', body);
+                if (!resp.ok) throw new Error(resp.error || 'Erro ao solicitar entrega');
+              } else {
+                const resp = await post('/api/client/set-vehicles-collection', payload);
+                if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');
+              }
               refetch();
             }}
           />
