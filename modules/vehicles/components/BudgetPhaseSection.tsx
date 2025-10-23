@@ -22,6 +22,106 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
     [events]
   );
 
+  // Deduplicar eventos por tipo + título, mantendo o mais recente
+  const deduplicatedEvents = useMemo(() => {
+    const seen = new Map<string, { event: (typeof events)[0]; title: string; color: string }>();
+
+    sortedEvents.forEach(ev => {
+      let color: string = TIMELINE_COLORS.BLUE;
+      let title = ev.title;
+      const titleLower = title.toLowerCase();
+
+      // Determinar cor baseado no tipo de evento e no título
+      switch (ev.type) {
+        case 'BUDGET_STARTED':
+          color = TIMELINE_COLORS.ORANGE;
+          break;
+        case 'BUDGET_APPROVED':
+          color = TIMELINE_COLORS.GREEN;
+          // Inferir categoria se necessário
+          const raw = ev.title?.trim() || '';
+          if (!/^Orçamento Aprovado\s*-\s*/i.test(raw)) {
+            const budgetStartedEvs = sortedEvents.filter(e => e.type === 'BUDGET_STARTED');
+            if (budgetStartedEvs.length === 1) {
+              const started = budgetStartedEvs[0]?.title || '';
+              const m = started.match(/Fase Orçamentária Iniciada\s*-\s*(.+)$/i);
+              const category = m?.[1]?.trim();
+              if (category) title = `Orçamento Aprovado - ${category}`;
+            }
+          }
+          break;
+        case 'EXECUTION_STARTED':
+          color = TIMELINE_COLORS.ORANGE;
+          // Exibir texto específico do serviço quando disponível
+          {
+            const ps = (ev.meta?.partner_service || '').toString().trim();
+            const psLower = ps.toLowerCase();
+            if (ps && psLower !== 'serviço' && psLower !== 'servico') {
+              title = `Execução de ${ps} Iniciada`;
+            } else {
+              // Fallback: manter título original
+              title = ev.title || 'Em Execução';
+            }
+          }
+          break;
+        case 'SERVICE_COMPLETED':
+          color = TIMELINE_COLORS.BLUE;
+          // Exibir finalização específica do serviço, quando disponível
+          {
+            const ps = (ev.meta?.partner_service || '').toString().trim();
+            const psLower = ps.toLowerCase();
+            if (ps && psLower !== 'serviço' && psLower !== 'servico') {
+              title = `Execução de ${ps} Finalizada`;
+            } else {
+              // Fallback genérico
+              title = ev.title || 'Serviço Concluído';
+            }
+          }
+          break;
+        case 'EXECUTION_COMPLETED':
+          color = TIMELINE_COLORS.GREEN;
+          // Exibir a categoria específica que foi finalizada
+          if (ev.meta?.partner_service) {
+            title = `Execução Finalizada - ${ev.meta.partner_service}`;
+          } else {
+            title = 'Execução Finalizada';
+          }
+          break;
+        default:
+          // Para eventos que não têm tipo específico, determinar cor pelo título
+          if (titleLower.includes('cadastrado')) {
+            color = TIMELINE_COLORS.BLUE;
+          } else if (titleLower.includes('previsão') || titleLower.includes('previsao')) {
+            color = TIMELINE_COLORS.ORANGE;
+          } else if (titleLower.includes('chegada confirmada')) {
+            color = TIMELINE_COLORS.GREEN;
+          } else if (titleLower.includes('análise') || titleLower.includes('analise')) {
+            if (titleLower.includes('iniciada')) {
+              color = TIMELINE_COLORS.RED;
+            } else if (titleLower.includes('finalizada')) {
+              color = TIMELINE_COLORS.GREEN;
+            }
+          } else if (titleLower.includes('aguardando') || titleLower.includes('coleta')) {
+            color = TIMELINE_COLORS.ORANGE;
+          } else if (titleLower.includes('fase orçament') || titleLower.includes('fase orcament')) {
+            color = TIMELINE_COLORS.ORANGE;
+          } else if (titleLower.includes('em análise')) {
+            color = TIMELINE_COLORS.ORANGE;
+          }
+      }
+
+      // Criar chave única baseada no tipo e título processado
+      const key = `${ev.type}:${title}`;
+
+      // Manter apenas o evento mais recente para cada combinação tipo+título
+      if (!seen.has(key)) {
+        seen.set(key, { event: ev, title, color });
+      }
+    });
+
+    return Array.from(seen.values());
+  }, [sortedEvents]);
+
   return (
     <div
       style={{
@@ -52,95 +152,9 @@ const BudgetPhaseSection: React.FC<Props> = ({ vehicleId, createdAt }) => {
         />
 
         {/* 2. Eventos do vehicle_history - ORDENADOS POR created_at */}
-        {sortedEvents.map(ev => {
-          let color: string = TIMELINE_COLORS.BLUE;
-          let title = ev.title;
-          const titleLower = title.toLowerCase();
-
-          // Determinar cor baseado no tipo de evento e no título
-          switch (ev.type) {
-            case 'BUDGET_STARTED':
-              color = TIMELINE_COLORS.ORANGE;
-              break;
-            case 'BUDGET_APPROVED':
-              color = TIMELINE_COLORS.GREEN;
-              // Inferir categoria se necessário
-              const raw = ev.title?.trim() || '';
-              if (!/^Orçamento Aprovado\s*-\s*/i.test(raw)) {
-                const budgetStartedEvs = sortedEvents.filter(e => e.type === 'BUDGET_STARTED');
-                if (budgetStartedEvs.length === 1) {
-                  const started = budgetStartedEvs[0]?.title || '';
-                  const m = started.match(/Fase Orçamentária Iniciada\s*-\s*(.+)$/i);
-                  const category = m?.[1]?.trim();
-                  if (category) title = `Orçamento Aprovado - ${category}`;
-                }
-              }
-              break;
-            case 'EXECUTION_STARTED':
-              color = TIMELINE_COLORS.ORANGE;
-              // Exibir texto específico do serviço quando disponível
-              {
-                const ps = (ev.meta?.partner_service || '').toString().trim();
-                const psLower = ps.toLowerCase();
-                if (ps && psLower !== 'serviço' && psLower !== 'servico') {
-                  title = `Execução de ${ps} Iniciada`;
-                } else {
-                  // Fallback: manter título original
-                  title = ev.title || 'Em Execução';
-                }
-              }
-              break;
-            case 'SERVICE_COMPLETED':
-              color = TIMELINE_COLORS.BLUE;
-              // Exibir finalização específica do serviço, quando disponível
-              {
-                const ps = (ev.meta?.partner_service || '').toString().trim();
-                const psLower = ps.toLowerCase();
-                if (ps && psLower !== 'serviço' && psLower !== 'servico') {
-                  title = `Execução de ${ps} Finalizada`;
-                } else {
-                  // Fallback genérico
-                  title = ev.title || 'Serviço Concluído';
-                }
-              }
-              break;
-            case 'EXECUTION_COMPLETED':
-              color = TIMELINE_COLORS.GREEN;
-              // Exibir a categoria específica que foi finalizada
-              if (ev.meta?.partner_service) {
-                title = `Execução Finalizada - ${ev.meta.partner_service}`;
-              } else {
-                title = 'Execução Finalizada';
-              }
-              break;
-            default:
-              // Para eventos que não têm tipo específico, determinar cor pelo título
-              if (titleLower.includes('cadastrado')) {
-                color = TIMELINE_COLORS.BLUE;
-              } else if (titleLower.includes('previsão') || titleLower.includes('previsao')) {
-                color = TIMELINE_COLORS.ORANGE;
-              } else if (titleLower.includes('chegada confirmada')) {
-                color = TIMELINE_COLORS.GREEN;
-              } else if (titleLower.includes('análise') || titleLower.includes('analise')) {
-                if (titleLower.includes('iniciada')) {
-                  color = TIMELINE_COLORS.RED;
-                } else if (titleLower.includes('finalizada')) {
-                  color = TIMELINE_COLORS.GREEN;
-                }
-              } else if (titleLower.includes('aguardando') || titleLower.includes('coleta')) {
-                color = TIMELINE_COLORS.ORANGE;
-              } else if (
-                titleLower.includes('fase orçament') ||
-                titleLower.includes('fase orcament')
-              ) {
-                color = TIMELINE_COLORS.ORANGE;
-              } else if (titleLower.includes('em análise')) {
-                color = TIMELINE_COLORS.ORANGE;
-              }
-          }
-
-          return <Item key={ev.id} color={color} title={title} date={formatDateBR(ev.date)} />;
-        })}
+        {deduplicatedEvents.map(({ event, title, color }) => (
+          <Item key={event.id} color={color} title={title} date={formatDateBR(event.date)} />
+        ))}
       </div>
     </div>
   );

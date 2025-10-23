@@ -20,7 +20,7 @@ export const PATCH = withAdminAuth(
 
       const { data: reqRow, error: reqErr } = await admin
         .from('delivery_requests')
-        .select('id, vehicle_id, status')
+        .select('id, vehicle_id, status, address_id')
         .eq('id', requestId)
         .single();
       if (reqErr || !reqRow)
@@ -69,9 +69,12 @@ export const PATCH = withAdminAuth(
       // timeline básica
       try {
         let vhStatus: string | null = null;
-        if (nextStatus === 'scheduled') vhStatus = 'Entrega Agendada';
-        else if (nextStatus === 'in_transit') vhStatus = 'Saiu para Entrega';
-        else if (nextStatus === 'delivered') vhStatus = 'Veículo Entregue';
+        const isPickup = !reqRow.address_id; // address_id null => retirada no pátio
+        if (nextStatus === 'scheduled')
+          vhStatus = isPickup ? 'Retirada Agendada' : 'Entrega Agendada';
+        else if (nextStatus === 'in_transit') vhStatus = isPickup ? null : 'Saiu para Entrega';
+        else if (nextStatus === 'delivered')
+          vhStatus = isPickup ? 'Veículo Retirado' : 'Veículo Entregue';
         if (vhStatus) {
           await admin.from('vehicle_history').insert({
             vehicle_id: reqRow.vehicle_id,

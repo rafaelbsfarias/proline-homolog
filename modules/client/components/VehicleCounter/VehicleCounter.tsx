@@ -263,11 +263,15 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
             onApply={async payload => {
               const isDelivery = (rowModalVehicle.status || '').toUpperCase() === 'FINALIZADO';
               if (isDelivery) {
-                const body = {
+                const method = payload.method === 'bring_to_yard' ? 'pickup' : 'delivery';
+                const body: any = {
                   vehicleId: payload.vehicleIds?.[0],
-                  addressId: payload.addressId,
                   desiredDate: payload.estimated_arrival_date,
+                  method,
                 };
+                if (method === 'delivery') {
+                  body.addressId = payload.addressId;
+                }
                 const resp = await post('/api/client/deliveries', body);
                 if (!resp.ok) throw new Error(resp.error || 'Erro ao solicitar entrega');
               } else {

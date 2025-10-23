@@ -96,16 +96,31 @@ async function reviewQuoteTimesHandler(
       );
     }
 
-    // Verificar se o orçamento está no status correto
-    // Aceita 'approved' (primeira análise), 'admin_review' (parceiro já atualizou)
-    // ou 'pending_client_approval' (aguardando aprovação do cliente)
+    // Verificar se o orçamento está no status correto para aprovação de prazos
+    // Ordem correta: Admin → Especialista → Cliente
+    // Especialista só pode aprovar quando:
+    // 1. Admin já aprovou (status indica aprovação do admin)
+    // 2. Cliente ainda não aprovou (approval_status.client = 'pending')
     if (
       quote.status !== 'approved' &&
-      quote.status !== 'admin_review' &&
-      quote.status !== 'pending_client_approval'
+      quote.status !== 'pending_client_approval' &&
+      quote.status !== 'admin_review'
     ) {
       return NextResponse.json(
         { success: false, error: 'Orçamento não está aguardando aprovação de prazos' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se o cliente já aprovou (não deveria permitir especialista aprovar depois)
+    const clientAlreadyApproved = quote.approval_status?.client === 'approved';
+    if (clientAlreadyApproved) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Cliente já aprovou este orçamento. Aprovação de prazos deve ocorrer antes da aprovação do cliente.',
+        },
         { status: 400 }
       );
     }

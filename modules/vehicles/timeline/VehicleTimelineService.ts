@@ -247,22 +247,10 @@ export async function getAllVehicleHistoryEvents(
     };
   });
 
-  // Pós-processamento: remover eventos 'EXECUTION_STARTED' que ocorram após o último 'EXECUTION_COMPLETED'
-  const lastCompletionIdx = (() => {
-    for (let i = events.length - 1; i >= 0; i--) {
-      if (events[i].type === 'EXECUTION_COMPLETED') return i;
-    }
-    return -1;
-  })();
+  // Política de exibição: ocultar eventos por serviço
+  // Remover totalmente 'EXECUTION_STARTED' e 'SERVICE_COMPLETED' da timeline exibida
+  events = events.filter(ev => ev.type !== 'EXECUTION_STARTED' && ev.type !== 'SERVICE_COMPLETED');
 
-  if (lastCompletionIdx >= 0) {
-    const lastCompletionDate = new Date(events[lastCompletionIdx].date).getTime();
-    events = events.filter(ev => {
-      if (ev.type !== 'EXECUTION_STARTED') return true;
-      return new Date(ev.date).getTime() <= lastCompletionDate;
-    });
-  }
-
-  logger?.info?.('timeline_all_events', { count: events.length });
+  logger?.info?.('timeline_events_filtered', { count: events.length });
   return events;
 }

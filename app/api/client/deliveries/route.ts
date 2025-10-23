@@ -8,13 +8,24 @@ const logger = getLogger('api:client:deliveries:create');
 export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
-    const { vehicleId, addressId, desiredDate } = body || {};
+    const {
+      vehicleId,
+      addressId,
+      desiredDate,
+      method,
+    }: { vehicleId?: string; addressId?: string; desiredDate?: string; method?: string } =
+      body || {};
 
-    if (!vehicleId || !addressId || !desiredDate) {
+    const mode: 'delivery' | 'pickup' = method === 'pickup' ? 'pickup' : 'delivery';
+
+    if (!vehicleId || !desiredDate) {
       return NextResponse.json(
-        { error: 'Parâmetros obrigatórios ausentes (vehicleId, addressId, desiredDate)' },
+        { error: 'Parâmetros obrigatórios ausentes (vehicleId, desiredDate)' },
         { status: 400 }
       );
+    }
+    if (mode === 'delivery' && !addressId) {
+      return NextResponse.json({ error: 'addressId é obrigatório para entregas' }, { status: 400 });
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
@@ -42,7 +53,8 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     }
 
     const statusUpper = String(vehicleRow.status || '').toUpperCase();
-    if (statusUpper !== 'FINALIZADO' && statusUpper !== 'EXECUÇÃO FINALIZADA') {
+    const isFinal = statusUpper === 'FINALIZADO' || statusUpper === 'EXECUÇÃO FINALIZADA';
+    if (!isFinal) {
       return NextResponse.json({ error: 'Veículo não está finalizado' }, { status: 400 });
     }
 
@@ -58,32 +70,28 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       );
     }
 
-    const { data: quotes } = await admin
-      .from('quotes')
-      .select('id, status')
-      .eq('service_order_id', serviceOrderId);
+    // 2.1) Se o veículo já está finalizado, não bloquear por status residual de quotes
+    // (mantemos o check apenas para veículos não finalizados; porém já retornamos acima)
 
-    const hasPending = (quotes || []).some(q =>
-      ['pending_admin_approval', 'admin_review', 'pending_client_approval', 'approved'].includes(
-        q.status
-      )
-    );
-    if (hasPending) {
-      return NextResponse.json(
-        { error: 'Há orçamentos pendentes ou em execução para este veículo' },
-        { status: 400 }
-      );
-    }
-
-    // 3) Validar endereço pertence ao cliente
-    const { data: addr } = await admin
-      .from('addresses')
-      .select('id, street, number, city, label')
-      .eq('id', addressId)
-      .eq('client_id', clientId)
-      .single();
-    if (!addr) {
-      return NextResponse.json({ error: 'Endereço inválido' }, { status: 400 });
+    // 3) Validar endereço pertence ao cliente (somente para entrega)
+    let addr: {
+      id: string;
+      street: string | null;
+      number: string | null;
+      city: string | null;
+      label: string | null;
+    } | null = null;
+    if (mode === 'delivery') {
+      const { data: addressRow } = await admin
+        .from('addresses')
+        .select('id, street, number, city, label')
+        .eq('id', addressId)
+        .eq('profile_id', clientId)
+        .single();
+      if (!addressRow) {
+        return NextResponse.json({ error: 'Endereço inválido' }, { status: 400 });
+      }
+      addr = addressRow as any;
     }
 
     // 4) Criar delivery_request + event
@@ -93,7 +101,7 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
         vehicle_id: vehicleId,
         service_order_id: serviceOrderId,
         client_id: clientId,
-        address_id: addressId,
+        address_id: mode === 'delivery' ? addressId : null,
         status: 'requested',
         desired_date: desiredDate,
         created_by: clientId,
@@ -108,24 +116,39 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     await admin.from('delivery_request_events').insert({
       request_id: inserted.id,
-      event_type: 'created',
+      event_type: mode === 'pickup' ? 'pickup_requested' : 'created',
       status_from: null,
       status_to: 'requested',
       actor_id: clientId,
       actor_role: 'client',
-      notes: null,
+      notes: mode === 'pickup' ? 'Retirada no pátio solicitada' : null,
     });
 
     // 5) Escrever timeline básica (sem PII)
-    const label =
-      addr.label || `${addr.street || ''} ${addr.number || ''} - ${addr.city || ''}`.trim();
     try {
-      await admin.from('vehicle_history').insert({
-        vehicle_id: vehicleId,
-        status: 'Entrega Solicitada',
-        partner_service: null,
-        notes: label ? `Entrega Solicitada — ${label}` : 'Entrega Solicitada',
-      });
+      if (mode === 'pickup') {
+        await admin.from('vehicle_history').insert({
+          vehicle_id: vehicleId,
+          status: 'Retirada no Pátio Solicitada',
+          partner_service: null,
+          notes: 'Retirada no Pátio Solicitada',
+        });
+        // Atualizar status do veículo para 'Retirada'
+        try {
+          await admin.from('vehicles').update({ status: 'Retirada' }).eq('id', vehicleId);
+        } catch (e) {
+          logger.warn('vehicle_status_update_failed_pickup', { e });
+        }
+      } else if (addr) {
+        const label =
+          addr.label || `${addr.street || ''} ${addr.number || ''} - ${addr.city || ''}`.trim();
+        await admin.from('vehicle_history').insert({
+          vehicle_id: vehicleId,
+          status: 'Entrega Solicitada',
+          partner_service: null,
+          notes: label ? `Entrega Solicitada — ${label}` : 'Entrega Solicitada',
+        });
+      }
     } catch (e) {
       logger.warn('vehicle_history_insert_failed', { e });
     }
