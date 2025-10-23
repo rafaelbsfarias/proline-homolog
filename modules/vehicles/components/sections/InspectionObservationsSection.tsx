@@ -12,7 +12,7 @@ export const InspectionObservationsSection: React.FC<InspectionObservationsSecti
   if (!observations) return null;
 
   return (
-    <SectionCard title="Observações do Especialista" fullWidth>
+    <SectionCard title="Observações Gerais" fullWidth>
       <div className={styles.container}>{observations}</div>
     </SectionCard>
   );

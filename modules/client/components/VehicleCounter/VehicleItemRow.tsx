@@ -11,6 +11,7 @@ interface Props {
   collectionFee?: number; // Optional: fee for this vehicle's collection
   onOpenDetails: (vehicle: Vehicle) => void;
   onOpenRowModal: (vehicle: Vehicle) => void;
+  pickupRequested?: boolean; // se o cliente já solicitou retirada no pátio (pendente)
 }
 
 function getDateStatusClass(status: string, dateStr?: string) {
@@ -29,7 +30,8 @@ function getDateStatusClass(status: string, dateStr?: string) {
 }
 
 export default function VehicleItemRow(props: Props) {
-  const { vehicle, addresses, collectionFee, onOpenDetails, onOpenRowModal } = props;
+  const { vehicle, addresses, collectionFee, onOpenDetails, onOpenRowModal, pickupRequested } =
+    props;
 
   const sClass = sanitizeStatus(vehicle.status);
   const statusUpper = (vehicle.status || '').toUpperCase();
@@ -90,7 +92,8 @@ export default function VehicleItemRow(props: Props) {
   })();
 
   const isFinalized = statusUpper === 'FINALIZADO';
-  const isPickupRequested = statusUpper === 'RETIRADA';
+  const isPickupRequested =
+    pickupRequested === true || statusUpper === 'RETIRADA' || statusUpper === 'AGUARDANDO RETIRADA';
 
   return (
     <div

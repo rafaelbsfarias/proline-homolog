@@ -28,13 +28,7 @@ function formatDateBR(dateIso?: string | null) {
   return `${day}/${month}/${year}`;
 }
 
-function toWindowIso(dateIso: string, startHour = 9, endHour = 18) {
-  // dateIso expected as YYYY-MM-DD
-  const [y, m, d] = dateIso.split('-').map(Number);
-  const start = new Date(Date.UTC(y, (m - 1) as number, d as number, startHour, 0, 0));
-  const end = new Date(Date.UTC(y, (m - 1) as number, d as number, endHour, 0, 0));
-  return { windowStart: start.toISOString(), windowEnd: end.toISOString() };
-}
+// (Apenas listagem: sem necessidade de converter janelas)
 
 interface DeliveryRequestsCardProps {
   clientId: string;
@@ -56,7 +50,7 @@ const thtd: React.CSSProperties = {
 };
 
 export default function DeliveryRequestsCard({ clientId }: DeliveryRequestsCardProps) {
-  const { get, authenticatedFetch } = useAuthenticatedFetch();
+  const { get } = useAuthenticatedFetch();
   const [items, setItems] = useState<DeliveryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,47 +93,7 @@ export default function DeliveryRequestsCard({ clientId }: DeliveryRequestsCardP
 
   const hasPending = useMemo(() => groups.length > 0, [groups]);
 
-  const confirmGroup = async (rows: DeliveryItem[]) => {
-    if (!rows.length) return;
-    const desiredDate = rows[0]?.desired_date || null;
-    if (!desiredDate) return;
-    const { windowStart, windowEnd } = toWindowIso(desiredDate);
-    setLoading(true);
-    setError(null);
-    try {
-      for (const it of rows) {
-        const resp = await authenticatedFetch(`/api/admin/deliveries/${it.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'schedule', windowStart, windowEnd }),
-        });
-        if (!resp.ok) throw new Error(resp.error || 'Falha ao agendar');
-      }
-      await fetchItems();
-    } catch (e: any) {
-      setError(e?.message || 'Erro ao agendar');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const rejectGroup = async (rows: DeliveryItem[]) => {
-    setLoading(true);
-    setError(null);
-    try {
-      for (const it of rows) {
-        const resp = await authenticatedFetch(`/api/admin/deliveries/${it.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ action: 'reject' }),
-        });
-        if (!resp.ok) throw new Error(resp.error || 'Falha ao rejeitar');
-      }
-      await fetchItems();
-    } catch (e: any) {
-      setError(e?.message || 'Erro ao rejeitar');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Card de listagem apenas — sem ações.
 
   if (!hasPending) return null;
 
@@ -158,7 +112,7 @@ export default function DeliveryRequestsCard({ clientId }: DeliveryRequestsCardP
               <th style={thtd}>Data Solicitada</th>
               <th style={thtd}>Veículos</th>
               <th style={thtd}>Placas</th>
-              <th style={thtd}>Ações</th>
+              <th style={thtd}>—</th>
             </tr>
           </thead>
           <tbody>
@@ -176,21 +130,8 @@ export default function DeliveryRequestsCard({ clientId }: DeliveryRequestsCardP
                     {plates}
                     {more ? ` +${more}` : ''}
                   </td>
-                  <td style={thtd}>
-                    <button
-                      onClick={() => confirmGroup(g.rows)}
-                      disabled={loading}
-                      title="Agendar janela padrão (09:00–18:00) para todas"
-                    >
-                      Confirmar todas
-                    </button>
-                    <button
-                      onClick={() => rejectGroup(g.rows)}
-                      disabled={loading}
-                      style={{ marginLeft: 8 }}
-                    >
-                      Rejeitar todas
-                    </button>
+                  <td style={thtd} aria-label="Sem ações">
+                    —
                   </td>
                 </tr>
               );

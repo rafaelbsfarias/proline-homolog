@@ -133,12 +133,7 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           partner_service: null,
           notes: 'Retirada no Pátio Solicitada',
         });
-        // Atualizar status do veículo para 'Retirada'
-        try {
-          await admin.from('vehicles').update({ status: 'Retirada' }).eq('id', vehicleId);
-        } catch (e) {
-          logger.warn('vehicle_status_update_failed_pickup', { e });
-        }
+        // Não alterar status do veículo aqui; próximo status será 'Aguardando Retirada' após aceite do admin
       } else if (addr) {
         const label =
           addr.label || `${addr.street || ''} ${addr.number || ''} - ${addr.city || ''}`.trim();

@@ -40,6 +40,9 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [rowModalVehicle, setRowModalVehicle] = useState<Vehicle | null>(null);
+    const [pendingPickupByVehicle, setPendingPickupByVehicle] = useState<Record<string, boolean>>(
+      {}
+    );
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
@@ -193,6 +196,7 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
                     vehicle={vehicle}
                     addresses={addresses}
                     collectionFee={vehicle.collection_fee ?? undefined}
+                    pickupRequested={!!pendingPickupByVehicle[vehicle.id]}
                     onOpenDetails={v => {
                       setSelectedVehicle(v);
                       setShowModal(true);
@@ -274,6 +278,10 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
                 }
                 const resp = await post('/api/client/deliveries', body);
                 if (!resp.ok) throw new Error(resp.error || 'Erro ao solicitar entrega');
+                // Se for retirada no pátio, desativar localmente o botão para este veículo
+                if (method === 'pickup' && body.vehicleId) {
+                  setPendingPickupByVehicle(prev => ({ ...prev, [body.vehicleId]: true }));
+                }
               } else {
                 const resp = await post('/api/client/set-vehicles-collection', payload);
                 if (!resp.ok) throw new Error(resp.error || 'Erro ao salvar');

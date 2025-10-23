@@ -25,8 +25,11 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
     if (error) throw error;
 
     const counts: Record<string, number> = {};
-    (data || []).forEach((r: any) => {
-      const s = String(r?.status || '').trim() || '-';
+    (data || []).forEach((r: { status?: string }) => {
+      const s =
+        String(r?.status || '')
+          .toUpperCase()
+          .trim() || '-';
       counts[s] = (counts[s] || 0) + 1;
     });
     return NextResponse.json({ success: true, counts });

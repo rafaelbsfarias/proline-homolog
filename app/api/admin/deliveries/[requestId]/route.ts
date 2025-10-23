@@ -66,12 +66,24 @@ export const PATCH = withAdminAuth(
         notes,
       });
 
+      // Atualizar status do veículo conforme ação e tipo (retirada vs entrega)
+      try {
+        const isPickup = !reqRow.address_id;
+        if (nextStatus === 'scheduled' && isPickup) {
+          await admin
+            .from('vehicles')
+            .update({ status: 'Aguardando Retirada' })
+            .eq('id', reqRow.vehicle_id);
+        }
+      } catch (e) {
+        logger.warn('vehicle_status_update_failed', { e, action, nextStatus });
+      }
+
       // timeline básica
       try {
         let vhStatus: string | null = null;
         const isPickup = !reqRow.address_id; // address_id null => retirada no pátio
-        if (nextStatus === 'scheduled')
-          vhStatus = isPickup ? 'Retirada Agendada' : 'Entrega Agendada';
+        if (nextStatus === 'scheduled') vhStatus = isPickup ? null : 'Entrega Agendada';
         else if (nextStatus === 'in_transit') vhStatus = isPickup ? null : 'Saiu para Entrega';
         else if (nextStatus === 'delivered')
           vhStatus = isPickup ? 'Veículo Retirado' : 'Veículo Entregue';

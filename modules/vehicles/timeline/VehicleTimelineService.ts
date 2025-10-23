@@ -206,7 +206,7 @@ export async function getAllVehicleHistoryEvents(
 
   const rows = (data || []).filter(row => !isAdminFullApproval(row.status));
 
-  let events: TimelineEvent[] = rows.map(row => {
+  const events: TimelineEvent[] = rows.map(row => {
     // Determinar o tipo do evento baseado no status
     let type: TimelineEvent['type'] = 'BUDGET_STARTED';
 
@@ -246,10 +246,6 @@ export async function getAllVehicleHistoryEvents(
       },
     };
   });
-
-  // Política de exibição: ocultar eventos por serviço
-  // Remover totalmente 'EXECUTION_STARTED' e 'SERVICE_COMPLETED' da timeline exibida
-  events = events.filter(ev => ev.type !== 'EXECUTION_STARTED' && ev.type !== 'SERVICE_COMPLETED');
 
   logger?.info?.('timeline_events_filtered', { count: events.length });
   return events;

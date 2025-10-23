@@ -21,11 +21,13 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
     const { data, error } = await admin.from('vehicles').select('status').eq('client_id', clientId);
     if (error) throw error;
     const set = new Set<string>();
-    (data || []).forEach((r: any) => {
-      const s = String(r?.status || '').trim();
+    (data || []).forEach((r: { status?: string }) => {
+      const s = String(r?.status || '')
+        .toUpperCase()
+        .trim();
       if (s) set.add(s);
     });
-    return NextResponse.json({ success: true, statuses: Array.from(set) });
+    return NextResponse.json({ success: true, statuses: Array.from(set).sort() });
   } catch (e: unknown) {
     const err = e as Error;
     return NextResponse.json(
