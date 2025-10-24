@@ -12,6 +12,7 @@ interface Props {
   onOpenDetails: (vehicle: Vehicle) => void;
   onOpenRowModal: (vehicle: Vehicle) => void;
   pickupRequested?: boolean; // se o cliente já solicitou retirada no pátio (pendente)
+  deliveryRequested?: boolean; // se o cliente já solicitou entrega (pendente)
 }
 
 function getDateStatusClass(status: string, dateStr?: string) {
@@ -30,8 +31,15 @@ function getDateStatusClass(status: string, dateStr?: string) {
 }
 
 export default function VehicleItemRow(props: Props) {
-  const { vehicle, addresses, collectionFee, onOpenDetails, onOpenRowModal, pickupRequested } =
-    props;
+  const {
+    vehicle,
+    addresses,
+    collectionFee,
+    onOpenDetails,
+    onOpenRowModal,
+    pickupRequested,
+    deliveryRequested,
+  } = props;
 
   const sClass = sanitizeStatus(vehicle.status);
   const statusUpper = (vehicle.status || '').toUpperCase();
@@ -91,9 +99,10 @@ export default function VehicleItemRow(props: Props) {
     return null;
   })();
 
-  const isFinalized = statusUpper === 'FINALIZADO';
+  const isFinalized = statusUpper === 'FINALIZADO' || statusUpper.startsWith('FINALIZADO:');
   const isPickupRequested =
     pickupRequested === true || statusUpper === 'RETIRADA' || statusUpper === 'AGUARDANDO RETIRADA';
+  const isDeliveryRequested = deliveryRequested === true || statusUpper.startsWith('FINALIZADO:'); // localmente e por status persistido
 
   return (
     <div
@@ -159,13 +168,19 @@ export default function VehicleItemRow(props: Props) {
             className="buttonVehicleCustom"
             onClick={() => onOpenRowModal(vehicle)}
             disabled={
-              isPickupRequested ? true : isFinalized ? false : !canClientModify(vehicle.status)
+              isPickupRequested
+                ? true
+                : isFinalized
+                  ? isDeliveryRequested
+                  : !canClientModify(vehicle.status)
             }
             title={
               isPickupRequested
                 ? 'Retirada já solicitada'
                 : isFinalized
-                  ? 'Solicitar entrega do veículo'
+                  ? isDeliveryRequested
+                    ? 'Entrega já solicitada'
+                    : 'Solicitar entrega do veículo'
                   : !canClientModify(vehicle.status)
                     ? 'Não editável neste status'
                     : 'Adicionar ponto de coleta'
@@ -174,7 +189,9 @@ export default function VehicleItemRow(props: Props) {
             {isPickupRequested
               ? 'Retirada solicitada'
               : isFinalized
-                ? 'Solicitar entrega do veículo'
+                ? isDeliveryRequested
+                  ? 'Entrega solicitada'
+                  : 'Solicitar entrega do veículo'
                 : 'Adicionar ponto de coleta'}
           </SolidButton>
         </div>

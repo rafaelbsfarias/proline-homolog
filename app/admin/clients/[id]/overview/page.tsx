@@ -35,6 +35,7 @@ const Page = () => {
 
   // Estado para modal de retirada
   const [pickupModalVehicle, setPickupModalVehicle] = useState<{
+    requestId?: string;
     vehicleId: string;
     plate: string;
     info: string;
@@ -45,20 +46,24 @@ const Page = () => {
   const [pickupError, setPickupError] = useState<string | null>(null);
   const [pickupSuccess, setPickupSuccess] = useState<string | null>(null);
 
-  // Estado para veículos aguardando retirada (dados reais da API)
-  const [vehiclesAwaitingPickup, setVehiclesAwaitingPickup] = useState<VehiclePickupRequest[]>([]);
+  // Estado para veículos aguardando retirada/entrega (dados reais da API)
+  const [pickupVehicles, setPickupVehicles] = useState<VehiclePickupRequest[]>([]);
+  const [deliveryVehicles, setDeliveryVehicles] = useState<VehiclePickupRequest[]>([]);
   const [loadingPickupVehicles, setLoadingPickupVehicles] = useState(false);
 
-  // Buscar veículos aguardando retirada ao carregar a página
+  // Buscar veículos aguardando retirada/entrega ao carregar a página
   React.useEffect(() => {
     const fetchPickupVehicles = async () => {
       setLoadingPickupVehicles(true);
       try {
-        const resp = await get<{ success: boolean; vehicles: VehiclePickupRequest[] }>(
-          `/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`
-        );
+        const resp = await get<{
+          success: boolean;
+          pickups: VehiclePickupRequest[];
+          deliveries: VehiclePickupRequest[];
+        }>(`/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`);
         if (resp.ok && resp.data?.success) {
-          setVehiclesAwaitingPickup(resp.data.vehicles || []);
+          setPickupVehicles(resp.data.pickups || []);
+          setDeliveryVehicles(resp.data.deliveries || []);
         }
       } catch {
         // Falha silenciosa - não interromper o carregamento da página
@@ -119,20 +124,36 @@ const Page = () => {
   );
 
   // Handlers para retirada de veículos
-  const handleAcceptPickupDate = async (vehicleId: string) => {
+  const handleAcceptPickupDate = async (requestId: string, vehicleId: string) => {
     setPickupLoading(true);
     setPickupError(null);
     try {
-      // A fazer: Implementar API
-      const resp = await post('/api/admin/accept-vehicle-pickup-date', { clientId, vehicleId });
+      // Verificar se é retirada ou entrega
+      const allVehicles = [...pickupVehicles, ...deliveryVehicles];
+      const vehicle = allVehicles.find(v => v.vehicleId === vehicleId && v.requestId === requestId);
+      const isDelivery = vehicle?.type === 'delivery';
+
+      // Chamar API apropriada
+      const endpoint = isDelivery
+        ? '/api/admin/accept-vehicle-delivery-date'
+        : '/api/admin/accept-vehicle-pickup-date';
+
+      const resp = await post(endpoint, { clientId, vehicleId, requestId });
       if (!resp.ok) throw new Error(resp.error || 'Erro ao aceitar data');
-      setPickupSuccess('Data de retirada aceita com sucesso!');
-      // Recarregar a lista de veículos
-      const reloadResp = await get<{ success: boolean; vehicles: VehiclePickupRequest[] }>(
-        `/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`
+
+      setPickupSuccess(
+        isDelivery ? 'Data de entrega aceita com sucesso!' : 'Data de retirada aceita com sucesso!'
       );
+
+      // Recarregar a lista de veículos
+      const reloadResp = await get<{
+        success: boolean;
+        pickups: VehiclePickupRequest[];
+        deliveries: VehiclePickupRequest[];
+      }>(`/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`);
       if (reloadResp.ok && reloadResp.data?.success) {
-        setVehiclesAwaitingPickup(reloadResp.data.vehicles || []);
+        setPickupVehicles(reloadResp.data.pickups || []);
+        setDeliveryVehicles(reloadResp.data.deliveries || []);
       }
     } catch (e: unknown) {
       const error = e as Error;
@@ -142,10 +163,16 @@ const Page = () => {
     }
   };
 
-  const handleProposePickupDate = (vehicleId: string, currentDate: string | null) => {
-    const vehicle = vehiclesAwaitingPickup.find(v => v.vehicleId === vehicleId);
+  const handleProposePickupDate = (
+    requestId: string,
+    vehicleId: string,
+    currentDate: string | null
+  ) => {
+    const allVehicles = [...pickupVehicles, ...deliveryVehicles];
+    const vehicle = allVehicles.find(v => v.vehicleId === vehicleId && v.requestId === requestId);
     if (vehicle) {
       setPickupModalVehicle({
+        requestId,
         vehicleId,
         plate: vehicle.plate,
         info: `${vehicle.brand} ${vehicle.model}${vehicle.year ? ` (${vehicle.year})` : ''}`,
@@ -163,20 +190,23 @@ const Page = () => {
     setPickupError(null);
     setPickupSuccess(null);
     try {
-      // A fazer: Implementar API
       const resp = await post('/api/admin/propose-vehicle-pickup-date', {
         clientId,
         vehicleId: pickupModalVehicle.vehicleId,
         proposedDate: pickupProposedDate,
+        requestId: pickupModalVehicle.requestId,
       });
       if (!resp.ok) throw new Error(resp.error || 'Erro ao propor data');
       setPickupSuccess('Proposta de data enviada com sucesso!');
       // Recarregar a lista de veículos
-      const reloadResp = await get<{ success: boolean; vehicles: VehiclePickupRequest[] }>(
-        `/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`
-      );
+      const reloadResp = await get<{
+        success: boolean;
+        pickups: VehiclePickupRequest[];
+        deliveries: VehiclePickupRequest[];
+      }>(`/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`);
       if (reloadResp.ok && reloadResp.data?.success) {
-        setVehiclesAwaitingPickup(reloadResp.data.vehicles || []);
+        setPickupVehicles(reloadResp.data.pickups || []);
+        setDeliveryVehicles(reloadResp.data.deliveries || []);
       }
       setTimeout(() => {
         setPickupModalVehicle(null);
@@ -186,6 +216,31 @@ const Page = () => {
       setPickupError(error.message || 'Erro ao propor data');
     } finally {
       setPickupLoading(false);
+    }
+  };
+
+  const handleUpdateDeliveryFee = async (requestId: string, addressId: string, fee: number) => {
+    try {
+      const resp = await post('/api/admin/update-delivery-fee', { requestId, addressId, fee });
+      if (!resp.ok) throw new Error(resp.error || 'Erro ao atualizar valor');
+
+      // Recarregar a lista de veículos
+      const reloadResp = await get<{
+        success: boolean;
+        pickups: VehiclePickupRequest[];
+        deliveries: VehiclePickupRequest[];
+      }>(`/api/admin/vehicles-awaiting-pickup?clientId=${clientId}`);
+
+      if (reloadResp.ok && reloadResp.data?.success) {
+        setPickupVehicles(reloadResp.data.pickups || []);
+        setDeliveryVehicles(reloadResp.data.deliveries || []);
+      }
+
+      setPickupSuccess('Valor da entrega atualizado com sucesso!');
+    } catch (e: unknown) {
+      const error = e as Error;
+      setPickupError(error.message || 'Erro ao atualizar valor');
+      throw error; // Re-throw para o componente tratar
     }
   };
 
@@ -223,16 +278,18 @@ const Page = () => {
         {/* 4) Coletas aprovadas */}
         <ApprovedCollectionSection groups={approvedCollections} total={approvedTotal} />
 
-        {/* 5) Veículos aguardando retirada */}
+        {/* 5) Veículos aguardando retirada/entrega */}
         {loadingPickupVehicles ? (
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <p>Carregando veículos aguardando retirada...</p>
+            <p>Carregando solicitações de retirada/entrega...</p>
           </div>
         ) : (
           <VehiclesAwaitingPickupSection
-            vehicles={vehiclesAwaitingPickup}
+            pickups={pickupVehicles}
+            deliveries={deliveryVehicles}
             onAcceptDate={handleAcceptPickupDate}
             onProposeNewDate={handleProposePickupDate}
+            onUpdateDeliveryFee={handleUpdateDeliveryFee}
             loading={pickupLoading}
           />
         )}

@@ -1,26 +1,34 @@
 import { NextResponse } from 'next/server';
 import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils/authMiddleware';
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
-import { getLogger } from '@/modules/logger';
 import { DeliveryService } from '@/modules/delivery/domain/DeliveryService';
 import { SupabaseDeliveryRequestRepository } from '@/modules/delivery/infra/SupabaseDeliveryRequestRepository';
 import { SupabaseVehicleRepository } from '@/modules/delivery/infra/SupabaseVehicleRepository';
 import { SupabaseTimelineWriter } from '@/modules/delivery/infra/SupabaseTimelineWriter';
 import { DevNotificationPort } from '@/modules/delivery/infra/DevNotificationPort';
 
-const logger = getLogger('api:admin:accept-vehicle-pickup-date');
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
-    const { clientId, vehicleId, requestId } = body || {};
+    const { clientId, vehicleId, proposedDate, requestId } = body || {};
 
-    if (!requestId && (!clientId || !vehicleId)) {
-      return NextResponse.json({ error: 'clientId e vehicleId são obrigatórios' }, { status: 400 });
+    if (!clientId || !vehicleId || !proposedDate) {
+      return NextResponse.json(
+        { error: 'clientId, vehicleId e proposedDate são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
+    // Validação simples de data ISO (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(proposedDate)) {
+      return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
-
     const service = new DeliveryService(
       new SupabaseDeliveryRequestRepository(admin),
       new SupabaseVehicleRepository(admin),
@@ -28,22 +36,15 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       new DevNotificationPort()
     );
 
-    const result = requestId
-      ? await service.approvePickupByRequestId({ requestId, actorId: req.user.id })
-      : await service.approvePickup({ clientId, vehicleId, actorId: req.user.id });
+    const result = await service.proposePickupNewDate({
+      clientId,
+      vehicleId,
+      proposedDate,
+      actorId: req.user.id,
+    });
+
     return NextResponse.json({ success: true, requestId: result.requestId });
   } catch (e: any) {
-    logger.error('unexpected_error', { e: e?.message || e });
-    const msg = e?.message || 'Erro interno';
-    const status = msg.includes('não encontrada')
-      ? 404
-      : msg.includes('sem data desejada')
-        ? 400
-        : 500;
-    return NextResponse.json({ error: msg }, { status });
+    return NextResponse.json({ error: e?.message || 'Erro interno' }, { status: 500 });
   }
 });
-
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;

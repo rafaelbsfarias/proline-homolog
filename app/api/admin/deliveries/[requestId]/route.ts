@@ -72,7 +72,7 @@ export const PATCH = withAdminAuth(
         if (nextStatus === 'scheduled' && isPickup) {
           await admin
             .from('vehicles')
-            .update({ status: 'Aguardando Retirada' })
+            .update({ status: 'Finalizado: Aguardando Retirada' })
             .eq('id', reqRow.vehicle_id);
         }
       } catch (e) {

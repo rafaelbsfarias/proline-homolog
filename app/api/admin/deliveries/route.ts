@@ -16,10 +16,10 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
 
     const admin = SupabaseService.getInstance().getAdminClient();
     let query = admin.from('delivery_requests').select(
-      `id, status, desired_date, created_at,
+      `id, status, desired_date, created_at, fee_amount,
          client:clients(profile_id, profiles(full_name)),
          vehicle:vehicles(id, plate),
-         address:addresses(id, street, number, city, label)`
+         address:addresses(id, street, number, city)`
     );
 
     if (status) query = query.eq('status', status);

@@ -20,16 +20,38 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     if (!vehicleId || !desiredDate) {
       return NextResponse.json(
-        { error: 'Parâmetros obrigatórios ausentes (vehicleId, desiredDate)' },
+        {
+          error: 'Parâmetros obrigatórios ausentes (vehicleId, desiredDate)',
+          code: 'E_BAD_PARAMS',
+        },
         { status: 400 }
       );
     }
     if (mode === 'delivery' && !addressId) {
-      return NextResponse.json({ error: 'addressId é obrigatório para entregas' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'addressId é obrigatório para entregas', code: 'E_ADDRESS_REQUIRED' },
+        { status: 400 }
+      );
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
     const clientId = req.user.id;
+    const tokenProfileId = req.user.profile_id;
+    logger.info('create_delivery_request_received', {
+      clientId: clientId.slice(0, 8),
+      vehicleId,
+      addressId,
+      desiredDate,
+      mode,
+    });
+
+    // Debug: verificar consistência entre id e profile_id do token
+    if (clientId !== tokenProfileId) {
+      logger.warn('auth_profile_mismatch', {
+        id: clientId.slice(0, 8),
+        profile_id: tokenProfileId.slice(0, 8),
+      });
+    }
 
     // 1) Validar que o veículo pertence ao cliente e está Finalizado
     const { data: vehicleRow, error: vehErr } = await admin
@@ -38,7 +60,11 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .eq('id', vehicleId)
       .single();
     if (vehErr || !vehicleRow) {
-      return NextResponse.json({ error: 'Veículo não encontrado' }, { status: 404 });
+      logger.warn('vehicle_not_found', { vehicleId: vehicleId?.slice(0, 8) });
+      return NextResponse.json(
+        { error: 'Veículo não encontrado', code: 'E_VEHICLE_NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     // Verifica propriedade via service_orders -> vehicles has client? If vehicles table has client_id, prefer that
@@ -49,13 +75,28 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       .eq('id', vehicleId)
       .single();
     if (vehicleOwner?.client_id !== clientId) {
-      return NextResponse.json({ error: 'Veículo não pertence ao cliente' }, { status: 403 });
+      logger.warn('vehicle_not_owned_by_client', {
+        vehicleId: vehicleId.slice(0, 8),
+        expectedOwner: String(vehicleOwner?.client_id || 'null').slice(0, 8),
+        clientId: clientId.slice(0, 8),
+      });
+      return NextResponse.json(
+        { error: 'Veículo não pertence ao cliente', code: 'E_VEHICLE_NOT_OWNED' },
+        { status: 403 }
+      );
     }
 
     const statusUpper = String(vehicleRow.status || '').toUpperCase();
     const isFinal = statusUpper === 'FINALIZADO' || statusUpper === 'EXECUÇÃO FINALIZADA';
     if (!isFinal) {
-      return NextResponse.json({ error: 'Veículo não está finalizado' }, { status: 400 });
+      logger.warn('vehicle_not_finalized', {
+        vehicleId: vehicleId.slice(0, 8),
+        status: vehicleRow.status,
+      });
+      return NextResponse.json(
+        { error: 'Veículo não está finalizado', code: 'E_VEHICLE_NOT_FINAL' },
+        { status: 400 }
+      );
     }
 
     // 2) Verificar pendências de orçamento (quotes em execução/aprovação) na service_order atual
@@ -82,15 +123,51 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
       label: string | null;
     } | null = null;
     if (mode === 'delivery') {
-      const { data: addressRow } = await admin
+      logger.info('address_validation_started', {
+        clientId: clientId.slice(0, 8),
+        addressId: addressId?.slice(0, 8),
+      });
+      const { data: addressRow, error: addrSelectErr } = await admin
         .from('addresses')
-        .select('id, street, number, city, label')
+        .select('id, street, number, city')
         .eq('id', addressId)
         .eq('profile_id', clientId)
         .single();
-      if (!addressRow) {
-        return NextResponse.json({ error: 'Endereço inválido' }, { status: 400 });
+      if (addrSelectErr) {
+        logger.warn('address_select_error', {
+          message: addrSelectErr.message,
+          hint: addrSelectErr.hint,
+          details: addrSelectErr.details,
+        });
       }
+      if (!addressRow) {
+        // Investigar causa: endereço inexistente ou não pertence ao cliente
+        const { data: existsAny } = await admin
+          .from('addresses')
+          .select('id, profile_id')
+          .eq('id', addressId)
+          .maybeSingle();
+        if (existsAny) {
+          logger.warn('address_not_owned_by_client', {
+            clientId: clientId?.slice(0, 8),
+            addressId,
+            owner: existsAny.profile_id?.slice?.(0, 8) || 'unknown',
+          });
+          return NextResponse.json(
+            { error: 'Endereço não pertence a este cliente', code: 'E_ADDRESS_NOT_OWNED' },
+            { status: 400 }
+          );
+        }
+        logger.warn('address_not_found', { clientId: clientId?.slice(0, 8), addressId });
+        return NextResponse.json(
+          { error: 'Endereço não encontrado', code: 'E_ADDRESS_NOT_FOUND' },
+          { status: 400 }
+        );
+      }
+      logger.info('address_ownership_verified', {
+        clientId: clientId.slice(0, 8),
+        addressId: addressRow.id?.slice?.(0, 8),
+      });
       addr = addressRow as any;
     }
 
@@ -111,7 +188,10 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
 
     if (insErr || !inserted) {
       logger.error('delivery_insert_failed', { error: insErr?.message });
-      return NextResponse.json({ error: 'Falha ao criar entrega' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Falha ao criar entrega', code: 'E_DELIVERY_INSERT_FAILED' },
+        { status: 500 }
+      );
     }
 
     await admin.from('delivery_request_events').insert({
@@ -143,6 +223,27 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
           partner_service: null,
           notes: label ? `Entrega Solicitada — ${label}` : 'Entrega Solicitada',
         });
+        // Atualizar status do veículo para refletir a solicitação de entrega
+        try {
+          const { error: vUpdErr } = await admin
+            .from('vehicles')
+            .update({ status: 'Finalizado: Entrega solicitada' })
+            .eq('id', vehicleId)
+            .eq('client_id', clientId);
+          if (vUpdErr) {
+            logger.warn('vehicle_status_update_failed_on_request', {
+              vehicleId: vehicleId.slice(0, 8),
+              error: vUpdErr.message,
+            });
+          } else {
+            logger.info('vehicle_status_updated_on_request', {
+              vehicleId: vehicleId.slice(0, 8),
+              newStatus: 'Finalizado: Entrega solicitada',
+            });
+          }
+        } catch (e) {
+          logger.warn('vehicle_status_update_exception', { e });
+        }
       }
     } catch (e) {
       logger.warn('vehicle_history_insert_failed', { e });

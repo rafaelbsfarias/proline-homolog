@@ -43,6 +43,9 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
     const [pendingPickupByVehicle, setPendingPickupByVehicle] = useState<Record<string, boolean>>(
       {}
     );
+    const [pendingDeliveryByVehicle, setPendingDeliveryByVehicle] = useState<
+      Record<string, boolean>
+    >({});
     const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
@@ -197,6 +200,7 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
                     addresses={addresses}
                     collectionFee={vehicle.collection_fee ?? undefined}
                     pickupRequested={!!pendingPickupByVehicle[vehicle.id]}
+                    deliveryRequested={!!pendingDeliveryByVehicle[vehicle.id]}
                     onOpenDetails={v => {
                       setSelectedVehicle(v);
                       setShowModal(true);
@@ -281,6 +285,10 @@ const VehicleCounter = forwardRef<VehicleCounterRef, VehicleCounterProps>(
                 // Se for retirada no pátio, desativar localmente o botão para este veículo
                 if (method === 'pickup' && body.vehicleId) {
                   setPendingPickupByVehicle(prev => ({ ...prev, [body.vehicleId]: true }));
+                }
+                // Se for entrega, desativar localmente o botão para este veículo
+                if (method === 'delivery' && body.vehicleId) {
+                  setPendingDeliveryByVehicle(prev => ({ ...prev, [body.vehicleId]: true }));
                 }
               } else {
                 const resp = await post('/api/client/set-vehicles-collection', payload);

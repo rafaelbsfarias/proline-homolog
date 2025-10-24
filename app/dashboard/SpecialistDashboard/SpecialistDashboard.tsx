@@ -12,6 +12,8 @@ import VehicleChecklistModal from '@/modules/specialist/components/VehicleCheckl
 import SpecialistRequestedPartsCounter from '@/modules/specialist/components/SpecialistRequestedPartsCounter';
 import SpecialistTimeApprovalsCounter from '@/modules/specialist/components/SpecialistTimeApprovalsCounter';
 import PendingReviewsCard from '@/modules/specialist/components/PendingReviewsCard';
+import AwaitingPickupCard from '@/modules/specialist/components/AwaitingPickupCard';
+import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
 import { useSpecialistPendingReviews } from '@/modules/specialist/hooks/useSpecialistPendingReviews';
 import { useSpecialistProfile } from '@/modules/specialist/hooks/useSpecialistProfile';
 import ForceChangePasswordModal from '@/modules/common/components/ForceChangePasswordModal/ForceChangePasswordModal';
@@ -20,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import styles from './SpecialistDashboard.module.css';
 
 const SpecialistDashboard = () => {
+  const { get } = useAuthenticatedFetch();
   const { showToast } = useToast();
   const router = useRouter();
   const [userName, setUserName] = useState('');
@@ -45,6 +48,24 @@ const SpecialistDashboard = () => {
 
   const [checklistOpen, setChecklistOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleData | null>(null);
+
+  // Retiradas aguardando (pickup) para o especialista
+  const [awaitingPickup, setAwaitingPickup] = useState<any[]>([]);
+  const [loadingAwaiting, setLoadingAwaiting] = useState(false);
+
+  const refetchAwaitingPickup = async () => {
+    setLoadingAwaiting(true);
+    try {
+      const resp = await get<{ success: boolean; items: any[] }>(
+        '/api/specialist/vehicles-awaiting-pickup'
+      );
+      if (resp.ok && resp.data?.success) {
+        setAwaitingPickup(resp.data.items || []);
+      }
+    } finally {
+      setLoadingAwaiting(false);
+    }
+  };
 
   const handleFilterStatusChange = (newStatus: string[]) => {
     setFilterStatus(newStatus);
@@ -76,13 +97,30 @@ const SpecialistDashboard = () => {
     const s = String(vehicle.status || '').toUpperCase();
     const canConfirm =
       s === VehicleStatus.AGUARDANDO_COLETA || s === VehicleStatus.AGUARDANDO_CHEGADA;
-    if (!canConfirm) return;
+
+    // Detectar status de entrega/retirada
+    const isAwaitingDelivery = vehicle.status?.includes('Finalizado: Aguardando Entrega');
+    const isAwaitingPickup = vehicle.status?.includes('Finalizado: Aguardando Retirada');
+    const isDeliveryPickup = isAwaitingDelivery || isAwaitingPickup;
+
+    if (!canConfirm && !isDeliveryPickup) return;
 
     try {
-      await confirmVehicleArrival(vehicle.id);
-      showToast('success', 'Chegada do veículo confirmada!');
+      if (isDeliveryPickup) {
+        // Chamar API de confirmar entrega/retirada
+        await confirmVehicleDelivery(vehicle.id);
+        const message = isAwaitingDelivery
+          ? 'Entrega do veículo confirmada!'
+          : 'Retirada do veículo confirmada!';
+        showToast('success', message);
+      } else {
+        // Lógica original de confirmar chegada
+        await confirmVehicleArrival(vehicle.id);
+        showToast('success', 'Chegada do veículo confirmada!');
+      }
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Erro ao confirmar chegada');
+      const action = isDeliveryPickup ? 'confirmar entrega/retirada' : 'confirmar chegada';
+      showToast('error', err instanceof Error ? err.message : `Erro ao ${action}`);
     }
   };
 
@@ -120,6 +158,7 @@ const SpecialistDashboard = () => {
     refetch,
     isSubmitting,
     confirmVehicleArrival,
+    confirmVehicleDelivery,
     startVehicleAnalysis,
     // Pagination
     currentPage,
@@ -139,6 +178,10 @@ const SpecialistDashboard = () => {
       }
     }
   }, [profileData]);
+
+  useEffect(() => {
+    refetchAwaitingPickup();
+  }, []);
 
   return (
     <div className={styles.container}>
@@ -211,6 +254,15 @@ const SpecialistDashboard = () => {
                 )}
               </div>
             )}
+          </div>
+
+          {/* Card: Entregas/Retiradas Agendadas — posicionado abaixo, dentro do main */}
+          <div style={{ marginTop: 16 }}>
+            <AwaitingPickupCard
+              items={awaitingPickup}
+              loading={loadingAwaiting}
+              onRefresh={refetchAwaitingPickup}
+            />
           </div>
         </main>
       )}

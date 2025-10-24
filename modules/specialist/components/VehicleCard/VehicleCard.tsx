@@ -72,8 +72,26 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
   const s = String(v.status || '').toUpperCase();
   const isChecklistEnabled =
     s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
+
+  // Detectar status de entrega/retirada
+  const isAwaitingDelivery = v.status?.includes('Finalizado: Aguardando Entrega');
+  const isAwaitingPickup = v.status?.includes('Finalizado: Aguardando Retirada');
+  const isConfirmDeliveryEnabled = isAwaitingDelivery || isAwaitingPickup;
+
   const isConfirmArrivalEnabled =
     s === VehicleStatus.AGUARDANDO_COLETA || s === VehicleStatus.AGUARDANDO_CHEGADA;
+
+  // Determinar texto do botão
+  let confirmButtonText = 'Confirmar chegada';
+  if (isAwaitingDelivery) {
+    confirmButtonText = 'Confirmar entrega';
+  } else if (isAwaitingPickup) {
+    confirmButtonText = 'Confirmar retirada';
+  }
+
+  if (confirming[v.id]) {
+    confirmButtonText = 'Confirmando...';
+  }
 
   const handleNavigateToDetails = () => {
     if (v && v.id) {
@@ -137,10 +155,12 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
             <button
               type="button"
               onClick={() => onConfirmArrival(v)}
-              disabled={!!confirming[v.id] || !isConfirmArrivalEnabled}
+              disabled={
+                !!confirming[v.id] || (!isConfirmArrivalEnabled && !isConfirmDeliveryEnabled)
+              }
               className={`${styles.button} ${styles.confirmArrivalButton}`}
             >
-              {confirming[v.id] ? 'Confirmando...' : 'Confirmar chegada'}
+              {confirmButtonText}
             </button>
           </>
         )}

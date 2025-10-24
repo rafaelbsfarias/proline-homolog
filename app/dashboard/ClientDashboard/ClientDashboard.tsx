@@ -10,6 +10,7 @@ import ForceChangePasswordModal from '@/modules/common/components/ForceChangePas
 import MessageModal from '@/modules/common/components/MessageModal/MessageModal';
 import './ClientDashboard.css';
 import VehicleCollectionSection from '@/modules/client/components/Collection/VehicleCollectionSection/VehicleCollectionSection';
+import VehicleDeliverySection from '@/modules/client/components/VehicleDeliverySection';
 import PendingQuotesCard from '@/modules/client/components/PendingQuotes/PendingQuotesCard';
 import { useAddresses } from '@/modules/client/hooks/useAddresses';
 import ApprovedQuotesCard from '@/modules/client/components/ApprovedQuotes/ApprovedQuotesCard';
@@ -36,12 +37,14 @@ const ClientDashboard: React.FC = () => {
 
   const [vehicleCounterLoading, setVehicleCounterLoading] = useState(true);
   const [collectionSectionLoading, setCollectionSectionLoading] = useState(true);
+  const [deliverySectionLoading, setDeliverySectionLoading] = useState(true);
   const [pendingQuotesLoading, setPendingQuotesLoading] = useState(true);
   const [approvedQuotesLoading, setApprovedQuotesLoading] = useState(true);
 
   const isComponentLoading =
     vehicleCounterLoading ||
     collectionSectionLoading ||
+    deliverySectionLoading ||
     pendingQuotesLoading ||
     approvedQuotesLoading;
 
@@ -137,6 +140,10 @@ const ClientDashboard: React.FC = () => {
 
             <div className="dashboard-counter">
               <VehicleCollectionSection onLoadingChange={setCollectionSectionLoading} />
+            </div>
+
+            <div className="dashboard-counter">
+              <VehicleDeliverySection onLoadingChange={setDeliverySectionLoading} />
             </div>
 
             <div className="dashboard-counter">

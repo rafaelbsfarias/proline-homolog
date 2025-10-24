@@ -25,6 +25,7 @@ interface UseClientVehiclesResult {
   isSubmitting: Record<string, boolean>;
   refetch: () => void;
   confirmVehicleArrival: (vehicleId: string) => Promise<void>;
+  confirmVehicleDelivery: (vehicleId: string) => Promise<void>;
   startVehicleAnalysis: (vehicleId: string) => Promise<void>;
   // Pagination state and handlers
   currentPage: number;
@@ -70,6 +71,25 @@ export const useClientVehicles = (
         updateVehicleStatus(vehicleId, VehicleStatus.CHEGADA_CONFIRMADA);
       } else {
         throw new Error(response.data?.error || 'Falha ao confirmar chegada');
+      }
+    } finally {
+      setIsSubmitting(prev => ({ ...prev, [vehicleId]: false }));
+    }
+  };
+
+  const confirmVehicleDelivery = async (vehicleId: string) => {
+    setIsSubmitting(prev => ({ ...prev, [vehicleId]: true }));
+    try {
+      const response = await post<{ success: boolean; error?: string }>(
+        '/api/specialist/confirm-delivery',
+        { vehicleId }
+      );
+      if (response.ok) {
+        // Status final após entrega/retirada
+        updateVehicleStatus(vehicleId, 'Veículo Entregue');
+        refetch(); // Recarregar lista
+      } else {
+        throw new Error(response.data?.error || 'Falha ao confirmar entrega/retirada');
       }
     } finally {
       setIsSubmitting(prev => ({ ...prev, [vehicleId]: false }));
@@ -159,6 +179,7 @@ export const useClientVehicles = (
     refetch,
     isSubmitting,
     confirmVehicleArrival,
+    confirmVehicleDelivery,
     startVehicleAnalysis,
     // Pagination
     currentPage,

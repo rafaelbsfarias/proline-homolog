@@ -8,15 +8,15 @@ import { SupabaseVehicleRepository } from '@/modules/delivery/infra/SupabaseVehi
 import { SupabaseTimelineWriter } from '@/modules/delivery/infra/SupabaseTimelineWriter';
 import { DevNotificationPort } from '@/modules/delivery/infra/DevNotificationPort';
 
-const logger = getLogger('api:admin:accept-vehicle-pickup-date');
+const logger = getLogger('api:admin:accept-vehicle-delivery-date');
 
 export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
   try {
     const body = await req.json();
-    const { clientId, vehicleId, requestId } = body || {};
+    const { requestId } = body || {};
 
-    if (!requestId && (!clientId || !vehicleId)) {
-      return NextResponse.json({ error: 'clientId e vehicleId são obrigatórios' }, { status: 400 });
+    if (!requestId) {
+      return NextResponse.json({ error: 'requestId é obrigatório' }, { status: 400 });
     }
 
     const admin = SupabaseService.getInstance().getAdminClient();
@@ -28,9 +28,11 @@ export const POST = withAdminAuth(async (req: AuthenticatedRequest) => {
       new DevNotificationPort()
     );
 
-    const result = requestId
-      ? await service.approvePickupByRequestId({ requestId, actorId: req.user.id })
-      : await service.approvePickup({ clientId, vehicleId, actorId: req.user.id });
+    const result = await service.approveDeliveryByRequestId({
+      requestId,
+      actorId: req.user.id,
+    });
+
     return NextResponse.json({ success: true, requestId: result.requestId });
   } catch (e: any) {
     logger.error('unexpected_error', { e: e?.message || e });

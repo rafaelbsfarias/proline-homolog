@@ -44,26 +44,6 @@ const BudgetActions: React.FC<BudgetActionsProps> = ({
       >
         {isSaving ? 'Salvando...' : mode === 'edit' ? 'Atualizar Orçamento' : 'Salvar Orçamento'}
       </button>
-
-      <button
-        onClick={onClear}
-        disabled={isSaving}
-        style={{
-          width: '100%',
-          padding: '12px 24px',
-          backgroundColor: 'transparent',
-          color: '#666',
-          border: '2px solid #ddd',
-          borderRadius: '8px',
-          fontSize: '14px',
-          fontWeight: '500',
-          cursor: isSaving ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s',
-          opacity: isSaving ? 0.6 : 1,
-        }}
-      >
-        Limpar Orçamento
-      </button>
     </div>
   );
 };

@@ -18,5 +18,6 @@ Arquivos
  - 13-migracoes-sql-draft.sql — Script SQL rascunho (não executar)
  - 14-rls-policies.md — Diretrizes de RLS e exemplos de policies
  - 15-plano-de-testes.md — Plano de testes (cliente, admin, integrações)
+ - feature-pickup-delivery-spec.md — Especificação final da feature (DDD/DRY/KISS/SOLID), pendências e modelagem
 
 Observação: este é um estudo/planejamento. Não há implementação nem migrações de banco nesta etapa.
