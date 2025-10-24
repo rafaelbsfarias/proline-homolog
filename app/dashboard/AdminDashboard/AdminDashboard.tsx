@@ -108,6 +108,7 @@ const AdminDashboard: React.FC = () => {
       >
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
           <div className={styles.countersRow}>
+            <GeneralFinancialSummaryButton />
             <PendingChecklistAnalysisCounter />
             <PendingRegistrationsCounter onLoadingChange={setPendingRegLoading} />
             <PendingQuotesCounter onLoadingChange={setPendingRegLoading} />
@@ -115,7 +116,6 @@ const AdminDashboard: React.FC = () => {
             <VehiclesPendingApprovalCounter onLoadingChange={setVehiclesCounterLoading} />
             <UsersCounter onLoadingChange={setUsersCounterLoading} />
             <VehiclesCounter onLoadingChange={setVehiclesCounterLoading} />
-            <GeneralFinancialSummaryButton />
           </div>
         </div>
       </div>

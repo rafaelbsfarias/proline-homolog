@@ -74,8 +74,8 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
     s === VehicleStatus.CHEGADA_CONFIRMADA || s === VehicleStatus.EM_ANALISE;
 
   // Detectar status de entrega/retirada
-  const isAwaitingDelivery = v.status?.includes('Finalizado: Aguardando Entrega');
-  const isAwaitingPickup = v.status?.includes('Finalizado: Aguardando Retirada');
+  const isAwaitingDelivery = v.status?.includes('FINALIZADO: AGUARDANDO ENTREGA');
+  const isAwaitingPickup = v.status?.includes('FINALIZADO: AGUARDANDO RETIRADA');
   const isConfirmDeliveryEnabled = isAwaitingDelivery || isAwaitingPickup;
 
   const isConfirmArrivalEnabled =

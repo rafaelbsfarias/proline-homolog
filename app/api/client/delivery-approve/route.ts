@@ -103,7 +103,7 @@ export const POST = withClientAuth(async (req: AuthenticatedRequest) => {
     // Atualizar status do veículo
     await admin
       .from('vehicles')
-      .update({ status: 'Finalizado: Aguardando Entrega' })
+      .update({ status: 'FINALIZADO: AGUARDANDO ENTREGA' })
       .eq('id', deliveryRequest.vehicle_id);
 
     logger.info('delivery-approved-by-client', {

@@ -22,11 +22,10 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
     if (error) throw error;
     const set = new Set<string>();
     (data || []).forEach((r: { status?: string }) => {
-      const s = String(r?.status || '')
-        .toUpperCase()
-        .trim();
+      const s = String(r?.status || '').trim();
       if (s) set.add(s);
     });
+    // Preserve original casing; sort lexicographically for stable UI
     return NextResponse.json({ success: true, statuses: Array.from(set).sort() });
   } catch (e: unknown) {
     const err = e as Error;

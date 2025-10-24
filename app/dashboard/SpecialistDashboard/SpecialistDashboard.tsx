@@ -99,8 +99,8 @@ const SpecialistDashboard = () => {
       s === VehicleStatus.AGUARDANDO_COLETA || s === VehicleStatus.AGUARDANDO_CHEGADA;
 
     // Detectar status de entrega/retirada
-    const isAwaitingDelivery = vehicle.status?.includes('Finalizado: Aguardando Entrega');
-    const isAwaitingPickup = vehicle.status?.includes('Finalizado: Aguardando Retirada');
+    const isAwaitingDelivery = vehicle.status?.includes('FINALIZADO: AGUARDANDO ENTREGA');
+    const isAwaitingPickup = vehicle.status?.includes('FINALIZADO: AGUARDANDO RETIRADA');
     const isDeliveryPickup = isAwaitingDelivery || isAwaitingPickup;
 
     if (!canConfirm && !isDeliveryPickup) return;
