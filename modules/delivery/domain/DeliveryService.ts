@@ -159,7 +159,7 @@ export class DeliveryService {
       statusFrom: req.status,
       statusTo: DeliveryStatus.InTransit,
       actorId,
-      actorRole: 'specialist',
+      actorRole: 'partner',
       notes: null,
     });
 
@@ -178,12 +178,13 @@ export class DeliveryService {
       statusFrom: req.status,
       statusTo: DeliveryStatus.Delivered,
       actorId,
-      actorRole: 'specialist',
+      actorRole: 'partner',
       notes: null,
     });
 
-    const status = req.address_id ? 'Veículo Entregue' : 'Veículo Retirado';
+    const status = req.address_id ? 'Entregue ao Cliente' : 'Veículo Retirado';
     await this.timeline.append(req.vehicle_id, status, null);
+    await this.vehicles.setStatus(req.vehicle_id, status);
   }
 
   async proposePickupNewDate(params: {

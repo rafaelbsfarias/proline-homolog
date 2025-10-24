@@ -86,7 +86,7 @@ export const useClientVehicles = (
       );
       if (response.ok) {
         // Status final após entrega/retirada
-        updateVehicleStatus(vehicleId, 'Veículo Entregue');
+        updateVehicleStatus(vehicleId, 'Entregue ao Cliente');
         refetch(); // Recarregar lista
       } else {
         throw new Error(response.data?.error || 'Falha ao confirmar entrega/retirada');

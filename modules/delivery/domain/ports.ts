@@ -19,7 +19,7 @@ export interface DeliveryRequestRepository {
     statusFrom: string | null;
     statusTo: string;
     actorId: UUID;
-    actorRole: 'admin' | 'client' | 'specialist';
+    actorRole: 'admin' | 'client' | 'specialist' | 'partner' | 'system';
     notes?: string | null;
   }): Promise<void>;
   proposePickupDate(requestId: UUID, newDateIso: ISODate, actorId: UUID): Promise<void>;
