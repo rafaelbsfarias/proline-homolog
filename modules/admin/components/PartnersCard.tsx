@@ -24,7 +24,7 @@ const PartnersCard: React.FC<PartnersCardProps> = ({ onLoadingChange }) => {
   const [partners, setPartners] = React.useState<PartnerData[]>([]);
   const [query, setQuery] = React.useState<string>('');
   const [filter, setFilter] = React.useState<'all' | 'pending' | 'executing' | 'approval'>('all');
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   React.useEffect(() => {
     let isMounted = true;

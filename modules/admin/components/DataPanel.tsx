@@ -25,7 +25,7 @@ const DataPanel: React.FC<DataPanelProps> = ({ onLoadingChange }) => {
   const [clients, setClients] = useState<ClientVehicleCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [specialistModalOpen, setSpecialistModalOpen] = useState(false);
   const [selectedClientForSpecialistModal, setSelectedClientForSpecialistModal] = useState<{
     id: string;

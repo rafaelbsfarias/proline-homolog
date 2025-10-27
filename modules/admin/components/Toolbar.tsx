@@ -21,7 +21,7 @@ const Toolbar: React.FC = () => {
   };
   return (
     <section className={styles.toolbarSection}>
-      <h3 className={styles.panelTitle}>Painel de Gestão ProLine</h3>
+      <h3 className={styles.panelTitle}></h3>
       <div className={styles.actionButtonsContainer}>
         <button className={styles.btnVehicle} onClick={() => setShowVehicleModal(true)}>
           <span className={styles.iconWrapper}>
