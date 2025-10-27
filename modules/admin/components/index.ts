@@ -14,3 +14,5 @@ export { default as PendingDelegationsList } from './PendingDelegationsList/Pend
 export { default as PendingChecklistAnalysisCounter } from './PendingDelegationsCounter';
 export { default as RequestedPartsCounter } from './RequestedPartsCounter';
 export { default as GeneralFinancialSummaryButton } from './GeneralFinancialSummaryButton';
+export { default as PreparationVehiclesCounter } from './PreparationVehiclesCounter';
+export { default as CommercializationVehiclesCounter } from './CommercializationVehiclesCounter';

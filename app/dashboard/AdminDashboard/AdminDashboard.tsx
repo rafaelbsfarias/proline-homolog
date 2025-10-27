@@ -11,6 +11,8 @@ import {
   PendingChecklistAnalysisCounter,
   RequestedPartsCounter, // Add the new component
   GeneralFinancialSummaryButton,
+  PreparationVehiclesCounter,
+  CommercializationVehiclesCounter,
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
@@ -72,12 +74,12 @@ const AdminDashboard: React.FC = () => {
           visibility: showOverallLoader ? 'hidden' : 'visible',
           background: '#F0F2F5',
           width: '100%',
-          padding: '32px 0 0 0',
-          minHeight: 80,
+          padding: '10px 0 0 0',
+          minHeight: 10,
         }}
       >
         <div className={styles.welcomeContainer}>
-          <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#222', marginBottom: '4px' }}>
+          <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#222', marginBottom: '10px' }}>
             Bem-vindo,{' '}
             <span style={{ color: '#072e4c', fontWeight: 600 }}>{(user as any)?.name || ''}</span>
           </div>
@@ -116,6 +118,8 @@ const AdminDashboard: React.FC = () => {
             <VehiclesPendingApprovalCounter onLoadingChange={setVehiclesCounterLoading} />
             <UsersCounter onLoadingChange={setUsersCounterLoading} />
             <VehiclesCounter onLoadingChange={setVehiclesCounterLoading} />
+            <PreparationVehiclesCounter />
+            <CommercializationVehiclesCounter />
           </div>
         </div>
       </div>
