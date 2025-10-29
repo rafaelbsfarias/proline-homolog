@@ -1,0 +1,209 @@
+```mermaid
+graph TB
+    %% ========================================
+    %% CURRENT ARCHITECTURE (Problematic)
+    %% ========================================
+    
+    subgraph Current["🔴 CURRENT ARCHITECTURE - Problematic"]
+        direction TB
+        
+        subgraph CurrentPresentation["Presentation Layer"]
+            CurrentDashboard["AdminDashboard.tsx<br/>142 LOC, 5 responsibilities"]
+            CurrentDataPanel["DataPanel.tsx<br/>235 LOC, 6 responsibilities"]
+            CurrentPartnersCard["PartnersCard.tsx<br/>220 LOC, 5 responsibilities"]
+            CurrentToolbar["Toolbar.tsx<br/>Manages 4 modals internally"]
+            CurrentCounters["Counters<br/>Duplicated code pattern"]
+        end
+        
+        subgraph CurrentHooks["Hooks (Mixed Concerns)"]
+            CurrentUseAdminVehicles["useAdminVehicles<br/>Data fetching + state"]
+        end
+        
+        subgraph CurrentServices["Services (Tight Coupling)"]
+            CurrentAdminService["AdminService<br/>Directly uses SupabaseService"]
+            CurrentSupabaseService["SupabaseService<br/>Infrastructure concern"]
+        end
+        
+        CurrentDashboard -->|7 callbacks| CurrentDataPanel
+        CurrentDashboard -->|direct fetch| CurrentAdminService
+        CurrentDataPanel -->|direct fetch| CurrentAdminService
+        CurrentPartnersCard -->|direct fetch| CurrentAdminService
+        CurrentCounters -->|direct fetch| CurrentAdminService
+        CurrentAdminService -->|tight coupling| CurrentSupabaseService
+        CurrentUseAdminVehicles -->|direct fetch| CurrentAdminService
+        
+        CurrentProblems["❌ PROBLEMS:<br/>• No domain layer<br/>• Tight coupling<br/>• Duplicated code (1200 LOC)<br/>• Mixed concerns<br/>• Hard to test<br/>• 7 loading states"]
+    end
+    
+    style Current fill:#ffebee
+    style CurrentProblems fill:#c62828,color:#fff
+    
+    %% ========================================
+    %% PROPOSED ARCHITECTURE (Clean Architecture + DDD)
+    %% ========================================
+    
+    subgraph Proposed["🟢 PROPOSED ARCHITECTURE - Clean Architecture + DDD"]
+        direction TB
+        
+        subgraph PresentationLayer["📱 Presentation Layer (React Components)"]
+            direction TB
+            
+            subgraph Pages["Pages (Containers)"]
+                AdminDashboardPage["AdminDashboard<br/>Composition only<br/>~60 LOC"]
+            end
+            
+            subgraph Components["Components (UI)"]
+                DashboardStats["DashboardStats<br/>Renders stats"]
+                VehiclesTable["VehiclesTable<br/>Renders vehicles"]
+                BaseCounter["BaseCounter<br/>Reusable counter"]
+                CollapsibleCard["CollapsibleCard<br/>Reusable card"]
+                Modal["Modal<br/>Reusable modal"]
+            end
+            
+            subgraph Hooks["Hooks (State Management)"]
+                UseLoadingOrchestrator["useLoadingOrchestrator<br/>Centralized loading"]
+                UseModalManager["useModalManager<br/>Centralized modals"]
+                UseDashboardStats["useDashboardStats<br/>Stats hook"]
+                UseVehicles["useVehicles<br/>Vehicles hook"]
+            end
+        end
+        
+        subgraph ApplicationLayer["🎯 Application Layer (Use Cases)"]
+            direction TB
+            
+            GetDashboardStatsUC["GetDashboardStatsUseCase<br/>Aggregates all counts"]
+            CreateUserUC["CreateUserUseCase<br/>User creation logic"]
+            AssignSpecialistUC["AssignSpecialistUseCase<br/>Assignment logic"]
+            UpdateVehicleStatusUC["UpdateVehicleStatusUseCase<br/>Status update logic"]
+            ListVehiclesUC["ListVehiclesUseCase<br/>Vehicle listing logic"]
+        end
+        
+        subgraph DomainLayer["💎 Domain Layer (Business Logic)"]
+            direction TB
+            
+            subgraph Entities["Entities"]
+                UserEntity["User<br/>Business rules"]
+                ClientEntity["Client<br/>Business rules"]
+                VehicleEntity["Vehicle<br/>Business rules"]
+            end
+            
+            subgraph ValueObjects["Value Objects"]
+                Email["Email<br/>Validation"]
+                CPF["CPF<br/>Validation"]
+                Plate["Plate<br/>Validation"]
+            end
+            
+            subgraph RepositoryInterfaces["Repository Interfaces"]
+                IUserRepo["IUserRepository"]
+                IClientRepo["IClientRepository"]
+                IVehicleRepo["IVehicleRepository"]
+            end
+        end
+        
+        subgraph InfrastructureLayer["🔧 Infrastructure Layer (External Concerns)"]
+            direction TB
+            
+            subgraph RepositoryImpl["Repository Implementations"]
+                SupabaseUserRepo["SupabaseUserRepository<br/>Implements IUserRepository"]
+                SupabaseClientRepo["SupabaseClientRepository<br/>Implements IClientRepository"]
+                SupabaseVehicleRepo["SupabaseVehicleRepository<br/>Implements IVehicleRepository"]
+            end
+            
+            subgraph Mappers["Mappers"]
+                UserMapper["UserMapper<br/>Domain ↔ Persistence"]
+                ClientMapper["ClientMapper<br/>Domain ↔ Persistence"]
+                VehicleMapper["VehicleMapper<br/>Domain ↔ Persistence"]
+            end
+            
+            subgraph External["External Services"]
+                SupabaseClient["Supabase Client"]
+                EmailService["Email Service"]
+            end
+        end
+        
+        subgraph DI["🔌 Dependency Injection"]
+            DIContainer["DI Container<br/>Wires dependencies"]
+        end
+        
+        %% Presentation → Application
+        AdminDashboardPage -->|uses| UseLoadingOrchestrator
+        AdminDashboardPage -->|uses| UseModalManager
+        AdminDashboardPage -->|composes| DashboardStats
+        AdminDashboardPage -->|composes| VehiclesTable
+        
+        DashboardStats -->|uses| UseDashboardStats
+        VehiclesTable -->|uses| UseVehicles
+        
+        UseDashboardStats -->|executes| GetDashboardStatsUC
+        UseVehicles -->|executes| ListVehiclesUC
+        UseModalManager -->|executes| CreateUserUC
+        UseModalManager -->|executes| AssignSpecialistUC
+        
+        %% Application → Domain (depends on interfaces)
+        GetDashboardStatsUC -->|depends on| IUserRepo
+        GetDashboardStatsUC -->|depends on| IClientRepo
+        GetDashboardStatsUC -->|depends on| IVehicleRepo
+        
+        CreateUserUC -->|depends on| IUserRepo
+        CreateUserUC -->|uses| UserEntity
+        CreateUserUC -->|uses| Email
+        
+        AssignSpecialistUC -->|depends on| IClientRepo
+        AssignSpecialistUC -->|uses| ClientEntity
+        
+        UpdateVehicleStatusUC -->|depends on| IVehicleRepo
+        UpdateVehicleStatusUC -->|uses| VehicleEntity
+        
+        ListVehiclesUC -->|depends on| IVehicleRepo
+        
+        %% Domain defines interfaces
+        UserEntity -.->|defines contract| IUserRepo
+        ClientEntity -.->|defines contract| IClientRepo
+        VehicleEntity -.->|defines contract| IVehicleRepo
+        
+        %% Infrastructure implements interfaces
+        IUserRepo <|..|implements| SupabaseUserRepo
+        IClientRepo <|..|implements| SupabaseClientRepo
+        IVehicleRepo <|..|implements| SupabaseVehicleRepo
+        
+        %% Repositories use mappers
+        SupabaseUserRepo -->|uses| UserMapper
+        SupabaseClientRepo -->|uses| ClientMapper
+        SupabaseVehicleRepo -->|uses| VehicleMapper
+        
+        %% Infrastructure → External
+        SupabaseUserRepo -->|uses| SupabaseClient
+        SupabaseClientRepo -->|uses| SupabaseClient
+        SupabaseVehicleRepo -->|uses| SupabaseClient
+        CreateUserUC -.->|uses| EmailService
+        
+        %% DI wires everything
+        DIContainer -.->|provides| SupabaseUserRepo
+        DIContainer -.->|provides| SupabaseClientRepo
+        DIContainer -.->|provides| SupabaseVehicleRepo
+        DIContainer -.->|provides| GetDashboardStatsUC
+        DIContainer -.->|provides| CreateUserUC
+        DIContainer -.->|provides| SupabaseClient
+        
+        ProposedBenefits["✅ BENEFITS:<br/>• Clear separation of concerns<br/>• Domain-driven design<br/>• Dependency inversion<br/>• Easy to test (mock repos)<br/>• Reusable components<br/>• Single loading orchestrator<br/>• 60% code reduction"]
+    end
+    
+    style Proposed fill:#e8f5e9
+    style PresentationLayer fill:#bbdefb
+    style ApplicationLayer fill:#c5cae9
+    style DomainLayer fill:#fff9c4
+    style InfrastructureLayer fill:#d7ccc8
+    style DI fill:#b2dfdb
+    style ProposedBenefits fill:#2e7d32,color:#fff
+    
+    %% Legend
+    subgraph Legend["📖 LEGEND"]
+        direction LR
+        L1["Solid Line = Direct Dependency"]
+        L2["Dashed Line = Interface/Contract"]
+        L3["Red = Current Problems"]
+        L4["Green = Proposed Solution"]
+    end
+    
+    style Legend fill:#f5f5f5
+```

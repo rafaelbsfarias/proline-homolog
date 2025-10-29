@@ -1,0 +1,140 @@
+```mermaid
+graph TB
+    %% ========================================
+    %% COMPONENT COMPOSITION - CURRENT
+    %% ========================================
+    
+    subgraph Current["🔴 CURRENT - Monolithic Components"]
+        direction TB
+        
+        CurrentDashboard["AdminDashboard.tsx<br/>142 LOC<br/>❌ 5 responsibilities:<br/>• Layout<br/>• State management<br/>• Data fetching<br/>• Modal management<br/>• Error handling"]
+        
+        CurrentDataPanel["DataPanel.tsx<br/>235 LOC<br/>❌ 6 responsibilities:<br/>• Rendering<br/>• Collapse state<br/>• Data fetching<br/>• Loading state<br/>• Error handling<br/>• Child coordination"]
+        
+        CurrentCounters["Counters (4 components)<br/>~80 LOC each<br/>❌ Duplicated pattern:<br/>• UsersCounter<br/>• PendingRegistrationsCounter<br/>• ClientsCounter<br/>• PartnersCounter"]
+        
+        CurrentDashboard -->|monolithic| CurrentDataPanel
+        CurrentDashboard -->|duplicated| CurrentCounters
+        
+        CurrentProblems["❌ PROBLEMS:<br/>• Tight coupling<br/>• Hard to test<br/>• Hard to reuse<br/>• Duplicated code<br/>• Mixed concerns"]
+    end
+    
+    style Current fill:#ffebee
+    style CurrentProblems fill:#c62828,color:#fff
+    
+    %% ========================================
+    %% COMPONENT COMPOSITION - PROPOSED
+    %% ========================================
+    
+    subgraph Proposed["🟢 PROPOSED - Composition Pattern"]
+        direction TB
+        
+        subgraph Container["Container (Page)"]
+            AdminDashboard["AdminDashboard.tsx<br/>~60 LOC<br/>✅ Single responsibility:<br/>• Composition only"]
+        end
+        
+        subgraph SmartComponents["Smart Components (Connected)"]
+            DashboardStats["DashboardStats.tsx<br/>~40 LOC<br/>✅ Responsibilities:<br/>• Use useDashboardStats hook<br/>• Render BaseCounter components"]
+            
+            VehiclesTable["VehiclesTable.tsx<br/>~50 LOC<br/>✅ Responsibilities:<br/>• Use useVehicles hook<br/>• Render VehicleRow components"]
+            
+            PartnersCard["PartnersCard.tsx<br/>~50 LOC<br/>✅ Responsibilities:<br/>• Use usePartners hook<br/>• Render PartnersList"]
+        end
+        
+        subgraph DumbComponents["Dumb Components (Presentational)"]
+            BaseCounter["BaseCounter.tsx<br/>~30 LOC<br/>✅ Props:<br/>• title: string<br/>• value: number<br/>• icon?: ReactNode<br/>• loading?: boolean<br/>• error?: string<br/>• onClick?: () => void"]
+            
+            CollapsibleCard["CollapsibleCard.tsx<br/>~40 LOC<br/>✅ Props:<br/>• title: string<br/>• children: ReactNode<br/>• defaultOpen?: boolean<br/>• actions?: ReactNode"]
+            
+            Modal["Modal.tsx<br/>~35 LOC<br/>✅ Props:<br/>• isOpen: boolean<br/>• onClose: () => void<br/>• title: string<br/>• children: ReactNode"]
+            
+            VehicleRow["VehicleRow.tsx<br/>~25 LOC<br/>✅ Props:<br/>• vehicle: VehicleDTO<br/>• onStatusChange?: (id, status) => void"]
+            
+            PartnersList["PartnersList.tsx<br/>~30 LOC<br/>✅ Props:<br/>• partners: PartnerDTO[]<br/>• onSelect?: (id) => void"]
+        end
+        
+        subgraph CustomHooks["Custom Hooks (State Logic)"]
+            UseDashboardStats["useDashboardStats()<br/>~25 LOC<br/>✅ Returns:<br/>• stats: DashboardStatsDTO<br/>• loading: boolean<br/>• error: Error | null<br/>• refetch: () => void"]
+            
+            UseVehicles["useVehicles()<br/>~30 LOC<br/>✅ Returns:<br/>• vehicles: VehicleDTO[]<br/>• loading: boolean<br/>• error: Error | null<br/>• updateStatus: (id, status) => void"]
+            
+            UsePartners["usePartners()<br/>~25 LOC<br/>✅ Returns:<br/>• partners: PartnerDTO[]<br/>• loading: boolean<br/>• error: Error | null<br/>• refetch: () => void"]
+            
+            UseLoadingOrchestrator["useLoadingOrchestrator()<br/>~40 LOC<br/>✅ Returns:<br/>• isLoading: boolean<br/>• register: (key, fn) => void<br/>• unregister: (key) => void<br/>• executeAll: () => void"]
+            
+            UseModalManager["useModalManager()<br/>~35 LOC<br/>✅ Returns:<br/>• activeModal: string | null<br/>• open: (modalId) => void<br/>• close: () => void"]
+        end
+        
+        %% Composition flow
+        AdminDashboard -->|composes| DashboardStats
+        AdminDashboard -->|composes| VehiclesTable
+        AdminDashboard -->|composes| PartnersCard
+        AdminDashboard -->|uses| UseLoadingOrchestrator
+        AdminDashboard -->|uses| UseModalManager
+        
+        DashboardStats -->|uses| UseDashboardStats
+        DashboardStats -->|renders 4x| BaseCounter
+        
+        VehiclesTable -->|uses| UseVehicles
+        VehiclesTable -->|wraps with| CollapsibleCard
+        VehiclesTable -->|renders many| VehicleRow
+        
+        PartnersCard -->|uses| UsePartners
+        PartnersCard -->|wraps with| CollapsibleCard
+        PartnersCard -->|renders| PartnersList
+        
+        UseModalManager -->|controls| Modal
+        
+        ProposedBenefits["✅ BENEFITS:<br/>• Loose coupling<br/>• Easy to test<br/>• Highly reusable<br/>• No duplication<br/>• Clear separation<br/>• Small components<br/>• Single responsibility"]
+    end
+    
+    style Proposed fill:#e8f5e9
+    style Container fill:#fff9c4
+    style SmartComponents fill:#c5cae9
+    style DumbComponents fill:#bbdefb
+    style CustomHooks fill:#b2dfdb
+    style ProposedBenefits fill:#2e7d32,color:#fff
+    
+    %% ========================================
+    %% REUSABILITY DIAGRAM
+    %% ========================================
+    
+    subgraph Reusability["♻️ COMPONENT REUSABILITY"]
+        direction LR
+        
+        BaseCounterReuse["BaseCounter<br/>Can be used for:<br/>• Total Users<br/>• Pending Users<br/>• Total Clients<br/>• Total Partners<br/>• Total Vehicles<br/>• ANY counter!"]
+        
+        CollapsibleCardReuse["CollapsibleCard<br/>Can be used for:<br/>• Vehicles section<br/>• Partners section<br/>• Users section<br/>• ANY collapsible content!"]
+        
+        ModalReuse["Modal<br/>Can be used for:<br/>• Create User<br/>• Assign Specialist<br/>• Delete confirmation<br/>• ANY modal!"]
+        
+        BaseCounterReuse -.->|eliminates| DuplicatedCounters["4 duplicated counter components"]
+        CollapsibleCardReuse -.->|eliminates| DuplicatedCards["3 duplicated card implementations"]
+        ModalReuse -.->|eliminates| DuplicatedModals["Internal modal management in Toolbar"]
+    end
+    
+    style Reusability fill:#f3e5f5
+    style DuplicatedCounters fill:#c62828,color:#fff
+    style DuplicatedCards fill:#c62828,color:#fff
+    style DuplicatedModals fill:#c62828,color:#fff
+    
+    %% ========================================
+    %% METRICS
+    %% ========================================
+    
+    subgraph Metrics["📊 METRICS COMPARISON"]
+        direction TB
+        
+        MetricsCurrent["CURRENT:<br/>• AdminDashboard: 142 LOC<br/>• DataPanel: 235 LOC<br/>• 4 Counters: 320 LOC<br/>• Total: ~700 LOC"]
+        
+        MetricsProposed["PROPOSED:<br/>• AdminDashboard: 60 LOC<br/>• DashboardStats: 40 LOC<br/>• BaseCounter: 30 LOC<br/>• CollapsibleCard: 40 LOC<br/>• 3 hooks: 80 LOC<br/>• Total: ~250 LOC"]
+        
+        MetricsReduction["REDUCTION:<br/>64% less code!<br/>~450 LOC eliminated"]
+        
+        MetricsCurrent -.-> MetricsReduction
+        MetricsProposed -.-> MetricsReduction
+    end
+    
+    style Metrics fill:#e0f2f1
+    style MetricsReduction fill:#00897b,color:#fff
+```

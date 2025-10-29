@@ -1,0 +1,129 @@
+```mermaid
+sequenceDiagram
+    %% ========================================
+    %% PROPOSED APPROACH - Centralized Modal Manager
+    %% ========================================
+    
+    participant User
+    participant AdminDashboard
+    participant UseModalManager
+    participant UseDashboardStats
+    participant Toolbar
+    participant Modal
+    participant CreateUserModal
+    participant CreateUserUC
+    participant IUserRepo
+    participant Supabase
+    participant DashboardStats
+    
+    autonumber
+    
+    User->>AdminDashboard: Opens dashboard
+    activate AdminDashboard
+    
+    Note over AdminDashboard: ✅ SOLUTION: Centralized modal state
+    AdminDashboard->>UseModalManager: useModalManager()
+    activate UseModalManager
+    UseModalManager->>UseModalManager: useState({ activeModal: null, modalData: {} })
+    UseModalManager-->>AdminDashboard: { activeModal, open, close }
+    deactivate UseModalManager
+    
+    AdminDashboard->>UseDashboardStats: useDashboardStats()
+    activate UseDashboardStats
+    UseDashboardStats-->>AdminDashboard: { stats, loading, refetch }
+    deactivate UseDashboardStats
+    
+    AdminDashboard->>Toolbar: <Toolbar onCreateUser={() => modalManager.open('createUser')} />
+    activate Toolbar
+    Toolbar-->>User: Display toolbar buttons
+    deactivate Toolbar
+    
+    User->>Toolbar: Clicks "Create User"
+    activate Toolbar
+    Toolbar->>UseModalManager: open('createUser')
+    activate UseModalManager
+    UseModalManager->>UseModalManager: setState({ activeModal: 'createUser', modalData: {} })
+    UseModalManager-->>AdminDashboard: Update state
+    deactivate UseModalManager
+    deactivate Toolbar
+    
+    AdminDashboard->>Modal: <Modal isOpen={activeModal === 'createUser'}>
+    activate Modal
+    Modal->>CreateUserModal: Render modal content
+    activate CreateUserModal
+    CreateUserModal-->>User: Display modal
+    deactivate CreateUserModal
+    deactivate Modal
+    
+    User->>CreateUserModal: Fills form and submits
+    activate CreateUserModal
+    
+    CreateUserModal->>CreateUserModal: Validate form
+    CreateUserModal->>CreateUserUC: execute({ name, email, role })
+    activate CreateUserUC
+    
+    Note over CreateUserUC: Use Case orchestrates business logic
+    
+    CreateUserUC->>CreateUserUC: Validate request
+    CreateUserUC->>IUserRepo: findByEmail(email)
+    activate IUserRepo
+    IUserRepo->>Supabase: SELECT * FROM user_profiles WHERE email = ?
+    activate Supabase
+    Supabase-->>IUserRepo: null (not found)
+    deactivate Supabase
+    IUserRepo-->>CreateUserUC: Result.ok(null)
+    deactivate IUserRepo
+    
+    CreateUserUC->>CreateUserUC: Create User entity
+    CreateUserUC->>IUserRepo: save(user)
+    activate IUserRepo
+    IUserRepo->>Supabase: INSERT INTO user_profiles (...)
+    activate Supabase
+    Supabase-->>IUserRepo: { id: 'user-123', ... }
+    deactivate Supabase
+    IUserRepo-->>CreateUserUC: Result.ok(user)
+    deactivate IUserRepo
+    
+    CreateUserUC-->>CreateUserModal: Result.ok(UserDTO)
+    deactivate CreateUserUC
+    
+    Note over CreateUserModal: ✅ Success: Trigger automatic refresh
+    
+    CreateUserModal->>UseModalManager: close()
+    activate UseModalManager
+    UseModalManager->>UseModalManager: setState({ activeModal: null, modalData: {} })
+    UseModalManager-->>AdminDashboard: Update state
+    deactivate UseModalManager
+    
+    CreateUserModal->>UseDashboardStats: refetch()
+    activate UseDashboardStats
+    
+    Note over UseDashboardStats: ✅ Automatic refresh after modal closes
+    
+    UseDashboardStats->>GetDashboardStatsUC: execute()
+    Note over GetDashboardStatsUC: Fetch updated counts
+    GetDashboardStatsUC-->>UseDashboardStats: Result.ok(updatedStats)
+    UseDashboardStats-->>AdminDashboard: { stats: updatedStats, loading: false }
+    deactivate UseDashboardStats
+    
+    CreateUserModal-->>User: Success message
+    deactivate CreateUserModal
+    
+    AdminDashboard->>DashboardStats: <DashboardStats stats={updatedStats} />
+    activate DashboardStats
+    
+    Note over DashboardStats: ✅ Dashboard automatically updates with new count
+    
+    DashboardStats-->>User: Display updated stats (151 users now)
+    deactivate DashboardStats
+    
+    deactivate AdminDashboard
+    
+    rect rgb(200, 255, 200)
+        Note over UseModalManager: Proposed Benefits:<br/>• Single source of truth for modal state<br/>• Type-safe modal IDs<br/>• Automatic data refresh after actions<br/>• Loose coupling<br/>• Easy to test<br/>• No manual refresh needed
+    end
+    
+    rect rgb(200, 200, 255)
+        Note over CreateUserUC: Use Case Benefits:<br/>• Encapsulated business logic<br/>• Repository pattern (testable)<br/>• Type-safe Result type<br/>• Validation centralized<br/>• Reusable across UI components
+    end
+```

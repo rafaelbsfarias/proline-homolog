@@ -1,0 +1,206 @@
+```mermaid
+graph TB
+    %% ========================================
+    %% MODULE STRUCTURE
+    %% ========================================
+    
+    subgraph AdminModule["📦 modules/admin/"]
+        direction TB
+        
+        subgraph Domain["domain/"]
+            direction TB
+            
+            subgraph DomainEntities["entities/"]
+                UserEntity["User.ts<br/>Business rules"]
+                ClientEntity["Client.ts<br/>Business rules"]
+                PartnerEntity["Partner.ts<br/>Business rules"]
+                SpecialistEntity["Specialist.ts<br/>Business rules"]
+                VehicleEntity["Vehicle.ts<br/>Business rules"]
+            end
+            
+            subgraph DomainValueObjects["value-objects/"]
+                Email["Email.ts<br/>Validation"]
+                CPF["CPF.ts<br/>Validation"]
+                CNPJ["CNPJ.ts<br/>Validation"]
+                PersonName["PersonName.ts<br/>Validation"]
+                CompanyName["CompanyName.ts<br/>Validation"]
+                Plate["Plate.ts<br/>Validation"]
+            end
+            
+            subgraph DomainRepositories["repositories/"]
+                IUserRepository["IUserRepository.ts<br/>Interface"]
+                IClientRepository["IClientRepository.ts<br/>Interface"]
+                IPartnerRepository["IPartnerRepository.ts<br/>Interface"]
+                ISpecialistRepository["ISpecialistRepository.ts<br/>Interface"]
+                IVehicleRepository["IVehicleRepository.ts<br/>Interface"]
+            end
+            
+            subgraph DomainEnums["enums/"]
+                UserRole["UserRole.ts"]
+                UserStatus["UserStatus.ts"]
+                VehicleStatus["VehicleStatus.ts"]
+                ServiceCategory["ServiceCategory.ts"]
+            end
+        end
+        
+        subgraph Application["application/"]
+            direction TB
+            
+            subgraph UseCasesUser["use-cases/user/"]
+                CreateUserUC["CreateUserUseCase.ts"]
+                UpdateUserUC["UpdateUserUseCase.ts"]
+                DeleteUserUC["DeleteUserUseCase.ts"]
+                ActivateUserUC["ActivateUserUseCase.ts"]
+                SuspendUserUC["SuspendUserUseCase.ts"]
+                GetUserByIdUC["GetUserByIdUseCase.ts"]
+                ListUsersByRoleUC["ListUsersByRoleUseCase.ts"]
+                CountUsersByStatusUC["CountUsersByStatusUseCase.ts"]
+            end
+            
+            subgraph UseCasesClient["use-cases/client/"]
+                CreateClientUC["CreateClientUseCase.ts"]
+                AssignSpecialistUC["AssignSpecialistToClientUseCase.ts"]
+                CountClientsUC["CountClientsUseCase.ts"]
+            end
+            
+            subgraph UseCasesPartner["use-cases/partner/"]
+                CreatePartnerUC["CreatePartnerUseCase.ts"]
+                CountPartnersUC["CountPartnersUseCase.ts"]
+                ListPartnersByCategoryUC["ListPartnersByCategoryUseCase.ts"]
+            end
+            
+            subgraph UseCasesVehicle["use-cases/vehicle/"]
+                CreateVehicleUC["CreateVehicleUseCase.ts"]
+                UpdateVehicleStatusUC["UpdateVehicleStatusUseCase.ts"]
+                CountVehiclesUC["CountVehiclesUseCase.ts"]
+            end
+            
+            subgraph UseCasesDashboard["use-cases/dashboard/"]
+                GetDashboardStatsUC["GetDashboardStatsUseCase.ts"]
+            end
+            
+            subgraph DTOs["dto/"]
+                UserDTO["UserDTO.ts"]
+                ClientDTO["ClientDTO.ts"]
+                PartnerDTO["PartnerDTO.ts"]
+                SpecialistDTO["SpecialistDTO.ts"]
+                VehicleDTO["VehicleDTO.ts"]
+                DashboardStatsDTO["DashboardStatsDTO.ts"]
+            end
+        end
+        
+        subgraph Infrastructure["infrastructure/"]
+            direction TB
+            
+            subgraph RepositoriesImpl["repositories/"]
+                SupabaseUserRepo["SupabaseUserRepository.ts"]
+                SupabaseClientRepo["SupabaseClientRepository.ts"]
+                SupabasePartnerRepo["SupabasePartnerRepository.ts"]
+                SupabaseSpecialistRepo["SupabaseSpecialistRepository.ts"]
+                SupabaseVehicleRepo["SupabaseVehicleRepository.ts"]
+            end
+            
+            subgraph MappersInfra["mappers/"]
+                UserMapper["UserMapper.ts"]
+                ClientMapper["ClientMapper.ts"]
+                PartnerMapper["PartnerMapper.ts"]
+                SpecialistMapper["SpecialistMapper.ts"]
+                VehicleMapper["VehicleMapper.ts"]
+            end
+            
+            subgraph Services["services/"]
+                EmailService["EmailService.ts"]
+                LoggerService["LoggerService.ts"]
+            end
+        end
+        
+        subgraph Presentation["presentation/"]
+            direction TB
+            
+            subgraph Pages["pages/"]
+                AdminDashboardPage["AdminDashboard.tsx<br/>Container"]
+            end
+            
+            subgraph ComponentsUI["components/"]
+                direction TB
+                
+                subgraph ComponentsShared["shared/"]
+                    BaseCounter["BaseCounter.tsx"]
+                    CollapsibleCard["CollapsibleCard.tsx"]
+                    Modal["Modal.tsx"]
+                    Toolbar["Toolbar.tsx"]
+                end
+                
+                subgraph ComponentsDashboard["dashboard/"]
+                    DashboardStats["DashboardStats.tsx"]
+                    DataPanel["DataPanel.tsx"]
+                end
+                
+                subgraph ComponentsVehicles["vehicles/"]
+                    VehiclesTable["VehiclesTable.tsx"]
+                    VehicleRow["VehicleRow.tsx"]
+                end
+                
+                subgraph ComponentsPartners["partners/"]
+                    PartnersCard["PartnersCard.tsx"]
+                    PartnersList["PartnersList.tsx"]
+                end
+                
+                subgraph ComponentsModals["modals/"]
+                    CreateUserModal["CreateUserModal.tsx"]
+                    AssignSpecialistModal["AssignSpecialistModal.tsx"]
+                    DeleteUserModal["DeleteUserModal.tsx"]
+                end
+            end
+            
+            subgraph HooksPresentation["hooks/"]
+                UseLoadingOrchestrator["useLoadingOrchestrator.ts"]
+                UseModalManager["useModalManager.ts"]
+                UseDashboardStats["useDashboardStats.ts"]
+                UseVehicles["useVehicles.ts"]
+                UseUsers["useUsers.ts"]
+                UseClients["useClients.ts"]
+                UsePartners["usePartners.ts"]
+            end
+        end
+        
+        subgraph DI["di/"]
+            DIContainer["container.ts<br/>Dependency injection"]
+            DITypes["types.ts<br/>DI symbols"]
+        end
+        
+        subgraph Shared["shared/"]
+            Result["Result.ts<br/>Error handling"]
+            BaseEntity["BaseEntity.ts"]
+            BaseValueObject["BaseValueObject.ts"]
+            IUseCase["IUseCase.ts"]
+        end
+    end
+    
+    %% Dependencies between layers
+    Application -->|uses| Domain
+    Infrastructure -->|implements| Domain
+    Presentation -->|uses| Application
+    Presentation -->|uses| Shared
+    DI -->|wires| Application
+    DI -->|wires| Infrastructure
+    
+    %% Notes
+    subgraph Notes["📝 NOTES"]
+        Note1["✅ Domain has no external dependencies"]
+        Note2["✅ Application depends only on domain interfaces"]
+        Note3["✅ Infrastructure implements domain interfaces"]
+        Note4["✅ Presentation uses application use cases"]
+        Note5["✅ DI container wires everything together"]
+        Note6["✅ Each layer has clear responsibilities"]
+    end
+    
+    style AdminModule fill:#e3f2fd
+    style Domain fill:#fff9c4
+    style Application fill:#c5cae9
+    style Infrastructure fill:#d7ccc8
+    style Presentation fill:#bbdefb
+    style DI fill:#b2dfdb
+    style Shared fill:#f5f5f5
+    style Notes fill:#e8f5e9
+```

@@ -1,0 +1,272 @@
+```mermaid
+classDiagram
+    %% ========================================
+    %% DOMAIN LAYER - Entities & Value Objects
+    %% ========================================
+    
+    class Entity~TId~ {
+        <<abstract>>
+        #id: TId
+        #createdAt: Date
+        #updatedAt: Date
+        +equals(other: Entity): boolean
+        +getId(): TId
+    }
+    
+    class ValueObject {
+        <<abstract>>
+        +equals(other: ValueObject): boolean
+        +getValue(): any
+    }
+    
+    %% Value Objects
+    class Email {
+        -value: string
+        +constructor(email: string)
+        +getValue(): string
+        +toString(): string
+        -validate(email: string): void
+    }
+    
+    class CPF {
+        -value: string
+        +constructor(cpf: string)
+        +getValue(): string
+        +getFormatted(): string
+        -validate(cpf: string): void
+        -removeFormatting(cpf: string): string
+    }
+    
+    class CNPJ {
+        -value: string
+        +constructor(cnpj: string)
+        +getValue(): string
+        +getFormatted(): string
+        -validate(cnpj: string): void
+        -removeFormatting(cnpj: string): string
+    }
+    
+    class PersonName {
+        -value: string
+        +constructor(name: string)
+        +getValue(): string
+        +getFirstName(): string
+        +getLastName(): string
+        -validate(name: string): void
+    }
+    
+    class CompanyName {
+        -value: string
+        +constructor(name: string)
+        +getValue(): string
+        -validate(name: string): void
+    }
+    
+    class DocumentNumber {
+        <<abstract>>
+        -document: CPF | CNPJ
+        +getValue(): string
+        +getFormatted(): string
+        +getType(): 'CPF' | 'CNPJ'
+    }
+    
+    %% IDs
+    class UserId {
+        -value: string
+        +constructor(id: string)
+        +getValue(): string
+        +equals(other: UserId): boolean
+    }
+    
+    class ClientId {
+        -value: string
+        +constructor(id: string)
+        +getValue(): string
+        +equals(other: ClientId): boolean
+    }
+    
+    class PartnerId {
+        -value: string
+        +constructor(id: string)
+        +getValue(): string
+        +equals(other: PartnerId): boolean
+    }
+    
+    class SpecialistId {
+        -value: string
+        +constructor(id: string)
+        +getValue(): string
+        +equals(other: SpecialistId): boolean
+    }
+    
+    class VehicleId {
+        -value: string
+        +constructor(id: string)
+        +getValue(): string
+        +equals(other: VehicleId): boolean
+    }
+    
+    %% ========================================
+    %% ENTITIES
+    %% ========================================
+    
+    class AdminUser {
+        -name: PersonName
+        -email: Email
+        -role: UserRole
+        -status: UserStatus
+        +constructor(id, name, email, role, status)
+        +getName(): PersonName
+        +getEmail(): Email
+        +isActive(): boolean
+        +activate(): void
+        +deactivate(): void
+        +suspend(): void
+    }
+    
+    class Client {
+        -name: PersonName
+        -email: Email
+        -company: CompanyName
+        -document: DocumentNumber
+        -specialists: SpecialistId[]
+        +constructor(id, name, email, company, document)
+        +assignSpecialist(specialistId): Result~void~
+        +removeSpecialist(specialistId): Result~void~
+        +hasSpecialist(specialistId): boolean
+        +getSpecialists(): SpecialistId[]
+    }
+    
+    class Partner {
+        -company: CompanyName
+        -cnpj: CNPJ
+        -email: Email
+        -category: ServiceCategory
+        -services: Service[]
+        +constructor(id, company, cnpj, email, category)
+        +addService(service): Result~void~
+        +removeService(serviceId): Result~void~
+        +getServices(): Service[]
+    }
+    
+    class Specialist {
+        -name: PersonName
+        -email: Email
+        -clients: ClientId[]
+        +constructor(id, name, email)
+        +assignToClient(clientId): Result~void~
+        +removeFromClient(clientId): Result~void~
+        +getClients(): ClientId[]
+    }
+    
+    class Vehicle {
+        -plate: Plate
+        -brand: string
+        -model: string
+        -year: number
+        -ownerId: ClientId
+        -status: VehicleStatus
+        +constructor(id, plate, brand, model, year, ownerId)
+        +updateStatus(newStatus): Result~void~
+        +assignToClient(clientId): Result~void~
+    }
+    
+    %% ========================================
+    %% ENUMS
+    %% ========================================
+    
+    class UserRole {
+        <<enumeration>>
+        ADMIN
+        CLIENT
+        PARTNER
+        SPECIALIST
+    }
+    
+    class UserStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        SUSPENDED
+        PENDING_APPROVAL
+    }
+    
+    class VehicleStatus {
+        <<enumeration>>
+        REGISTERED
+        IN_ANALYSIS
+        BUDGETING
+        APPROVED
+        IN_EXECUTION
+        COMPLETED
+    }
+    
+    class ServiceCategory {
+        <<enumeration>>
+        MECHANICS
+        BODYWORK
+        PAINTING
+        CLEANING
+        TIRES
+        STORE
+        YARD
+    }
+    
+    %% ========================================
+    %% RELATIONSHIPS
+    %% ========================================
+    
+    Entity <|-- AdminUser : extends
+    Entity <|-- Client : extends
+    Entity <|-- Partner : extends
+    Entity <|-- Specialist : extends
+    Entity <|-- Vehicle : extends
+    
+    ValueObject <|-- Email : extends
+    ValueObject <|-- CPF : extends
+    ValueObject <|-- CNPJ : extends
+    ValueObject <|-- PersonName : extends
+    ValueObject <|-- CompanyName : extends
+    ValueObject <|-- DocumentNumber : extends
+    ValueObject <|-- UserId : extends
+    ValueObject <|-- ClientId : extends
+    ValueObject <|-- PartnerId : extends
+    ValueObject <|-- SpecialistId : extends
+    ValueObject <|-- VehicleId : extends
+    
+    DocumentNumber o-- CPF : contains
+    DocumentNumber o-- CNPJ : contains
+    
+    AdminUser o-- PersonName : has
+    AdminUser o-- Email : has
+    AdminUser o-- UserRole : has
+    AdminUser o-- UserStatus : has
+    AdminUser o-- UserId : has
+    
+    Client o-- PersonName : has
+    Client o-- Email : has
+    Client o-- CompanyName : has
+    Client o-- DocumentNumber : has
+    Client o-- ClientId : has
+    Client "1" o-- "*" SpecialistId : has
+    
+    Partner o-- CompanyName : has
+    Partner o-- CNPJ : has
+    Partner o-- Email : has
+    Partner o-- ServiceCategory : has
+    Partner o-- PartnerId : has
+    
+    Specialist o-- PersonName : has
+    Specialist o-- Email : has
+    Specialist o-- SpecialistId : has
+    Specialist "1" o-- "*" ClientId : has
+    
+    Vehicle o-- VehicleId : has
+    Vehicle o-- ClientId : owned by
+    Vehicle o-- VehicleStatus : has
+    
+    %% Notes
+    note for Entity "Base class para todas as entidades\nGarante identidade única"
+    note for ValueObject "Base class para Value Objects\nImutáveis e comparáveis por valor"
+    note for DocumentNumber "Encapsula CPF ou CNPJ\nValidação automática"
+```

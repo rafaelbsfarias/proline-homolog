@@ -1,0 +1,58 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant AdminDashboard
+    participant LoadingOrchestrator
+    participant UserCounter
+    participant DataPanel
+    participant PartnersCard
+    participant API
+    
+    User->>AdminDashboard: Acessa dashboard
+    
+    activate AdminDashboard
+    AdminDashboard->>LoadingOrchestrator: useLoadingOrchestrator()
+    activate LoadingOrchestrator
+    LoadingOrchestrator-->>AdminDashboard: { isLoading, register, setLoading }
+    deactivate LoadingOrchestrator
+    
+    AdminDashboard->>User: Mostra Loading Spinner<br/>(isLoading = true)
+    
+    par Componentes se registram
+        AdminDashboard->>UserCounter: renderiza
+        activate UserCounter
+        UserCounter->>LoadingOrchestrator: register('userCounter')
+        LoadingOrchestrator-->>UserCounter: componentId
+        UserCounter->>API: GET /api/users-count
+        API-->>UserCounter: { count: 42 }
+        UserCounter->>LoadingOrchestrator: setLoading('userCounter', false)
+        deactivate UserCounter
+    and
+        AdminDashboard->>DataPanel: renderiza
+        activate DataPanel
+        DataPanel->>LoadingOrchestrator: register('dataPanel')
+        LoadingOrchestrator-->>DataPanel: componentId
+        DataPanel->>API: GET /api/admin/clients-with-collection-summary
+        API-->>DataPanel: { clients: [...] }
+        DataPanel->>LoadingOrchestrator: setLoading('dataPanel', false)
+        deactivate DataPanel
+    and
+        AdminDashboard->>PartnersCard: renderiza
+        activate PartnersCard
+        PartnersCard->>LoadingOrchestrator: register('partnersCard')
+        LoadingOrchestrator-->>PartnersCard: componentId
+        PartnersCard->>API: GET /api/admin/partners/overview
+        API-->>PartnersCard: { partners: [...] }
+        PartnersCard->>LoadingOrchestrator: setLoading('partnersCard', false)
+        deactivate PartnersCard
+    end
+    
+    Note over LoadingOrchestrator: Verifica automaticamente:<br/>Object.values(loadingStates).every(s => !s)
+    
+    LoadingOrchestrator->>AdminDashboard: isLoading = false
+    AdminDashboard->>User: Esconde Loading Spinner
+    AdminDashboard->>User: Mostra Dashboard Completo
+    deactivate AdminDashboard
+    
+    Note right of LoadingOrchestrator: ✅ Benefícios:<br/>- 1 hook centralizado<br/>- Auto-registro de componentes<br/>- Lógica encapsulada<br/>- Complexidade: O(1)<br/>- Fácil adicionar componentes
+```

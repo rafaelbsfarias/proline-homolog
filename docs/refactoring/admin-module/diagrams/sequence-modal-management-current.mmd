@@ -1,0 +1,79 @@
+```mermaid
+sequenceDiagram
+    %% ========================================
+    %% CURRENT APPROACH - Modal State in Toolbar
+    %% ========================================
+    
+    participant User
+    participant AdminDashboard
+    participant Toolbar
+    participant CreateUserModal
+    participant AssignSpecialistModal
+    participant DeleteUserModal
+    participant AdminService
+    participant Supabase
+    
+    autonumber
+    
+    User->>AdminDashboard: Opens dashboard
+    activate AdminDashboard
+    
+    AdminDashboard->>Toolbar: <Toolbar />
+    activate Toolbar
+    
+    Note over Toolbar: ❌ PROBLEM: Modal state managed inside Toolbar
+    Toolbar->>Toolbar: useState(isCreateUserModalOpen)
+    Toolbar->>Toolbar: useState(isAssignSpecialistModalOpen)
+    Toolbar->>Toolbar: useState(isDeleteUserModalOpen)
+    Toolbar->>Toolbar: useState(selectedUserId)
+    
+    Toolbar-->>User: Display toolbar buttons
+    deactivate Toolbar
+    
+    User->>Toolbar: Clicks "Create User"
+    activate Toolbar
+    Toolbar->>Toolbar: setIsCreateUserModalOpen(true)
+    Toolbar->>CreateUserModal: <CreateUserModal isOpen={true} />
+    activate CreateUserModal
+    CreateUserModal-->>User: Display modal
+    deactivate CreateUserModal
+    deactivate Toolbar
+    
+    User->>CreateUserModal: Fills form and submits
+    activate CreateUserModal
+    
+    CreateUserModal->>CreateUserModal: Validate form
+    CreateUserModal->>AdminService: createUser({ name, email, role })
+    activate AdminService
+    
+    AdminService->>Supabase: INSERT INTO user_profiles (...)
+    activate Supabase
+    Supabase-->>AdminService: { id: 'user-123', ... }
+    deactivate Supabase
+    
+    AdminService-->>CreateUserModal: Success
+    deactivate AdminService
+    
+    CreateUserModal->>CreateUserModal: Close modal
+    CreateUserModal->>Toolbar: onClose()
+    activate Toolbar
+    Toolbar->>Toolbar: setIsCreateUserModalOpen(false)
+    deactivate Toolbar
+    
+    Note over CreateUserModal,AdminDashboard: ❌ PROBLEM: Dashboard doesn't know about new user
+    
+    CreateUserModal-->>User: Success message
+    deactivate CreateUserModal
+    
+    Note over AdminDashboard: Dashboard still shows old data!<br/>Manual refresh needed
+    
+    User->>AdminDashboard: Manually refreshes page
+    activate AdminDashboard
+    AdminDashboard->>AdminDashboard: Refetch all data
+    AdminDashboard-->>User: Updated data displayed
+    deactivate AdminDashboard
+    
+    rect rgb(255, 200, 200)
+        Note over Toolbar: Current Problems:<br/>• Modal state inside Toolbar (wrong place)<br/>• 4 separate modal states<br/>• No centralized modal management<br/>• Dashboard unaware of changes<br/>• Manual refresh required<br/>• Tight coupling
+    end
+```

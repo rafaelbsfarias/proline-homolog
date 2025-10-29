@@ -1,0 +1,130 @@
+```mermaid
+sequenceDiagram
+    %% ========================================
+    %% PROPOSED APPROACH - Aggregated Fetch
+    %% ========================================
+    
+    participant User
+    participant AdminDashboard
+    participant UseDashboardStats
+    participant GetDashboardStatsUC
+    participant IUserRepo
+    participant IClientRepo
+    participant IPartnerRepo
+    participant IVehicleRepo
+    participant Supabase
+    participant DashboardStats
+    participant BaseCounter
+    
+    autonumber
+    
+    User->>AdminDashboard: Navigates to dashboard
+    
+    activate AdminDashboard
+    AdminDashboard->>UseDashboardStats: useDashboardStats()
+    activate UseDashboardStats
+    
+    Note over UseDashboardStats: ✅ SOLUTION: Single loading state
+    UseDashboardStats->>UseDashboardStats: useState({ loading: true, data: null, error: null })
+    
+    UseDashboardStats->>GetDashboardStatsUC: execute()
+    activate GetDashboardStatsUC
+    
+    Note over GetDashboardStatsUC: Parallel fetch using Promise.all
+    
+    par Fetch all counts in parallel
+        GetDashboardStatsUC->>IUserRepo: countByStatus('active')
+        activate IUserRepo
+        IUserRepo->>Supabase: SELECT COUNT(*) FROM user_profiles WHERE status='active'
+        activate Supabase
+        Supabase-->>IUserRepo: { count: 150 }
+        deactivate Supabase
+        IUserRepo-->>GetDashboardStatsUC: Result.ok(150)
+        deactivate IUserRepo
+    and
+        GetDashboardStatsUC->>IUserRepo: countByStatus('pending_approval')
+        activate IUserRepo
+        IUserRepo->>Supabase: SELECT COUNT(*) FROM user_profiles WHERE status='pending_approval'
+        activate Supabase
+        Supabase-->>IUserRepo: { count: 8 }
+        deactivate Supabase
+        IUserRepo-->>GetDashboardStatsUC: Result.ok(8)
+        deactivate IUserRepo
+    and
+        GetDashboardStatsUC->>IClientRepo: count()
+        activate IClientRepo
+        IClientRepo->>Supabase: SELECT COUNT(*) FROM user_profiles WHERE role='client'
+        activate Supabase
+        Supabase-->>IClientRepo: { count: 75 }
+        deactivate Supabase
+        IClientRepo-->>GetDashboardStatsUC: Result.ok(75)
+        deactivate IClientRepo
+    and
+        GetDashboardStatsUC->>IPartnerRepo: count()
+        activate IPartnerRepo
+        IPartnerRepo->>Supabase: SELECT COUNT(*) FROM user_profiles WHERE role='partner'
+        activate Supabase
+        Supabase-->>IPartnerRepo: { count: 25 }
+        deactivate Supabase
+        IPartnerRepo-->>GetDashboardStatsUC: Result.ok(25)
+        deactivate IPartnerRepo
+    and
+        GetDashboardStatsUC->>IVehicleRepo: count()
+        activate IVehicleRepo
+        IVehicleRepo->>Supabase: SELECT COUNT(*) FROM vehicles
+        activate Supabase
+        Supabase-->>IVehicleRepo: { count: 120 }
+        deactivate Supabase
+        IVehicleRepo-->>GetDashboardStatsUC: Result.ok(120)
+        deactivate IVehicleRepo
+    end
+    
+    Note over GetDashboardStatsUC: Aggregate results
+    
+    GetDashboardStatsUC->>GetDashboardStatsUC: Create DashboardStatsDTO
+    GetDashboardStatsUC-->>UseDashboardStats: Result.ok({ totalUsers: 150, pendingUsers: 8, totalClients: 75, totalPartners: 25, totalVehicles: 120 })
+    deactivate GetDashboardStatsUC
+    
+    UseDashboardStats->>UseDashboardStats: setState({ loading: false, data: stats, error: null })
+    UseDashboardStats-->>AdminDashboard: { stats, loading: false, error: null }
+    deactivate UseDashboardStats
+    
+    AdminDashboard->>DashboardStats: <DashboardStats stats={stats} loading={loading} />
+    activate DashboardStats
+    
+    Note over DashboardStats: Render using BaseCounter component
+    
+    DashboardStats->>BaseCounter: <BaseCounter title="Total Users" value={150} />
+    activate BaseCounter
+    BaseCounter-->>User: Display "150 Users"
+    deactivate BaseCounter
+    
+    DashboardStats->>BaseCounter: <BaseCounter title="Pending" value={8} />
+    activate BaseCounter
+    BaseCounter-->>User: Display "8 Pending"
+    deactivate BaseCounter
+    
+    DashboardStats->>BaseCounter: <BaseCounter title="Clients" value={75} />
+    activate BaseCounter
+    BaseCounter-->>User: Display "75 Clients"
+    deactivate BaseCounter
+    
+    DashboardStats->>BaseCounter: <BaseCounter title="Partners" value={25} />
+    activate BaseCounter
+    BaseCounter-->>User: Display "25 Partners"
+    deactivate BaseCounter
+    
+    DashboardStats->>BaseCounter: <BaseCounter title="Vehicles" value={120} />
+    activate BaseCounter
+    BaseCounter-->>User: Display "120 Vehicles"
+    deactivate BaseCounter
+    
+    deactivate DashboardStats
+    deactivate AdminDashboard
+    
+    Note over User,Supabase: ✅ BENEFITS:<br/>• Single use case aggregates all data<br/>• Parallel execution (faster)<br/>• Single loading state<br/>• Reusable BaseCounter<br/>• Type-safe repository pattern<br/>• Easy to test
+    
+    rect rgb(200, 255, 200)
+        Note over AdminDashboard: Proposed Metrics:<br/>• 1 network roundtrip (parallel queries)<br/>• ~30 LOC for BaseCounter (reused 5x)<br/>• O(1) loading complexity<br/>• Easy to maintain<br/>• 64% code reduction
+    end
+```

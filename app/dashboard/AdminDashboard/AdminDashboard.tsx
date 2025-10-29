@@ -1,6 +1,7 @@
 import {
   Header,
   Toolbar,
+  AdminVehiclesSection,
   PendingRegistrationsCounter,
   PendingQuotesCounter,
   VehiclesPendingApprovalCounter,
@@ -128,6 +129,19 @@ const AdminDashboard: React.FC = () => {
       </div>
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
         <PartnersCard onLoadingChange={setPartnersCardLoading} />
+      </div>
+      <div
+        style={{
+          visibility: showOverallLoader ? 'hidden' : 'visible',
+          background: 'transparent',
+          width: '100%',
+          margin: '0 auto',
+          padding: '16px 0 32px 0',
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+          <AdminVehiclesSection />
+        </div>
       </div>
     </div>
   );

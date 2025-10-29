@@ -1,0 +1,376 @@
+```mermaid
+classDiagram
+    %% ========================================
+    %% USE CASE INTERFACES
+    %% ========================================
+    
+    class IUseCase~TRequest, TResponse~ {
+        <<interface>>
+        +execute(request: TRequest): Promise~Result~TResponse~~
+    }
+    
+    %% ========================================
+    %% USER USE CASES
+    %% ========================================
+    
+    class CreateUserUseCase {
+        -userRepository: IUserRepository
+        -emailService: IEmailService
+        -logger: ILogger
+        +constructor(userRepo, emailService, logger)
+        +execute(request: CreateUserRequest): Promise~Result~UserDTO~~
+        -validateRequest(request): Result~void~
+        -checkEmailUniqueness(email): Promise~Result~void~~
+        -createEntity(request): Result~AdminUser~
+        -sendWelcomeEmail(user): Promise~Result~void~~
+    }
+    
+    class UpdateUserUseCase {
+        -userRepository: IUserRepository
+        -logger: ILogger
+        +constructor(userRepo, logger)
+        +execute(request: UpdateUserRequest): Promise~Result~UserDTO~~
+        -validateRequest(request): Result~void~
+        -getUserById(id): Promise~Result~AdminUser~~
+        -applyChanges(user, changes): Result~AdminUser~
+    }
+    
+    class DeleteUserUseCase {
+        -userRepository: IUserRepository
+        -logger: ILogger
+        +constructor(userRepo, logger)
+        +execute(request: DeleteUserRequest): Promise~Result~void~~
+        -validateRequest(request): Result~void~
+        -checkUserExists(id): Promise~Result~AdminUser~~
+        -checkDependencies(id): Promise~Result~void~~
+    }
+    
+    class GetUserByIdUseCase {
+        -userRepository: IUserRepository
+        +constructor(userRepo)
+        +execute(request: GetUserRequest): Promise~Result~UserDTO~~
+    }
+    
+    class ListUsersByRoleUseCase {
+        -userRepository: IUserRepository
+        +constructor(userRepo)
+        +execute(request: ListByRoleRequest): Promise~Result~UserDTO[]~~
+    }
+    
+    class CountUsersByStatusUseCase {
+        -userRepository: IUserRepository
+        +constructor(userRepo)
+        +execute(request: CountByStatusRequest): Promise~Result~number~~
+    }
+    
+    class ActivateUserUseCase {
+        -userRepository: IUserRepository
+        -emailService: IEmailService
+        +constructor(userRepo, emailService)
+        +execute(request: ActivateUserRequest): Promise~Result~UserDTO~~
+        -getUserById(id): Promise~Result~AdminUser~~
+        -sendActivationEmail(user): Promise~Result~void~~
+    }
+    
+    class SuspendUserUseCase {
+        -userRepository: IUserRepository
+        -logger: ILogger
+        +constructor(userRepo, logger)
+        +execute(request: SuspendUserRequest): Promise~Result~UserDTO~~
+        -getUserById(id): Promise~Result~AdminUser~~
+        -logSuspension(user, reason): void
+    }
+    
+    %% ========================================
+    %% CLIENT USE CASES
+    %% ========================================
+    
+    class CreateClientUseCase {
+        -clientRepository: IClientRepository
+        -logger: ILogger
+        +constructor(clientRepo, logger)
+        +execute(request: CreateClientRequest): Promise~Result~ClientDTO~~
+        -validateRequest(request): Result~void~
+        -checkDocumentUniqueness(document): Promise~Result~void~~
+    }
+    
+    class AssignSpecialistToClientUseCase {
+        -clientRepository: IClientRepository
+        -specialistRepository: ISpecialistRepository
+        +constructor(clientRepo, specialistRepo)
+        +execute(request: AssignSpecialistRequest): Promise~Result~ClientDTO~~
+        -getClient(id): Promise~Result~Client~~
+        -checkSpecialistExists(id): Promise~Result~Specialist~~
+        -assignAndSave(client, specialistId): Promise~Result~Client~~
+    }
+    
+    class CountClientsUseCase {
+        -clientRepository: IClientRepository
+        +constructor(clientRepo)
+        +execute(): Promise~Result~number~~
+    }
+    
+    %% ========================================
+    %% PARTNER USE CASES
+    %% ========================================
+    
+    class CreatePartnerUseCase {
+        -partnerRepository: IPartnerRepository
+        -logger: ILogger
+        +constructor(partnerRepo, logger)
+        +execute(request: CreatePartnerRequest): Promise~Result~PartnerDTO~~
+        -validateRequest(request): Result~void~
+        -checkCNPJUniqueness(cnpj): Promise~Result~void~~
+    }
+    
+    class CountPartnersUseCase {
+        -partnerRepository: IPartnerRepository
+        +constructor(partnerRepo)
+        +execute(): Promise~Result~number~~
+    }
+    
+    class ListPartnersByCategoryUseCase {
+        -partnerRepository: IPartnerRepository
+        +constructor(partnerRepo)
+        +execute(request: ListByCategoryRequest): Promise~Result~PartnerDTO[]~~
+    }
+    
+    %% ========================================
+    %% SPECIALIST USE CASES
+    %% ========================================
+    
+    class CreateSpecialistUseCase {
+        -specialistRepository: ISpecialistRepository
+        -logger: ILogger
+        +constructor(specialistRepo, logger)
+        +execute(request: CreateSpecialistRequest): Promise~Result~SpecialistDTO~~
+        -validateRequest(request): Result~void~
+        -checkEmailUniqueness(email): Promise~Result~void~~
+    }
+    
+    class CountSpecialistsUseCase {
+        -specialistRepository: ISpecialistRepository
+        +constructor(specialistRepo)
+        +execute(): Promise~Result~number~~
+    }
+    
+    %% ========================================
+    %% VEHICLE USE CASES
+    %% ========================================
+    
+    class CreateVehicleUseCase {
+        -vehicleRepository: IVehicleRepository
+        -clientRepository: IClientRepository
+        +constructor(vehicleRepo, clientRepo)
+        +execute(request: CreateVehicleRequest): Promise~Result~VehicleDTO~~
+        -validateRequest(request): Result~void~
+        -checkPlateUniqueness(plate): Promise~Result~void~~
+        -checkOwnerExists(clientId): Promise~Result~void~~
+    }
+    
+    class UpdateVehicleStatusUseCase {
+        -vehicleRepository: IVehicleRepository
+        -logger: ILogger
+        +constructor(vehicleRepo, logger)
+        +execute(request: UpdateVehicleStatusRequest): Promise~Result~VehicleDTO~~
+        -getVehicle(id): Promise~Result~Vehicle~~
+        -validateStatusTransition(current, new): Result~void~
+    }
+    
+    class CountVehiclesUseCase {
+        -vehicleRepository: IVehicleRepository
+        +constructor(vehicleRepo)
+        +execute(): Promise~Result~number~~
+    }
+    
+    %% ========================================
+    %% DASHBOARD USE CASES
+    %% ========================================
+    
+    class GetDashboardStatsUseCase {
+        -userRepository: IUserRepository
+        -clientRepository: IClientRepository
+        -partnerRepository: IPartnerRepository
+        -specialistRepository: ISpecialistRepository
+        -vehicleRepository: IVehicleRepository
+        +constructor(userRepo, clientRepo, partnerRepo, specialistRepo, vehicleRepo)
+        +execute(): Promise~Result~DashboardStatsDTO~~
+        -gatherAllCounts(): Promise~Result~Stats~~
+    }
+    
+    %% ========================================
+    %% REQUEST/RESPONSE DTOs
+    %% ========================================
+    
+    class CreateUserRequest {
+        +name: string
+        +email: string
+        +role: UserRole
+    }
+    
+    class UpdateUserRequest {
+        +id: string
+        +name?: string
+        +email?: string
+        +status?: UserStatus
+    }
+    
+    class DeleteUserRequest {
+        +id: string
+        +reason?: string
+    }
+    
+    class GetUserRequest {
+        +id: string
+    }
+    
+    class CreateClientRequest {
+        +name: string
+        +email: string
+        +company: string
+        +document: string
+    }
+    
+    class AssignSpecialistRequest {
+        +clientId: string
+        +specialistId: string
+    }
+    
+    class CreatePartnerRequest {
+        +company: string
+        +cnpj: string
+        +email: string
+        +category: ServiceCategory
+    }
+    
+    class CreateSpecialistRequest {
+        +name: string
+        +email: string
+    }
+    
+    class CreateVehicleRequest {
+        +plate: string
+        +brand: string
+        +model: string
+        +year: number
+        +ownerId: string
+    }
+    
+    class UpdateVehicleStatusRequest {
+        +vehicleId: string
+        +newStatus: VehicleStatus
+    }
+    
+    class UserDTO {
+        +id: string
+        +name: string
+        +email: string
+        +role: string
+        +status: string
+        +createdAt: string
+    }
+    
+    class ClientDTO {
+        +id: string
+        +name: string
+        +email: string
+        +company: string
+        +document: string
+        +specialists: string[]
+    }
+    
+    class PartnerDTO {
+        +id: string
+        +company: string
+        +cnpj: string
+        +email: string
+        +category: string
+    }
+    
+    class SpecialistDTO {
+        +id: string
+        +name: string
+        +email: string
+        +clients: string[]
+    }
+    
+    class VehicleDTO {
+        +id: string
+        +plate: string
+        +brand: string
+        +model: string
+        +year: number
+        +ownerId: string
+        +status: string
+    }
+    
+    class DashboardStatsDTO {
+        +totalUsers: number
+        +pendingUsers: number
+        +totalClients: number
+        +totalPartners: number
+        +totalSpecialists: number
+        +totalVehicles: number
+    }
+    
+    %% ========================================
+    %% RELATIONSHIPS
+    %% ========================================
+    
+    IUseCase <|.. CreateUserUseCase : implements
+    IUseCase <|.. UpdateUserUseCase : implements
+    IUseCase <|.. DeleteUserUseCase : implements
+    IUseCase <|.. GetUserByIdUseCase : implements
+    IUseCase <|.. ListUsersByRoleUseCase : implements
+    IUseCase <|.. CountUsersByStatusUseCase : implements
+    IUseCase <|.. ActivateUserUseCase : implements
+    IUseCase <|.. SuspendUserUseCase : implements
+    
+    IUseCase <|.. CreateClientUseCase : implements
+    IUseCase <|.. AssignSpecialistToClientUseCase : implements
+    IUseCase <|.. CountClientsUseCase : implements
+    
+    IUseCase <|.. CreatePartnerUseCase : implements
+    IUseCase <|.. CountPartnersUseCase : implements
+    IUseCase <|.. ListPartnersByCategoryUseCase : implements
+    
+    IUseCase <|.. CreateSpecialistUseCase : implements
+    IUseCase <|.. CountSpecialistsUseCase : implements
+    
+    IUseCase <|.. CreateVehicleUseCase : implements
+    IUseCase <|.. UpdateVehicleStatusUseCase : implements
+    IUseCase <|.. CountVehiclesUseCase : implements
+    
+    IUseCase <|.. GetDashboardStatsUseCase : implements
+    
+    CreateUserUseCase ..> CreateUserRequest : accepts
+    CreateUserUseCase ..> UserDTO : returns
+    UpdateUserUseCase ..> UpdateUserRequest : accepts
+    UpdateUserUseCase ..> UserDTO : returns
+    DeleteUserUseCase ..> DeleteUserRequest : accepts
+    GetUserByIdUseCase ..> GetUserRequest : accepts
+    GetUserByIdUseCase ..> UserDTO : returns
+    
+    CreateClientUseCase ..> CreateClientRequest : accepts
+    CreateClientUseCase ..> ClientDTO : returns
+    AssignSpecialistToClientUseCase ..> AssignSpecialistRequest : accepts
+    AssignSpecialistToClientUseCase ..> ClientDTO : returns
+    
+    CreatePartnerUseCase ..> CreatePartnerRequest : accepts
+    CreatePartnerUseCase ..> PartnerDTO : returns
+    
+    CreateSpecialistUseCase ..> CreateSpecialistRequest : accepts
+    CreateSpecialistUseCase ..> SpecialistDTO : returns
+    
+    CreateVehicleUseCase ..> CreateVehicleRequest : accepts
+    CreateVehicleUseCase ..> VehicleDTO : returns
+    UpdateVehicleStatusUseCase ..> UpdateVehicleStatusRequest : accepts
+    UpdateVehicleStatusUseCase ..> VehicleDTO : returns
+    
+    GetDashboardStatsUseCase ..> DashboardStatsDTO : returns
+    
+    %% Notes
+    note for IUseCase "Single responsibility\nEach use case = one business operation"
+    note for CreateUserUseCase "Orchestrates: validation, uniqueness check, persistence, email"
+    note for GetDashboardStatsUseCase "Aggregates data from multiple repositories\nReplaces 7 separate API calls"
+```

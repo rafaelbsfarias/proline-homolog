@@ -1,0 +1,200 @@
+```mermaid
+erDiagram
+    %% ========================================
+    %% USERS AND AUTHENTICATION
+    %% ========================================
+    
+    users ||--o{ user_profiles : "has profile"
+    users {
+        uuid id PK
+        varchar email UK
+        varchar encrypted_password
+        timestamptz email_confirmed_at
+        timestamptz last_sign_in_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    user_profiles {
+        uuid id PK
+        uuid user_id FK "references users(id)"
+        varchar name
+        varchar company
+        varchar document "CPF or CNPJ"
+        varchar role "admin, client, partner, specialist"
+        varchar status "active, inactive, suspended, pending_approval"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    %% ========================================
+    %% CLIENTS AND SPECIALISTS
+    %% ========================================
+    
+    user_profiles ||--o{ client_specialists : "client has specialists"
+    user_profiles ||--o{ client_specialists : "specialist assigned to clients"
+    
+    client_specialists {
+        uuid id PK
+        uuid client_id FK "references user_profiles(id)"
+        uuid specialist_id FK "references user_profiles(id)"
+        timestamptz assigned_at
+        timestamptz created_at
+    }
+    
+    %% ========================================
+    %% VEHICLES
+    %% ========================================
+    
+    user_profiles ||--o{ vehicles : "client owns vehicles"
+    
+    vehicles {
+        uuid id PK
+        uuid client_id FK "references user_profiles(id)"
+        varchar plate UK
+        varchar brand
+        varchar model
+        integer year
+        varchar status "registered, in_analysis, budgeting, approved, in_execution, completed"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    vehicles ||--o{ vehicle_history : "tracks status changes"
+    
+    vehicle_history {
+        uuid id PK
+        uuid vehicle_id FK "references vehicles(id)"
+        varchar old_status
+        varchar new_status
+        uuid changed_by FK "references user_profiles(id)"
+        text notes
+        timestamptz created_at
+    }
+    
+    %% ========================================
+    %% PARTNERS AND SERVICES
+    %% ========================================
+    
+    user_profiles ||--o{ partner_services : "partner offers services"
+    
+    partner_services {
+        uuid id PK
+        uuid partner_id FK "references user_profiles(id)"
+        varchar category "mechanics, bodywork, painting, cleaning, tires, store, yard"
+        varchar service_name
+        text description
+        boolean active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    %% ========================================
+    %% BUDGETS/QUOTES
+    %% ========================================
+    
+    vehicles ||--o{ quotes : "has quotes"
+    user_profiles ||--o{ quotes : "partner creates quotes"
+    
+    quotes {
+        uuid id PK
+        uuid vehicle_id FK "references vehicles(id)"
+        uuid partner_id FK "references user_profiles(id)"
+        varchar status "pending, approved, rejected"
+        decimal total_amount
+        text notes
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    
+    quotes ||--o{ quote_items : "contains items"
+    partner_services ||--o{ quote_items : "service in quote"
+    
+    quote_items {
+        uuid id PK
+        uuid quote_id FK "references quotes(id)"
+        uuid service_id FK "references partner_services(id)"
+        varchar description
+        integer quantity
+        decimal unit_price
+        decimal total_price
+        timestamptz created_at
+    }
+    
+    %% ========================================
+    %% INSPECTIONS
+    %% ========================================
+    
+    vehicles ||--o{ inspections : "has inspections"
+    
+    inspections {
+        uuid id PK
+        uuid vehicle_id FK "references vehicles(id)"
+        uuid inspector_id FK "references user_profiles(id)"
+        varchar status "pending, in_progress, completed"
+        jsonb checklist_data
+        text observations
+        timestamptz started_at
+        timestamptz completed_at
+        timestamptz created_at
+    }
+    
+    %% ========================================
+    %% ADMIN AUDIT LOGS
+    %% ========================================
+    
+    user_profiles ||--o{ admin_audit_logs : "admin performs actions"
+    
+    admin_audit_logs {
+        uuid id PK
+        uuid admin_id FK "references user_profiles(id)"
+        varchar action_type "create_user, update_user, delete_user, assign_specialist, etc"
+        uuid target_id "ID of affected entity"
+        varchar target_type "user, vehicle, quote, etc"
+        jsonb old_values
+        jsonb new_values
+        text reason
+        timestamptz created_at
+    }
+    
+    %% ========================================
+    %% PENDING REGISTRATIONS
+    %% ========================================
+    
+    pending_registrations {
+        uuid id PK
+        varchar email UK
+        varchar name
+        varchar company
+        varchar document
+        varchar role "client, partner, specialist"
+        varchar status "pending, approved, rejected"
+        uuid reviewed_by FK "references user_profiles(id)"
+        timestamptz reviewed_at
+        text rejection_reason
+        timestamptz created_at
+    }
+    
+    user_profiles ||--o{ pending_registrations : "admin reviews"
+    
+    %% ========================================
+    %% NOTES
+    %% ========================================
+    
+    %%{
+        Note about design decisions:
+        
+        1. users table is from Supabase Auth
+        2. user_profiles extends users with app-specific data
+        3. role field determines: admin, client, partner, specialist
+        4. status field tracks: active, inactive, suspended, pending_approval
+        5. client_specialists is many-to-many: clients can have multiple specialists
+        6. vehicle_history provides audit trail for status changes
+        7. partner_services is one-to-many: partner can offer multiple services
+        8. quotes link vehicles to partners
+        9. quote_items link quotes to specific services
+        10. inspections track vehicle inspection process
+        11. admin_audit_logs track all admin actions for compliance
+        12. pending_registrations handle approval workflow
+    }%%
+```

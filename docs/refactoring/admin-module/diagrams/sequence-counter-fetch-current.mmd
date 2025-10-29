@@ -1,0 +1,96 @@
+```mermaid
+sequenceDiagram
+    %% ========================================
+    %% CURRENT APPROACH - Individual Fetches
+    %% ========================================
+    
+    participant User
+    participant AdminDashboard
+    participant UsersCounter
+    participant PendingCounter
+    participant ClientsCounter
+    participant PartnersCounter
+    participant AdminService
+    participant Supabase
+    
+    autonumber
+    
+    User->>AdminDashboard: Navigates to dashboard
+    
+    Note over AdminDashboard: ❌ PROBLEM: 7 separate loading states
+    
+    activate AdminDashboard
+    AdminDashboard->>AdminDashboard: useState(isLoadingUsers)
+    AdminDashboard->>AdminDashboard: useState(isLoadingPending)
+    AdminDashboard->>AdminDashboard: useState(isLoadingClients)
+    AdminDashboard->>AdminDashboard: useState(isLoadingPartners)
+    AdminDashboard->>AdminDashboard: useState(isLoadingVehicles)
+    AdminDashboard->>AdminDashboard: useState(isLoadingSpecialists)
+    AdminDashboard->>AdminDashboard: useState(isLoadingData)
+    
+    Note over AdminDashboard: Mounts child components
+    
+    AdminDashboard->>UsersCounter: Mount
+    activate UsersCounter
+    UsersCounter->>AdminService: fetchUsersCount()
+    activate AdminService
+    AdminService->>Supabase: SELECT COUNT(*) FROM users
+    activate Supabase
+    Supabase-->>AdminService: { count: 150 }
+    deactivate Supabase
+    AdminService-->>UsersCounter: 150
+    deactivate AdminService
+    UsersCounter->>UsersCounter: setCount(150)
+    UsersCounter-->>User: Display "150 Users"
+    deactivate UsersCounter
+    
+    AdminDashboard->>PendingCounter: Mount
+    activate PendingCounter
+    PendingCounter->>AdminService: fetchPendingCount()
+    activate AdminService
+    AdminService->>Supabase: SELECT COUNT(*) FROM pending_registrations
+    activate Supabase
+    Supabase-->>AdminService: { count: 8 }
+    deactivate Supabase
+    AdminService-->>PendingCounter: 8
+    deactivate AdminService
+    PendingCounter->>PendingCounter: setCount(8)
+    PendingCounter-->>User: Display "8 Pending"
+    deactivate PendingCounter
+    
+    AdminDashboard->>ClientsCounter: Mount
+    activate ClientsCounter
+    ClientsCounter->>AdminService: fetchClientsCount()
+    activate AdminService
+    AdminService->>Supabase: SELECT COUNT(*) FROM clients
+    activate Supabase
+    Supabase-->>AdminService: { count: 75 }
+    deactivate Supabase
+    AdminService-->>ClientsCounter: 75
+    deactivate AdminService
+    ClientsCounter->>ClientsCounter: setCount(75)
+    ClientsCounter-->>User: Display "75 Clients"
+    deactivate ClientsCounter
+    
+    AdminDashboard->>PartnersCounter: Mount
+    activate PartnersCounter
+    PartnersCounter->>AdminService: fetchPartnersCount()
+    activate AdminService
+    AdminService->>Supabase: SELECT COUNT(*) FROM partners
+    activate Supabase
+    Supabase-->>AdminService: { count: 25 }
+    deactivate Supabase
+    AdminService-->>PartnersCounter: 25
+    deactivate AdminService
+    PartnersCounter->>PartnersCounter: setCount(25)
+    PartnersCounter-->>User: Display "25 Partners"
+    deactivate PartnersCounter
+    
+    deactivate AdminDashboard
+    
+    Note over User,Supabase: ❌ PROBLEMS:<br/>• 4+ separate network requests<br/>• 4+ duplicated counter components<br/>• 7 loading states to manage<br/>• Poor performance<br/>• Code duplication
+    
+    rect rgb(255, 200, 200)
+        Note over AdminDashboard: Current Metrics:<br/>• 4+ network roundtrips<br/>• ~320 LOC for counters<br/>• O(n) loading complexity<br/>• Difficult to maintain
+    end
+```

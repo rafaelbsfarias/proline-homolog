@@ -1,0 +1,166 @@
+```mermaid
+sequenceDiagram
+    %% ========================================
+    %% ASSIGN SPECIALIST TO CLIENT FLOW
+    %% ========================================
+    
+    participant User
+    participant AdminDashboard
+    participant UseModalManager
+    participant ClientsTable
+    participant Modal
+    participant AssignSpecialistModal
+    participant UseSpecialists
+    participant AssignSpecialistUC
+    participant IClientRepo
+    participant ISpecialistRepo
+    participant ClientEntity
+    participant Supabase
+    participant UseDashboardStats
+    
+    autonumber
+    
+    User->>AdminDashboard: Opens dashboard
+    activate AdminDashboard
+    
+    AdminDashboard->>UseModalManager: useModalManager()
+    activate UseModalManager
+    UseModalManager-->>AdminDashboard: { activeModal, open, close }
+    deactivate UseModalManager
+    
+    AdminDashboard->>ClientsTable: <ClientsTable clients={clients} />
+    activate ClientsTable
+    ClientsTable-->>User: Display clients list
+    deactivate ClientsTable
+    
+    User->>ClientsTable: Clicks "Assign Specialist" for Client XYZ
+    activate ClientsTable
+    
+    ClientsTable->>UseModalManager: open('assignSpecialist', { clientId: 'client-xyz' })
+    activate UseModalManager
+    UseModalManager->>UseModalManager: setState({ activeModal: 'assignSpecialist', modalData: { clientId: 'client-xyz' } })
+    UseModalManager-->>AdminDashboard: Update state
+    deactivate UseModalManager
+    
+    deactivate ClientsTable
+    
+    AdminDashboard->>Modal: <Modal isOpen={activeModal === 'assignSpecialist'}>
+    activate Modal
+    
+    Modal->>AssignSpecialistModal: <AssignSpecialistModal clientId={modalData.clientId} />
+    activate AssignSpecialistModal
+    
+    Note over AssignSpecialistModal: Modal opens and loads available specialists
+    
+    AssignSpecialistModal->>UseSpecialists: useSpecialists()
+    activate UseSpecialists
+    
+    UseSpecialists->>ISpecialistRepo: findAll()
+    activate ISpecialistRepo
+    ISpecialistRepo->>Supabase: SELECT * FROM user_profiles WHERE role='specialist'
+    activate Supabase
+    Supabase-->>ISpecialistRepo: [{ id: 'spec-1', name: 'John Doe' }, ...]
+    deactivate Supabase
+    ISpecialistRepo-->>UseSpecialists: Result.ok([specialists])
+    deactivate ISpecialistRepo
+    
+    UseSpecialists-->>AssignSpecialistModal: { specialists, loading: false }
+    deactivate UseSpecialists
+    
+    AssignSpecialistModal-->>User: Display list of specialists
+    deactivate AssignSpecialistModal
+    deactivate Modal
+    
+    User->>AssignSpecialistModal: Selects specialist "John Doe" and clicks "Assign"
+    activate AssignSpecialistModal
+    
+    AssignSpecialistModal->>AssignSpecialistModal: setState({ submitting: true })
+    
+    AssignSpecialistModal->>AssignSpecialistUC: execute({ clientId: 'client-xyz', specialistId: 'spec-1' })
+    activate AssignSpecialistUC
+    
+    Note over AssignSpecialistUC: Use Case orchestrates business logic
+    
+    AssignSpecialistUC->>AssignSpecialistUC: Validate request
+    
+    AssignSpecialistUC->>IClientRepo: findById('client-xyz')
+    activate IClientRepo
+    IClientRepo->>Supabase: SELECT * FROM user_profiles WHERE id='client-xyz'
+    activate Supabase
+    Supabase-->>IClientRepo: { id: 'client-xyz', name: 'Client XYZ', specialists: [] }
+    deactivate Supabase
+    IClientRepo-->>AssignSpecialistUC: Result.ok(Client entity)
+    deactivate IClientRepo
+    
+    AssignSpecialistUC->>ISpecialistRepo: findById('spec-1')
+    activate ISpecialistRepo
+    ISpecialistRepo->>Supabase: SELECT * FROM user_profiles WHERE id='spec-1'
+    activate Supabase
+    Supabase-->>ISpecialistRepo: { id: 'spec-1', name: 'John Doe' }
+    deactivate Supabase
+    ISpecialistRepo-->>AssignSpecialistUC: Result.ok(Specialist entity)
+    deactivate ISpecialistRepo
+    
+    Note over AssignSpecialistUC: Both entities exist, proceed with assignment
+    
+    AssignSpecialistUC->>ClientEntity: client.assignSpecialist(specialistId)
+    activate ClientEntity
+    
+    ClientEntity->>ClientEntity: Validate assignment (business rules)
+    
+    alt Specialist already assigned
+        ClientEntity-->>AssignSpecialistUC: Result.fail('Specialist already assigned')
+    else Assignment valid
+        ClientEntity->>ClientEntity: specialists.push(specialistId)
+        ClientEntity-->>AssignSpecialistUC: Result.ok()
+    end
+    
+    deactivate ClientEntity
+    
+    Note over AssignSpecialistUC: Assuming assignment is valid
+    
+    AssignSpecialistUC->>IClientRepo: update(client)
+    activate IClientRepo
+    IClientRepo->>Supabase: INSERT INTO client_specialists (client_id, specialist_id)
+    activate Supabase
+    Supabase-->>IClientRepo: { id: 'assignment-123', ... }
+    deactivate Supabase
+    IClientRepo-->>AssignSpecialistUC: Result.ok(updatedClient)
+    deactivate IClientRepo
+    
+    AssignSpecialistUC-->>AssignSpecialistModal: Result.ok(ClientDTO)
+    deactivate AssignSpecialistUC
+    
+    Note over AssignSpecialistModal: ✅ Success: Close modal and refresh data
+    
+    AssignSpecialistModal->>AssignSpecialistModal: setState({ submitting: false })
+    AssignSpecialistModal->>AssignSpecialistModal: Show success toast
+    
+    AssignSpecialistModal->>UseModalManager: close()
+    activate UseModalManager
+    UseModalManager->>UseModalManager: setState({ activeModal: null, modalData: {} })
+    UseModalManager-->>AdminDashboard: Update state
+    deactivate UseModalManager
+    
+    AssignSpecialistModal->>UseDashboardStats: refetch()
+    activate UseDashboardStats
+    Note over UseDashboardStats: Refresh dashboard stats
+    UseDashboardStats-->>AdminDashboard: Updated stats
+    deactivate UseDashboardStats
+    
+    AssignSpecialistModal-->>User: Success: "Specialist assigned successfully"
+    deactivate AssignSpecialistModal
+    
+    Note over AdminDashboard: Dashboard automatically refreshes
+    
+    AdminDashboard-->>User: Display updated data
+    deactivate AdminDashboard
+    
+    rect rgb(200, 255, 200)
+        Note over AssignSpecialistUC: Benefits:<br/>• Business rules in domain entity<br/>• Type-safe repositories<br/>• Automatic validation<br/>• Transaction-safe<br/>• Easy to test
+    end
+    
+    rect rgb(255, 240, 200)
+        Note over ClientEntity: Domain Logic:<br/>• Prevents duplicate assignments<br/>• Validates specialist exists<br/>• Encapsulates business rules<br/>• No infrastructure dependencies
+    end
+```

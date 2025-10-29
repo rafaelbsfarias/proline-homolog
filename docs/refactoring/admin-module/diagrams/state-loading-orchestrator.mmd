@@ -1,0 +1,120 @@
+```mermaid
+stateDiagram-v2
+    %% ========================================
+    %% LOADING ORCHESTRATOR STATE MACHINE
+    %% ========================================
+    
+    [*] --> Idle: Component mounts
+    
+    state "🟢 Idle" as Idle {
+        [*] --> WaitingForRegistration
+        WaitingForRegistration: No loading operations registered
+        WaitingForRegistration: isLoading = false
+    }
+    
+    state "🔵 Registering" as Registering {
+        [*] --> AddingLoader
+        AddingLoader: Component calls register(key, fn)
+        AddingLoader: Loader added to registry
+        AddingLoader --> CheckAutoExecute
+        CheckAutoExecute: autoExecuteOnMount = true?
+        CheckAutoExecute --> ExecuteAll: Yes
+        CheckAutoExecute --> Idle: No
+    }
+    
+    state "⏳ Loading" as Loading {
+        [*] --> ExecutingAll
+        ExecutingAll: Executing all registered loaders in parallel
+        ExecutingAll: isLoading = true
+        ExecutingAll: Promise.all(loaders.map(fn => fn()))
+        ExecutingAll --> CheckResults
+        
+        state CheckResults <<choice>>
+        CheckResults --> AllSuccess: All succeeded
+        CheckResults --> SomeErrors: Some failed
+        
+        state "✅ All Success" as AllSuccess {
+            allSuccess: All loaders completed successfully
+            allSuccess: isLoading = false
+            allSuccess: errors = {}
+        }
+        
+        state "❌ Some Errors" as SomeErrors {
+            someErrors: Some loaders failed
+            someErrors: isLoading = false
+            someErrors: errors = { [key]: error, ... }
+        }
+    }
+    
+    state "🔄 Reloading" as Reloading {
+        [*] --> ExecutingSingle
+        ExecutingSingle: reload(key) called
+        ExecutingSingle: isLoading = true
+        ExecutingSingle: Execute single loader by key
+        ExecutingSingle --> SingleComplete
+        
+        state "✅ Single Complete" as SingleComplete {
+            singleComplete: Loader completed
+            singleComplete: isLoading = false
+            singleComplete: Update errors if failed
+        }
+    }
+    
+    state "🗑️ Unregistering" as Unregistering {
+        [*] --> RemovingLoader
+        RemovingLoader: Component calls unregister(key)
+        RemovingLoader: Loader removed from registry
+        RemovingLoader --> Idle
+    }
+    
+    %% State transitions
+    Idle --> Registering: register(key, fn)
+    Idle --> Loading: executeAll()
+    Idle --> Reloading: reload(key)
+    Idle --> Unregistering: unregister(key)
+    
+    Registering --> Idle: Registration complete
+    Registering --> Loading: autoExecuteOnMount
+    
+    Loading --> Idle: All complete (success or errors)
+    Reloading --> Idle: Single loader complete
+    Unregistering --> Idle: Unregistration complete
+    
+    AllSuccess --> Idle: Continue
+    SomeErrors --> Idle: Continue
+    SingleComplete --> Idle: Continue
+    
+    Idle --> [*]: Component unmounts
+    
+    note right of Idle
+        Hook State:
+        • loaders: Map<string, () => Promise<void>>
+        • isLoading: boolean
+        • errors: Record<string, Error>
+        
+        Exposed API:
+        • register(key, fn)
+        • unregister(key)
+        • executeAll()
+        • reload(key)
+        • isLoading
+        • getError(key)
+    end note
+    
+    note right of Loading
+        Benefits:
+        • Centralized loading state
+        • Automatic parallel execution
+        • Individual error tracking
+        • Automatic cleanup on unmount
+        • Self-registration pattern
+    end note
+    
+    note right of SomeErrors
+        Error Handling:
+        • Errors are isolated per loader
+        • Other loaders continue executing
+        • Components can check errors by key
+        • Failed loaders can be retried individually
+    end note
+```

@@ -1,0 +1,277 @@
+```mermaid
+classDiagram
+    %% ========================================
+    %% REPOSITORY INTERFACES (Domain Layer)
+    %% ========================================
+    
+    class IRepository~T, TId~ {
+        <<interface>>
+        +findById(id: TId): Promise~Result~T~~
+        +findAll(): Promise~Result~T[]~~
+        +save(entity: T): Promise~Result~T~~
+        +update(entity: T): Promise~Result~T~~
+        +delete(id: TId): Promise~Result~void~~
+    }
+    
+    class IUserRepository {
+        <<interface>>
+        +findById(id: UserId): Promise~Result~AdminUser~~
+        +findByEmail(email: Email): Promise~Result~AdminUser~~
+        +findByRole(role: UserRole): Promise~Result~AdminUser[]~~
+        +findByStatus(status: UserStatus): Promise~Result~AdminUser[]~~
+        +countByStatus(status: UserStatus): Promise~Result~number~~
+        +save(user: AdminUser): Promise~Result~AdminUser~~
+        +update(user: AdminUser): Promise~Result~AdminUser~~
+        +delete(id: UserId): Promise~Result~void~~
+    }
+    
+    class IClientRepository {
+        <<interface>>
+        +findById(id: ClientId): Promise~Result~Client~~
+        +findByEmail(email: Email): Promise~Result~Client~~
+        +findBySpecialist(specialistId: SpecialistId): Promise~Result~Client[]~~
+        +count(): Promise~Result~number~~
+        +save(client: Client): Promise~Result~Client~~
+        +update(client: Client): Promise~Result~Client~~
+        +delete(id: ClientId): Promise~Result~void~~
+    }
+    
+    class IPartnerRepository {
+        <<interface>>
+        +findById(id: PartnerId): Promise~Result~Partner~~
+        +findByCNPJ(cnpj: CNPJ): Promise~Result~Partner~~
+        +findByCategory(category: ServiceCategory): Promise~Result~Partner[]~~
+        +count(): Promise~Result~number~~
+        +save(partner: Partner): Promise~Result~Partner~~
+        +update(partner: Partner): Promise~Result~Partner~~
+        +delete(id: PartnerId): Promise~Result~void~~
+    }
+    
+    class ISpecialistRepository {
+        <<interface>>
+        +findById(id: SpecialistId): Promise~Result~Specialist~~
+        +findByEmail(email: Email): Promise~Result~Specialist~~
+        +findByClient(clientId: ClientId): Promise~Result~Specialist[]~~
+        +count(): Promise~Result~number~~
+        +save(specialist: Specialist): Promise~Result~Specialist~~
+        +update(specialist: Specialist): Promise~Result~Specialist~~
+        +delete(id: SpecialistId): Promise~Result~void~~
+    }
+    
+    class IVehicleRepository {
+        <<interface>>
+        +findById(id: VehicleId): Promise~Result~Vehicle~~
+        +findByPlate(plate: Plate): Promise~Result~Vehicle~~
+        +findByOwner(clientId: ClientId): Promise~Result~Vehicle[]~~
+        +findByStatus(status: VehicleStatus): Promise~Result~Vehicle[]~~
+        +count(): Promise~Result~number~~
+        +save(vehicle: Vehicle): Promise~Result~Vehicle~~
+        +update(vehicle: Vehicle): Promise~Result~Vehicle~~
+        +delete(id: VehicleId): Promise~Result~void~~
+    }
+    
+    %% ========================================
+    %% REPOSITORY IMPLEMENTATIONS (Infrastructure Layer)
+    %% ========================================
+    
+    class SupabaseUserRepository {
+        -supabaseClient: SupabaseClient
+        -mapper: UserMapper
+        +constructor(client: SupabaseClient, mapper: UserMapper)
+        +findById(id: UserId): Promise~Result~AdminUser~~
+        +findByEmail(email: Email): Promise~Result~AdminUser~~
+        +findByRole(role: UserRole): Promise~Result~AdminUser[]~~
+        +findByStatus(status: UserStatus): Promise~Result~AdminUser[]~~
+        +countByStatus(status: UserStatus): Promise~Result~number~~
+        +save(user: AdminUser): Promise~Result~AdminUser~~
+        +update(user: AdminUser): Promise~Result~AdminUser~~
+        +delete(id: UserId): Promise~Result~void~~
+        -toDomain(data: any): Result~AdminUser~
+        -toPersistence(user: AdminUser): any
+        -handleError(error: any): Result~never~
+    }
+    
+    class SupabaseClientRepository {
+        -supabaseClient: SupabaseClient
+        -mapper: ClientMapper
+        +constructor(client: SupabaseClient, mapper: ClientMapper)
+        +findById(id: ClientId): Promise~Result~Client~~
+        +findByEmail(email: Email): Promise~Result~Client~~
+        +findBySpecialist(specialistId: SpecialistId): Promise~Result~Client[]~~
+        +count(): Promise~Result~number~~
+        +save(client: Client): Promise~Result~Client~~
+        +update(client: Client): Promise~Result~Client~~
+        +delete(id: ClientId): Promise~Result~void~~
+        -toDomain(data: any): Result~Client~
+        -toPersistence(client: Client): any
+        -handleError(error: any): Result~never~
+    }
+    
+    class SupabasePartnerRepository {
+        -supabaseClient: SupabaseClient
+        -mapper: PartnerMapper
+        +constructor(client: SupabaseClient, mapper: PartnerMapper)
+        +findById(id: PartnerId): Promise~Result~Partner~~
+        +findByCNPJ(cnpj: CNPJ): Promise~Result~Partner~~
+        +findByCategory(category: ServiceCategory): Promise~Result~Partner[]~~
+        +count(): Promise~Result~number~~
+        +save(partner: Partner): Promise~Result~Partner~~
+        +update(partner: Partner): Promise~Result~Partner~~
+        +delete(id: PartnerId): Promise~Result~void~~
+        -toDomain(data: any): Result~Partner~
+        -toPersistence(partner: Partner): any
+        -handleError(error: any): Result~never~
+    }
+    
+    class SupabaseSpecialistRepository {
+        -supabaseClient: SupabaseClient
+        -mapper: SpecialistMapper
+        +constructor(client: SupabaseClient, mapper: SpecialistMapper)
+        +findById(id: SpecialistId): Promise~Result~Specialist~~
+        +findByEmail(email: Email): Promise~Result~Specialist~~
+        +findByClient(clientId: ClientId): Promise~Result~Specialist[]~~
+        +count(): Promise~Result~number~~
+        +save(specialist: Specialist): Promise~Result~Specialist~~
+        +update(specialist: Specialist): Promise~Result~Specialist~~
+        +delete(id: SpecialistId): Promise~Result~void~~
+        -toDomain(data: any): Result~Specialist~
+        -toPersistence(specialist: Specialist): any
+        -handleError(error: any): Result~never~
+    }
+    
+    class SupabaseVehicleRepository {
+        -supabaseClient: SupabaseClient
+        -mapper: VehicleMapper
+        +constructor(client: SupabaseClient, mapper: VehicleMapper)
+        +findById(id: VehicleId): Promise~Result~Vehicle~~
+        +findByPlate(plate: Plate): Promise~Result~Vehicle~~
+        +findByOwner(clientId: ClientId): Promise~Result~Vehicle[]~~
+        +findByStatus(status: VehicleStatus): Promise~Result~Vehicle[]~~
+        +count(): Promise~Result~number~~
+        +save(vehicle: Vehicle): Promise~Result~Vehicle~~
+        +update(vehicle: Vehicle): Promise~Result~Vehicle~~
+        +delete(id: VehicleId): Promise~Result~void~~
+        -toDomain(data: any): Result~Vehicle~
+        -toPersistence(vehicle: Vehicle): any
+        -handleError(error: any): Result~never~
+    }
+    
+    %% ========================================
+    %% MAPPERS (Infrastructure Layer)
+    %% ========================================
+    
+    class UserMapper {
+        <<utility>>
+        +toDomain(raw: any): Result~AdminUser~
+        +toPersistence(user: AdminUser): any
+        +toDTO(user: AdminUser): UserDTO
+        -mapValueObjects(raw: any): Result~ValueObjects~
+    }
+    
+    class ClientMapper {
+        <<utility>>
+        +toDomain(raw: any): Result~Client~
+        +toPersistence(client: Client): any
+        +toDTO(client: Client): ClientDTO
+        -mapValueObjects(raw: any): Result~ValueObjects~
+    }
+    
+    class PartnerMapper {
+        <<utility>>
+        +toDomain(raw: any): Result~Partner~
+        +toPersistence(partner: Partner): any
+        +toDTO(partner: Partner): PartnerDTO
+        -mapValueObjects(raw: any): Result~ValueObjects~
+    }
+    
+    class SpecialistMapper {
+        <<utility>>
+        +toDomain(raw: any): Result~Specialist~
+        +toPersistence(specialist: Specialist): any
+        +toDTO(specialist: Specialist): SpecialistDTO
+        -mapValueObjects(raw: any): Result~ValueObjects~
+    }
+    
+    class VehicleMapper {
+        <<utility>>
+        +toDomain(raw: any): Result~Vehicle~
+        +toPersistence(vehicle: Vehicle): any
+        +toDTO(vehicle: Vehicle): VehicleDTO
+        -mapValueObjects(raw: any): Result~ValueObjects~
+    }
+    
+    %% ========================================
+    %% RESULT TYPE (Shared Kernel)
+    %% ========================================
+    
+    class Result~T~ {
+        <<value object>>
+        -isSuccess: boolean
+        -error?: Error
+        -value?: T
+        +constructor(isSuccess, error?, value?)
+        +static ok~T~(value: T): Result~T~
+        +static fail~T~(error: Error): Result~T~
+        +isOk(): boolean
+        +isFailure(): boolean
+        +getValue(): T
+        +getError(): Error
+        +map~U~(fn: (T) => U): Result~U~
+        +flatMap~U~(fn: (T) => Result~U~): Result~U~
+    }
+    
+    %% ========================================
+    %% SUPABASE CLIENT (External)
+    %% ========================================
+    
+    class SupabaseClient {
+        <<external>>
+        +from(table: string): QueryBuilder
+        +rpc(fn: string, params: any): Promise~any~
+    }
+    
+    %% ========================================
+    %% RELATIONSHIPS
+    %% ========================================
+    
+    IRepository <|.. IUserRepository : extends
+    IRepository <|.. IClientRepository : extends
+    IRepository <|.. IPartnerRepository : extends
+    IRepository <|.. ISpecialistRepository : extends
+    IRepository <|.. IVehicleRepository : extends
+    
+    IUserRepository <|.. SupabaseUserRepository : implements
+    IClientRepository <|.. SupabaseClientRepository : implements
+    IPartnerRepository <|.. SupabasePartnerRepository : implements
+    ISpecialistRepository <|.. SupabaseSpecialistRepository : implements
+    IVehicleRepository <|.. SupabaseVehicleRepository : implements
+    
+    SupabaseUserRepository --> UserMapper : uses
+    SupabaseClientRepository --> ClientMapper : uses
+    SupabasePartnerRepository --> PartnerMapper : uses
+    SupabaseSpecialistRepository --> SpecialistMapper : uses
+    SupabaseVehicleRepository --> VehicleMapper : uses
+    
+    SupabaseUserRepository --> SupabaseClient : depends on
+    SupabaseClientRepository --> SupabaseClient : depends on
+    SupabasePartnerRepository --> SupabaseClient : depends on
+    SupabaseSpecialistRepository --> SupabaseClient : depends on
+    SupabaseVehicleRepository --> SupabaseClient : depends on
+    
+    SupabaseUserRepository ..> Result : returns
+    SupabaseClientRepository ..> Result : returns
+    SupabasePartnerRepository ..> Result : returns
+    SupabaseSpecialistRepository ..> Result : returns
+    SupabaseVehicleRepository ..> Result : returns
+    
+    UserMapper ..> Result : returns
+    ClientMapper ..> Result : returns
+    PartnerMapper ..> Result : returns
+    SpecialistMapper ..> Result : returns
+    VehicleMapper ..> Result : returns
+    
+    %% Notes
+    note for IRepository "Generic repository interface\nDefines common CRUD operations"
+    note for Result "Railway-oriented programming\nType-safe error handling"
+    note for UserMapper "Converts between domain and persistence\nValidates data integrity"
+```

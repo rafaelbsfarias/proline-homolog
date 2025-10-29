@@ -1,0 +1,195 @@
+```mermaid
+stateDiagram-v2
+    %% ========================================
+    %% MODAL MANAGER STATE MACHINE
+    %% ========================================
+    
+    [*] --> NoModalOpen: Component mounts
+    
+    state "🔒 No Modal Open" as NoModalOpen {
+        [*] --> Ready
+        Ready: activeModal = null
+        Ready: No modal is displayed
+    }
+    
+    state "📋 Create User Modal" as CreateUserModal {
+        [*] --> FormEmpty
+        
+        state "Form Empty" as FormEmpty {
+            formEmpty: User enters form
+            formEmpty: Validation: disabled
+        }
+        
+        state "Form Filling" as FormFilling {
+            formFilling: User types data
+            formFilling: Real-time validation
+        }
+        
+        state "Form Valid" as FormValid {
+            formValid: All fields valid
+            formValid: Submit button: enabled
+        }
+        
+        state "Submitting" as Submitting {
+            submitting: CreateUserUseCase executing
+            submitting: Submit button: disabled + loading
+        }
+        
+        state SubmitResult <<choice>>
+        
+        state "✅ Success" as CreateSuccess {
+            success: User created successfully
+            success: Show success toast
+            success: Close modal
+        }
+        
+        state "❌ Error" as CreateError {
+            error: Creation failed
+            error: Show error message
+            error: Form remains open
+        }
+        
+        FormEmpty --> FormFilling: User types
+        FormFilling --> FormValid: All valid
+        FormFilling --> FormEmpty: Clear form
+        FormValid --> Submitting: Submit clicked
+        FormValid --> FormFilling: Edit field
+        Submitting --> SubmitResult
+        SubmitResult --> CreateSuccess: Success
+        SubmitResult --> CreateError: Error
+        CreateError --> FormFilling: Fix errors
+        CreateSuccess --> NoModalOpen: Modal closes
+    }
+    
+    state "👤 Assign Specialist Modal" as AssignSpecialistModal {
+        [*] --> LoadingData
+        
+        state "⏳ Loading Data" as LoadingData {
+            loading: Fetching available specialists
+            loading: Fetching client info
+        }
+        
+        state LoadResult <<choice>>
+        
+        state "📝 Selection" as Selection {
+            selection: List of specialists shown
+            selection: User selects specialist
+            selection: Assign button: enabled
+        }
+        
+        state "❌ Load Error" as LoadError {
+            loadError: Failed to load data
+            loadError: Show error message
+            loadError: Retry button shown
+        }
+        
+        state "⏳ Assigning" as Assigning {
+            assigning: AssignSpecialistUseCase executing
+            assigning: Assign button: disabled + loading
+        }
+        
+        state AssignResult <<choice>>
+        
+        state "✅ Assigned" as AssignSuccess {
+            assigned: Specialist assigned successfully
+            assigned: Show success toast
+            assigned: Close modal
+        }
+        
+        state "❌ Assign Error" as AssignError {
+            assignError: Assignment failed
+            assignError: Show error message
+            assignError: Modal remains open
+        }
+        
+        LoadingData --> LoadResult
+        LoadResult --> Selection: Success
+        LoadResult --> LoadError: Error
+        LoadError --> LoadingData: Retry
+        Selection --> Assigning: Assign clicked
+        Assigning --> AssignResult
+        AssignResult --> AssignSuccess: Success
+        AssignResult --> AssignError: Error
+        AssignError --> Selection: Try again
+        AssignSuccess --> NoModalOpen: Modal closes
+    }
+    
+    state "🗑️ Delete User Modal" as DeleteUserModal {
+        [*] --> Confirming
+        
+        state "⚠️ Confirming" as Confirming {
+            confirming: Show user details
+            confirming: Warning message
+            confirming: Confirm/Cancel buttons
+        }
+        
+        state "⏳ Deleting" as Deleting {
+            deleting: DeleteUserUseCase executing
+            deleting: Delete button: disabled + loading
+        }
+        
+        state DeleteResult <<choice>>
+        
+        state "✅ Deleted" as DeleteSuccess {
+            deleted: User deleted successfully
+            deleted: Show success toast
+            deleted: Close modal
+        }
+        
+        state "❌ Delete Error" as DeleteError {
+            deleteError: Deletion failed
+            deleteError: Show error message
+            deleteError: Modal remains open
+        }
+        
+        Confirming --> Deleting: Confirm clicked
+        Confirming --> NoModalOpen: Cancel clicked
+        Deleting --> DeleteResult
+        DeleteResult --> DeleteSuccess: Success
+        DeleteResult --> DeleteError: Error
+        DeleteError --> Confirming: Try again
+        DeleteSuccess --> NoModalOpen: Modal closes
+    }
+    
+    %% State transitions
+    NoModalOpen --> CreateUserModal: open('createUser')
+    NoModalOpen --> AssignSpecialistModal: open('assignSpecialist')
+    NoModalOpen --> DeleteUserModal: open('deleteUser')
+    
+    CreateUserModal --> NoModalOpen: close() or Cancel
+    AssignSpecialistModal --> NoModalOpen: close() or Cancel
+    DeleteUserModal --> NoModalOpen: close() or Cancel
+    
+    NoModalOpen --> [*]: Component unmounts
+    
+    note right of NoModalOpen
+        Hook State:
+        • activeModal: string | null
+        • modalData: Record<string, any>
+        
+        Exposed API:
+        • open(modalId, data?)
+        • close()
+        • activeModal
+        • getModalData()
+    end note
+    
+    note right of CreateUserModal
+        Benefits:
+        • Centralized modal state
+        • Type-safe modal IDs
+        • Modal-specific data passing
+        • Automatic cleanup
+        • Single source of truth
+    end note
+    
+    note left of AssignSpecialistModal
+        Data Flow:
+        1. open('assignSpecialist', { clientId })
+        2. Modal loads specialists
+        3. User selects specialist
+        4. Use case executes
+        5. Success → close modal
+        6. Dashboard refreshes automatically
+    end note
+```

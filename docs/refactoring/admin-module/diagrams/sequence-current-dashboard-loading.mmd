@@ -1,0 +1,78 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant AdminDashboard
+    participant UserCounter
+    participant PendingRegCounter
+    participant RequestedPartsCounter
+    participant UsersCounterAPI
+    participant DataPanelAPI
+    participant VehiclesCounter
+    participant DataPanel
+    participant PartnersCard
+    
+    Note over AdminDashboard: Estado Inicial:<br/>7 loading states = true
+    
+    User->>AdminDashboard: Acessa dashboard
+    
+    activate AdminDashboard
+    AdminDashboard->>AdminDashboard: showOverallLoader = true<br/>(7 ORs)
+    AdminDashboard->>User: Mostra Loading Spinner
+    
+    par Fetch Paralelo (7 componentes)
+        AdminDashboard->>UserCounter: onLoadingChange={setUserLoading}
+        activate UserCounter
+        UserCounter->>UsersCounterAPI: GET /api/users-count
+        UsersCounterAPI-->>UserCounter: { count: 42 }
+        UserCounter->>AdminDashboard: onLoadingChange(false)
+        deactivate UserCounter
+    and
+        AdminDashboard->>PendingRegCounter: onLoadingChange={setPendingRegLoading}
+        activate PendingRegCounter
+        PendingRegCounter->>UsersCounterAPI: GET /api/admin/cadastros-pendentes
+        UsersCounterAPI-->>PendingRegCounter: [...]
+        PendingRegCounter->>AdminDashboard: onLoadingChange(false)
+        deactivate PendingRegCounter
+    and
+        AdminDashboard->>RequestedPartsCounter: onLoadingChange={setRequestedPartsLoading}
+        activate RequestedPartsCounter
+        RequestedPartsCounter->>UsersCounterAPI: GET /api/admin/part-requests/pending-count
+        UsersCounterAPI-->>RequestedPartsCounter: { count: 5 }
+        RequestedPartsCounter->>AdminDashboard: onLoadingChange(false)
+        deactivate RequestedPartsCounter
+    and
+        AdminDashboard->>VehiclesCounter: onLoadingChange={setVehiclesCounterLoading}
+        activate VehiclesCounter
+        VehiclesCounter->>UsersCounterAPI: GET /api/admin/vehicles-count
+        UsersCounterAPI-->>VehiclesCounter: { count: 150 }
+        VehiclesCounter->>AdminDashboard: onLoadingChange(false)
+        deactivate VehiclesCounter
+    and
+        AdminDashboard->>DataPanel: onLoadingChange={setDataPanelLoading}
+        activate DataPanel
+        DataPanel->>DataPanelAPI: GET /api/admin/clients-with-collection-summary
+        DataPanelAPI-->>DataPanel: { clients: [...] }
+        DataPanel->>AdminDashboard: onLoadingChange(false)
+        deactivate DataPanel
+    and
+        AdminDashboard->>PartnersCard: onLoadingChange={setPartnersCardLoading}
+        activate PartnersCard
+        PartnersCard->>DataPanelAPI: GET /api/admin/partners/overview
+        DataPanelAPI-->>PartnersCard: { partners: [...] }
+        PartnersCard->>AdminDashboard: onLoadingChange(false)
+        deactivate PartnersCard
+    and
+        AdminDashboard->>AdminDashboard: fetchUser()
+        Note over AdminDashboard: supabase.auth.getUser()
+        AdminDashboard->>AdminDashboard: setUserLoading(false)
+    end
+    
+    Note over AdminDashboard: Verifica:<br/>userLoading || pendingRegLoading ||<br/>requestedPartsLoading || usersCounterLoading ||<br/>vehiclesCounterLoading || dataPanelLoading ||<br/>partnersCardLoading
+    
+    AdminDashboard->>AdminDashboard: showOverallLoader = false
+    AdminDashboard->>User: Esconde Loading Spinner
+    AdminDashboard->>User: Mostra Dashboard Completo
+    deactivate AdminDashboard
+    
+    Note right of AdminDashboard: ❌ Problemas:<br/>- 7 estados diferentes<br/>- 7 callbacks<br/>- Lógica de OR manual<br/>- Complexidade ciclomática: 8<br/>- Difícil adicionar novos componentes
+```
