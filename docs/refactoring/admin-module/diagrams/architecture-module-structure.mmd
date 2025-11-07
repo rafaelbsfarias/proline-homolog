@@ -1,9 +1,6 @@
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#fff','primaryTextColor':'#000','primaryBorderColor':'#000','lineColor':'#000','secondaryColor':'#fff','tertiaryColor':'#fff','edgeLabelBackground':'#fff'}}}%%
 graph TB
-    %% ========================================
-    %% MODULE STRUCTURE
-    %% ========================================
-    
     subgraph AdminModule["📦 modules/admin/"]
         direction TB
         
@@ -195,12 +192,37 @@ graph TB
         Note6["✅ Each layer has clear responsibilities"]
     end
     
-    style AdminModule fill:#e3f2fd
-    style Domain fill:#fff9c4
-    style Application fill:#c5cae9
-    style Infrastructure fill:#d7ccc8
-    style Presentation fill:#bbdefb
-    style DI fill:#b2dfdb
-    style Shared fill:#f5f5f5
-    style Notes fill:#e8f5e9
+    style AdminModule fill:#e3f2fd,stroke:#000,stroke-width:3px,color:#000
+    style Domain fill:#fff9c4,stroke:#000,stroke-width:2px,color:#000
+    style Application fill:#d1c4e9,stroke:#000,stroke-width:2px,color:#000
+    style Infrastructure fill:#d7ccc8,stroke:#000,stroke-width:2px,color:#000
+    style Presentation fill:#bbdefb,stroke:#000,stroke-width:2px,color:#000
+    style DI fill:#b2dfdb,stroke:#000,stroke-width:2px,color:#000
+    style Shared fill:#f5f5f5,stroke:#000,stroke-width:2px,color:#000
+    style Notes fill:#c8e6c9,stroke:#000,stroke-width:2px,color:#000
+    
+    style DomainEntities fill:#fff9c4,stroke:#000,stroke-width:1px,color:#000
+    style DomainValueObjects fill:#fff9c4,stroke:#000,stroke-width:1px,color:#000
+    style DomainRepositories fill:#ffe0b2,stroke:#000,stroke-width:1px,color:#000
+    style DomainEnums fill:#fff9c4,stroke:#000,stroke-width:1px,color:#000
+    
+    style UseCasesUser fill:#d1c4e9,stroke:#000,stroke-width:1px,color:#000
+    style UseCasesClient fill:#d1c4e9,stroke:#000,stroke-width:1px,color:#000
+    style UseCasesPartner fill:#d1c4e9,stroke:#000,stroke-width:1px,color:#000
+    style UseCasesVehicle fill:#d1c4e9,stroke:#000,stroke-width:1px,color:#000
+    style UseCasesDashboard fill:#d1c4e9,stroke:#000,stroke-width:1px,color:#000
+    style DTOs fill:#e1bee7,stroke:#000,stroke-width:1px,color:#000
+    
+    style RepositoriesImpl fill:#d7ccc8,stroke:#000,stroke-width:1px,color:#000
+    style MappersInfra fill:#efebe9,stroke:#000,stroke-width:1px,color:#000
+    style Services fill:#d7ccc8,stroke:#000,stroke-width:1px,color:#000
+    
+    style Pages fill:#bbdefb,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsUI fill:#bbdefb,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsShared fill:#e3f2fd,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsDashboard fill:#e3f2fd,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsVehicles fill:#e3f2fd,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsPartners fill:#e3f2fd,stroke:#000,stroke-width:1px,color:#000
+    style ComponentsModals fill:#e3f2fd,stroke:#000,stroke-width:1px,color:#000
+    style HooksPresentation fill:#b2dfdb,stroke:#000,stroke-width:1px,color:#000
 ```
