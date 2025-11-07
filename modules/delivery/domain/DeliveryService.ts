@@ -132,7 +132,7 @@ export class DeliveryService {
       notes: `Data: ${desiredDate}, Valor: R$ ${req.fee_amount}`,
     });
 
-    await this.vehicles.setStatus(req.vehicle_id, 'Finalizado: Aguardando Aprovação de Entrega');
+    await this.vehicles.setStatus(req.vehicle_id, 'FINALIZADO: AGUARDANDO APROVAÇÃO DE ENTREGA');
 
     await this.notify.send(req.client_id, 'delivery_pending_approval', {
       vehicleId: req.vehicle_id,
