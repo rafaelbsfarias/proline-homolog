@@ -1,0 +1,65 @@
+/* WelcomeSection Styles - Mobile First */
+
+.welcomeContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem; /* 16px mobile */
+}
+
+.welcomeText {
+  /* Mobile: Menor tamanho de fonte */
+  font-size: 1rem; /* 16px */
+  font-weight: 500;
+  color: #222;
+  margin-bottom: 0.625rem; /* 10px */
+  line-height: 1.4;
+
+  /* Quebra de linha caso o nome seja muito longo */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.userName {
+  color: #072e4c;
+  font-weight: 600;
+}
+
+/* Small: Smartphones landscape (≥ 576px) */
+@media (min-width: 576px) {
+  .welcomeContainer {
+    padding: 0 1.5rem; /* 24px */
+  }
+
+  .welcomeText {
+    font-size: 1.1rem; /* 17.6px */
+  }
+}
+
+/* Medium: Tablets (≥ 768px) */
+@media (min-width: 768px) {
+  .welcomeContainer {
+    padding: 0 1.5rem; /* 24px */
+  }
+
+  .welcomeText {
+    font-size: 1.15rem; /* 18.4px */
+  }
+}
+
+/* Large: Desktops (≥ 992px) */
+@media (min-width: 992px) {
+  .welcomeContainer {
+    padding: 0 1.25rem; /* 20px */
+  }
+
+  .welcomeText {
+    font-size: 1.2rem; /* 19.2px - original */
+  }
+}
+
+/* Extra Large: Large desktops (≥ 1200px) */
+@media (min-width: 1200px) {
+  .welcomeText {
+    font-size: 1.2rem; /* 19.2px - original */
+  }
+}

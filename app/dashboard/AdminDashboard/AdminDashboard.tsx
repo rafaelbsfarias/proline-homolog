@@ -10,10 +10,12 @@ import {
   VehiclesCounter,
   PartnersCard,
   PendingChecklistAnalysisCounter,
-  RequestedPartsCounter, // Add the new component
+  RequestedPartsCounter,
   GeneralFinancialSummaryButton,
   PreparationVehiclesCounter,
   CommercializationVehiclesCounter,
+  Section,
+  WelcomeSection,
 } from '@/modules/admin/components';
 
 import styles from './AdminDashboard.module.css';
@@ -70,46 +72,28 @@ const AdminDashboard: React.FC = () => {
 
       {showOverallLoader && <Loading />}
 
-      <div
-        style={{
-          visibility: showOverallLoader ? 'hidden' : 'visible',
-          background: '#F0F2F5',
-          width: '100%',
-          padding: '10px 0 0 0',
-          minHeight: 10,
-        }}
+      <Section background="gray" paddingBlock="10px 0 0 0" isLoading={showOverallLoader}>
+        <WelcomeSection userName={user?.name} />
+      </Section>
+
+      <Section
+        background="white"
+        paddingBlock="0 0 32px 0"
+        marginBottom="32px"
+        isLoading={showOverallLoader}
       >
-        <div className={styles.welcomeContainer}>
-          <div style={{ fontSize: '1.2rem', fontWeight: 500, color: '#222', marginBottom: '10px' }}>
-            Bem-vindo,{' '}
-            <span style={{ color: '#072e4c', fontWeight: 600 }}>{(user as any)?.name || ''}</span>
-          </div>
-        </div>
-      </div>
-      <div
-        style={{
-          visibility: showOverallLoader ? 'hidden' : 'visible',
-          background: '#fff',
-          width: '100%',
-          margin: '0 auto',
-          padding: '0 0 32px 0',
-          marginBottom: 32,
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
-          <Toolbar />
-        </div>
-      </div>
+        <Toolbar />
+      </Section>
+
       <div
         style={{
           visibility: showOverallLoader ? 'hidden' : 'visible',
           background: 'transparent',
           width: '100%',
-          margin: '0 auto',
           padding: '0 0 32px 0',
         }}
       >
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <div className={styles.countersRow}>
             <GeneralFinancialSummaryButton />
             <PendingChecklistAnalysisCounter />
@@ -124,22 +108,24 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
         <DataPanel onLoadingChange={setDataPanelLoading} />
       </div>
+
       <div style={{ visibility: showOverallLoader ? 'hidden' : 'visible' }}>
         <PartnersCard onLoadingChange={setPartnersCardLoading} />
       </div>
+
       <div
         style={{
           visibility: showOverallLoader ? 'hidden' : 'visible',
           background: 'transparent',
           width: '100%',
-          margin: '0 auto',
           padding: '16px 0 32px 0',
         }}
       >
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           <AdminVehiclesSection />
         </div>
       </div>

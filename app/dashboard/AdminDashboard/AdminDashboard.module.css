@@ -24,3 +24,50 @@
   min-height: 100vh;
   background-color: #f0f2f5;
 }
+
+/* Counters Row - Mobile First Approach */
+.countersRow {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  width: 100%;
+}
+
+/* Mobile: 1 coluna (< 576px) */
+@media (min-width: 320px) {
+  .countersRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Small Tablets: 2 colunas (≥ 576px) */
+@media (min-width: 576px) {
+  .countersRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Tablets: 3 colunas (≥ 768px) */
+@media (min-width: 768px) {
+  .countersRow {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.125rem; /* 18px */
+  }
+}
+
+/* Desktop: 4 colunas (≥ 992px) */
+@media (min-width: 992px) {
+  .countersRow {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.125rem; /* 18px */
+  }
+}
+
+/* Large Desktop: 5 colunas (≥ 1200px) */
+@media (min-width: 1200px) {
+  .countersRow {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.125rem; /* 18px */
+  }
+}

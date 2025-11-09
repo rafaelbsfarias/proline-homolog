@@ -17,3 +17,5 @@ export { default as GeneralFinancialSummaryButton } from './GeneralFinancialSumm
 export { default as PreparationVehiclesCounter } from './PreparationVehiclesCounter';
 export { default as CommercializationVehiclesCounter } from './CommercializationVehiclesCounter';
 export { default as AdminVehiclesSection } from './AdminVehiclesSection';
+export { Section } from './Section';
+export { WelcomeSection } from './WelcomeSection';

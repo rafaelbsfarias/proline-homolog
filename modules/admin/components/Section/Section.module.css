@@ -1,0 +1,53 @@
+/* Section Component Styles - Mobile First Approach */
+
+.sectionOuter {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.sectionOuter[data-background='white'] {
+  background: #fff;
+}
+
+.sectionOuter[data-background='gray'] {
+  background: #f0f2f5;
+}
+
+.sectionOuter[data-background='transparent'] {
+  background: transparent;
+}
+
+.sectionInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  /* Base: Mobile (< 576px) - 16px padding */
+  padding: 0 1rem;
+}
+
+/* Small: Smartphones landscape (≥ 576px) */
+@media (min-width: 576px) {
+  .sectionInner {
+    padding: 0 1.5rem; /* 24px */
+  }
+}
+
+/* Medium: Tablets (≥ 768px) */
+@media (min-width: 768px) {
+  .sectionInner {
+    padding: 0 1.5rem; /* 24px */
+  }
+}
+
+/* Large: Desktops (≥ 992px) */
+@media (min-width: 992px) {
+  .sectionInner {
+    padding: 0 1.25rem; /* 20px */
+  }
+}
+
+/* Extra Large: Large desktops (≥ 1200px) */
+@media (min-width: 1200px) {
+  .sectionInner {
+    padding: 0 1.25rem; /* 20px - original design */
+  }
+}
