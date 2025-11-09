@@ -81,36 +81,69 @@ const AdminVehiclesSection: React.FC = () => {
           <p style={{ padding: 12, color: '#666' }}>Nenhum veículo encontrado.</p>
         ) : (
           <div className="vehicles-list">
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Placa</th>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Modelo</th>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Status</th>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Criado em</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(row => (
-                  <tr key={row.id}>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>{row.plate}</td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                      {row.client_company || '-'}
-                    </td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                      {[row.brand, row.model].filter(Boolean).join(' ')}
-                    </td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                      {row.status || '-'}
-                    </td>
-                    <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                      {new Date(row.created_at).toLocaleDateString('pt-BR')}
-                    </td>
+            {/* Desktop: Tabela */}
+            <div className="vehicles-table-desktop">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Placa</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Cliente</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Modelo</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Criado em</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map(row => (
+                    <tr key={row.id}>
+                      <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                        {row.plate}
+                      </td>
+                      <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                        {row.client_company || '-'}
+                      </td>
+                      <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                        {[row.brand, row.model].filter(Boolean).join(' ')}
+                      </td>
+                      <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                        {row.status || '-'}
+                      </td>
+                      <td style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                        {new Date(row.created_at).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile: Cards */}
+            <div className="vehicles-cards-mobile">
+              {rows.map(row => (
+                <div key={row.id} className="vehicle-card-item">
+                  <div className="card-field">
+                    <strong>Placa:</strong>
+                    <span>{row.plate}</span>
+                  </div>
+                  <div className="card-field">
+                    <strong>Cliente:</strong>
+                    <span>{row.client_company || '-'}</span>
+                  </div>
+                  <div className="card-field">
+                    <strong>Modelo:</strong>
+                    <span>{[row.brand, row.model].filter(Boolean).join(' ') || '-'}</span>
+                  </div>
+                  <div className="card-field">
+                    <strong>Status:</strong>
+                    <span>{row.status || '-'}</span>
+                  </div>
+                  <div className="card-field card-field-last">
+                    <strong>Criado em:</strong>
+                    <span>{new Date(row.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             {totalPages > 1 && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>

@@ -27,47 +27,82 @@
 
 /* Counters Row - Mobile First Approach */
 .countersRow {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin: 0;
   width: 100%;
+  justify-content: center;
+  align-items: stretch;
 }
 
-/* Mobile: 1 coluna (< 576px) */
-@media (min-width: 320px) {
+/* Estilo global para todos os filhos diretos (contadores/botões) */
+.countersRow > * {
+  flex: 1 1 auto;
+  min-width: 280px;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Mobile: 1 item por linha, ocupa toda largura */
+@media (max-width: 575px) {
   .countersRow {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .countersRow > * {
+    min-width: 100%;
+    max-width: 100%;
   }
 }
 
 /* Small Tablets: 2 colunas (≥ 576px) */
-@media (min-width: 576px) {
-  .countersRow {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+@media (min-width: 576px) and (max-width: 767px) {
+  .countersRow > * {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: calc(50% - 0.5rem);
+    max-width: calc(50% - 0.5rem);
   }
 }
 
 /* Tablets: 3 colunas (≥ 768px) */
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 991px) {
   .countersRow {
-    grid-template-columns: repeat(3, 1fr);
     gap: 1.125rem; /* 18px */
+  }
+
+  .countersRow > * {
+    flex: 1 1 calc(33.333% - 0.75rem);
+    min-width: calc(33.333% - 0.75rem);
+    max-width: calc(33.333% - 0.75rem);
   }
 }
 
 /* Desktop: 4 colunas (≥ 992px) */
-@media (min-width: 992px) {
+@media (min-width: 992px) and (max-width: 1199px) {
   .countersRow {
-    grid-template-columns: repeat(4, 1fr);
     gap: 1.125rem; /* 18px */
+  }
+
+  .countersRow > * {
+    flex: 1 1 calc(25% - 0.85rem);
+    min-width: calc(25% - 0.85rem);
+    max-width: calc(25% - 0.85rem);
   }
 }
 
 /* Large Desktop: 5 colunas (≥ 1200px) */
 @media (min-width: 1200px) {
   .countersRow {
-    grid-template-columns: repeat(5, 1fr);
     gap: 1.125rem; /* 18px */
+  }
+
+  .countersRow > * {
+    flex: 1 1 calc(20% - 0.9rem);
+    min-width: 180px;
+    max-width: calc(20% - 0.9rem);
   }
 }

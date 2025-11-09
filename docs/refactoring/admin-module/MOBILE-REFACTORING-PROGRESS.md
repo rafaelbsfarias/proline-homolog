@@ -46,9 +46,11 @@
 ### 3. Melhorias no CSS
 
 #### AdminDashboard.module.css
-- ✅ Adicionado `.countersRow` com grid responsivo
+- ✅ `.countersRow` convertido de grid para flexbox
 - ✅ Mobile-first: 1 coluna → 5 colunas (breakpoints)
 - ✅ Gap responsivo
+- ✅ Centralização com `justify-content: center`
+- ✅ Altura uniforme com `align-items: stretch`
 
 **Grid Responsivo:**
 ```
@@ -58,6 +60,16 @@ Tablet (768):        3 colunas
 Desktop (992):       4 colunas
 Large Desktop (1200): 5 colunas
 ```
+
+#### Toolbar.module.css
+- ✅ `.counterCard` refatorado (inline-block → flex)
+- ✅ Altura mínima: 60px para consistência
+- ✅ Largura mínima: 180px desktop, 100% mobile
+- ✅ Margens removidas (margin: 0)
+- ✅ Hover effect melhorado com elevação
+- ✅ Botões de ação padronizados
+- ✅ `.actionButtonsContainer` centralizado
+- ✅ Min-width e min-height para botões (200px x 50px)
 
 ---
 
@@ -236,8 +248,10 @@ Large Desktop (1200): 5 colunas
 - ✅ Loading states otimizados
 - ✅ Performance melhorada
 - ✅ Acessibilidade WCAG AA
+- ✅ Alinhamento de contadores e botões
+- ✅ Dimensionamento consistente (min-height, min-width)
 
 ---
 
-**Última atualização**: 2025-11-09
-**Status**: Fase 1 Completa (40% do projeto)
+**Última atualização**: 2025-01-19
+**Status**: Fase 1 - 60% Completa (Alinhamento e Estrutura Base)
