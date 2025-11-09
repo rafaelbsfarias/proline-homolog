@@ -57,8 +57,9 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
       .map(s => s.trim())
       .filter(Boolean);
     if (statusFilters.length > 0) {
-      // PostgREST .in is case-sensitive; assume provided statuses match DB
-      query = query.in('status', statusFilters);
+      // Use OR with ilike for case-insensitive matching
+      const statusConditions = statusFilters.map(s => `status.ilike.${s}`).join(',');
+      query = query.or(statusConditions);
     }
     // Quando há busca livre (q), precisamos aplicar OR sobre campos da tabela base
     // e também sobre o campo relacionado (clients.company_name). Como PostgREST
@@ -87,8 +88,10 @@ export const GET = withAdminAuth(async (req: AuthenticatedRequest) => {
       let baseQ = baseQuery;
       let clientQ = clientQuery;
       if (statusFilters.length > 0) {
-        baseQ = baseQ.in('status', statusFilters);
-        clientQ = clientQ.in('status', statusFilters);
+        // Use OR with ilike for case-insensitive matching
+        const statusConditions = statusFilters.map(s => `status.ilike.${s}`).join(',');
+        baseQ = baseQ.or(statusConditions);
+        clientQ = clientQ.or(statusConditions);
       }
 
       // limit safeguards

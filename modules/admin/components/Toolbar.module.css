@@ -32,6 +32,7 @@
   min-height: 60px;
   width: 100%;
   text-align: center;
+  text-decoration: none;
   transition:
     box-shadow 0.2s,
     border 0.2s,

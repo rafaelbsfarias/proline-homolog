@@ -52,7 +52,6 @@ const VehiclesCounter: React.FC<VehiclesCounterProps> = ({ onLoadingChange }) =>
       href="/admin/vehicles"
       className={styles.counterCard}
       title="Ver listagem geral de veículos"
-      style={{ cursor: 'pointer', display: 'inline-block', textDecoration: 'none' }}
     >
       Veículos: {count}
     </Link>

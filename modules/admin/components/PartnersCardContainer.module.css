@@ -3,6 +3,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 180px;
-  margin-top: 32px;
+  min-height: 80px;
+  margin-top: 20px;
 }

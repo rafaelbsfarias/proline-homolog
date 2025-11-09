@@ -122,7 +122,7 @@ const AdminDashboard: React.FC = () => {
           visibility: showOverallLoader ? 'hidden' : 'visible',
           background: 'transparent',
           width: '100%',
-          padding: '16px 0 32px 0',
+          padding: '0 0 32px 0',
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
