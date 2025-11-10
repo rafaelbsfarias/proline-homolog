@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Header from '@/modules/admin/components/Header';
 import { useAuthenticatedFetch } from '@/modules/common/hooks/useAuthenticatedFetch';
+import styles from './page.module.css';
 
 type VehicleRow = {
   id: string;
@@ -58,8 +59,8 @@ export default function AdminVehiclesListPage() {
         if (!active) return;
         setRows(resp.data.vehicles || []);
         setTotal(resp.data.total ?? (resp.data.vehicles?.length || 0));
-      } catch (e: any) {
-        if (active) setError(e?.message || 'Erro ao listar veículos');
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : 'Erro ao listar veículos');
       } finally {
         if (active) setLoading(false);
       }
@@ -73,138 +74,118 @@ export default function AdminVehiclesListPage() {
   }, [query, get]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f7fa' }}>
+    <div className={styles.pageContainer}>
       <Header />
-      <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 16px' }}>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 16,
-          }}
-        >
-          <h1 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#072e4c', margin: 0 }}>
-            Veículos
-          </h1>
-          <div style={{ display: 'flex', gap: 8, minWidth: 300 }}>
+      <main className={styles.mainContent}>
+        <div className={styles.pageHeader}>
+          <h1 className={styles.pageTitle}>Veículos</h1>
+          <div className={styles.searchContainer}>
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
               placeholder="Filtrar por placa, cliente ou status"
-              style={{
-                padding: '10px 12px',
-                borderRadius: 8,
-                border: '1px solid #e5e7eb',
-                width: '100%',
-              }}
+              className={styles.searchInput}
             />
           </div>
         </div>
 
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid #e5e7eb',
-            borderRadius: 12,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-          }}
-        >
-          <div style={{ padding: 16, borderBottom: '1px solid #e5e7eb' }}>
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
             {loading ? (
-              <span style={{ color: '#666' }}>Carregando...</span>
+              <span className={styles.loadingMessage}>Carregando...</span>
             ) : error ? (
-              <span style={{ color: '#b91c1c' }}>{error}</span>
+              <span className={styles.errorMessage}>{error}</span>
             ) : (
-              <div
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <span style={{ color: '#374151' }}>Total: {total}</span>
-                <div style={{ display: 'flex', gap: 8 }}>
+              <>
+                <span className={styles.totalInfo}>Total: {total}</span>
+                <div className={styles.paginationButtons}>
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page <= 1 || loading}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
-                      background: page <= 1 ? '#f3f4f6' : '#fff',
-                      color: page <= 1 ? '#9ca3af' : '#374151',
-                      cursor: page <= 1 ? 'not-allowed' : 'pointer',
-                    }}
+                    className={styles.paginationButton}
                   >
                     Anterior
                   </button>
                   <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={loading || page * pageSize >= total}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: 6,
-                      border: '1px solid #e5e7eb',
-                      background: page * pageSize >= total ? '#f3f4f6' : '#fff',
-                      color: page * pageSize >= total ? '#9ca3af' : '#374151',
-                      cursor: page * pageSize >= total ? 'not-allowed' : 'pointer',
-                    }}
+                    className={styles.paginationButton}
                   >
                     Próxima
                   </button>
                 </div>
-              </div>
+              </>
             )}
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+
+          {/* Desktop: Tabela */}
+          <div className={styles.tableWrapper}>
+            <table className={styles.vehiclesTable}>
               <thead>
-                <tr style={{ background: '#f9fafb', color: '#374151' }}>
-                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-                    Placa
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-                    Cliente
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-                    Marca/Modelo
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-                    Status
-                  </th>
-                  <th style={{ textAlign: 'left', padding: 12, borderBottom: '1px solid #e5e7eb' }}>
-                    Criado em
-                  </th>
+                <tr>
+                  <th>Placa</th>
+                  <th>Cliente</th>
+                  <th>Marca/Modelo</th>
+                  <th>Status</th>
+                  <th>Criado em</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(v => (
                   <tr key={v.id}>
-                    <td style={{ padding: 12, borderBottom: '1px solid #f3f4f6', fontWeight: 600 }}>
-                      <a href={`/dashboard/vehicle/${v.id}`} style={{ color: '#0f62fe' }}>
+                    <td>
+                      <a href={`/dashboard/vehicle/${v.id}`} className={styles.plateLink}>
                         {v.plate}
                       </a>
                     </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid #f3f4f6' }}>
-                      {v.client_company || '-'}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid #f3f4f6' }}>
-                      {(v.brand || '-') + ' ' + (v.model || '')}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid #f3f4f6' }}>
-                      {v.status || '-'}
-                    </td>
-                    <td style={{ padding: 12, borderBottom: '1px solid #f3f4f6' }}>
-                      {new Date(v.created_at).toLocaleDateString('pt-BR')}
-                    </td>
+                    <td>{v.client_company || '-'}</td>
+                    <td>{(v.brand || '-') + ' ' + (v.model || '')}</td>
+                    <td>{v.status || '-'}</td>
+                    <td>{new Date(v.created_at).toLocaleDateString('pt-BR')}</td>
                   </tr>
                 ))}
                 {!loading && rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ padding: 16, color: '#6b7280' }}>
+                    <td colSpan={5} className={styles.emptyMessage}>
                       Nenhum veículo encontrado.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile: Cards */}
+          <div className={styles.vehicleCardsContainer}>
+            {rows.map(v => (
+              <div key={v.id} className={styles.vehicleCard}>
+                <div className={`${styles.cardField} ${styles.cardFieldPlate}`}>
+                  <strong>Placa:</strong>
+                  <a href={`/dashboard/vehicle/${v.id}`} className={styles.plateLink}>
+                    {v.plate}
+                  </a>
+                </div>
+                <div className={styles.cardField}>
+                  <strong>Cliente:</strong>
+                  <span>{v.client_company || '-'}</span>
+                </div>
+                <div className={styles.cardField}>
+                  <strong>Marca/Modelo:</strong>
+                  <span>{(v.brand || '-') + ' ' + (v.model || '')}</span>
+                </div>
+                <div className={styles.cardField}>
+                  <strong>Status:</strong>
+                  <span>{v.status || '-'}</span>
+                </div>
+                <div className={styles.cardField}>
+                  <strong>Criado em:</strong>
+                  <span>{new Date(v.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </div>
+            ))}
+            {!loading && rows.length === 0 && (
+              <div className={styles.emptyMessage}>Nenhum veículo encontrado.</div>
+            )}
           </div>
         </div>
       </main>
