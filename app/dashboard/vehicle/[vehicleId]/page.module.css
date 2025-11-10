@@ -19,7 +19,9 @@
 @media (max-width: 768px) {
   .mainContent {
     margin: 16px auto;
-    padding: 0 12px;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
   }
 
   .loadingWrapper {
