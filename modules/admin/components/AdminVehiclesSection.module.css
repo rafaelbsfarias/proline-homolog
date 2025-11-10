@@ -1,0 +1,15 @@
+.vehiclesSectionOuter {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* Mobile: ajusta largura para 91% igual aos outros containers */
+@media (max-width: 768px) {
+  .vehiclesSectionOuter {
+    width: 85%;
+    margin: 5px auto 50px 20px;
+  }
+}

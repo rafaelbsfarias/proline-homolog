@@ -89,8 +89,9 @@ const AdminDashboard: React.FC = () => {
         style={{
           visibility: showOverallLoader ? 'hidden' : 'visible',
           background: 'transparent',
-          width: '100%',
+          width: '94%',
           padding: '0 0 32px 0',
+          margin: '0 auto',
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
@@ -125,9 +126,7 @@ const AdminDashboard: React.FC = () => {
           padding: '0 0 32px 0',
         }}
       >
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
-          <AdminVehiclesSection />
-        </div>
+        <AdminVehiclesSection />
       </div>
     </div>
   );

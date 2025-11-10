@@ -22,12 +22,13 @@
   margin: 0 auto;
   /* Base: Mobile (< 576px) - 16px padding */
   padding: 0 1rem;
+  box-sizing: border-box;
 }
 
 /* Small: Smartphones landscape (≥ 576px) */
 @media (min-width: 576px) {
   .sectionInner {
-    padding: 0 1.5rem; /* 24px */
+    padding: 0 1.25rem; /* 20px */
   }
 }
 

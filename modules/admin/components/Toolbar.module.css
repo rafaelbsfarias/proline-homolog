@@ -56,15 +56,15 @@
   }
   .counterCard {
     min-width: 0;
-    width: 100%;
-    justify-content: flex-start;
-    padding: 12px 16px;
+    width: 93%;
+    justify-content: center;
+    padding: 14px 16px;
   }
 }
 .toolbarSection {
   margin-top: 0px;
-  padding: 0 20px;
-  width: 100%;
+  padding: 0;
+  width: 93%;
   box-sizing: border-box;
 }
 .welcomeTitle {
@@ -85,7 +85,9 @@
   gap: 12px;
   flex-wrap: wrap;
   width: 100%;
+  max-width: 100%;
   align-items: stretch;
+  box-sizing: border-box;
 }
 /* Botões coloridos - Base comum */
 .btnVehicle,
@@ -162,7 +164,7 @@
 @media (max-width: 575px) {
   .actionButtonsContainer {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .btnVehicle,
@@ -170,6 +172,7 @@
   .btnPartner,
   .btnUsers {
     min-width: 100%;
+    max-width: 100%;
     flex: 1 1 100%;
     font-size: 0.95rem;
     padding: 14px 16px;
@@ -188,6 +191,7 @@
   .btnUsers {
     flex: 1 1 calc(50% - 6px);
     min-width: calc(50% - 6px);
+    max-width: calc(50% - 6px);
     font-size: 0.95rem;
   }
 }
@@ -199,7 +203,8 @@
   .btnPartner,
   .btnUsers {
     flex: 1 1 calc(25% - 9px);
-    min-width: 160px;
+    min-width: 140px;
+    max-width: calc(25% - 9px);
     font-size: 0.9rem;
     padding: 12px 14px;
   }
@@ -212,6 +217,7 @@
   .btnPartner,
   .btnUsers {
     flex: 1 1 calc(25% - 9px);
-    min-width: 200px;
+    min-width: 180px;
+    max-width: calc(25% - 9px);
   }
 }
