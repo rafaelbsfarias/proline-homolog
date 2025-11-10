@@ -16,8 +16,15 @@
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 0;
+  }
+
   .text {
-    font-size: 14px;
+    font-size: 0.9rem;
+    line-height: 1.5;
     padding: 12px;
+    border-radius: 6px;
+    border-left-width: 3px;
   }
 }

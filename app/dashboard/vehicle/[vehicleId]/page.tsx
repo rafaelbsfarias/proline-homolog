@@ -7,6 +7,7 @@ import { useAuth } from '@/modules/common/services/AuthProvider';
 import { Loading } from '@/modules/common/components/Loading/Loading';
 import VehicleDetails from '@/modules/vehicles/components/VehicleDetails';
 import { useVehicleDetails } from '@/modules/vehicles/hooks/useVehicleDetails';
+import styles from './page.module.css';
 
 const UnifiedVehicleDetailsPage = () => {
   const params = useParams();
@@ -25,23 +26,21 @@ const UnifiedVehicleDetailsPage = () => {
 
   const { vehicle, inspection, mediaUrls, loading, error } = useVehicleDetails(role, vehicleId);
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f5' }}>
+    <div className={styles.pageContainer}>
       <Header />
-      <main style={{ maxWidth: 1200, margin: '24px auto', padding: '0 16px' }}>
+      <main className={styles.mainContent}>
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+          <div className={styles.loadingWrapper}>
             <Loading />
           </div>
         ) : (
-          <>
-            <VehicleDetails
-              vehicle={vehicle}
-              inspection={inspection}
-              mediaUrls={mediaUrls}
-              loading={loading}
-              error={error}
-            />
-          </>
+          <VehicleDetails
+            vehicle={vehicle}
+            inspection={inspection}
+            mediaUrls={mediaUrls}
+            loading={loading}
+            error={error}
+          />
         )}
       </main>
     </div>
