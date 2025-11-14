@@ -3,11 +3,43 @@ import { withAdminAuth, type AuthenticatedRequest } from '@/modules/common/utils
 import { SupabaseService } from '@/modules/common/services/SupabaseService';
 import { STATUS } from '@/modules/common/constants/status';
 
+type VehicleRevenue = {
+  vehicle_id: string;
+  plate: string;
+  brand: string;
+  model: string;
+  total_revenue: number;
+};
+
+type ClientRevenue = {
+  client_id: string;
+  client_name: string;
+  total_revenue: number;
+  vehicle_count: number;
+};
+
+type PartnerRevenue = {
+  partner_id: string;
+  company_name: string;
+  total_revenue: number;
+  quote_count: number;
+};
+
+type QuotesByStatus = {
+  finalized: number; // Faturamento realizado
+  in_execution: number; // Em execução (projeção)
+  pending: number; // Pendentes (projeção)
+  total: number; // Total geral
+};
+
 type TotalsResponse = {
   collections_total: number; // BRL
   parking_total_today: number; // BRL
-  approved_budgets_total: number; // BRL
+  quotes_by_status: QuotesByStatus; // Estratificação de orçamentos
   purchased_parts_total: number; // BRL
+  by_vehicle?: VehicleRevenue[];
+  by_client?: ClientRevenue[];
+  by_partner?: PartnerRevenue[];
 };
 
 export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
@@ -108,19 +140,37 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
     parking_total_today = 0;
   }
 
-  // 3) Approved budgets total = sum(total_value) where quotes.status = 'approved'
-  let approved_budgets_total = 0;
+  // 3) Quotes by status (estratificação para faturamento e projeção)
+  const quotes_by_status: QuotesByStatus = {
+    finalized: 0,
+    in_execution: 0,
+    pending: 0,
+    total: 0,
+  };
+
   try {
-    const { data: sumRows } = await admin
+    const { data: allQuotes } = await admin
       .from('quotes')
-      .select('total_value', { head: false })
-      .eq('status', 'approved');
-    approved_budgets_total = (sumRows || []).reduce(
-      (sum, r: any) => sum + (Number(r?.total_value) || 0),
-      0
-    );
+      .select('total_value, status', { head: false });
+
+    (allQuotes || []).forEach((q: any) => {
+      const value = Number(q?.total_value) || 0;
+      const status = String(q?.status || '').toLowerCase();
+
+      quotes_by_status.total += value;
+
+      // Estratificação por status
+      if (status === 'finalized') {
+        quotes_by_status.finalized += value;
+      } else if (status === 'in_execution' || status === 'in_progress') {
+        quotes_by_status.in_execution += value;
+      } else {
+        // Todos os outros status são considerados pendentes (pending, pending_admin_approval, pending_client_approval, etc)
+        quotes_by_status.pending += value;
+      }
+    });
   } catch {
-    approved_budgets_total = 0;
+    // Mantém valores zerados em caso de erro
   }
 
   // 4) Purchased parts total = sum(quantity * estimated_price) where status in ('ordered','received')
@@ -139,11 +189,154 @@ export const GET = withAdminAuth(async (_req: AuthenticatedRequest) => {
     purchased_parts_total = 0;
   }
 
+  // 5) Revenue by vehicle (from all quotes - agnostic to status)
+  const by_vehicle: VehicleRevenue[] = [];
+  try {
+    const { data: quoteRows } = await admin
+      .from('quotes')
+      .select(
+        'total_value, service_order_id, service_orders ( vehicle_id, vehicles ( id, plate, brand, model ) )'
+      );
+
+    const revenueByVehicle = new Map<
+      string,
+      { plate: string; brand: string; model: string; revenue: number }
+    >();
+
+    (quoteRows || []).forEach((q: any) => {
+      const value = Number(q?.total_value) || 0;
+      const so = Array.isArray(q?.service_orders) ? q.service_orders[0] : q.service_orders;
+      const vehicle = Array.isArray(so?.vehicles) ? so.vehicles[0] : so?.vehicles;
+
+      if (vehicle?.id) {
+        const existing = revenueByVehicle.get(vehicle.id);
+        revenueByVehicle.set(vehicle.id, {
+          plate: vehicle.plate || 'N/A',
+          brand: vehicle.brand || 'N/A',
+          model: vehicle.model || 'N/A',
+          revenue: (existing?.revenue || 0) + value,
+        });
+      }
+    });
+
+    by_vehicle.push(
+      ...Array.from(revenueByVehicle.entries()).map(([vid, data]) => ({
+        vehicle_id: vid,
+        plate: data.plate,
+        brand: data.brand,
+        model: data.model,
+        total_revenue: data.revenue,
+      }))
+    );
+    by_vehicle.sort((a, b) => b.total_revenue - a.total_revenue);
+  } catch {
+    // ignore
+  }
+
+  // 6) Revenue by client (from all quotes - agnostic to status)
+  const by_client: ClientRevenue[] = [];
+  try {
+    const { data: quoteRows } = await admin
+      .from('quotes')
+      .select('total_value, service_order_id, service_orders ( client_id, vehicle_id )');
+
+    const revenueByClient = new Map<string, { revenue: number; vehicleIds: Set<string> }>();
+
+    (quoteRows || []).forEach((q: any) => {
+      const value = Number(q?.total_value) || 0;
+      const so = Array.isArray(q?.service_orders) ? q.service_orders[0] : q.service_orders;
+      const clientId = so?.client_id;
+      const vehicleId = so?.vehicle_id;
+
+      if (clientId) {
+        const existing = revenueByClient.get(clientId);
+        if (!existing) {
+          revenueByClient.set(clientId, {
+            revenue: value,
+            vehicleIds: new Set(vehicleId ? [vehicleId] : []),
+          });
+        } else {
+          existing.revenue += value;
+          if (vehicleId) existing.vehicleIds.add(vehicleId);
+        }
+      }
+    });
+
+    // Get client names (company_name from clients table)
+    const clientIds = Array.from(revenueByClient.keys());
+    if (clientIds.length > 0) {
+      const { data: clientsData } = await admin
+        .from('clients')
+        .select('profile_id, company_name')
+        .in('profile_id', clientIds);
+
+      const clientNamesMap = new Map<string, string>();
+      (clientsData || []).forEach((c: any) => {
+        if (c?.profile_id && c?.company_name) {
+          clientNamesMap.set(c.profile_id, c.company_name);
+        }
+      });
+
+      by_client.push(
+        ...Array.from(revenueByClient.entries()).map(([cid, data]) => ({
+          client_id: cid,
+          client_name: clientNamesMap.get(cid) || 'Cliente sem nome',
+          total_revenue: data.revenue,
+          vehicle_count: data.vehicleIds.size, // Apenas veículos com orçamentos
+        }))
+      );
+    }
+
+    by_client.sort((a, b) => b.total_revenue - a.total_revenue);
+  } catch {
+    // ignore
+  }
+
+  // 7) Revenue by partner (from all quotes - agnostic to status)
+  const by_partner: PartnerRevenue[] = [];
+  try {
+    const { data: quoteRows } = await admin
+      .from('quotes')
+      .select('total_value, partner_id, partners ( company_name )');
+
+    const revenueByPartner = new Map<string, { company: string; revenue: number; count: number }>();
+
+    (quoteRows || []).forEach((q: any) => {
+      const value = Number(q?.total_value) || 0;
+      const partnerId = q?.partner_id;
+      const partner = Array.isArray(q?.partners) ? q.partners[0] : q.partners;
+
+      if (partnerId) {
+        const existing = revenueByPartner.get(partnerId);
+        revenueByPartner.set(partnerId, {
+          company: partner?.company_name || 'Parceiro sem nome',
+          revenue: (existing?.revenue || 0) + value,
+          count: (existing?.count || 0) + 1,
+        });
+      }
+    });
+
+    by_partner.push(
+      ...Array.from(revenueByPartner.entries()).map(([pid, data]) => ({
+        partner_id: pid,
+        company_name: data.company,
+        total_revenue: data.revenue,
+        quote_count: data.count,
+      }))
+    );
+    by_partner.sort((a, b) => b.total_revenue - a.total_revenue);
+  } catch {
+    // ignore
+  }
+
   const result: TotalsResponse = {
     collections_total,
     parking_total_today,
-    approved_budgets_total,
+    quotes_by_status,
     purchased_parts_total,
+    by_vehicle,
+    by_client,
+    by_partner,
   };
 
   return NextResponse.json(result);

@@ -1,22 +1,44 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/modules/common/services/supabaseClient';
 
 type FinancialItemType =
   | 'vehicle_collection'
   | 'executed_budget'
   | 'material_purchase'
-  | 'operation_fee'
   | 'parking_fee';
-type ServiceStatus = 'finished' | 'in_progress';
 
-type FinancialItem = {
+type VehicleFinancialItem = {
   id: string;
   type: FinancialItemType;
   description: string;
-  vehiclePlate?: string;
-  serviceStatus: ServiceStatus;
-  dueDate?: string; // ISO date
-  amount: number; // cents or BRL? We'll use BRL number for mock simplicity
+  status: 'finished' | 'in_progress' | 'pending';
+  amount: number;
+};
+
+type VehicleFinancials = {
+  vehicleId: string;
+  plate: string;
+  brand?: string;
+  model?: string;
+  items: VehicleFinancialItem[];
+  total: number;
+  status: 'finished' | 'in_progress' | 'pending';
+};
+
+type GeneralFees = {
+  operation_fee: number;
+  total: number;
+};
+
+type FinancialOverviewResponse = {
+  general_fees: GeneralFees;
+  vehicles: VehicleFinancials[];
+  summary: {
+    total_to_pay: number;
+    total_future: number;
+    grand_total: number;
+  };
 };
 
 type Props = {
@@ -35,8 +57,6 @@ function typeLabel(type: FinancialItemType) {
       return 'Orçamento Executado';
     case 'material_purchase':
       return 'Materiais Comprados';
-    case 'operation_fee':
-      return 'Taxa de Operação';
     case 'parking_fee':
       return 'Parqueamento';
     default:
@@ -44,151 +64,87 @@ function typeLabel(type: FinancialItemType) {
   }
 }
 
-type MockVehicle = {
-  plate: string;
-  inPatioAtacado: boolean;
-  enteredAt?: string; // ISO date quando entrou no pátio
-};
-
-type MockClientPricing = {
-  taxaOperacao: number; // valor por veículo
-  parqueamentoDiaria: number; // valor por dia por veículo no pátio_atacado
-};
-
-function getMockClientPricing(clientId?: string): MockClientPricing {
-  // Valores estáticos com leve variação determinística por clientId
-  const base: MockClientPricing = { taxaOperacao: 35, parqueamentoDiaria: 12.5 };
-  if (!clientId) return base;
-  const last = clientId.at(-1);
-  if (last && /[0-9]/.test(last)) {
-    const n = Number(last);
-    return {
-      taxaOperacao: base.taxaOperacao + (n % 3) * 5,
-      parqueamentoDiaria: base.parqueamentoDiaria + (n % 4) * 2,
-    };
+function statusLabel(status: 'finished' | 'in_progress' | 'pending') {
+  switch (status) {
+    case 'finished':
+      return 'Concluído';
+    case 'in_progress':
+      return 'Em execução';
+    case 'pending':
+      return 'Pendente';
+    default:
+      return status;
   }
-  if (clientId.endsWith('a')) return { taxaOperacao: 40, parqueamentoDiaria: 15 };
-  return base;
-}
-
-function getMockVehiclesForClient(clientId?: string): MockVehicle[] {
-  // Lista pequena e determinística de veículos "cadastrados" do cliente
-  const base: MockVehicle[] = [
-    { plate: 'ABC1D23', inPatioAtacado: false },
-    { plate: 'EFG4H56', inPatioAtacado: true, enteredAt: daysAgoISO(3) },
-    { plate: 'IJK7L89', inPatioAtacado: true, enteredAt: daysAgoISO(1) },
-  ];
-  if (!clientId) return base;
-  // Varia a quantidade levemente por clientId
-  if (clientId.length % 2 === 0) {
-    return [...base, { plate: 'MNO0P12', inPatioAtacado: false }];
-  }
-  return base;
-}
-
-function daysAgoISO(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
-// Mock simples e determinístico, incluindo taxas de operação e parqueamento
-function getMockItems(clientId?: string): FinancialItem[] {
-  const pricing = getMockClientPricing(clientId);
-  const vehicles = getMockVehiclesForClient(clientId);
-  const totalVehicles = vehicles.length; // "veículos cadastrados"
-
-  // Taxa de operação: taxa por veículo x quantidade de veículos cadastrados
-  const totalTaxaOperacao = pricing.taxaOperacao * totalVehicles;
-
-  // Parqueamento: diária x total de dias de todos veículos no pátio_atacado
-  const vehiclesInPatio = vehicles.filter(v => v.inPatioAtacado && v.enteredAt);
-  const totalDiasPatio = vehiclesInPatio.reduce((sum, v) => {
-    if (!v.enteredAt) return sum;
-    const entered = new Date(v.enteredAt).getTime();
-    const now = Date.now();
-    const diffDays = Math.max(1, Math.ceil((now - entered) / (1000 * 60 * 60 * 24)));
-    return sum + diffDays;
-  }, 0);
-  const totalParqueamento = pricing.parqueamentoDiaria * totalDiasPatio;
-
-  const base: FinancialItem[] = [
-    {
-      id: 'fee-op',
-      type: 'operation_fee',
-      description: `Taxa por veículo (${totalVehicles} x ${formatCurrencyBRL(pricing.taxaOperacao)})`,
-      serviceStatus: 'finished',
-      amount: totalTaxaOperacao,
-    },
-    {
-      id: 'fee-park',
-      type: 'parking_fee',
-      description: `Parqueamento (${vehiclesInPatio.length} veículo(s), ${totalDiasPatio} dia(s) no pátio)`,
-      serviceStatus: 'finished',
-      amount: totalParqueamento,
-    },
-    {
-      id: 'it-1',
-      type: 'vehicle_collection',
-      description: 'Coleta do veículo em domicílio',
-      vehiclePlate: 'ABC1D23',
-      serviceStatus: 'finished',
-      dueDate: new Date().toISOString(),
-      amount: 120.0,
-    },
-    {
-      id: 'it-2',
-      type: 'executed_budget',
-      description: 'Reparo de alternador',
-      vehiclePlate: 'ABC1D23',
-      serviceStatus: 'finished',
-      dueDate: new Date().toISOString(),
-      amount: 850.0,
-    },
-    {
-      id: 'it-3',
-      type: 'material_purchase',
-      description: 'Compra de correia e rolamentos',
-      vehiclePlate: 'ABC1D23',
-      serviceStatus: 'finished',
-      dueDate: new Date().toISOString(),
-      amount: 230.5,
-    },
-    {
-      id: 'it-4',
-      type: 'executed_budget',
-      description: 'Instalação de acessórios elétricos',
-      vehiclePlate: 'EFG4H56',
-      serviceStatus: 'in_progress',
-      dueDate: undefined,
-      amount: 640.0,
-    },
-    {
-      id: 'it-5',
-      type: 'material_purchase',
-      description: 'Kit de iluminação (projeção)',
-      vehiclePlate: 'EFG4H56',
-      serviceStatus: 'in_progress',
-      dueDate: undefined,
-      amount: 180.0,
-    },
-  ];
-  // Variação leve por clientId só para não parecer 100% fixo
-  if (clientId && clientId.endsWith('a')) {
-    return base.map(i => (i.id === 'it-2' ? { ...i, amount: i.amount + 50 } : i));
-  }
-  return base;
 }
 
 export default function FinancialOverview({ clientId }: Props) {
-  const items = useMemo(() => getMockItems(clientId), [clientId]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<FinancialOverviewResponse | null>(null);
 
-  const toPay = items.filter(i => i.serviceStatus === 'finished');
-  const future = items.filter(i => i.serviceStatus === 'in_progress');
+  useEffect(() => {
+    if (!clientId) return;
 
-  const totalToPay = toPay.reduce((sum, i) => sum + i.amount, 0);
-  const totalFuture = future.reduce((sum, i) => sum + i.amount, 0);
-  const grandTotal = totalToPay + totalFuture;
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        const response = await fetch(`/api/client/${clientId}/financial-overview`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Erro ao buscar dados financeiros');
+        }
+
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [clientId]);
+
+  if (loading) {
+    return (
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 20px 24px' }}>
+        <div style={{ textAlign: 'center', color: '#666' }}>Carregando...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 20px 24px' }}>
+        <div style={{ color: '#dc2626', background: '#fee2e2', padding: 16, borderRadius: 8 }}>
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 20px 24px' }}>
+        <div style={{ color: '#666' }}>Nenhum dado disponível</div>
+      </div>
+    );
+  }
+
+  const { general_fees, vehicles, summary } = data;
+  const finishedVehicles = vehicles.filter(v => v.status === 'finished');
+  const futureVehicles = vehicles.filter(v => v.status !== 'finished');
 
   const cardStyle: React.CSSProperties = {
     background: '#fff',
@@ -204,6 +160,20 @@ export default function FinancialOverview({ clientId }: Props) {
     alignItems: 'center',
     padding: '8px 0',
     borderBottom: '1px solid #eee',
+  };
+
+  const vehicleCardStyle: React.CSSProperties = {
+    ...cardStyle,
+    marginTop: 16,
+  };
+
+  const vehicleHeaderStyle: React.CSSProperties = {
+    fontWeight: 600,
+    color: '#072e4c',
+    fontSize: '1.1rem',
+    marginBottom: 12,
+    paddingBottom: 8,
+    borderBottom: '2px solid #e0e0e0',
   };
 
   return (
@@ -222,78 +192,124 @@ export default function FinancialOverview({ clientId }: Props) {
         <div style={cardStyle}>
           <div style={{ color: '#666', fontSize: 12 }}>Total a pagar</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#e67e22' }}>
-            {formatCurrencyBRL(totalToPay)}
+            {formatCurrencyBRL(summary.total_to_pay)}
           </div>
         </div>
         <div style={cardStyle}>
           <div style={{ color: '#666', fontSize: 12 }}>Pagamentos futuros</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#002E4C' }}>
-            {formatCurrencyBRL(totalFuture)}
+            {formatCurrencyBRL(summary.total_future)}
           </div>
         </div>
         <div style={cardStyle}>
           <div style={{ color: '#666', fontSize: 12 }}>Total geral</div>
           <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#27ae60' }}>
-            {formatCurrencyBRL(grandTotal)}
+            {formatCurrencyBRL(summary.grand_total)}
           </div>
         </div>
       </div>
 
-      {/* A Pagar */}
-      <div style={{ marginTop: 24, ...cardStyle }}>
-        <div style={sectionTitle}>A pagar</div>
-        {toPay.length === 0 ? (
-          <div style={{ color: '#777' }}>Nenhum valor a pagar no momento.</div>
-        ) : (
-          <div>
-            {toPay.map(item => (
-              <div key={item.id} style={itemRow}>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#333' }}>{typeLabel(item.type)}</div>
-                  <div style={{ color: '#555', fontSize: 13 }}>{item.description}</div>
-                  {item.vehiclePlate && (
-                    <div style={{ color: '#888', fontSize: 12 }}>Placa: {item.vehiclePlate}</div>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700 }}>{formatCurrencyBRL(item.amount)}</div>
-                  {item.dueDate && (
-                    <div style={{ color: '#999', fontSize: 12 }}>
-                      Venc.: {new Date(item.dueDate).toLocaleDateString('pt-BR')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+      {/* Taxas Gerais */}
+      {general_fees.operation_fee > 0 && (
+        <div style={vehicleCardStyle}>
+          <div style={sectionTitle}>Taxas Gerais</div>
+          <div style={itemRow}>
+            <div>
+              <div style={{ fontWeight: 600, color: '#333' }}>Taxa de Operação</div>
+              <div style={{ color: '#555', fontSize: 13 }}>Taxa aplicada ao cliente</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontWeight: 700 }}>{formatCurrencyBRL(general_fees.operation_fee)}</div>
+              <div style={{ color: '#27ae60', fontSize: 12 }}>Concluído</div>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Pagamentos futuros */}
-      <div style={{ marginTop: 16, ...cardStyle }}>
-        <div style={sectionTitle}>Pagamentos futuros</div>
-        {future.length === 0 ? (
-          <div style={{ color: '#777' }}>Nenhum pagamento futuro previsto.</div>
-        ) : (
-          <div>
-            {future.map(item => (
-              <div key={item.id} style={itemRow}>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#333' }}>{typeLabel(item.type)}</div>
-                  <div style={{ color: '#555', fontSize: 13 }}>{item.description}</div>
-                  {item.vehiclePlate && (
-                    <div style={{ color: '#888', fontSize: 12 }}>Placa: {item.vehiclePlate}</div>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700 }}>{formatCurrencyBRL(item.amount)}</div>
-                  <div style={{ color: '#999', fontSize: 12 }}>Em execução</div>
-                </div>
+      {/* Veículos - Serviços Concluídos */}
+      {finishedVehicles.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#072e4c', marginBottom: 8 }}>
+            Veículos - A Pagar
+          </h2>
+          {finishedVehicles.map(vehicle => (
+            <div key={vehicle.vehicleId} style={vehicleCardStyle}>
+              <div style={vehicleHeaderStyle}>
+                Placa: {vehicle.plate}
+                {vehicle.brand && vehicle.model && (
+                  <span
+                    style={{ fontWeight: 400, fontSize: '0.9rem', marginLeft: 8, color: '#666' }}
+                  >
+                    ({vehicle.brand} {vehicle.model})
+                  </span>
+                )}
+                <span style={{ float: 'right', color: '#e67e22' }}>
+                  {formatCurrencyBRL(vehicle.total)}
+                </span>
               </div>
-            ))}
+              {vehicle.items.map(item => (
+                <div key={item.id} style={itemRow}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#333' }}>{typeLabel(item.type)}</div>
+                    <div style={{ color: '#555', fontSize: 13 }}>{item.description}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700 }}>{formatCurrencyBRL(item.amount)}</div>
+                    <div style={{ color: '#27ae60', fontSize: 12 }}>{statusLabel(item.status)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Veículos - Serviços Futuros */}
+      {futureVehicles.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 600, color: '#072e4c', marginBottom: 8 }}>
+            Veículos - Pagamentos Futuros
+          </h2>
+          {futureVehicles.map(vehicle => (
+            <div key={vehicle.vehicleId} style={vehicleCardStyle}>
+              <div style={vehicleHeaderStyle}>
+                Placa: {vehicle.plate}
+                {vehicle.brand && vehicle.model && (
+                  <span
+                    style={{ fontWeight: 400, fontSize: '0.9rem', marginLeft: 8, color: '#666' }}
+                  >
+                    ({vehicle.brand} {vehicle.model})
+                  </span>
+                )}
+                <span style={{ float: 'right', color: '#002E4C' }}>
+                  {formatCurrencyBRL(vehicle.total)}
+                </span>
+              </div>
+              {vehicle.items.map(item => (
+                <div key={item.id} style={itemRow}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#333' }}>{typeLabel(item.type)}</div>
+                    <div style={{ color: '#555', fontSize: 13 }}>{item.description}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700 }}>{formatCurrencyBRL(item.amount)}</div>
+                    <div style={{ color: '#666', fontSize: 12 }}>{statusLabel(item.status)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Mensagem se não houver veículos */}
+      {vehicles.length === 0 && general_fees.operation_fee === 0 && (
+        <div style={{ marginTop: 24, ...cardStyle }}>
+          <div style={{ color: '#777', textAlign: 'center', padding: 16 }}>
+            Nenhum dado financeiro disponível no momento.
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

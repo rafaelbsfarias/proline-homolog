@@ -48,6 +48,14 @@
   transform: translateY(-2px);
 }
 
+/* Classe para destacar contadores urgentes (delegações pendentes) */
+.urgent {
+  border-color: #dc3545 !important;
+  box-shadow:
+    0 4px 20px rgba(220, 53, 69, 0.18),
+    0 1.5px 6px rgba(220, 53, 69, 0.1) !important;
+}
+
 @media (max-width: 600px) {
   .countersRow {
     flex-direction: column;
@@ -62,9 +70,10 @@
   }
 }
 .toolbarSection {
-  margin-top: 0px;
+  margin: 0 auto 0 auto;
   padding: 0;
   width: 93%;
+  max-width: 1200px;
   box-sizing: border-box;
 }
 .welcomeTitle {
@@ -85,7 +94,8 @@
   gap: 12px;
   flex-wrap: wrap;
   width: 100%;
-  max-width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   align-items: stretch;
   box-sizing: border-box;
 }

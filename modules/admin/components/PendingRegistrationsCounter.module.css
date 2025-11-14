@@ -1,6 +1,8 @@
 /* Estilos específicos para o contador de cadastros pendentes */
 .counterCard {
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #fff;
   border: 1px solid #eee;
   border-radius: 8px;
@@ -10,16 +12,18 @@
   font-size: 18px;
   font-weight: 600;
   color: #1a1a1a;
-  padding: 0.5rem 1.2rem;
-  margin: 15px;
-  margin-left: 16px;
+  padding: 1rem 1.2rem;
+  margin: 0;
   outline: none;
-  min-width: 120px;
+  min-width: 180px;
+  min-height: 60px;
   text-align: center;
   transition:
     box-shadow 0.2s,
-    border 0.2s;
+    border 0.2s,
+    transform 0.2s;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 /* Classe para destacar pendências urgentes */
@@ -28,4 +32,11 @@
   box-shadow:
     0 4px 20px rgba(220, 53, 69, 0.18),
     0 1.5px 6px rgba(220, 53, 69, 0.1) !important;
+}
+
+.counterCard:hover {
+  box-shadow:
+    0 6px 24px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }

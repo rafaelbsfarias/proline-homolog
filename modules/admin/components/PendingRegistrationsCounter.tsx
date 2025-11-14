@@ -55,7 +55,7 @@ const PendingRegistrationsCounter: React.FC<PendingRegistrationsCounterProps> = 
       title="Ver cadastros pendentes"
       onClick={() => router.push('/admin/pendentes')}
     >
-      Cadastros pendentes: {count}
+      Cadastros Pendentes: {count}
     </span>
   );
 };
