@@ -6,7 +6,8 @@ type FinancialItemType =
   | 'vehicle_collection'
   | 'executed_budget'
   | 'material_purchase'
-  | 'parking_fee';
+  | 'parking_fee'
+  | 'vehicle_delivery';
 
 type VehicleFinancialItem = {
   id: string;
@@ -53,6 +54,8 @@ function typeLabel(type: FinancialItemType) {
   switch (type) {
     case 'vehicle_collection':
       return 'Coleta de Veículo';
+    case 'vehicle_delivery':
+      return 'Entrega de Veículo';
     case 'executed_budget':
       return 'Orçamento Executado';
     case 'material_purchase':

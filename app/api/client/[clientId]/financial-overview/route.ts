@@ -5,7 +5,8 @@ type FinancialItemType =
   | 'vehicle_collection'
   | 'executed_budget'
   | 'material_purchase'
-  | 'parking_fee';
+  | 'parking_fee'
+  | 'vehicle_delivery';
 
 type VehicleFinancialItem = {
   id: string;
@@ -268,6 +269,43 @@ export async function GET(
         description: `Materiais (${qty} ${qty > 1 ? 'itens' : 'item'})`,
         status: partRecord.status === 'received' ? 'finished' : 'in_progress',
         amount,
+      });
+    });
+
+    // 7) Get delivery requests (scheduled/delivered deliveries with address)
+    // Status 'scheduled' = cliente aprovou e está agendada (faturável)
+    // Status 'delivered' = entrega concluída (faturada)
+    const { data: deliveryData } = await admin
+      .from('delivery_requests')
+      .select('id, fee_amount, status, vehicle_id, vehicles ( id, plate, brand, model )')
+      .eq('client_id', clientId)
+      .in('status', ['scheduled', 'delivered'])
+      .not('address_id', 'is', null); // Apenas entregas (com endereço)
+
+    (deliveryData || []).forEach((delivery: unknown) => {
+      const deliveryRecord = delivery as Record<string, unknown>;
+      const fee = Number(deliveryRecord.fee_amount) || 0;
+
+      if (fee <= 0) return;
+
+      const vehicleData = deliveryRecord.vehicles;
+      const vehicle = Array.isArray(vehicleData) ? vehicleData[0] : vehicleData;
+      const vehicleRecord = vehicle as Record<string, unknown> | undefined;
+
+      if (!vehicleRecord?.id || !vehicleRecord?.plate) return;
+
+      const entry = getVehicleEntry(
+        String(vehicleRecord.id),
+        String(vehicleRecord.plate),
+        vehicleRecord.brand as string | undefined,
+        vehicleRecord.model as string | undefined
+      );
+      entry.items.push({
+        id: `delivery-${deliveryRecord.id}`,
+        type: 'vehicle_delivery',
+        description: 'Entrega de veículo',
+        status: 'finished', // Entregas aprovadas são consideradas finalizadas
+        amount: fee,
       });
     });
 
